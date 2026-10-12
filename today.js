@@ -264,7 +264,7 @@ export async function renderToday() {
     <div class="duo">
       <a class="tile tr" href="#/trening">
         <span class="tile-ic">🏋️</span><h3>Tréning</h3>
-        <p>${plan ? (trainedToday ? 'Dnes hotovo ✓' : `Ďalšie: ${h(nd?.name || 'deň 1')}`) : 'Vytvor si plán'}</p>
+        <p>${plan ? (trainedToday ? 'Dnes hotovo ✓' : `Ďalší: ${h(nd?.name || 'deň 1')}`) : 'Vytvor si plán'}</p>
         ${plan ? `<div class="dots5">${Array.from({ length: Math.max(p.training_days || plan.days.length, 1) }, (_, i) => `<i class="${i < weekLogs.length ? 'on' : ''}"></i>`).join('')}</div><small>${weekLogs.length} z ${p.training_days || plan.days.length} tento týždeň</small>` : ''}
       </a>
       <a class="tile wg" href="#/vaha">
