@@ -107,3 +107,44 @@ export function fmtDate(iso) {
   const [y, m, d] = iso.split('-');
   return `${Number(d)}. ${Number(m)}.`;
 }
+
+// ---------- Adaptívny cieľ ----------
+// Každý týždeň porovná priemerný príjem s tým, ako sa hýbal trend váhy, a upraví cieľ.
+// Očakávané tempo: chudnutie -0.5 kg/týždeň, naberanie +0.25 kg/týždeň, udržiavanie 0.
+export const EXPECTED_WEEKLY = { lose: -0.5, maintain: 0, gain: 0.25 };
+
+export function adaptTarget({ goal, sex, currentTarget, avgIntake, loggedDays, trendChange7 }) {
+  if (!currentTarget || loggedDays < 4 || trendChange7 == null) return null; // málo dát
+  const expected = EXPECTED_WEEKLY[goal] ?? 0;
+  const diff = trendChange7 - expected; // kladné = váha išla hore viac, než mala
+  // 1 kg tuku ~ 7700 kcal; za týždeň -> 1100 kcal/deň na 1 kg rozdielu. Používame polovicu (tlmenie)
+  let adjust = -Math.round((diff * 7700) / 7 / 2 / 10) * 10;
+  adjust = Math.max(-200, Math.min(200, adjust));
+  if (Math.abs(adjust) < 50) return { newKcal: currentTarget, adjust: 0, reason: 'Ideš presne podľa plánu, cieľ ostáva.' };
+  let newKcal = currentTarget + adjust;
+  const floor = MIN_KCAL[sex] || 1500;
+  if (newKcal < floor) newKcal = floor;
+  newKcal = Math.round(newKcal / 10) * 10;
+  const reason = adjust < 0
+    ? `Váha sa za týždeň zmenila o ${trendChange7 > 0 ? '+' : ''}${trendChange7} kg (plán ${expected > 0 ? '+' : ''}${expected}). Znižujem o ${Math.abs(newKcal - currentTarget)} kcal.`
+    : `Váha sa za týždeň zmenila o ${trendChange7 > 0 ? '+' : ''}${trendChange7} kg (plán ${expected > 0 ? '+' : ''}${expected}). Zvyšujem o ${newKcal - currentTarget} kcal.`;
+  return { newKcal, adjust: newKcal - currentTarget, reason };
+}
+
+// Streak: koľko dní v rade (končiac dnes alebo včera) má aspoň jeden záznam
+export function streak(datesWithLogs, todayIso = today()) {
+  const set = new Set(datesWithLogs);
+  let d = set.has(todayIso) ? todayIso : addDays(todayIso, -1);
+  let n = 0;
+  while (set.has(d)) { n++; d = addDays(d, -1); }
+  return n;
+}
+
+export function weekStart(iso = today()) {
+  const d = new Date(iso + 'T00:00:00');
+  const day = (d.getDay() + 6) % 7; // pondelok = 0
+  return addDays(iso, -day);
+}
+export function last7(iso = today()) {
+  return Array.from({ length: 7 }, (_, i) => addDays(iso, i - 6));
+}

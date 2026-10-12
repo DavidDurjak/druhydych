@@ -1,6 +1,6 @@
 // Service worker: appka sa nainštaluje na plochu a načíta aj pri slabom signáli (dáta idú vždy online)
-const CACHE = 'druhydych-v1';
-const ASSETS = ['./', './index.html', './app.css', './app.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
+const CACHE = 'druhydych-v2';
+const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './workouts.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
