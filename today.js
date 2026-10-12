@@ -1,4 +1,4 @@
-// Obrazovka Dnes v0.5: pozdrav, týždenný pás, dýchajúci kružok kalórií, tip dňa, farebné jedlá, voda v litroch, mini graf váhy
+// Obrazovka Dnes v0.5: pozdrav, týždenný pás, dýchajúci krúžok kalórií, tip dňa, farebné jedlá, voda v litroch, mini graf váhy
 import * as db from './data.js';
 import * as calc from './calc.js';
 import * as v2 from './app2.js';
@@ -141,6 +141,20 @@ export async function renderToday() {
   const wkAvg = wkVals.length ? wkVals.reduce((a, b) => a + b, 0) / wkVals.length : 0;
   const wkOk = wkAvg && Math.abs(wkAvg - p.target_kcal) <= p.target_kcal * 0.1;
   const weekLine = wkVals.length >= 2 ? `<div class="wk-avg ${wkOk ? 'ok' : ''}">Týždenný priemer <b>${r0(wkAvg)} kcal</b>${wkOk ? ' · v pláne ✓' : wkAvg > p.target_kcal ? ` · ${r0(wkAvg - p.target_kcal)} nad cieľ` : ` · ${r0(p.target_kcal - wkAvg)} pod cieľ`}</div>` : '';
+  // týždenný rozpočet: čo zostáva z kalórií na celý týždeň (len aktuálny týždeň)
+  const inThisWeek = calc.today() >= wkStart && calc.today() <= wkEnd;
+  let budLine = '';
+  if (inThisWeek && wkVals.length >= 2 && p.target_kcal) {
+    const eatenWk = Array.from({ length: 7 }, (_, i) => calc.addDays(wkStart, i)).filter(d => d <= calc.today()).reduce((a, d) => a + (d === st.date ? sum.kcal : (byDay[d]?.kcal || 0)), 0);
+    const daysAfter = Math.round((new Date(wkEnd + 'T00:00:00') - new Date(calc.today() + 'T00:00:00')) / 86400000);
+    const leftWk = p.target_kcal * 7 - eatenWk;
+    const perDay = daysAfter > 0 ? leftWk / daysAfter : 0;
+    const dleft = `${daysAfter} ${daysAfter === 1 ? 'deň' : daysAfter < 5 ? 'dni' : 'dní'}`;
+    budLine = daysAfter > 0 && leftWk > 0
+      ? (perDay >= p.target_kcal * 0.8 && perDay <= p.target_kcal * 1.15
+        ? `<div class="wk-avg">Týždenný rozpočet: zostáva <b>${r0(leftWk)} kcal</b>, to je <b>${r0(perDay)} kcal</b> denne na ďalších ${dleft}</div>`
+        : `<div class="wk-avg">Týždenný rozpočet: zostáva <b>${r0(leftWk)} kcal</b> na ďalších ${dleft}. Drž sa denného cieľa.</div>`) : '';
+  }
   // návrat po výpadku: posledná aktivita pred 3 a viac dňami, dnes ešte nič
   const prevAct = actDates.filter(d => d < calc.today()).sort().pop();
   const gap = prevAct ? Math.round((new Date(calc.today()) - new Date(prevAct)) / 86400000) : 0;
@@ -246,6 +260,7 @@ export async function renderToday() {
       </div>
     </section>
     ${weekLine}
+    ${budLine}
 
     ${tip && !firstRun ? `<aside class="tip ${tip.quote ? 'q' : ''}"><span class="tip-i">${tip.icon}</span><p>${h(tip.text)}</p></aside>` : ''}
 
