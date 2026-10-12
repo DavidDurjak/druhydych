@@ -183,10 +183,24 @@ export async function renderToday() {
     <button class="wk-nav" data-wk="7" aria-label="Ďalší týždeň">›</button>
   </div>`;
 
-  const macro = (lbl, val, target, color) => {
-    const pct = target ? Math.min(100, val / target * 100) : 0, over = target && val > target * 1.05;
-    return `<div class="mc"><div class="mc-h"><span>${lbl}</span><b>${r0(val)}<small> / ${r0(target)} g</small></b></div><div class="mc-b"><i style="width:${pct}%;background:${over ? 'var(--m-dinner)' : color}"></i></div></div>`;
+  const macro = (lbl, val, target, color, noOver = false) => {
+    const pct = target ? Math.min(100, val / target * 100) : 0, over = !noOver && target && val > target * 1.05;
+    return `<div class="mc"><div class="mc-h"><span><u style="background:${color}"></u>${lbl}</span><b>${r0(val)}<small> / ${r0(target)} g</small></b></div><div class="mc-b"><i style="width:${pct}%;background:${over ? 'var(--m-dinner)' : color}"></i></div></div>`;
   };
+  // vláknina z jedál, ktoré ju majú v databáze (cieľ: 14 g na 1000 kcal, aspoň 25 g)
+  const fiber = foods.reduce((a, f) => a + Number(f.fiber || 0), 0);
+  const fiberGoal = Math.max(25, Math.round((p.target_kcal || 2000) / 1000 * 14));
+  const fiberGap = foods.length > 0 && foods.some(f => f.fiber == null);
+  // koráltky jedál okolo kruhu: 5 hlavných jedál podľa odporúčaného rozdelenia dňa
+  const BEAD_R = 106, BOX = 236;
+  let beadAcc = 0;
+  const beads = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner'].map(k => {
+    const m = MEAL_META[k], mid = beadAcc + m.share / 2; beadAcc += m.share;
+    const ang = mid * 2 * Math.PI, x = BOX / 2 + BEAD_R * Math.sin(ang) - 14, y = BOX / 2 - BEAD_R * Math.cos(ang) - 14;
+    const on = foods.some(f => f.meal === k);
+    return `<a class="bead ${on ? 'on' : ''}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--mc:${m.color}" href="#/jedlo?meal=${k}" aria-label="${m.label}${on ? ': zapísané' : ': pridať'}">${m.icon}</a>`;
+  }).join('');
+  const goalPct = p.target_kcal ? Math.round(sum.kcal / p.target_kcal * 100) : 0;
 
   const mealRows = f => `<li><span class="fi">${foodEmoji(f.name, f.meal)}</span><div class="fn" data-edit="${f.id}" role="button" tabindex="0"><b>${h(f.name)}</b><span>${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)}, ` : ''}${r0(f.grams)} g</span></div><span class="fk">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></li>`;
   const mealCards = Object.entries(MEAL_META).map(([k, m]) => {
@@ -245,9 +259,10 @@ export async function renderToday() {
     <section class="hero-k ${over ? 'over' : ''}">
       <div class="hk-ring">
         <div class="breath"></div>
-        ${ringSvg(208, 15, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'big')}
+        ${ringSvg(176, 13, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'big')}
         <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7CFFB2"/><stop offset="1" stop-color="#3FD5C4"/></linearGradient></defs></svg>
-        <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span></div>
+        <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span><em class="hk-pc">${goalPct} % cieľa</em></div>
+        ${beads}
       </div>
       <div class="hk-stats">
         <div class="hk-st"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'naplánované' : 'zjedené'}</span></div>
@@ -257,7 +272,9 @@ export async function renderToday() {
         ${macro('Bielkoviny', sum.protein, p.target_protein, 'var(--protein)')}
         ${macro('Sacharidy', sum.carbs, p.target_carbs, 'var(--carbs)')}
         ${macro('Tuky', sum.fat, p.target_fat, 'var(--fat)')}
+        ${macro('Vláknina', fiber, fiberGoal, 'var(--fiber)', true)}
       </div>
+      ${fiberGap ? '<p class="hk-note">Vláknina sa počíta len z jedál, ktoré ju majú v databáze.</p>' : ''}
     </section>
     ${weekLine}
     ${budLine}

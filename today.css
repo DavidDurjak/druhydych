@@ -1,5 +1,6 @@
 /* v0.5: obrazovka Dnes */
 :root {
+  --fiber: #9BE564;
   --track: #222A35;
   --m-breakfast: #FFB547;
   --m-lunch: #FF7A59;
@@ -50,23 +51,30 @@
 .hk-st b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .hk-st span { position: relative; display: inline-block; font-size: 12.5px; color: var(--muted); }
 .hk-st span i { position: absolute; left: 100%; margin-left: 4px; font-style: normal; }
-.hk-ring { position: relative; width: 208px; height: 208px; margin: 0 auto; display: grid; place-items: center; }
-.hk-ring .rg { position: absolute; inset: 0; }
-.breath { position: absolute; inset: 22px; border-radius: 50%; background: radial-gradient(circle, rgba(124,255,178,.22) 0%, rgba(124,255,178,0) 70%); animation: breath 5.5s ease-in-out infinite; }
+.hk-ring { position: relative; width: 236px; height: 236px; margin: 0 auto; display: grid; place-items: center; }
+.hk-ring .rg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.bead { position: absolute; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; line-height: 1; background: var(--track); border: 1.5px solid transparent; opacity: .6; filter: grayscale(.85); transition: opacity .3s, filter .3s, background .3s; }
+.bead.on { opacity: 1; filter: none; background: color-mix(in srgb, var(--mc) 24%, var(--card)); border-color: var(--mc); box-shadow: 0 0 12px color-mix(in srgb, var(--mc) 40%, transparent); }
+.bead:active { transform: scale(.9); }
+.breath { position: absolute; inset: 56px; border-radius: 50%; background: radial-gradient(circle, rgba(124,255,178,.22) 0%, rgba(124,255,178,0) 70%); animation: breath 5.5s ease-in-out infinite; }
 .hero-k.over .breath { background: radial-gradient(circle, rgba(255,107,53,.22) 0%, rgba(255,107,53,0) 70%); }
 @keyframes breath { 0%, 100% { transform: scale(.82); opacity: .55; } 45% { transform: scale(1.06); opacity: 1; } }
 .hk-c { position: relative; text-align: center; }
-.hk-c b { display: block; font-size: 44px; font-weight: 800; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+.hk-c b { display: block; font-size: 42px; font-weight: 800; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
 .hk-c span { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); }
-.hk-macros { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.hk-pc { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 99px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-style: normal; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hero-k.over .hk-pc { background: rgba(255,107,53,.16); color: #FF8A5C; }
+.hk-macros { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
 .mc { display: flex; flex-direction: column; gap: 7px; text-align: left; }
-.mc-h { display: flex; flex-direction: column; gap: 1px; }
-.mc-h span { font-size: 11.5px; color: var(--muted); font-weight: 600; }
-.mc-h b { font-size: 16px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.mc-h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.mc-h span { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.mc-h u { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.mc-h b { font-size: 15px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .mc-h small { font-size: 11.5px; color: var(--muted); font-weight: 600; }
 .mc-b { height: 6px; border-radius: 99px; background: var(--track); overflow: hidden; }
 .mc-b i { display: block; height: 100%; border-radius: 99px; transition: width .8s cubic-bezier(.2,.8,.2,1); }
-.hk-macros { gap: 14px; }
+.hk-macros { gap: 16px 22px; }
+.hk-note { width: 100%; margin: 12px 0 0; font-size: 11.5px; color: var(--muted); text-align: center; }
 
 /* rýchly zápis */
 .qk { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
@@ -183,7 +191,7 @@
 .ci-go { font-size: 13px; font-weight: 700; color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) { .breath { animation: none; } .rg-fill, .mc-b i { transition: none; } }
-@media (max-width: 360px) { .hk-ring { width: 184px; height: 184px; } .hk-ring .rg { width: 184px; height: 184px; } .hk-c b { font-size: 40px; } }
+@media (max-width: 340px) { .hk-c b { font-size: 36px; } }
 
 /* výber jedla na obrazovke Pridať jedlo: 7 jedál sa posúvajú do strán */
 #mealseg { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }

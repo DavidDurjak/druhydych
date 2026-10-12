@@ -1,4 +1,4 @@
-// Vláknina, cukry a soľ za deň: karta pod hlavným kruhom na obrazovke Dnes (samo sa vloží, bez zásahu do today.js)
+// Cukry a soľ za deň: karta pod hlavným kruhom na obrazovke Dnes (vláknina je teraz priamo v hlavnej karte)
 import * as db from './data.js';
 import { ctx } from './app.js';
 import './meals.js';
@@ -16,14 +16,13 @@ async function inject() {
   busy = true;
   try {
     const p = ctx.state.profile, date = ctx.state.date;
-    const { data, error } = await db.sb.from('food_logs').select('fiber,sugar,salt').eq('user_id', p.id).eq('date', date);
+    const { data, error } = await db.sb.from('food_logs').select('sugar,salt').eq('user_id', p.id).eq('date', date);
     const m = root.querySelector('.screen.td .meals');
     if (error || !data || !m || root.querySelector('#micro') || ctx.state.date !== date) return;
-    const has = data.some(r => r.fiber != null || r.sugar != null || r.salt != null);
+    const has = data.some(r => r.sugar != null || r.salt != null);
     if (!has) return;
     const sum = k => data.reduce((a, r) => a + Number(r[k] || 0), 0);
-    const fiber = sum('fiber'), sugar = sum('sugar'), salt = sum('salt');
-    const fGoal = Math.max(20, Math.round((p.target_kcal || 2000) / 1000 * 14));
+    const sugar = sum('sugar'), salt = sum('salt');
     const row = (lbl, val, goal, unit, max) => {
       const pct = Math.min(100, goal ? val / goal * 100 : 0);
       const bad = max && val > goal;
@@ -31,7 +30,7 @@ async function inject() {
     };
     const el = document.createElement('section');
     el.id = 'micro'; el.className = 'micro';
-    el.innerHTML = `<h3>Vláknina, cukry a soľ</h3>${row('Vláknina', fiber, fGoal, 'g', false)}${row('Cukry', sugar, 50, 'g', true)}${row('Soľ', salt, 5, 'g', true)}<p class="mi-n">Počíta sa z jedál, ktoré majú tieto údaje. Odporúčania WHO: vláknina aspoň 14 g na 1000 kcal, cukry do 50 g, soľ do 5 g.</p>`;
+    el.innerHTML = `<h3>Cukry a soľ</h3>${row('Cukry', sugar, 50, 'g', true)}${row('Soľ', salt, 5, 'g', true)}<p class="mi-n">Počíta sa z jedál, ktoré majú tieto údaje. Odporúčania WHO: cukry do 50 g, soľ do 5 g.</p>`;
     m.before(el);
   } catch (_) { /* nepodstatné */ } finally { busy = false; }
 }
