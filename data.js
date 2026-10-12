@@ -225,3 +225,33 @@ export async function exportCsv() {
   });
   return rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
 }
+
+// ---------- v0.3: push ----------
+export async function vapidPublicKey() {
+  const { data, error } = await sb.rpc('vapid_public_key');
+  if (error) throw new Error(error.message);
+  return data;
+}
+export async function savePushSubscription(row) {
+  return must(await sb.from('push_subscriptions').upsert(row, { onConflict: 'endpoint' }).select().single());
+}
+export async function deletePushSubscription(endpoint) {
+  must(await sb.from('push_subscriptions').delete().eq('endpoint', endpoint));
+}
+export async function getReminderSettings(userId) {
+  const { data, error } = await sb.from('reminder_settings').select('*').eq('user_id', userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+export async function ensureReminderSettings(userId, defaults) {
+  const cur = await getReminderSettings(userId);
+  if (cur) return cur;
+  return must(await sb.from('reminder_settings').insert({ user_id: userId, ...defaults }).select().single());
+}
+export async function saveReminderSettings(row) {
+  return must(await sb.from('reminder_settings').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }).select().single());
+}
+export async function queueTestPush() {
+  const { error } = await sb.rpc('queue_test_push');
+  if (error) throw new Error(error.message);
+}
