@@ -15,7 +15,7 @@ import * as gl from './goals.js';
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
 
-const MEALS = { breakfast: 'Raňajky', lunch: 'Obed', dinner: 'Večera', snack: 'Snack' };
+const MEALS = { breakfast: 'Raňajky', brunch: 'Desiata', lunch: 'Obed', afternoon: 'Olovrant', dinner: 'Večera', late: 'Druhá večera', snack: 'Snack' };
 export const ctx = {};
 const ICONS = {
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>',
@@ -71,13 +71,14 @@ function dateLabel(iso) {
   const days = ['Nedeľa', 'Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota'];
   if (iso === calc.today()) return 'Dnes';
   if (iso === calc.addDays(calc.today(), -1)) return 'Včera';
+  if (iso === calc.addDays(calc.today(), 1)) return 'Zajtra';
   return `${days[d.getDay()]} ${calc.fmtDate(iso)}`;
 }
-function datePicker() {
+function datePicker(future = false) {
   return `<div class="row" style="gap:6px">
     <button class="btn icon ghost" data-day="-1">‹</button>
     <span class="date mono" style="min-width:90px;text-align:center">${dateLabel(state.date)}</span>
-    <button class="btn icon ghost" data-day="1" ${state.date >= calc.today() ? 'disabled' : ''}>›</button>
+    <button class="btn icon ghost" data-day="1" ${!future && state.date >= calc.today() ? 'disabled' : ''}>›</button>
   </div>`;
 }
 function bindDatePicker(root, rerender) {
@@ -109,7 +110,7 @@ function renderAuth(mode = 'login') {
   <div class="hero">
     <div class="tag">Druhý dych</div>
     <h1>Druhý dych nie je dar.<br>Dá sa naučiť.</h1>
-    <p class="lead">12 týždňov. Jedlo, váha, pohyb a hlava na jednom mieste. Tvoj kouč vidí každý krok.</p>
+    <p class="lead">12 týždňov. Jedlo, váha, pohýb a hlava na jednom mieste. Tvoj kouč vidí každý krok.</p>
   </div>
   <div class="screen no-nav">
     <div class="card">
@@ -130,7 +131,7 @@ function renderAuth(mode = 'login') {
     try {
       if (mode === 'register') {
         const res = await db.signUp(f.get('email'), f.get('password'), f.get('name'));
-        if (!res.session) { toast('Účet vytvorený. Skontroluj e-mail a potvrď registráciu.'); renderAuth('login'); return; }
+        if (!res.session) { toast('Účet vytvorený. Skontroluj e-mail a potvrdň registráciu.'); renderAuth('login'); return; }
       } else {
         await db.signIn(f.get('email'), f.get('password'));
       }
@@ -162,7 +163,7 @@ async function renderOnboarding() {
         ${Object.entries(calc.ACTIVITY).map(([k, v]) => `<option value="${k}" ${(p.activity || 'light') === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
       <label class="field"><span>Koľko dní v týždni chceš trénovať</span><input class="input" type="number" name="training_days" min="0" max="7" value="${p.training_days ?? 3}"></label>
       <div id="preview" class="stat mb" style="display:none"></div>
-      ${p.onboarded ? '' : '<label class="row small mb" style="gap:10px;align-items:flex-start"><input type="checkbox" name="adult" required style="margin-top:3px"> <span>Mám aspoň 18 rokov. Beriem na vedomie, že appka nenahrádza lekára ani výživového poradcu a používam ju na vlastnú zodpovednosť.</span></label>'}
+      ${p.onboarded ? '' : '<label class="row small mb" style="gap:10px;align-items:flex-start"><input type="checkbox" name="adult" required style="margin-top:3px"> <span>Mám aspoň 18 rokov. Beriem na vedomie, že appka nenahradíza lekára ani výživového poradcu a používam ju na vlastnú zodpovednosť.</span></label>'}
       <button class="btn primary" type="submit">${p.onboarded ? 'Uložiť zmeny' : 'Uložiť a začať'}</button>
     </form>
   </div>`;

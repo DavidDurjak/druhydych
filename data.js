@@ -299,6 +299,20 @@ export async function copyMeal(userId, fromDate, toDate, meal) {
   must(await sb.from('food_logs').insert(rows.map(r => ({ ...r, user_id: userId, date: toDate, meal }))));
   return rows.length;
 }
+// celý deň (alebo jedna časť dňa) na viac dátumov naraz: plánovanie dopredu
+export async function copyDay(userId, fromDate, toDates, meal = null) {
+  let q = sb.from('food_logs').select('meal,name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty').eq('user_id', userId).eq('date', fromDate).order('created_at');
+  if (meal) q = q.eq('meal', meal);
+  const rows = must(await q);
+  if (!rows.length || !toDates.length) return 0;
+  const out = [];
+  toDates.forEach(d => rows.forEach(r => out.push({ ...r, user_id: userId, date: d })));
+  must(await sb.from('food_logs').insert(out));
+  return rows.length * toDates.length;
+}
+export async function clearMeal(userId, date, meal) {
+  must(await sb.from('food_logs').delete().eq('user_id', userId).eq('date', date).eq('meal', meal));
+}
 export async function recentLogs(userId, limit = 25) {
   const rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty,created_at')
     .eq('user_id', userId).neq('source', 'quick').order('created_at', { ascending: false }).limit(300));
