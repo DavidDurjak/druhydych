@@ -1,9 +1,9 @@
 // Druhý dych: hlavná aplikácia (routing + obrazovky)
 import * as db from './data.js';
 import * as calc from './calc.js';
-import { searchBasic, searchOFF, lookupBarcode } from './food.js';
 import * as v2 from './app2.js';
 import * as push from './push.js';
+import * as fd from './foods.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -73,7 +73,7 @@ async function route() {
   if (!state.session) return renderAuth();
   if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
-  const views = { '#/': renderToday, '#/onboarding': renderOnboarding, '#/jedlo': renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
+  const views = { '#/': renderToday, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
     '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders };
   let fn = views[path];
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
@@ -222,7 +222,7 @@ async function renderToday() {
     <div class="topbar"><div><div class="brand"><span class="dot"></span> Ahoj, ${h(p.name?.split(' ')[0] || '')}</div><div class="date">Deň ${day} z 84 · týždeň ${Math.min(12, Math.ceil(day / 7))}</div></div>${datePicker()}</div>
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
     ${pushCard}
-    ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">AI cieľ</span></div>
+    ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">Adaptívny cieľ</span></div>
       <p class="small mt">${h(adaptive.reason)}</p>
       <p class="muted small mt">Priemer ${adaptive.avg} kcal z ${adaptive.days} dní · trend ${adaptive.ch > 0 ? '+' : ''}${adaptive.ch} kg</p>
       ${adaptive.adjust ? `<div class="row mt" style="gap:8px"><button class="btn sm primary" id="adaptYes">Nastaviť ${adaptive.newKcal} kcal</button><button class="btn sm ghost" id="adaptNo">Nechať ${p.target_kcal}</button></div>` : `<button class="btn sm ghost mt" id="adaptNo">OK</button>`}
@@ -251,7 +251,7 @@ async function renderToday() {
     ${Object.entries(MEALS).map(([k, lbl]) => {
       const rows = foods.filter(f => f.meal === k); const s = calc.sumMacros(rows);
       return `<div class="card meal"><div class="meal-h"><h3>${lbl}</h3><div class="row"><span class="muted small mono">${r0(s.kcal)} kcal</span><button class="btn sm primary" data-add="${k}">+ Pridať</button></div></div>
-        ${rows.length ? rows.map(f => `<div class="item"><div class="n"><b>${h(f.name)}</b><span>${h(f.brand || '')}${f.brand ? ' · ' : ''}${r0(f.grams)} g · B ${r0(f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></div>`).join('') : '<div class="empty">Zatiaľ nič.</div>'}
+        ${rows.length ? rows.map(f => `<div class="item"><div class="n"><b>${h(f.name)}</b><span>${h(f.brand || '')}${f.brand ? ' · ' : ''}${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)} · ` : ''}${r0(f.grams)} g · B ${r0(f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></div>`).join('') : `<div class="empty row between"><span>Zatiaľ nič.</span>${state.date === calc.today() ? `<a href="#" data-copy="${k}" class="small">↻ Ako včera</a>` : ''}</div>`}
       </div>`;
     }).join('')}
     <div class="card"><div class="row between"><div><h3>Denný check-in</h3><p class="muted small">${checkin && (checkin.sleep_h || checkin.steps || checkin.mood) ? `Spánok ${checkin.sleep_h ?? '–'} h · ${checkin.steps ?? '–'} krokov · nálada ${checkin.mood ?? '–'}/5` : 'Spánok, kroky, nálada. 20 sekúnd.'}</p></div><a class="btn sm" href="#/checkin">${checkin?.mood ? 'Upraviť' : 'Vyplniť'}</a></div></div>
@@ -261,6 +261,11 @@ async function renderToday() {
   push.bindPushCard(renderToday);
   $app.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
   $app.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
+  $app.querySelectorAll('[data-copy]').forEach(b => b.onclick = async e => {
+    e.preventDefault();
+    const n = await db.copyMeal(uid, calc.addDays(state.date, -1), state.date, b.dataset.copy).catch(err => { toast(err.message, true); return -1; });
+    if (n === 0) toast('Včera tu nebolo nič zapísané', true); else if (n > 0) { toast('Skopírované z včera'); renderToday(); }
+  });
   $app.querySelectorAll('[data-w]').forEach(b => b.onclick = async () => {
     const n = Number(b.dataset.w); const val = n === water ? n - 1 : n;
     await db.upsertCheckin({ user_id: uid, date: state.date, water: val, sleep_h: checkin?.sleep_h ?? null, steps: checkin?.steps ?? null, mood: checkin?.mood ?? null, note: checkin?.note ?? null });
@@ -270,134 +275,7 @@ async function renderToday() {
   $app.querySelector('#adaptNo')?.addEventListener('click', async () => { await db.applyTarget(uid, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: p.target_kcal, reason: 'Ponechané používateľom', avg_intake: adaptive.avg, trend_change: adaptive.ch }, {}); renderToday(); });
 }
 
-// ---------- jedlo ----------
-async function renderFood() {
-  const params = new URLSearchParams((location.hash.split('?')[1]) || '');
-  let meal = params.get('meal') || defaultMeal();
-  const uid = state.profile.id;
-  const recent = await db.recentFoods(uid, 20);
-
-  $app.innerHTML = `<div class="screen">
-    <div class="topbar"><h1>Pridať jedlo</h1>${datePicker()}</div>
-    <div class="seg mb" id="mealseg">${Object.entries(MEALS).map(([k, l]) => `<button data-meal="${k}" class="${k === meal ? 'on' : ''}">${l}</button>`).join('')}</div>
-    <div class="input-row mb">
-      <input class="input" id="q" placeholder="Hľadaj: kuracie prsia, Skyr, Kofola..." autocomplete="off">
-      <button class="btn icon" id="scan" title="Čiarový kód">▦</button>
-    </div>
-    <div class="row mb" style="gap:8px"><button class="btn sm ghost" id="manual">+ Vlastné jedlo</button><button class="btn sm ghost" id="quick">+ Rýchle kalórie</button></div>
-    <div class="card"><div id="results" class="results">
-      ${recent.length ? '<p class="muted small mb">Naposledy</p>' + recent.map((f, i) => resRow(f, i, 'recent')).join('') : ''}
-      <p class="muted small mb mt">Základné potraviny</p>${searchBasic('').map((f, i) => resRow(f, i, 'basic')).join('')}
-    </div></div>
-  </div>${nav('#/jedlo')}`;
-
-  const pools = { recent, basic: searchBasic(''), off: [] };
-  const $res = $app.querySelector('#results');
-  const bind = () => $res.querySelectorAll('[data-pick]').forEach(el => el.onclick = () => openAdd(pools[el.dataset.pool][Number(el.dataset.pick)], meal, () => { toast('Pridané'); location.hash = '#/'; }));
-  bind();
-  bindDatePicker($app, renderFood);
-  $app.querySelectorAll('[data-meal]').forEach(b => b.onclick = () => { meal = b.dataset.meal; $app.querySelectorAll('[data-meal]').forEach(x => x.classList.toggle('on', x === b)); });
-
-  let ctrl = null, timer = null;
-  $app.querySelector('#q').oninput = e => {
-    const q = e.target.value.trim();
-    clearTimeout(timer);
-    const basic = searchBasic(q); pools.basic = basic;
-    $res.innerHTML = (basic.length ? '<p class="muted small mb">Základné potraviny</p>' + basic.map((f, i) => resRow(f, i, 'basic')).join('') : '') + (q.length >= 2 ? '<div class="spinner"></div>' : '');
-    bind();
-    if (q.length < 2) return;
-    timer = setTimeout(async () => {
-      if (ctrl) ctrl.abort(); ctrl = new AbortController();
-      try {
-        const off = await searchOFF(q, { signal: ctrl.signal }); pools.off = off;
-        $res.querySelector('.spinner')?.remove();
-        $res.insertAdjacentHTML('beforeend', off.length ? '<p class="muted small mb mt">Open Food Facts</p>' + off.map((f, i) => resRow(f, i, 'off')).join('') : '<p class="empty">Nič v databáze. Skús iný názov alebo pridaj vlastné jedlo.</p>');
-        bind();
-      } catch (err) { if (err.name !== 'AbortError') { $res.querySelector('.spinner')?.remove(); $res.insertAdjacentHTML('beforeend', '<p class="empty">Online databáza nedostupná.</p>'); } }
-    }, 350);
-  };
-  $app.querySelector('#manual').onclick = () => openAdd({ name: '', brand: '', kcal: 0, protein: 0, carbs: 0, fat: 0, source: 'manual' }, meal, () => { toast('Pridané'); location.hash = '#/'; }, true);
-  $app.querySelector('#quick').onclick = () => openQuick(meal);
-  $app.querySelector('#scan').onclick = () => openScan(meal);
-}
-function defaultMeal() {
-  const hr = new Date().getHours();
-  return hr < 10 ? 'breakfast' : hr < 15 ? 'lunch' : hr < 21 ? 'dinner' : 'snack';
-}
-function resRow(f, i, pool) {
-  const g = f.grams || 100;
-  const kcal = pool === 'recent' ? r0(f.kcal) : r0(f.kcal);
-  return `<div class="res" data-pick="${i}" data-pool="${pool}"><div class="n"><b>${h(f.name)}</b><span>${f.brand ? h(f.brand) + ' · ' : ''}${pool === 'recent' ? `${r0(g)} g` : '100 g'} · B ${r0(pool === 'recent' ? f.protein : f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${kcal}</span></div>`;
-}
-function openAdd(food, meal, done, editable = false) {
-  // recent položky majú hodnoty za zalogované gramy -> prepočítaj na 100 g
-  let per100 = { kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat };
-  let grams = 100;
-  if (food.grams && food.grams !== 100 && food.source !== 'basic') {
-    const k = 100 / Number(food.grams);
-    per100 = { kcal: food.kcal * k, protein: food.protein * k, carbs: food.carbs * k, fat: food.fat * k };
-    grams = Number(food.grams);
-  }
-  const bg = sheet(`<h2 class="mb">${editable ? 'Vlastné jedlo' : h(food.name)}</h2>
-    ${editable ? '<label class="field"><span>Názov</span><input class="input" id="fname" placeholder="Napr. Mamina sviečková"></label>' : `<p class="muted small mb">${h(food.brand || '')} · na 100 g: ${r0(per100.kcal)} kcal, B ${r0(per100.protein)} g, S ${r0(per100.carbs)} g, T ${r0(per100.fat)} g</p>`}
-    ${editable ? `<p class="muted small mb">Hodnoty na 100 g:</p><div class="grid2"><label class="field"><span>kcal</span><input class="input" id="pk" type="number" value="0"></label><label class="field"><span>Bielkoviny (g)</span><input class="input" id="pp" type="number" step="0.1" value="0"></label><label class="field"><span>Sacharidy (g)</span><input class="input" id="pc" type="number" step="0.1" value="0"></label><label class="field"><span>Tuky (g)</span><input class="input" id="pf" type="number" step="0.1" value="0"></label></div>` : ''}
-    <label class="field"><span>Množstvo (g)</span><input class="input" id="g" type="number" inputmode="decimal" value="${grams}" min="1"></label>
-    <div class="row mb" style="gap:6px">${[50, 100, 150, 200, 250].map(v => `<button class="btn sm ghost" data-g="${v}">${v}</button>`).join('')}</div>
-    <div class="stat mb" id="calc"></div>
-    <button class="btn primary" id="save">Pridať do ${MEALS[meal].toLowerCase()}</button>`);
-  const $g = bg.querySelector('#g'), $calc = bg.querySelector('#calc');
-  const getPer100 = () => editable ? { kcal: Number(bg.querySelector('#pk').value), protein: Number(bg.querySelector('#pp').value), carbs: Number(bg.querySelector('#pc').value), fat: Number(bg.querySelector('#pf').value) } : per100;
-  const upd = () => { const s = calc.scale(getPer100(), $g.value || 0); $calc.innerHTML = `<b class="mono">${s.kcal} kcal</b><span>B ${s.protein} g · S ${s.carbs} g · T ${s.fat} g</span>`; };
-  bg.addEventListener('input', upd); upd();
-  bg.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { $g.value = b.dataset.g; upd(); });
-  bg.querySelector('#save').onclick = async () => {
-    const name = editable ? bg.querySelector('#fname').value.trim() : food.name;
-    if (!name) return toast('Zadaj názov', true);
-    const s = calc.scale(getPer100(), $g.value || 0);
-    try {
-      await db.addFood({ user_id: state.profile.id, date: state.date, meal, name, brand: food.brand || null, grams: Number($g.value), ...s, source: food.source || 'manual', barcode: food.barcode || null });
-      bg.remove(); done();
-    } catch (err) { toast(err.message, true); }
-  };
-}
-function openQuick(meal) {
-  const bg = sheet(`<h2 class="mb">Rýchle kalórie</h2><p class="muted small mb">Keď nevieš presne, čo si jedol, zadaj aspoň odhad.</p>
-    <label class="field"><span>Názov</span><input class="input" id="n" placeholder="Napr. obed v jedálni"></label>
-    <div class="grid2"><label class="field"><span>kcal</span><input class="input" id="k" type="number" inputmode="numeric"></label><label class="field"><span>Bielkoviny (g)</span><input class="input" id="p" type="number" inputmode="numeric" value="0"></label></div>
-    <button class="btn primary" id="save">Pridať</button>`);
-  bg.querySelector('#save').onclick = async () => {
-    const name = bg.querySelector('#n').value.trim() || 'Odhad';
-    const kcal = Number(bg.querySelector('#k').value); if (!kcal) return toast('Zadaj kcal', true);
-    await db.addFood({ user_id: state.profile.id, date: state.date, meal, name, grams: 0, kcal, protein: Number(bg.querySelector('#p').value || 0), carbs: 0, fat: 0, source: 'quick' });
-    bg.remove(); toast('Pridané'); location.hash = '#/';
-  };
-}
-async function openScan(meal) {
-  const hasDetector = 'BarcodeDetector' in window;
-  const bg = sheet(`<h2 class="mb">Čiarový kód</h2>
-    ${hasDetector ? '<video id="v" autoplay playsinline style="width:100%;border-radius:12px;background:#000;max-height:50vh"></video><p class="muted small mt">Namier na čiarový kód.</p>' : '<p class="muted small mb">Tento prehliadač nevie čítať kód kamerou (iPhone Safari). Zadaj číslo pod kódom ručne:</p>'}
-    <div class="input-row mt"><input class="input" id="code" inputmode="numeric" placeholder="8586..."><button class="btn sm primary" id="go">Hľadať</button></div>`);
-  let stream = null, raf = null;
-  const finish = async code => {
-    if (raf) cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop());
-    bg.remove();
-    toast('Hľadám ' + code);
-    const f = await lookupBarcode(code);
-    if (!f) return toast('Produkt nie je v databáze. Pridaj ho ako vlastné jedlo.', true);
-    openAdd(f, meal, () => { toast('Pridané'); location.hash = '#/'; });
-  };
-  bg.querySelector('#go').onclick = () => { const c = bg.querySelector('#code').value.trim(); if (c) finish(c); };
-  bg.addEventListener('click', e => { if (e.target === bg && stream) stream.getTracks().forEach(t => t.stop()); });
-  if (hasDetector) {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      const v = bg.querySelector('#v'); v.srcObject = stream;
-      const det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
-      const tick = async () => { try { const codes = await det.detect(v); if (codes.length) return finish(codes[0].rawValue); } catch (_) { } raf = requestAnimationFrame(tick); };
-      tick();
-    } catch (_) { toast('Kamera nedostupná, zadaj kód ručne.', true); }
-  }
-}
+// ---------- jedlo: foods.js ----------
 
 // ---------- váha ----------
 function weightChart(tr) {
@@ -496,7 +374,7 @@ async function renderProfile() {
     <a class="btn mb" href="#/pripomienky">Pripomienky a notifikácie</a>
     <a class="btn mb" href="#/spravy">Správy</a>
     <button class="btn danger" id="out">Odhlásiť sa</button>
-    <p class="muted small center mt">Druhý dych · verzia 0.3 · ${new Date().getFullYear()}</p>
+    <p class="muted small center mt">Druhý dych · verzia 0.4 · ${new Date().getFullYear()}</p>
   </div>${nav('#/profil')}`;
   $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; };
 }
