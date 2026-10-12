@@ -86,10 +86,11 @@ export async function upsertCheckin(row) {
 }
 
 // ---------- Kouč ----------
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 export async function coachOverview(fromDate) {
   const profiles = must(await sb.from('profiles').select('*').order('name'));
   const weights = must(await sb.from('weight_logs').select('user_id,date,weight_kg').order('date'));
-  const foods = must(await sb.from('food_logs').select('user_id,date,kcal').gte('date', fromDate));
+  const foods = must(await sb.from('food_logs').select('user_id,date,kcal').gte('date', fromDate).lte('date', todayISO()));
   const checkins = must(await sb.from('checkins').select('user_id,date,sleep_h,steps,mood').gte('date', fromDate));
   return { profiles, weights, foods, checkins };
 }
@@ -173,7 +174,7 @@ export async function applyTarget(userId, row, newTargets) {
 // Dáta pre dnešok (streak, týždeň)
 export async function activityDates(userId, fromDate) {
   const [f, w, c, t] = await Promise.all([
-    sb.from('food_logs').select('date').eq('user_id', userId).gte('date', fromDate),
+    sb.from('food_logs').select('date').eq('user_id', userId).gte('date', fromDate).lte('date', todayISO()),
     sb.from('weight_logs').select('date').eq('user_id', userId).gte('date', fromDate),
     sb.from('checkins').select('date').eq('user_id', userId).gte('date', fromDate),
     sb.from('workout_logs').select('date').eq('user_id', userId).eq('done', true).gte('date', fromDate),
@@ -293,7 +294,7 @@ export async function reportFood(foodId, userId, reason) {
 }
 // Skopíruje jedlá z jedného dňa/jedla do iného
 export async function copyMeal(userId, fromDate, toDate, meal) {
-  const rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty')
+  const rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty,fiber,sugar,salt')
     .eq('user_id', userId).eq('date', fromDate).eq('meal', meal).order('created_at'));
   if (!rows.length) return 0;
   must(await sb.from('food_logs').insert(rows.map(r => ({ ...r, user_id: userId, date: toDate, meal }))));
@@ -301,7 +302,7 @@ export async function copyMeal(userId, fromDate, toDate, meal) {
 }
 // celý deň (alebo jedna časť dňa) na viac dátumov naraz: plánovanie dopredu
 export async function copyDay(userId, fromDate, toDates, meal = null) {
-  let q = sb.from('food_logs').select('meal,name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty').eq('user_id', userId).eq('date', fromDate).order('created_at');
+  let q = sb.from('food_logs').select('meal,name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty,fiber,sugar,salt').eq('user_id', userId).eq('date', fromDate).order('created_at');
   if (meal) q = q.eq('meal', meal);
   const rows = must(await q);
   if (!rows.length || !toDates.length) return 0;
@@ -314,7 +315,7 @@ export async function clearMeal(userId, date, meal) {
   must(await sb.from('food_logs').delete().eq('user_id', userId).eq('date', date).eq('meal', meal));
 }
 export async function recentLogs(userId, limit = 25) {
-  const rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty,created_at')
+  const rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty,fiber,sugar,salt,created_at')
     .eq('user_id', userId).neq('source', 'quick').order('created_at', { ascending: false }).limit(300));
   const seen = new Set(); const out = [];
   for (const r of rows) {
