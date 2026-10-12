@@ -1,0 +1,298 @@
+// Druhý dych v0.2: nové obrazovky (fotky, tréning, kouč detail, správy, adaptívny cieľ)
+import * as db from './data.js';
+import * as calc from './calc.js';
+import { generatePlan, nextDay, EXERCISES } from './workouts.js';
+import { ctx } from './app.js';
+
+// ctx sa naplní až po načítaní app.js, preto lenivé gettery
+const $app = () => ctx.$app;
+const state = new Proxy({}, { get: (_, k) => ctx.state[k], set: (_, k, v) => { ctx.state[k] = v; return true; } });
+const h = (...a) => ctx.h(...a), r0 = (...a) => ctx.r0(...a), toast = (...a) => ctx.toast(...a), sheet = (...a) => ctx.sheet(...a), nav = (...a) => ctx.nav(...a), datePicker = (...a) => ctx.datePicker(...a), bindDatePicker = (...a) => ctx.bindDatePicker(...a);
+
+// ---------- FOTKY ----------
+export async function renderPhotos(userId = state.profile.id, asCoach = false) {
+  const photos = await db.listPhotos(userId);
+  const urls = await db.photoUrls(photos.map(p => p.path));
+  const byDate = {};
+  photos.forEach(p => { byDate[p.date] = byDate[p.date] || {}; byDate[p.date][p.pose] = { ...p, url: urls[p.path] }; });
+  const dates = Object.keys(byDate).sort();
+  const first = dates[0], last = dates[dates.length - 1];
+  const poses = { front: 'Spredu', side: 'Zboku', back: 'Zozadu' };
+  let pose = 'front';
+  const cmp = () => {
+    if (dates.length < 2) return `<p class="empty">${dates.length ? 'Po druhej fotke sa tu objaví porovnanie pred/po.' : 'Zatiaľ žiadne fotky.'}</p>`;
+    const a = byDate[first]?.[pose], b = byDate[last]?.[pose];
+    if (!a || !b) return '<p class="empty">Pre túto pózu chýba fotka na začiatku alebo na konci.</p>';
+    return `<div class="cmp" id="cmp"><img src="${b.url}" alt="po"><div class="cmp-a" id="cmpA"><img src="${a.url}" alt="pred"></div><div class="cmp-h" id="cmpH"><span></span></div>
+      <div class="cmp-l">${calc.fmtDate(first)}</div><div class="cmp-r">${calc.fmtDate(last)}</div></div>
+      <input type="range" id="cmpR" min="0" max="100" value="50" class="range">`;
+  };
+  $app().innerHTML = `<div class="screen">
+    <div class="topbar"><h1>${asCoach ? 'Fotky' : 'Progres'}</h1>${asCoach ? `<a class="btn sm ghost" href="#/kouc/${userId}">← Späť</a>` : `<button class="btn sm primary" id="add">+ Fotka</button>`}</div>
+    <div class="seg mb" id="poseSeg">${Object.entries(poses).map(([k, v]) => `<button data-pose="${k}" class="${k === pose ? 'on' : ''}">${v}</button>`).join('')}</div>
+    <div class="card" id="cmpWrap">${cmp()}</div>
+    <h3 class="mb">Časová os</h3>
+    <div class="timeline" id="tl">${dates.length ? dates.slice().reverse().map(d => `<div class="tl-row"><div class="tl-date mono">${calc.fmtDate(d)}<span>${d.slice(0, 4)}</span></div><div class="tl-pics">${['front', 'side', 'back'].map(p => byDate[d][p] ? `<div class="tl-pic"><img src="${byDate[d][p].url}" loading="lazy">${asCoach ? '' : `<button class="tl-del" data-del="${byDate[d][p].id}">×</button>`}</div>` : '').join('')}</div></div>`).join('') : '<p class="empty">Odfoť sa raz týždenne, vždy v rovnakom svetle a oblečení. Najlepšie ráno.</p>'}</div>
+  </div>${nav(asCoach ? '#/kouc' : '#/fotky')}`;
+  const bindCmp = () => {
+    const r = $app().querySelector('#cmpR'); if (!r) return;
+    const A = $app().querySelector('#cmpA'), H = $app().querySelector('#cmpH');
+    const set = v => { A.style.width = v + '%'; H.style.left = v + '%'; };
+    r.oninput = () => set(r.value); set(50);
+  };
+  bindCmp();
+  $app().querySelectorAll('[data-pose]').forEach(b => b.onclick = () => { pose = b.dataset.pose; $app().querySelectorAll('[data-pose]').forEach(x => x.classList.toggle('on', x === b)); $app().querySelector('#cmpWrap').innerHTML = cmp(); bindCmp(); });
+  $app().querySelector('#add')?.addEventListener('click', () => openPhotoAdd(userId, () => renderPhotos(userId)));
+  $app().querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { const row = photos.find(p => p.id === Number(b.dataset.del)); if (row && confirm('Zmazať fotku?')) { await db.deletePhoto(row); renderPhotos(userId); } });
+}
+function openPhotoAdd(userId, done) {
+  const bg = sheet(`<h2 class="mb">Nová fotka</h2>
+    <p class="muted small mb">Rovnaké miesto, svetlo a oblečenie ako minule. Fotka ostáva súkromná, vidí ju len kouč.</p>
+    <label class="field"><span>Dátum</span><input class="input" type="date" id="pd" value="${state.date}" max="${calc.today()}"></label>
+    <label class="field"><span>Póza</span><div class="seg" id="ps"><button type="button" data-p="front" class="on">Spredu</button><button type="button" data-p="side">Zboku</button><button type="button" data-p="back">Zozadu</button></div></label>
+    <label class="btn primary" style="display:flex"><input type="file" id="pf" accept="image/*" capture="environment" style="display:none">Odfotiť / vybrať</label>
+    <div id="pprev" class="mt"></div>
+    <button class="btn primary mt" id="save" disabled>Uložiť</button>`);
+  let pose = 'front', file = null;
+  bg.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { pose = b.dataset.p; bg.querySelectorAll('[data-p]').forEach(x => x.classList.toggle('on', x === b)); });
+  bg.querySelector('#pf').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    file = await shrink(f, 1280, 0.82);
+    bg.querySelector('#pprev').innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;border-radius:12px;max-height:45vh;object-fit:contain;background:#000">`;
+    bg.querySelector('#save').disabled = false;
+  };
+  bg.querySelector('#save').onclick = async () => {
+    const btn = bg.querySelector('#save'); btn.disabled = true; btn.textContent = 'Nahrávam...';
+    try { await db.uploadPhoto(userId, bg.querySelector('#pd').value, pose, file); bg.remove(); toast('Fotka uložená'); done(); }
+    catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = 'Uložiť'; }
+  };
+}
+// Zmenší fotku v prehliadači, aby upload nebol 5 MB
+function shrink(file, max, q) {
+  return new Promise(res => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => { URL.revokeObjectURL(url); res(new File([b], 'photo.jpg', { type: 'image/jpeg' })); }, 'image/jpeg', q);
+    };
+    img.onerror = () => res(file);
+    img.src = url;
+  });
+}
+
+// ---------- TRÉNING ----------
+export async function renderTraining() {
+  const p = state.profile, uid = p.id;
+  const [plan, logs, lastKg] = await Promise.all([db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.today(), -60)), db.lastWeights(uid)]);
+  if (!plan) return renderPlanSetup();
+  const ws = calc.weekStart();
+  const weekDone = logs.filter(l => l.done && l.date >= ws).length;
+  const todayLog = logs.find(l => l.date === state.date);
+  const dayNo = todayLog ? todayLog.plan_day : nextDay(plan, logs);
+  const day = plan.days[dayNo - 1];
+  const sets = todayLog?.sets?.length ? todayLog.sets : day.exercises.flatMap(e => Array.from({ length: e.sets }, (_, i) => ({ ex: e.id, set: i + 1, kg: lastKg[e.id] || '', reps: '', done: false })));
+  const doneCount = sets.filter(s => s.done).length;
+
+  $app().innerHTML = `<div class="screen">
+    <div class="topbar"><div><h1>Tréning</h1><p class="muted small">${h(plan.name)}</p></div>${datePicker()}</div>
+    <div class="grid3 mb">
+      <div class="stat"><b class="mono">${weekDone}/${p.training_days || plan.days.length}</b><span>tento týždeň</span></div>
+      <div class="stat"><b class="mono">${logs.filter(l => l.done).length}</b><span>tréningov spolu</span></div>
+      <div class="stat"><b class="mono" id="setCount">${doneCount}/${sets.length}</b><span>sérií dnes</span></div>
+    </div>
+    <div class="row between mb"><div class="seg" style="flex:1">${plan.days.map(d => `<button data-day="${d.day}" class="${d.day === dayNo ? 'on' : ''}">D${d.day}</button>`).join('')}</div></div>
+    <div class="card ${todayLog?.done ? 'accent' : ''}">
+      <div class="row between"><h2>${h(day.name)}</h2>${todayLog?.done ? '<span class="chip" style="background:#12332A;color:var(--accent)">Hotovo</span>' : ''}</div>
+      <p class="muted small">${day.exercises.map(e => e.muscle).filter((v, i, a) => a.indexOf(v) === i).join(' · ')}</p>
+    </div>
+    ${day.exercises.map(e => `<div class="card ex">
+      <div class="row between"><h3>${h(e.name)}</h3><span class="muted small">${e.sets}× ${e.reps ? e.reps + ' op.' : Math.round(e.seconds / 60) + ' min'}</span></div>
+      <div class="sets">${sets.filter(s => s.ex === e.id).map(s => `<div class="set ${s.done ? 'done' : ''}" data-ex="${e.id}" data-set="${s.set}">
+        <span class="setno">${s.set}</span>
+        ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="kg" value="${s.kg ?? ''}" data-f="kg"><input class="input sm" inputmode="numeric" placeholder="op." value="${s.reps ?? ''}" data-f="reps">` : `<span class="muted small" style="flex:1">${Math.round(e.seconds / 60)} min</span>`}
+        <button class="chk" data-chk>✓</button></div>`).join('')}</div>
+    </div>`).join('')}
+    <div class="row" style="gap:8px"><button class="btn primary" id="finish">${todayLog?.done ? 'Uložiť zmeny' : 'Ukončiť tréning'}</button><button class="btn sm ghost" id="replan">Nový plán</button></div>
+  </div>${nav('#/trening')}`;
+
+  bindDatePicker($app(), renderTraining);
+  $app().querySelectorAll('[data-day]').forEach(b => b.onclick = async () => {
+    if (todayLog && todayLog.plan_day !== Number(b.dataset.day) && !confirm('Dnes už máš rozrobený iný deň. Prepnúť?')) return;
+    await db.upsertWorkoutLog({ user_id: uid, date: state.date, plan_day: Number(b.dataset.day), day_name: plan.days[Number(b.dataset.day) - 1].name, sets: [], done: false });
+    renderTraining();
+  });
+  const collect = () => sets.map(s => {
+    const el = $app().querySelector(`.set[data-ex="${s.ex}"][data-set="${s.set}"]`);
+    if (!el) return s;
+    const kg = el.querySelector('[data-f=kg]')?.value, reps = el.querySelector('[data-f=reps]')?.value;
+    return { ...s, kg: kg === '' || kg == null ? null : Number(kg), reps: reps === '' || reps == null ? null : Number(reps), done: el.classList.contains('done') };
+  });
+  let saveTimer = null;
+  const autosave = (done = false) => { clearTimeout(saveTimer); saveTimer = setTimeout(() => db.upsertWorkoutLog({ user_id: uid, date: state.date, plan_day: dayNo, day_name: day.name, sets: collect(), done: done || !!todayLog?.done }).catch(e => toast(e.message, true)), 400); };
+  $app().querySelectorAll('[data-chk]').forEach(b => b.onclick = () => { b.closest('.set').classList.toggle('done'); $app().querySelector('#setCount').textContent = `${$app().querySelectorAll('.set.done').length}/${sets.length}`; autosave(); });
+  $app().querySelectorAll('.set input').forEach(i => i.oninput = () => autosave());
+  $app().querySelector('#finish').onclick = async () => {
+    clearTimeout(saveTimer);
+    const s = collect();
+    await db.upsertWorkoutLog({ user_id: uid, date: state.date, plan_day: dayNo, day_name: day.name, sets: s, done: true });
+    toast(`Tréning hotový. ${s.filter(x => x.done).length} sérií.`); renderTraining();
+  };
+  $app().querySelector('#replan').onclick = () => renderPlanSetup();
+}
+async function renderPlanSetup() {
+  const p = state.profile;
+  let days = Math.max(2, Math.min(5, p.training_days || 3));
+  const preview = () => generatePlan({ goal: p.goal, days, gym: true });
+  const draw = () => {
+    const pl = preview();
+    $app().querySelector('#planPrev').innerHTML = pl.days.map(d => `<div class="card"><h3>${h(d.name)}</h3><p class="muted small">${d.exercises.map(e => `${h(e.name)} ${e.sets}×${e.reps || Math.round(e.seconds / 60) + 'min'}`).join(' · ')}</p></div>`).join('');
+  };
+  $app().innerHTML = `<div class="screen">
+    <h1 class="mb">Tvoj plán</h1>
+    <p class="muted mb">Plán sa generuje z tvojho cieľa (${calc.GOAL[p.goal]?.label || ''}) a počtu dní. Cviky sú na gym, s postupným zvyšovaním váh.</p>
+    <label class="field"><span>Dní v týždni</span><div class="seg" id="dseg">${[2, 3, 4, 5].map(n => `<button data-n="${n}" class="${n === days ? 'on' : ''}">${n}</button>`).join('')}</div></label>
+    <div id="planPrev"></div>
+    <button class="btn primary" id="save">Použiť tento plán</button>
+  </div>${nav('#/trening')}`;
+  draw();
+  $app().querySelectorAll('[data-n]').forEach(b => b.onclick = () => { days = Number(b.dataset.n); $app().querySelectorAll('[data-n]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  $app().querySelector('#save').onclick = async () => {
+    await db.savePlan(p.id, preview());
+    if (p.training_days !== days) state.profile = await db.upsertProfile({ id: p.id, training_days: days });
+    toast('Plán uložený'); renderTraining();
+  };
+}
+
+// ---------- ADAPTÍVNY CIEĽ (volá sa z Dnes) ----------
+export async function checkAdaptive(p, weights) {
+  if (p.role === 'coach' && !p.onboarded) return null;
+  const ws = calc.weekStart();
+  const hist = await db.listTargetHistory(p.id);
+  if (hist.some(t => t.date >= ws)) return null; // tento týždeň už bolo
+  const startPlus7 = calc.addDays(p.start_date || calc.today(), 7);
+  if (calc.today() < startPlus7) return null; // prvý týždeň nič
+  const from = calc.addDays(calc.today(), -7), to = calc.addDays(calc.today(), -1);
+  const fd = await db.foodByDay(p.id, from, to);
+  const days = Object.keys(fd).length;
+  const avg = days ? Math.round(Object.values(fd).reduce((a, b) => a + b.kcal, 0) / days) : 0;
+  const tr = calc.trend(weights.map(w => ({ date: w.date, weight: Number(w.weight_kg) })));
+  const ch = calc.trendChange(tr, 7);
+  const res = calc.adaptTarget({ goal: p.goal, sex: p.sex, currentTarget: p.target_kcal, avgIntake: avg, loggedDays: days, trendChange7: ch });
+  if (!res) return null;
+  return { ...res, avg, ch, days };
+}
+export async function applyAdaptive(p, res) {
+  const kcal = res.newKcal;
+  const fat = Math.round((kcal * 0.25) / 9);
+  const carbs = Math.max(0, Math.round((kcal - p.target_protein * 4 - fat * 9) / 4));
+  state.profile = await db.applyTarget(p.id, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: kcal, reason: res.reason, avg_intake: res.avg, trend_change: res.ch }, { target_kcal: kcal, target_carbs: carbs, target_fat: fat });
+}
+
+// ---------- SPRÁVY ----------
+export async function renderMessages() {
+  const uid = state.profile.id;
+  const msgs = await db.listMessages(uid);
+  const unread = msgs.filter(m => m.to_user === uid && !m.read_at).map(m => m.id);
+  await db.markRead(unread);
+  $app().innerHTML = `<div class="screen">
+    <h1 class="mb">Správy od kouča</h1>
+    ${state.profile.role !== 'coach' ? `<form id="mf" class="card"><textarea class="input" name="b" rows="2" placeholder="Napíš koučovi..."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>` : ''}
+    ${msgs.length ? msgs.map(m => `<div class="card msg ${m.from_user === uid ? 'mine' : ''}"><p>${h(m.body)}</p><p class="muted small mt">${m.from_user === uid ? 'Ty' : 'Kouč'} · ${new Date(m.created_at).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>`).join('') : '<p class="empty">Zatiaľ žiadne správy.</p>'}
+  </div>${nav('#/spravy')}`;
+  $app().querySelector('#mf')?.addEventListener('submit', async e => {
+    e.preventDefault(); const body = new FormData(e.target).get('b').trim(); if (!body) return;
+    const { data } = await db.sb.from('profiles').select('id').eq('role', 'coach').limit(1);
+    if (!data?.length) return toast('Kouč zatiaľ nie je nastavený', true);
+    await db.sendMessage(uid, data[0].id, body); toast('Odoslané'); renderMessages();
+  });
+}
+
+// ---------- KOUČ 2.0 ----------
+export async function renderCoach() {
+  if (state.profile.role !== 'coach') { location.hash = '#/'; return; }
+  const from = calc.addDays(calc.today(), -6);
+  $app().innerHTML = `<div class="screen"><h1>Kouč</h1><div class="spinner"></div></div>${nav('#/kouc')}`;
+  const { profiles, weights, foods, checkins, wlogs, photos } = await db.coachOverview2(from);
+  const people = profiles.filter(p => p.role !== 'coach' && p.onboarded).map(p => {
+    const w = weights.filter(x => x.user_id === p.id);
+    const tr = calc.trend(w.map(x => ({ date: x.date, weight: Number(x.weight_kg) })));
+    const last = tr[tr.length - 1];
+    const startW = Number(p.start_weight || w[0]?.weight_kg || 0);
+    const fd = foods.filter(x => x.user_id === p.id);
+    const daysLogged = new Set(fd.map(x => x.date)).size;
+    const kcalByDay = {}; fd.forEach(x => kcalByDay[x.date] = (kcalByDay[x.date] || 0) + Number(x.kcal));
+    const avg = daysLogged ? Object.values(kcalByDay).reduce((a, b) => a + b, 0) / daysLogged : 0;
+    const lastFood = fd.length ? fd.map(x => x.date).sort().pop() : null;
+    const ci = checkins.filter(x => x.user_id === p.id);
+    const sleep = ci.filter(x => x.sleep_h).reduce((a, x, _, arr) => a + Number(x.sleep_h) / arr.length, 0);
+    const trainings = wlogs.filter(x => x.user_id === p.id && x.done).length;
+    const nPhotos = photos.filter(x => x.user_id === p.id).length;
+    const ch7 = calc.trendChange(tr, 7);
+    const daysSinceStart = Math.min(7, Math.max(1, Math.round((new Date(calc.today()) - new Date(p.start_date || calc.today())) / 86400000) + 1));
+    let flag = 'ok', why = 'Ide podľa plánu';
+    const staleDays = lastFood ? Math.round((new Date(calc.today()) - new Date(lastFood)) / 86400000) : 99;
+    if (staleDays >= 3) { flag = 'bad'; why = `Nelogoval ${staleDays} dní`; }
+    else if (daysLogged < daysSinceStart * 0.6) { flag = 'warn'; why = `Logoval len ${daysLogged}/7 dní`; }
+    else if (p.goal === 'lose' && ch7 != null && ch7 >= 0 && tr.length > 10) { flag = 'warn'; why = 'Váha stagnuje'; }
+    else if (p.target_kcal && avg > p.target_kcal * 1.15) { flag = 'warn'; why = `Priemer ${r0(avg)} kcal, cieľ ${p.target_kcal}`; }
+    else if (p.training_days && trainings < Math.ceil(p.training_days * 0.5) && daysSinceStart >= 7) { flag = 'warn'; why = `Len ${trainings} tréningy z ${p.training_days}`; }
+    return { p, last, startW, daysLogged, avg, sleep, trainings, nPhotos, ch7, flag, why };
+  });
+  const order = { bad: 0, warn: 1, ok: 2 };
+  people.sort((a, b) => order[a.flag] - order[b.flag]);
+  const totalLoss = people.reduce((a, x) => a + (x.last ? x.startW - x.last.trend : 0), 0);
+  $app().innerHTML = `<div class="screen">
+    <div class="topbar"><h1>Kouč</h1><button class="btn sm ghost" id="csv">Export CSV</button></div>
+    <div class="grid3 mb">
+      <div class="stat"><b class="mono">${people.length}</b><span>účastníkov</span></div>
+      <div class="stat"><b class="mono">${people.filter(x => x.flag === 'ok').length}</b><span>v pohode</span></div>
+      <div class="stat"><b class="mono ${totalLoss > 0 ? 'pos' : ''}">${totalLoss.toFixed(1)}</b><span>kg dole spolu</span></div>
+    </div>
+    ${people.length ? people.map(x => `<a class="card link" href="#/kouc/${x.p.id}">
+      <div class="row between"><div><h3><span class="flag ${x.flag}"></span>${h(x.p.name)}</h3><p class="muted small">${x.why}</p></div><div style="text-align:right"><b class="mono">${x.last ? x.last.trend.toFixed(1) : '–'} kg</b><p class="muted small mono">${x.last ? ((x.last.trend - x.startW) > 0 ? '+' : '') + (x.last.trend - x.startW).toFixed(1) + ' od štartu' : 'bez váženia'}</p></div></div>
+      <div class="grid3 mt" style="gap:6px">
+        <div class="stat" style="padding:8px"><b class="mono" style="font-size:15px">${x.daysLogged}/7</b><span>jedlo</span></div>
+        <div class="stat" style="padding:8px"><b class="mono" style="font-size:15px">${x.trainings}/${x.p.training_days || '-'}</b><span>tréningy</span></div>
+        <div class="stat" style="padding:8px"><b class="mono" style="font-size:15px">${x.avg ? r0(x.avg) : '–'}</b><span>Ø kcal / ${x.p.target_kcal}</span></div>
+      </div>
+    </a>`).join('') : '<div class="card"><p class="muted">Zatiaľ žiadni účastníci.</p></div>'}
+  </div>${nav('#/kouc')}`;
+  $app().querySelector('#csv').onclick = async () => {
+    const csv = await db.exportCsv();
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `druhydych-${calc.today()}.csv`; a.click();
+  };
+}
+export async function renderCoachDetail(userId) {
+  if (state.profile.role !== 'coach') { location.hash = '#/'; return; }
+  $app().innerHTML = `<div class="screen"><div class="spinner"></div></div>${nav('#/kouc')}`;
+  const from = calc.addDays(calc.today(), -13);
+  const { profile: p, weights, foods, checkins, photos, wlogs, targets } = await db.participantDetail(userId, from);
+  const tr = calc.trend(weights.map(w => ({ date: w.date, weight: Number(w.weight_kg) })));
+  const last = tr[tr.length - 1];
+  const startW = Number(p.start_weight || weights[0]?.weight_kg || 0);
+  const fd = {}; foods.forEach(f => { fd[f.date] = fd[f.date] || { kcal: 0, protein: 0, n: 0 }; fd[f.date].kcal += Number(f.kcal); fd[f.date].protein += Number(f.protein); fd[f.date].n++; });
+  const days14 = Array.from({ length: 14 }, (_, i) => calc.addDays(calc.today(), i - 13));
+  const notes = checkins.filter(c => c.note);
+  const urls = await db.photoUrls(photos.slice(-3).map(x => x.path));
+  $app().innerHTML = `<div class="screen">
+    <div class="topbar"><div><h1>${h(p.name)}</h1><p class="muted small">${calc.GOAL[p.goal]?.label || ''} · cieľ ${p.target_kcal} kcal · ${p.training_days}× tréning</p></div><a class="btn sm ghost" href="#/kouc">←</a></div>
+    <div class="grid3 mb">
+      <div class="stat"><b class="mono">${last ? last.trend.toFixed(1) : '–'}</b><span>kg trend</span></div>
+      <div class="stat"><b class="mono ${last && last.trend < startW ? 'pos' : ''}">${last ? ((last.trend - startW) > 0 ? '+' : '') + (last.trend - startW).toFixed(1) : '–'}</b><span>od štartu (${startW.toFixed(1)})</span></div>
+      <div class="stat"><b class="mono">${wlogs.filter(w => w.done).length}</b><span>tréningov / 14 d</span></div>
+    </div>
+    <div class="card">${ctx.weightChart(tr)}</div>
+    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieli, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
+    ${photos.length ? `<a class="card link" href="#/kouc/${userId}/fotky"><div class="row between"><h3>Fotky (${photos.length})</h3><span class="muted small">Otvoriť →</span></div><div class="row mt" style="gap:6px">${photos.slice(-3).map(x => `<img src="${urls[x.path]}" style="width:31%;aspect-ratio:3/4;object-fit:cover;border-radius:10px">`).join('')}</div></a>` : '<div class="card"><p class="muted small">Zatiaľ žiadne fotky.</p></div>'}
+    ${targets.length ? `<div class="card"><h3 class="mb">Zmeny cieľa</h3>${targets.slice().reverse().map(t => `<div class="item"><div class="n"><b>${t.old_kcal} → ${t.new_kcal} kcal</b><span>${h(t.reason || '')}</span></div><span class="muted small mono">${calc.fmtDate(t.date)}</span></div>`).join('')}</div>` : ''}
+    ${notes.length ? `<div class="card"><h3 class="mb">Poznámky z check-inov</h3>${notes.slice(0, 5).map(c => `<div class="item"><div class="n"><b>${calc.fmtDate(c.date)} · nálada ${c.mood ?? '–'}/5 · spánok ${c.sleep_h ?? '–'} h</b><span>${h(c.note)}</span></div></div>`).join('')}</div>` : ''}
+    <form id="mf" class="card"><h3 class="mb">Správa pre ${h(p.name.split(' ')[0])}</h3><textarea class="input" name="b" rows="2" placeholder="Napr. Dobrá práca tento týždeň, skús pridať bielkoviny na raňajky."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>
+  </div>${nav('#/kouc')}`;
+  $app().querySelector('#mf').onsubmit = async e => {
+    e.preventDefault(); const body = new FormData(e.target).get('b').trim(); if (!body) return;
+    await db.sendMessage(state.profile.id, userId, body); toast('Odoslané'); e.target.reset();
+  };
+}
