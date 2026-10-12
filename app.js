@@ -1,0 +1,513 @@
+// Druhý dych: hlavná aplikácia (routing + obrazovky)
+import * as db from './data.js';
+import * as calc from './calc.js';
+import { searchBasic, searchOFF, lookupBarcode } from './food.js';
+
+const $app = document.getElementById('app');
+const state = { session: null, profile: null, date: calc.today() };
+
+const MEALS = { breakfast: 'Raňajky', lunch: 'Obed', dinner: 'Večera', snack: 'Snack' };
+const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>',
+  food: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3v8a3 3 0 0 0 3 3v7M10 3v8a3 3 0 0 1-3 3M17 3c-2 2-2 5-2 8h2v10"/></svg>',
+  scale: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 9a4 4 0 0 1 8 0M12 9v3"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
+  coach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-5-6.3"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+};
+
+// ---------- helpers ----------
+const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const r0 = n => Math.round(Number(n || 0));
+function toast(msg, err = false) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast' + (err ? ' err' : ''); t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), err ? 4000 : 2200);
+}
+function sheet(html) {
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  bg.innerHTML = `<div class="sheet">${html}</div>`;
+  bg.addEventListener('click', e => { if (e.target === bg) bg.remove(); });
+  document.body.appendChild(bg);
+  return bg;
+}
+function nav(active) {
+  const items = [
+    ['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/vaha', 'scale', 'Váha'], ['#/checkin', 'check', 'Check-in'],
+  ];
+  if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
+  items.push(['#/profil', 'user', 'Profil']);
+  return `<nav class="nav">${items.map(([href, ic, lbl]) => `<a href="${href}" class="${active === href ? 'on' : ''}">${ICONS[ic]}<span>${lbl}</span></a>`).join('')}</nav>`;
+}
+function dateLabel(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  const days = ['Nedeľa', 'Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota'];
+  if (iso === calc.today()) return 'Dnes';
+  if (iso === calc.addDays(calc.today(), -1)) return 'Včera';
+  return `${days[d.getDay()]} ${calc.fmtDate(iso)}`;
+}
+function datePicker() {
+  return `<div class="row" style="gap:6px">
+    <button class="btn icon ghost" data-day="-1">‹</button>
+    <span class="date mono" style="min-width:90px;text-align:center">${dateLabel(state.date)}</span>
+    <button class="btn icon ghost" data-day="1" ${state.date >= calc.today() ? 'disabled' : ''}>›</button>
+  </div>`;
+}
+function bindDatePicker(root, rerender) {
+  root.querySelectorAll('[data-day]').forEach(b => b.onclick = () => { state.date = calc.addDays(state.date, Number(b.dataset.day)); rerender(); });
+}
+
+// ---------- router ----------
+window.addEventListener('hashchange', route);
+async function route() {
+  const hash = location.hash || '#/';
+  const path = hash.split('?')[0];
+  if (!state.session) return renderAuth();
+  if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
+  if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
+  const views = { '#/': renderToday, '#/onboarding': renderOnboarding, '#/jedlo': renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': renderCoach, '#/profil': renderProfile };
+  const fn = views[path] || renderToday;
+  try { await fn(); } catch (e) { console.error(e); toast(e.message, true); }
+  window.scrollTo(0, 0);
+}
+
+// ---------- auth ----------
+function renderAuth(mode = 'login') {
+  $app.innerHTML = `
+  <div class="hero">
+    <div class="tag">Druhý dych</div>
+    <h1>Druhý dych nie je dar.<br>Dá sa naučiť.</h1>
+    <p class="lead">12 týždňov. Jedlo, váha, pohyb a hlava na jednom mieste. Tvoj kouč vidí každý krok.</p>
+  </div>
+  <div class="screen no-nav">
+    <div class="card">
+      <div class="seg mb"><button data-m="login" class="${mode === 'login' ? 'on' : ''}">Prihlásiť sa</button><button data-m="register" class="${mode === 'register' ? 'on' : ''}">Registrovať</button></div>
+      <form id="authf">
+        ${mode === 'register' ? '<label class="field"><span>Meno</span><input class="input" name="name" required placeholder="Ako ťa máme volať"></label>' : ''}
+        <label class="field"><span>E-mail</span><input class="input" type="email" name="email" required autocomplete="email"></label>
+        <label class="field"><span>Heslo</span><input class="input" type="password" name="password" required minlength="6" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}"></label>
+        <button class="btn primary" type="submit">${mode === 'register' ? 'Vytvoriť účet' : 'Prihlásiť sa'}</button>
+      </form>
+    </div>
+  </div>`;
+  $app.querySelectorAll('[data-m]').forEach(b => b.onclick = () => renderAuth(b.dataset.m));
+  $app.querySelector('#authf').onsubmit = async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
+    try {
+      if (mode === 'register') {
+        const res = await db.signUp(f.get('email'), f.get('password'), f.get('name'));
+        if (!res.session) { toast('Účet vytvorený. Skontroluj e-mail a potvrď registráciu.'); renderAuth('login'); return; }
+      } else {
+        await db.signIn(f.get('email'), f.get('password'));
+      }
+    } catch (err) { toast(err.message, true); btn.disabled = false; }
+  };
+}
+
+// ---------- onboarding ----------
+async function renderOnboarding() {
+  const p = state.profile || {};
+  $app.innerHTML = `<div class="screen no-nav">
+    <div class="brand mb"><span class="dot"></span> Druhý dych</div>
+    <h1>Nastav si štart</h1>
+    <p class="muted mb">Z týchto údajov ti appka vypočíta denný cieľ kalórií a makier. Všetko sa dá neskôr zmeniť v profile.</p>
+    <form id="onb" class="card">
+      <label class="field"><span>Meno</span><input class="input" name="name" required value="${h(p.name || '')}"></label>
+      <div class="grid2">
+        <label class="field"><span>Pohlavie</span><select class="input" name="sex" required>
+          <option value="m" ${p.sex === 'm' ? 'selected' : ''}>Muž</option><option value="f" ${p.sex === 'f' ? 'selected' : ''}>Žena</option></select></label>
+        <label class="field"><span>Rok narodenia</span><input class="input" type="number" name="birth_year" required min="1950" max="2015" value="${p.birth_year || 2008}"></label>
+      </div>
+      <div class="grid2">
+        <label class="field"><span>Výška (cm)</span><input class="input" type="number" name="height_cm" required min="120" max="230" value="${p.height_cm || ''}"></label>
+        <label class="field"><span>Váha teraz (kg)</span><input class="input" type="number" step="0.1" name="weight" required min="30" max="300" value="${p.start_weight || ''}"></label>
+      </div>
+      <label class="field"><span>Cieľ</span><select class="input" name="goal" required>
+        ${Object.entries(calc.GOAL).map(([k, v]) => `<option value="${k}" ${p.goal === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
+      <label class="field"><span>Aktivita</span><select class="input" name="activity" required>
+        ${Object.entries(calc.ACTIVITY).map(([k, v]) => `<option value="${k}" ${(p.activity || 'light') === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
+      <label class="field"><span>Koľko dní v týždni chceš trénovať</span><input class="input" type="number" name="training_days" min="0" max="7" value="${p.training_days ?? 3}"></label>
+      <div id="preview" class="stat mb" style="display:none"></div>
+      <button class="btn primary" type="submit">Uložiť a začať</button>
+    </form>
+  </div>`;
+  const form = $app.querySelector('#onb');
+  const preview = () => {
+    const f = new FormData(form);
+    const w = Number(f.get('weight')), hc = Number(f.get('height_cm'));
+    if (!w || !hc) return;
+    const t = calc.targets({ sex: f.get('sex'), weightKg: w, heightCm: hc, birthYear: f.get('birth_year'), activity: f.get('activity'), goal: f.get('goal') });
+    const el = $app.querySelector('#preview'); el.style.display = 'block';
+    el.innerHTML = `<b>${t.kcal} kcal / deň</b><span>Bielkoviny ${t.protein} g · Sacharidy ${t.carbs} g · Tuky ${t.fat} g · (bazálny metabolizmus ${t.bmr}, výdaj ${t.tdee})</span>`;
+  };
+  form.addEventListener('input', preview); preview();
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const f = new FormData(form);
+    const w = Number(f.get('weight')), hc = Number(f.get('height_cm'));
+    const t = calc.targets({ sex: f.get('sex'), weightKg: w, heightCm: hc, birthYear: f.get('birth_year'), activity: f.get('activity'), goal: f.get('goal') });
+    const uid = state.session.user.id;
+    const first = !state.profile?.onboarded;
+    const profile = {
+      id: uid, email: state.session.user.email, name: f.get('name'), sex: f.get('sex'), birth_year: Number(f.get('birth_year')), height_cm: hc,
+      goal: f.get('goal'), activity: f.get('activity'), training_days: Number(f.get('training_days')),
+      target_kcal: t.kcal, target_protein: t.protein, target_carbs: t.carbs, target_fat: t.fat, onboarded: true,
+      role: state.profile?.role || 'participant',
+    };
+    if (first) { profile.start_weight = w; profile.start_date = calc.today(); }
+    try {
+      state.profile = await db.upsertProfile(profile);
+      await db.upsertWeight({ user_id: uid, date: calc.today(), weight_kg: w });
+      toast('Štart nastavený. Ideme.');
+      location.hash = '#/';
+    } catch (err) { toast(err.message, true); }
+  };
+}
+
+// ---------- dnes ----------
+function ring(value, target) {
+  const pct = Math.min(1, target ? value / target : 0);
+  const r = 56, c = 2 * Math.PI * r;
+  const over = target && value > target;
+  return `<div class="ring"><svg width="132" height="132" viewBox="0 0 132 132">
+    <circle cx="66" cy="66" r="${r}" stroke="var(--bg-2)" stroke-width="12" fill="none"/>
+    <circle cx="66" cy="66" r="${r}" stroke="${over ? 'var(--accent-2)' : 'var(--accent)'}" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}"/>
+  </svg><div class="center"><b class="mono">${r0(Math.max(0, target - value))}</b><span>${over ? 'kcal navyše' : 'kcal zostáva'}</span></div></div>`;
+}
+function macroBar(label, val, target, color) {
+  const pct = Math.min(100, target ? (val / target) * 100 : 0);
+  return `<div class="macro"><div class="lbl"><span>${label}</span><span class="mono">${r0(val)} / ${target} g</span></div><div class="bar"><i style="width:${pct}%;background:${color}"></i></div></div>`;
+}
+
+async function renderToday() {
+  const p = state.profile, uid = p.id;
+  const [foods, weights, checkin] = await Promise.all([db.listFood(uid, state.date), db.listWeights(uid), db.getCheckin(uid, state.date)]);
+  const sum = calc.sumMacros(foods);
+  const tr = calc.trend(weights.map(w => ({ date: w.date, weight: Number(w.weight_kg) })));
+  const last = tr[tr.length - 1];
+  const change = calc.trendChange(tr, 7);
+  const startW = Number(p.start_weight || (weights[0]?.weight_kg ?? 0));
+  const total = last ? Math.round((last.trend - startW) * 10) / 10 : 0;
+  const day = Math.max(1, Math.round((new Date(calc.today()) - new Date(p.start_date || calc.today())) / 86400000) + 1);
+
+  $app.innerHTML = `<div class="screen">
+    <div class="topbar"><div><div class="brand"><span class="dot"></span> Ahoj, ${h(p.name?.split(' ')[0] || '')}</div><div class="date">Deň ${day} z 84 · týždeň ${Math.min(12, Math.ceil(day / 7))}</div></div>${datePicker()}</div>
+    <div class="card">
+      <div class="ring-wrap">${ring(sum.kcal, p.target_kcal)}
+        <div class="macros">
+          ${macroBar('Bielkoviny', sum.protein, p.target_protein, 'var(--protein)')}
+          ${macroBar('Sacharidy', sum.carbs, p.target_carbs, 'var(--carbs)')}
+          ${macroBar('Tuky', sum.fat, p.target_fat, 'var(--fat)')}
+        </div>
+      </div>
+      <div class="row between mt small muted"><span>Zjedené <b class="mono" style="color:var(--text)">${r0(sum.kcal)}</b> kcal</span><span>Cieľ <b class="mono" style="color:var(--text)">${p.target_kcal}</b> kcal</span></div>
+    </div>
+    <div class="grid3 mb">
+      <div class="stat"><b class="mono">${last ? last.trend.toFixed(1) : '–'}</b><span>kg trend</span></div>
+      <div class="stat"><b class="mono ${total < 0 ? 'pos' : total > 0 ? 'neg' : ''}">${total > 0 ? '+' : ''}${total.toFixed(1)}</b><span>kg od štartu</span></div>
+      <div class="stat"><b class="mono">${change == null ? '–' : (change > 0 ? '+' : '') + change.toFixed(1)}</b><span>kg za 7 dní</span></div>
+    </div>
+    ${Object.entries(MEALS).map(([k, lbl]) => {
+      const rows = foods.filter(f => f.meal === k); const s = calc.sumMacros(rows);
+      return `<div class="card meal"><div class="meal-h"><h3>${lbl}</h3><div class="row"><span class="muted small mono">${r0(s.kcal)} kcal</span><button class="btn sm primary" data-add="${k}">+ Pridať</button></div></div>
+        ${rows.length ? rows.map(f => `<div class="item"><div class="n"><b>${h(f.name)}</b><span>${h(f.brand || '')}${f.brand ? ' · ' : ''}${r0(f.grams)} g · B ${r0(f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></div>`).join('') : '<div class="empty">Zatiaľ nič.</div>'}
+      </div>`;
+    }).join('')}
+    <div class="card"><div class="row between"><div><h3>Denný check-in</h3><p class="muted small">${checkin ? `Spánok ${checkin.sleep_h ?? '–'} h · ${checkin.steps ?? '–'} krokov · nálada ${checkin.mood ?? '–'}/5` : 'Spánok, kroky, nálada. 20 sekúnd.'}</p></div><a class="btn sm" href="#/checkin">${checkin ? 'Upraviť' : 'Vyplniť'}</a></div></div>
+  </div>${nav('#/')}`;
+
+  bindDatePicker($app, renderToday);
+  $app.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
+  $app.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
+}
+
+// ---------- jedlo ----------
+async function renderFood() {
+  const params = new URLSearchParams((location.hash.split('?')[1]) || '');
+  let meal = params.get('meal') || defaultMeal();
+  const uid = state.profile.id;
+  const recent = await db.recentFoods(uid, 20);
+
+  $app.innerHTML = `<div class="screen">
+    <div class="topbar"><h1>Pridať jedlo</h1>${datePicker()}</div>
+    <div class="seg mb" id="mealseg">${Object.entries(MEALS).map(([k, l]) => `<button data-meal="${k}" class="${k === meal ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="input-row mb">
+      <input class="input" id="q" placeholder="Hľadaj: kuracie prsia, Skyr, Kofola..." autocomplete="off">
+      <button class="btn icon" id="scan" title="Čiarový kód">▦</button>
+    </div>
+    <div class="row mb" style="gap:8px"><button class="btn sm ghost" id="manual">+ Vlastné jedlo</button><button class="btn sm ghost" id="quick">+ Rýchle kalórie</button></div>
+    <div class="card"><div id="results" class="results">
+      ${recent.length ? '<p class="muted small mb">Naposledy</p>' + recent.map((f, i) => resRow(f, i, 'recent')).join('') : ''}
+      <p class="muted small mb mt">Základné potraviny</p>${searchBasic('').map((f, i) => resRow(f, i, 'basic')).join('')}
+    </div></div>
+  </div>${nav('#/jedlo')}`;
+
+  const pools = { recent, basic: searchBasic(''), off: [] };
+  const $res = $app.querySelector('#results');
+  const bind = () => $res.querySelectorAll('[data-pick]').forEach(el => el.onclick = () => openAdd(pools[el.dataset.pool][Number(el.dataset.pick)], meal, () => { toast('Pridané'); location.hash = '#/'; }));
+  bind();
+  bindDatePicker($app, renderFood);
+  $app.querySelectorAll('[data-meal]').forEach(b => b.onclick = () => { meal = b.dataset.meal; $app.querySelectorAll('[data-meal]').forEach(x => x.classList.toggle('on', x === b)); });
+
+  let ctrl = null, timer = null;
+  $app.querySelector('#q').oninput = e => {
+    const q = e.target.value.trim();
+    clearTimeout(timer);
+    const basic = searchBasic(q); pools.basic = basic;
+    $res.innerHTML = (basic.length ? '<p class="muted small mb">Základné potraviny</p>' + basic.map((f, i) => resRow(f, i, 'basic')).join('') : '') + (q.length >= 2 ? '<div class="spinner"></div>' : '');
+    bind();
+    if (q.length < 2) return;
+    timer = setTimeout(async () => {
+      if (ctrl) ctrl.abort(); ctrl = new AbortController();
+      try {
+        const off = await searchOFF(q, { signal: ctrl.signal }); pools.off = off;
+        $res.querySelector('.spinner')?.remove();
+        $res.insertAdjacentHTML('beforeend', off.length ? '<p class="muted small mb mt">Open Food Facts</p>' + off.map((f, i) => resRow(f, i, 'off')).join('') : '<p class="empty">Nič v databáze. Skús iný názov alebo pridaj vlastné jedlo.</p>');
+        bind();
+      } catch (err) { if (err.name !== 'AbortError') { $res.querySelector('.spinner')?.remove(); $res.insertAdjacentHTML('beforeend', '<p class="empty">Online databáza nedostupná.</p>'); } }
+    }, 350);
+  };
+  $app.querySelector('#manual').onclick = () => openAdd({ name: '', brand: '', kcal: 0, protein: 0, carbs: 0, fat: 0, source: 'manual' }, meal, () => { toast('Pridané'); location.hash = '#/'; }, true);
+  $app.querySelector('#quick').onclick = () => openQuick(meal);
+  $app.querySelector('#scan').onclick = () => openScan(meal);
+}
+function defaultMeal() {
+  const hr = new Date().getHours();
+  return hr < 10 ? 'breakfast' : hr < 15 ? 'lunch' : hr < 21 ? 'dinner' : 'snack';
+}
+function resRow(f, i, pool) {
+  const g = f.grams || 100;
+  return `<div class="res" data-pick="${i}" data-pool="${pool}"><div class="n"><b>${h(f.name)}</b><span>${f.brand ? h(f.brand) + ' · ' : ''}${pool === 'recent' ? `${r0(g)} g` : '100 g'} · B ${r0(f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${r0(f.kcal)}</span></div>`;
+}
+function openAdd(food, meal, done, editable = false) {
+  // recent položky majú hodnoty za zalogované gramy -> prepočítaj na 100 g
+  let per100 = { kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat };
+  let grams = 100;
+  if (food.grams && food.grams !== 100 && food.source !== 'basic') {
+    const k = 100 / Number(food.grams);
+    per100 = { kcal: food.kcal * k, protein: food.protein * k, carbs: food.carbs * k, fat: food.fat * k };
+    grams = Number(food.grams);
+  }
+  const bg = sheet(`<h2 class="mb">${editable ? 'Vlastné jedlo' : h(food.name)}</h2>
+    ${editable ? '<label class="field"><span>Názov</span><input class="input" id="fname" placeholder="Napr. Mamina sviečková"></label>' : `<p class="muted small mb">${h(food.brand || '')} · na 100 g: ${r0(per100.kcal)} kcal, B ${r0(per100.protein)} g, S ${r0(per100.carbs)} g, T ${r0(per100.fat)} g</p>`}
+    ${editable ? `<p class="muted small mb">Hodnoty na 100 g:</p><div class="grid2"><label class="field"><span>kcal</span><input class="input" id="pk" type="number" value="0"></label><label class="field"><span>Bielkoviny (g)</span><input class="input" id="pp" type="number" step="0.1" value="0"></label><label class="field"><span>Sacharidy (g)</span><input class="input" id="pc" type="number" step="0.1" value="0"></label><label class="field"><span>Tuky (g)</span><input class="input" id="pf" type="number" step="0.1" value="0"></label></div>` : ''}
+    <label class="field"><span>Množstvo (g)</span><input class="input" id="g" type="number" inputmode="decimal" value="${grams}" min="1"></label>
+    <div class="row mb" style="gap:6px">${[50, 100, 150, 200, 250].map(v => `<button class="btn sm ghost" data-g="${v}">${v}</button>`).join('')}</div>
+    <div class="stat mb" id="calc"></div>
+    <button class="btn primary" id="save">Pridať do ${MEALS[meal].toLowerCase()}</button>`);
+  const $g = bg.querySelector('#g'), $calc = bg.querySelector('#calc');
+  const getPer100 = () => editable ? { kcal: Number(bg.querySelector('#pk').value), protein: Number(bg.querySelector('#pp').value), carbs: Number(bg.querySelector('#pc').value), fat: Number(bg.querySelector('#pf').value) } : per100;
+  const upd = () => { const s = calc.scale(getPer100(), $g.value || 0); $calc.innerHTML = `<b class="mono">${s.kcal} kcal</b><span>B ${s.protein} g · S ${s.carbs} g · T ${s.fat} g</span>`; };
+  bg.addEventListener('input', upd); upd();
+  bg.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { $g.value = b.dataset.g; upd(); });
+  bg.querySelector('#save').onclick = async () => {
+    const name = editable ? bg.querySelector('#fname').value.trim() : food.name;
+    if (!name) return toast('Zadaj názov', true);
+    const s = calc.scale(getPer100(), $g.value || 0);
+    try {
+      await db.addFood({ user_id: state.profile.id, date: state.date, meal, name, brand: food.brand || null, grams: Number($g.value), ...s, source: food.source || 'manual', barcode: food.barcode || null });
+      bg.remove(); done();
+    } catch (err) { toast(err.message, true); }
+  };
+}
+function openQuick(meal) {
+  const bg = sheet(`<h2 class="mb">Rýchle kalórie</h2><p class="muted small mb">Keď nevieš presne, čo si jedol, zadaj aspoň odhad.</p>
+    <label class="field"><span>Názov</span><input class="input" id="n" placeholder="Napr. obed v jedálni"></label>
+    <div class="grid2"><label class="field"><span>kcal</span><input class="input" id="k" type="number" inputmode="numeric"></label><label class="field"><span>Bielkoviny (g)</span><input class="input" id="p" type="number" inputmode="numeric" value="0"></label></div>
+    <button class="btn primary" id="save">Pridať</button>`);
+  bg.querySelector('#save').onclick = async () => {
+    const name = bg.querySelector('#n').value.trim() || 'Odhad';
+    const kcal = Number(bg.querySelector('#k').value); if (!kcal) return toast('Zadaj kcal', true);
+    await db.addFood({ user_id: state.profile.id, date: state.date, meal, name, grams: 0, kcal, protein: Number(bg.querySelector('#p').value || 0), carbs: 0, fat: 0, source: 'quick' });
+    bg.remove(); toast('Pridané'); location.hash = '#/';
+  };
+}
+async function openScan(meal) {
+  const hasDetector = 'BarcodeDetector' in window;
+  const bg = sheet(`<h2 class="mb">Čiarový kód</h2>
+    ${hasDetector ? '<video id="v" autoplay playsinline style="width:100%;border-radius:12px;background:#000;max-height:50vh"></video><p class="muted small mt">Namier na čiarový kód.</p>' : '<p class="muted small mb">Tento prehliadač nevie čítať kód kamerou (iPhone Safari). Zadaj číslo pod kódom ručne:</p>'}
+    <div class="input-row mt"><input class="input" id="code" inputmode="numeric" placeholder="8586..."><button class="btn sm primary" id="go">Hľadať</button></div>`);
+  let stream = null, raf = null;
+  const finish = async code => {
+    if (raf) cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop());
+    bg.remove();
+    toast('Hľadám ' + code);
+    const f = await lookupBarcode(code);
+    if (!f) return toast('Produkt nie je v databáze. Pridaj ho ako vlastné jedlo.', true);
+    openAdd(f, meal, () => { toast('Pridané'); location.hash = '#/'; });
+  };
+  bg.querySelector('#go').onclick = () => { const c = bg.querySelector('#code').value.trim(); if (c) finish(c); };
+  bg.addEventListener('click', e => { if (e.target === bg && stream) stream.getTracks().forEach(t => t.stop()); });
+  if (hasDetector) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const v = bg.querySelector('#v'); v.srcObject = stream;
+      const det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+      const tick = async () => { try { const codes = await det.detect(v); if (codes.length) return finish(codes[0].rawValue); } catch (_) { } raf = requestAnimationFrame(tick); };
+      tick();
+    } catch (_) { toast('Kamera nedostupná, zadaj kód ručne.', true); }
+  }
+}
+
+// ---------- váha ----------
+function weightChart(tr) {
+  if (tr.length < 2) return '<p class="empty">Graf sa zobrazí po druhom vážení.</p>';
+  const W = 520, H = 190, pl = 34, pr = 10, pt = 12, pb = 24;
+  const data = tr.slice(-60);
+  const ws = data.flatMap(d => [d.weight, d.trend]);
+  let min = Math.min(...ws), max = Math.max(...ws); const pad = Math.max(0.5, (max - min) * 0.15); min -= pad; max += pad;
+  const x = i => pl + (i / (data.length - 1)) * (W - pl - pr);
+  const y = v => pt + (1 - (v - min) / (max - min)) * (H - pt - pb);
+  const ticks = [min, (min + max) / 2, max];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">
+    ${ticks.map(t => `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text class="lbl" x="2" y="${y(t) + 4}">${t.toFixed(1)}</text>`).join('')}
+    ${data.map((d, i) => `<circle class="raw" cx="${x(i)}" cy="${y(d.weight)}" r="4"/>`).join('')}
+    <path class="trend" d="${data.map((d, i) => `${i ? 'L' : 'M'}${x(i)},${y(d.trend)}`).join(' ')}"/>
+    <text class="lbl" x="${pl}" y="${H - 6}">${calc.fmtDate(data[0].date)}</text><text class="lbl" x="${W - pr}" y="${H - 6}" text-anchor="end">${calc.fmtDate(data[data.length - 1].date)}</text>
+  </svg>`;
+}
+async function renderWeight() {
+  const uid = state.profile.id;
+  const weights = await db.listWeights(uid);
+  const tr = calc.trend(weights.map(w => ({ date: w.date, weight: Number(w.weight_kg) })));
+  const last = tr[tr.length - 1];
+  const todayRow = weights.find(w => w.date === state.date);
+  const startW = Number(state.profile.start_weight || weights[0]?.weight_kg || 0);
+  const ch7 = calc.trendChange(tr, 7);
+  $app.innerHTML = `<div class="screen">
+    <div class="topbar"><h1>Váha</h1>${datePicker()}</div>
+    <div class="card">
+      <form id="wf" class="input-row"><input class="input" type="number" step="0.1" inputmode="decimal" name="w" placeholder="kg" value="${todayRow ? todayRow.weight_kg : ''}" required><input class="input" type="number" step="0.5" inputmode="decimal" name="waist" placeholder="pás cm" value="${todayRow?.waist_cm ?? ''}" style="max-width:110px"><button class="btn sm primary" type="submit">Uložiť</button></form>
+      <p class="muted small mt">Váž sa ráno, po WC, pred jedlom. Denné výkyvy sú normálne, pozeraj trend (zelená čiara).</p>
+    </div>
+    <div class="grid3 mb">
+      <div class="stat"><b class="mono">${last ? last.trend.toFixed(1) : '–'}</b><span>kg trend</span></div>
+      <div class="stat"><b class="mono">${last ? (last.trend - startW > 0 ? '+' : '') + (last.trend - startW).toFixed(1) : '–'}</b><span>od štartu (${startW.toFixed(1)})</span></div>
+      <div class="stat"><b class="mono">${ch7 == null ? '–' : (ch7 > 0 ? '+' : '') + ch7.toFixed(1)}</b><span>kg / 7 dní</span></div>
+    </div>
+    <div class="card">${weightChart(tr)}</div>
+    <div class="card">${weights.length ? [...weights].reverse().slice(0, 30).map(w => `<div class="item"><div class="n"><b>${calc.fmtDate(w.date)} ${w.date.slice(0, 4)}</b><span>${w.waist_cm ? 'pás ' + w.waist_cm + ' cm' : ''}</span></div><span class="k mono">${Number(w.weight_kg).toFixed(1)} kg</span><button class="del" data-del="${w.id}">×</button></div>`).join('') : '<div class="empty">Žiadne váženia.</div>'}</div>
+  </div>${nav('#/vaha')}`;
+  bindDatePicker($app, renderWeight);
+  $app.querySelector('#wf').onsubmit = async e => {
+    e.preventDefault(); const f = new FormData(e.target);
+    try {
+      await db.upsertWeight({ user_id: uid, date: state.date, weight_kg: Number(f.get('w')), waist_cm: f.get('waist') ? Number(f.get('waist')) : null });
+      toast('Uložené'); renderWeight();
+    } catch (err) { toast(err.message, true); }
+  };
+  $app.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteWeight(Number(b.dataset.del)); renderWeight(); });
+}
+
+// ---------- check-in ----------
+async function renderCheckin() {
+  const uid = state.profile.id;
+  const c = await db.getCheckin(uid, state.date) || {};
+  let mood = c.mood || 0;
+  $app.innerHTML = `<div class="screen">
+    <div class="topbar"><h1>Check-in</h1>${datePicker()}</div>
+    <form id="cf" class="card">
+      <div class="grid2">
+        <label class="field"><span>Spánok (hodiny)</span><input class="input" name="sleep" type="number" step="0.5" inputmode="decimal" value="${c.sleep_h ?? ''}" placeholder="7.5"></label>
+        <label class="field"><span>Kroky</span><input class="input" name="steps" type="number" inputmode="numeric" value="${c.steps ?? ''}" placeholder="8000"></label>
+      </div>
+      <label class="field"><span>Nálada / energia</span><div class="mood">${[1, 2, 3, 4, 5].map(m => `<button type="button" data-mood="${m}" class="${mood === m ? 'on' : ''}">${['😵', '😕', '😐', '🙂', '🔥'][m - 1]}</button>`).join('')}</div></label>
+      <label class="field"><span>Poznámka pre kouča (nepovinné)</span><textarea class="input" name="note" rows="2" placeholder="Ako sa dnes cítiš, čo bolo ťažké...">${h(c.note || '')}</textarea></label>
+      <button class="btn primary" type="submit">Uložiť check-in</button>
+    </form>
+  </div>${nav('#/checkin')}`;
+  bindDatePicker($app, renderCheckin);
+  $app.querySelectorAll('[data-mood]').forEach(b => b.onclick = () => { mood = Number(b.dataset.mood); $app.querySelectorAll('[data-mood]').forEach(x => x.classList.toggle('on', x === b)); });
+  $app.querySelector('#cf').onsubmit = async e => {
+    e.preventDefault(); const f = new FormData(e.target);
+    try {
+      await db.upsertCheckin({ user_id: uid, date: state.date, sleep_h: f.get('sleep') ? Number(f.get('sleep')) : null, steps: f.get('steps') ? Number(f.get('steps')) : null, mood: mood || null, note: f.get('note') || null });
+      toast('Uložené. Dobrá práca.'); location.hash = '#/';
+    } catch (err) { toast(err.message, true); }
+  };
+}
+
+// ---------- kouč ----------
+async function renderCoach() {
+  if (state.profile.role !== 'coach') { location.hash = '#/'; return; }
+  const from = calc.addDays(calc.today(), -6);
+  $app.innerHTML = `<div class="screen"><h1>Kouč</h1><div class="spinner"></div></div>${nav('#/kouc')}`;
+  const { profiles, weights, foods, checkins } = await db.coachOverview(from);
+  const people = profiles.filter(p => p.role !== 'coach' && p.onboarded).map(p => {
+    const w = weights.filter(x => x.user_id === p.id);
+    const tr = calc.trend(w.map(x => ({ date: x.date, weight: Number(x.weight_kg) })));
+    const last = tr[tr.length - 1];
+    const startW = Number(p.start_weight || w[0]?.weight_kg || 0);
+    const fd = foods.filter(x => x.user_id === p.id);
+    const daysLogged = new Set(fd.map(x => x.date)).size;
+    const kcalByDay = {}; fd.forEach(x => kcalByDay[x.date] = (kcalByDay[x.date] || 0) + Number(x.kcal));
+    const avg = daysLogged ? Object.values(kcalByDay).reduce((a, b) => a + b, 0) / daysLogged : 0;
+    const lastFood = fd.length ? fd.map(x => x.date).sort().pop() : null;
+    const lastWeigh = w.length ? w[w.length - 1].date : null;
+    const ci = checkins.filter(x => x.user_id === p.id);
+    const sleep = ci.filter(x => x.sleep_h).reduce((a, x, _, arr) => a + Number(x.sleep_h) / arr.length, 0);
+    const ch7 = calc.trendChange(tr, 7);
+    let flag = 'ok', why = 'Loguje, ide podľa plánu';
+    const staleDays = lastFood ? Math.round((new Date(calc.today()) - new Date(lastFood)) / 86400000) : 99;
+    const daysSinceStart = Math.min(7, Math.max(1, Math.round((new Date(calc.today()) - new Date(p.start_date || calc.today())) / 86400000) + 1));
+    if (staleDays >= 3) { flag = 'bad'; why = `Nelogoval ${staleDays} dní`; }
+    else if (daysLogged < daysSinceStart * 0.6) { flag = 'warn'; why = `Logoval len ${daysLogged}/7 dní`; }
+    else if (p.goal === 'lose' && ch7 != null && ch7 >= 0 && tr.length > 10) { flag = 'warn'; why = 'Váha stagnuje, skontroluj príjem'; }
+    else if (p.target_kcal && avg > p.target_kcal * 1.15) { flag = 'warn'; why = `Priemer ${r0(avg)} kcal, cieľ ${p.target_kcal}`; }
+    return { p, last, startW, daysLogged, avg, lastFood, lastWeigh, sleep, ch7, flag, why };
+  });
+  const order = { bad: 0, warn: 1, ok: 2 };
+  people.sort((a, b) => order[a.flag] - order[b.flag]);
+  const totalLoss = people.reduce((a, x) => a + (x.last ? x.startW - x.last.trend : 0), 0);
+  $app.innerHTML = `<div class="screen">
+    <div class="topbar"><h1>Kouč</h1><span class="date">posledných 7 dní</span></div>
+    <div class="grid3 mb">
+      <div class="stat"><b class="mono">${people.length}</b><span>účastníkov</span></div>
+      <div class="stat"><b class="mono">${people.filter(x => x.flag === 'ok').length}</b><span>v pohode</span></div>
+      <div class="stat"><b class="mono ${totalLoss > 0 ? 'pos' : ''}">${totalLoss.toFixed(1)}</b><span>kg dole spolu</span></div>
+    </div>
+    ${people.length ? people.map(x => `<div class="card">
+      <div class="row between"><div><h3><span class="flag ${x.flag}"></span>${h(x.p.name)}</h3><p class="muted small">${x.why}</p></div><div class="right"><b class="mono">${x.last ? x.last.trend.toFixed(1) : '–'} kg</b><p class="muted small mono">${x.last ? ((x.last.trend - x.startW) > 0 ? '+' : '') + (x.last.trend - x.startW).toFixed(1) + ' od štartu' : 'bez váženia'}</p></div></div>
+      <div class="grid3 mt">
+        <div class="stat"><b class="mono" style="font-size:16px">${x.daysLogged}/7</b><span>dní s jedlom</span></div>
+        <div class="stat"><b class="mono" style="font-size:16px">${x.avg ? r0(x.avg) : '–'}</b><span>Ø kcal (cieľ ${x.p.target_kcal})</span></div>
+        <div class="stat"><b class="mono" style="font-size:16px">${x.sleep ? x.sleep.toFixed(1) + ' h' : '–'}</b><span>Ø spánok</span></div>
+      </div>
+      <p class="muted small mt">Cieľ: ${calc.GOAL[x.p.goal]?.label || '–'} · Posledné jedlo: ${x.lastFood ? calc.fmtDate(x.lastFood) : 'nikdy'} · Posledné váženie: ${x.lastWeigh ? calc.fmtDate(x.lastWeigh) : 'nikdy'}</p>
+    </div>`).join('') : '<div class="card"><p class="muted">Zatiaľ žiadni účastníci. Po registrácii a nastavení štartu sa tu objavia.</p></div>'}
+  </div>${nav('#/kouc')}`;
+}
+
+// ---------- profil ----------
+async function renderProfile() {
+  const p = state.profile;
+  $app.innerHTML = `<div class="screen">
+    <h1 class="mb">Profil</h1>
+    <div class="card">
+      <h3>${h(p.name)}</h3><p class="muted small">${h(p.email || '')} · ${p.role === 'coach' ? 'kouč' : 'účastník'}</p>
+      <div class="grid2 mt">
+        <div class="stat"><b class="mono">${p.target_kcal || '–'}</b><span>kcal cieľ</span></div>
+        <div class="stat"><b class="mono">${p.target_protein || '–'} g</b><span>bielkoviny</span></div>
+        <div class="stat"><b class="mono">${p.start_weight || '–'} kg</b><span>štartová váha</span></div>
+        <div class="stat"><b class="mono">${p.start_date ? calc.fmtDate(p.start_date) : '–'}</b><span>štart</span></div>
+      </div>
+      <p class="muted small mt">Cieľ: ${calc.GOAL[p.goal]?.label || '–'} · ${calc.ACTIVITY[p.activity]?.label || ''}</p>
+    </div>
+    <a class="btn mb" href="#/onboarding">Upraviť údaje a prepočítať cieľ</a>
+    <button class="btn danger" id="out">Odhlásiť sa</button>
+    <p class="muted small center mt">Druhý dych · verzia 0.1 · ${new Date().getFullYear()}</p>
+  </div>${nav('#/profil')}`;
+  $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; };
+}
+
+// ---------- boot ----------
+async function boot() {
+  state.session = await db.getSession();
+  db.onAuthChange(s => { const was = !!state.session; state.session = s; if (!s) state.profile = null; if (!!s !== was) route(); });
+  route();
+}
+boot();
