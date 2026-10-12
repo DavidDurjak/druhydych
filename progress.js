@@ -2,6 +2,7 @@
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
+import { defaultWeek } from './report.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -37,7 +38,7 @@ function paceVerdict(goal, weekly, weight) {
     return { cls: 'warn', text: 'Váha ide hore. Uber 150 až 200 kcal alebo pridaj kroky.' };
   }
   if (goal === 'gain') {
-    if (pct >= 0.75) return { cls: 'warn', text: 'Priberáš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
+    if (pct >= 0.75) return { cls: 'warn', text: 'Pribéraš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
     if (pct >= 0.15) return { cls: 'ok', text: 'Ideálne tempo naberania svalov.' };
     return { cls: 'mid', text: 'Váha sa nehýbe. Pridaj 150 až 200 kcal, najlepšie zo sacharidov.' };
   }
@@ -170,6 +171,7 @@ export async function renderProgress() {
   $app().innerHTML = `<div class="screen pg">
     <h1 class="pg-h1">Pokrok</h1>
     ${progressTabs('pokrok')}
+    <a class="rp-card" href="#/report?w=${defaultWeek()}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre týždňa, porovnanie a na čo sa zamerať.</p></div><span class="rp-card-go">›</span></a>
     <div class="pg-per">${[[7, '7 dní'], [30, '30 dní'], ['all', 'Celý program']].map(([v, l]) => `<button data-per="${v}" class="${period === v ? 'on' : ''}">${l}</button>`).join('')}</div>
 
     <section class="pg-card pg-weight">
