@@ -255,3 +255,59 @@ export async function queueTestPush() {
   const { error } = await sb.rpc('queue_test_push');
   if (error) throw new Error(error.message);
 }
+
+// ---------- v0.4: komunitná databáza jedál ----------
+export async function searchFoods(q, lim = 30) {
+  const { data, error } = await sb.rpc('search_foods', { q, lim });
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+export async function getFood(id) {
+  const { data, error } = await sb.from('foods').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+export async function foodByBarcode(code) {
+  const { data, error } = await sb.from('foods').select('*').eq('barcode', code).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+export async function myFoods(userId) {
+  return must(await sb.from('foods').select('*').eq('created_by', userId).order('updated_at', { ascending: false }).limit(100));
+}
+export async function createFood(row) {
+  return must(await sb.from('foods').insert(row).select().single());
+}
+export async function updateFood(id, row) {
+  return must(await sb.from('foods').update(row).eq('id', id).select().single());
+}
+export async function deleteFoodItem(id) {
+  must(await sb.from('foods').delete().eq('id', id));
+}
+export async function foodUsed(id) {
+  await sb.rpc('food_used', { p_id: id });
+}
+export async function reportFood(foodId, userId, reason) {
+  const { error } = await sb.from('food_reports').insert({ food_id: foodId, user_id: userId, reason });
+  if (error && error.code !== '23505') throw new Error(error.message);
+}
+// Skopíruje jedlá z jedného dňa/jedla do iného
+export async function copyMeal(userId, fromDate, toDate, meal) {
+  const rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty')
+    .eq('user_id', userId).eq('date', fromDate).eq('meal', meal).order('created_at'));
+  if (!rows.length) return 0;
+  must(await sb.from('food_logs').insert(rows.map(r => ({ ...r, user_id: userId, date: toDate, meal }))));
+  return rows.length;
+}
+export async function recentLogs(userId, limit = 25) {
+  const rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty,created_at')
+    .eq('user_id', userId).neq('source', 'quick').order('created_at', { ascending: false }).limit(300));
+  const seen = new Set(); const out = [];
+  for (const r of rows) {
+    const key = r.food_id ? 'id' + r.food_id : (r.name + '|' + (r.brand || '')).toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key); out.push(r);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
