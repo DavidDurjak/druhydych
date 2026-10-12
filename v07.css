@@ -1,0 +1,97 @@
+/* v0.7: aktivita z hodiniek, obrazovka Hodinky, týždenný report */
+
+/* karta aktivity na Dnes */
+.act { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px; margin-bottom: 10px; }
+.act-h { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.act-h h3 { flex: 1; font-size: 16px; }
+.act-h > span { font-size: 12px; color: var(--muted); }
+.act-sync { font-size: 12px; font-weight: 700; color: var(--accent); background: rgba(124,255,178,.10); padding: 6px 10px; border-radius: 99px; white-space: nowrap; }
+.act-steps { margin-bottom: 12px; }
+.act-st { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.act-st b { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.act-st small { font-size: 12px; color: var(--muted); }
+.act-bar { height: 8px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.act-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #FFB547, #FF7A59); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.act-g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.act-c { background: var(--bg-2); border-radius: 14px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.act-c span { font-size: 16px; }
+.act-c b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.act-c small { font-size: 11px; color: var(--muted); }
+.act-empty { display: flex; align-items: center; gap: 12px; }
+.act-empty > div { flex: 1; min-width: 0; }
+.act-empty h3 { font-size: 15px; }
+.act-empty p { font-size: 13px; color: var(--muted); }
+.act-w { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 14px; background: var(--bg-2); display: grid; place-items: center; font-size: 22px; }
+
+/* obrazovka Hodinky */
+.hw-hero { display: flex; align-items: center; gap: 14px; padding: 18px 16px; margin-bottom: 14px; border-radius: 22px; border: 1px solid var(--line); background: var(--card); }
+.hw-hero.on { background: radial-gradient(120% 120% at 0% 0%, rgba(124,255,178,.12), rgba(124,255,178,0) 60%), var(--card); border-color: rgba(124,255,178,.25); }
+.hw-watch { width: 58px; height: 58px; flex: 0 0 auto; border-radius: 18px; background: var(--bg-2); display: grid; place-items: center; font-size: 30px; }
+.hw-hero h2 { font-size: 20px; letter-spacing: -0.02em; }
+.hw-hero p { font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.hw-row { display: grid; grid-template-columns: 52px repeat(4, 1fr); gap: 6px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; font-variant-numeric: tabular-nums; }
+.hw-row:first-of-type { border-top: 0; }
+.hw-row span { color: var(--muted); white-space: nowrap; }
+.hw-steps { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.hw-step { display: flex; gap: 12px; align-items: flex-start; }
+.hw-step > div { flex: 1; min-width: 0; }
+.hw-step h4 { font-size: 15px; margin-bottom: 6px; }
+.hw-step p { line-height: 1.45; }
+.hw-n { width: 28px; height: 28px; flex: 0 0 auto; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+.hw-key { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.hw-key code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font-size: 12px; }
+.hw-sub { margin: 8px 0 8px 18px; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.45; }
+.hw-sub code, .hw-url { font-size: 11.5px; background: var(--bg-2); padding: 1px 5px; border-radius: 5px; word-break: break-all; }
+
+/* týždenný report */
+.rp-nav { display: flex; gap: 4px; }
+.rp-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 22px 16px 18px; margin-bottom: 12px; border-radius: 28px; border: 1px solid var(--line);
+  background: radial-gradient(120% 90% at 50% 0%, rgba(124,255,178,.12) 0%, rgba(124,255,178,0) 60%), var(--card); }
+.rp-score { position: relative; width: 170px; height: 170px; display: grid; place-items: center; }
+.rp-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rp-sc { position: relative; }
+.rp-sc b { display: block; font-size: 52px; font-weight: 800; letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+.rp-sc span { font-size: 13px; color: var(--muted); }
+.rp-hero h2 { margin-top: 12px; font-size: 22px; letter-spacing: -0.02em; }
+.rp-delta { margin-top: 4px; font-size: 14px; color: var(--muted); font-weight: 600; }
+.rp-delta.up { color: var(--accent); } .rp-delta.dn { color: var(--accent-2); }
+.rp-parts { display: flex; flex-direction: column; gap: 12px; }
+.rp-pl { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; margin-bottom: 6px; }
+.rp-pl b { font-variant-numeric: tabular-nums; }
+.rp-pl small { color: var(--muted); font-weight: 600; }
+.rp-pb { height: 8px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.rp-pb i { display: block; height: 100%; border-radius: 99px; }
+.rp-pb i.ok { background: var(--accent); } .rp-pb i.mid { background: #FFC857; } .rp-pb i.low { background: var(--accent-2); }
+.rp-focus { display: flex; gap: 14px; align-items: flex-start; padding: 16px; margin-bottom: 12px; border-radius: 22px; background: linear-gradient(135deg, rgba(124,255,178,.12), rgba(63,213,196,.05)); border: 1px solid rgba(124,255,178,.25); }
+.rp-fi { width: 46px; height: 46px; flex: 0 0 auto; border-radius: 15px; background: rgba(124,255,178,.14); display: grid; place-items: center; font-size: 24px; }
+.rp-focus small { font-size: 12px; color: var(--accent); font-weight: 700; }
+.rp-focus h3 { font-size: 17px; margin: 2px 0 4px; letter-spacing: -0.01em; }
+.rp-focus p { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+.rp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rp-s { background: var(--bg-2); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.rp-s span { font-size: 16px; }
+.rp-s b { font-size: 20px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.rp-s small { font-size: 12px; color: var(--muted); }
+.rp-s em { font-style: normal; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.rp-s em .g { color: var(--accent); font-weight: 700; } .rp-s em .b { color: var(--accent-2); font-weight: 700; }
+
+/* karta reportu na Dnes a v Pokroku */
+.rp-card { display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 14px; border-radius: 20px; color: var(--text);
+  background: linear-gradient(135deg, rgba(140,140,255,.16), rgba(124,255,178,.06)); border: 1px solid rgba(140,140,255,.3); }
+.rp-card:active { transform: scale(.99); }
+.rp-card-i { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 14px; background: rgba(140,140,255,.18); display: grid; place-items: center; font-size: 22px; }
+.rp-card > div { flex: 1; min-width: 0; }
+.rp-card h3 { font-size: 15px; }
+.rp-card p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.rp-card-go { font-size: 24px; color: var(--muted); }
+
+/* zoznam pre kouča */
+.rp-li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); color: var(--text); }
+.rp-li:first-of-type { border-top: 0; }
+.rp-li-s { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 12px; display: grid; place-items: center; font-size: 15px; font-variant-numeric: tabular-nums; }
+.rp-li-s.ok { background: rgba(124,255,178,.14); color: var(--accent); } .rp-li-s.mid { background: rgba(255,200,87,.14); color: #FFC857; } .rp-li-s.low { background: rgba(255,107,53,.14); color: var(--accent-2); }
+.rp-li span { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-li em { font-style: normal; font-size: 13px; font-weight: 700; color: var(--muted); }
+.rp-li em.up { color: var(--accent); } .rp-li em.dn { color: var(--accent-2); }
+.rp-li i { font-style: normal; color: var(--muted); font-size: 20px; }
+@media (prefers-reduced-motion: reduce) { .act-bar i { transition: none; } }
