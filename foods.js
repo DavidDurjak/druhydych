@@ -19,7 +19,7 @@ export function defaultMeal() {
 
 // Jedlo z akéhoľvek zdroja -> jednotný tvar s hodnotami na 100 g
 function fromDb(f) {
-  return { id: f.id, name: f.name, brand: f.brand || '', barcode: f.barcode || null, kcal: Number(f.kcal), protein: Number(f.protein), carbs: Number(f.carbs), fat: Number(f.fat),
+  return { id: f.id, name: f.name, brand: f.brand || '', barcode: f.barcode || null, kcal: Number(f.kcal), protein: Number(f.protein), carbs: Number(f.carbs), fat: Number(f.fat), fiber: f.fiber ?? null, sugar: f.sugar ?? null, salt: f.salt ?? null,
     portions: Array.isArray(f.portions) ? f.portions : [], verified: !!f.verified, is_recipe: !!f.is_recipe, mine: f.mine ?? (f.created_by === state().profile.id),
     created_by: f.created_by, source: 'db', raw: f };
 }
@@ -73,7 +73,7 @@ export async function renderFood() {
   // ---------- rýchle pridanie z Naposledy: jedno ťuknutie, hromadný výber, späť ----------
   let multi = false; const chosen = new Set(); let added = [];
   const logRow = l => ({ user_id: uid, date: state().date, meal, name: l.name, brand: l.brand || null, grams: l.grams, kcal: l.kcal, protein: l.protein, carbs: l.carbs, fat: l.fat,
-    source: l.source || 'manual', barcode: l.barcode || null, food_id: l.food_id || null, portion: l.portion || null, qty: l.qty ?? null });
+    source: l.source || 'manual', barcode: l.barcode || null, food_id: l.food_id || null, portion: l.portion || null, qty: l.qty ?? null, fiber: l.fiber ?? null, sugar: l.sugar ?? null, salt: l.salt ?? null });
   const drawBar = () => {
     let bar = $app().querySelector('.fast-bar');
     const n = multi ? chosen.size : added.length;
@@ -152,7 +152,7 @@ export async function renderFood() {
       bind();
       $res.querySelector('#addQ').onclick = () => openFoodEditor({ name: q }, meal, done);
       if (ctrl) ctrl.abort(); ctrl = new AbortController();
-      // našli sme dosť v našej databáze: Open Food Facts len na požiadanie (rýchlejšie, menej šumu)
+      // našli sme dosť v našej databáze: Open Food Facts len na vyžiadanie (rýchlejšie, menej šumu)
       if (local.length >= 8) {
         const box0 = $res.querySelector('#offBox');
         box0.innerHTML = '<button class="btn ghost sm" id="moreOff">Hľadať aj v Open Food Facts</button>';
@@ -186,7 +186,7 @@ export async function renderFood() {
   };
 }
 
-// ---------- pridanie do deníka (porcie) ----------
+// ---------- pridanie do denníka (porcie) ----------
 export function openAdd(food, meal, done) {
   const portions = [{ label: 'g', g: 1 }, ...(food.portions || [])];
   let unit = 0, qty = 100;
@@ -220,7 +220,8 @@ export function openAdd(food, meal, done) {
       // produkt z Open Food Facts uložíme do našej databázy, nech ho nabudúce nájdu všetci
       if (f.source === 'off' && f.barcode) f = await importOff(f).catch(() => f);
       const s = calc.scale(f, g);
-      await db.addFood({ user_id: state().profile.id, date: state().date, meal, name: f.name, brand: f.brand || null, grams: r1(g), ...s,
+      const mic = {}; for (const k of ['fiber', 'sugar', 'salt']) if (f[k] != null) mic[k] = r1(Number(f[k]) * g / 100);
+      await db.addFood({ user_id: state().profile.id, date: state().date, meal, name: f.name, brand: f.brand || null, grams: r1(g), ...s, ...mic,
         source: f.source === 'db' ? 'db' : (f.source || 'manual'), barcode: f.barcode || null, food_id: f.id || null,
         portion: unit === 0 ? null : portions[unit].label, qty: unit === 0 ? null : Number($qty.value) });
       if (f.id) db.foodUsed(f.id);
@@ -273,7 +274,7 @@ export function openFoodEditor(pre = {}, meal, done) {
       <label class="field"><span>Cukry</span><input class="input" id="sugar" type="number" inputmode="decimal" step="any" value="${pre.sugar ?? ''}"></label>
       <label class="field"><span>Soľ</span><input class="input" id="salt" type="number" inputmode="decimal" step="any" value="${pre.salt ?? ''}"></label>
       <label class="field"><span>Alkohol (% obj.)</span><input class="input" id="abv" type="number" inputmode="decimal" step="any" placeholder="napr. 12" value="${pre.alcohol ? r1(pre.alcohol / 0.79) : ''}"></label></div></details>
-    <p class="small muted mb">Porcie (napr. 1 kus, 1 lyžica, 1 tanier), aby sa nemuselo vážiť:</p>
+    <p class="small muted mb">Porcie (napr. 1 kus, 1 lžica, 1 tanier), aby sa nemuselo vážiť:</p>
     <div id="plist"></div>
     <button class="btn sm ghost mb" id="padd">＋ Pridať porciu</button>
     <p class="err small" id="err"></p>
@@ -317,7 +318,7 @@ export function openFoodEditor(pre = {}, meal, done) {
     }
   };
   $('#del')?.addEventListener('click', async () => {
-    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v deníku ostanú.')) return;
+    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v denníku ostanú.')) return;
     try { await db.deleteFoodItem(pre.id); bg.remove(); toast('Zmazané'); renderFood(); } catch (e) { toast(e.message, true); }
   });
 }
@@ -329,7 +330,7 @@ export function openRecipeEditor(pre, meal, done) {
   const bg = sheet(`<div class="row between"><h2>${edit ? 'Upraviť recept' : 'Nový recept'}</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
     <p class="muted small mt mb">Zadaj suroviny tak, ako ich dávaš do hrnca. Appka spočíta hodnoty na porciu.</p>
     <label class="field"><span>Názov</span><input class="input" id="name" maxlength="120" placeholder="Napr. Mamina sviečková" value="${h(pre?.name || '')}"></label>
-    <label class="field"><span>Počet porcií</span><input class="input" id="serv" type="number" inputmode="numeric" min="1" value="${pre?.servings || 4}"></label>
+    <label class="field"><span>Počet poríč</span><input class="input" id="serv" type="number" inputmode="numeric" min="1" value="${pre?.servings || 4}"></label>
     <p class="sec">Suroviny</p><div id="ilist"></div>
     <div class="input-row mt"><input class="input" id="iq" placeholder="Pridaj surovinu: ryža, kuracie..." autocomplete="off"></div>
     <div id="ires" class="results"></div>
