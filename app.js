@@ -4,6 +4,7 @@ import * as calc from './calc.js';
 import * as v2 from './app2.js';
 import * as push from './push.js';
 import * as fd from './foods.js';
+import * as td from './today.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -85,12 +86,12 @@ async function route() {
   if (!state.session) return renderAuth();
   if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
-  const views = { '#/': renderToday, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
+  const views = { '#/': td.renderToday, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
     '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders };
   let fn = views[path];
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
-  fn = fn || renderToday;
+  fn = fn || td.renderToday;
   try { await fn(); if (path === '#/vaha' || path === '#/fotky') progressTabs(path); } catch (e) { console.error(e); toast(e.message, true); }
   window.scrollTo(0, 0);
 }
@@ -190,102 +191,7 @@ async function renderOnboarding() {
   };
 }
 
-// ---------- dnes ----------
-function ring(value, target) {
-  const pct = Math.min(1, target ? value / target : 0);
-  const r = 56, c = 2 * Math.PI * r;
-  const over = target && value > target;
-  return `<div class="ring"><svg width="132" height="132" viewBox="0 0 132 132">
-    <circle cx="66" cy="66" r="${r}" stroke="var(--bg-2)" stroke-width="12" fill="none"/>
-    <circle cx="66" cy="66" r="${r}" stroke="${over ? 'var(--accent-2)' : 'var(--accent)'}" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}"/>
-  </svg><div class="center"><b class="mono">${r0(Math.max(0, target - value))}</b><span>${over ? 'kcal navyše' : 'kcal zostáva'}</span></div></div>`;
-}
-function macroBar(label, val, target, color) {
-  const pct = Math.min(100, target ? (val / target) * 100 : 0);
-  return `<div class="macro"><div class="lbl"><span>${label}</span><span class="mono">${r0(val)} / ${target} g</span></div><div class="bar"><i style="width:${pct}%;background:${color}"></i></div></div>`;
-}
-
-async function renderToday() {
-  const p = state.profile, uid = p.id;
-  const from30 = calc.addDays(calc.today(), -30);
-  const [foods, weights, checkin, actDates, msgs, plan, wlogs] = await Promise.all([
-    db.listFood(uid, state.date), db.listWeights(uid), db.getCheckin(uid, state.date),
-    db.activityDates(uid, from30), db.listMessages(uid), db.getPlan(uid), db.listWorkoutLogs(uid, calc.weekStart()),
-  ]);
-  const sum = calc.sumMacros(foods);
-  const tr = calc.trend(weights.map(w => ({ date: w.date, weight: Number(w.weight_kg) })));
-  const last = tr[tr.length - 1];
-  const change = calc.trendChange(tr, 7);
-  const startW = Number(p.start_weight || (weights[0]?.weight_kg ?? 0));
-  const total = last ? Math.round((last.trend - startW) * 10) / 10 : 0;
-  const day = Math.max(1, Math.round((new Date(calc.today()) - new Date(p.start_date || calc.today())) / 86400000) + 1);
-  const strk = calc.streak(actDates);
-  const week = calc.last7();
-  const actSet = new Set(actDates);
-  const unread = msgs.filter(m => m.to_user === uid && !m.read_at);
-  const lastMsg = msgs.find(m => m.to_user === uid);
-  const water = checkin?.water || 0, waterGoal = p.water_goal || 8;
-  const trainedWeek = wlogs.filter(w => w.done).length;
-  const trainedToday = wlogs.some(w => w.done && w.date === state.date);
-  const adaptive = state.date === calc.today() ? await v2.checkAdaptive(p, weights).catch(() => null) : null;
-  const pushCard = state.date === calc.today() ? await push.pushPromptCard().catch(() => '') : '';
-
-  $app.innerHTML = `<div class="screen">
-    <div class="topbar"><div><div class="brand"><span class="dot"></span> Ahoj, ${h(p.name?.split(' ')[0] || '')}</div><div class="date">Deň ${day} z 84 · týždeň ${Math.min(12, Math.ceil(day / 7))}</div></div>${datePicker()}</div>
-    ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
-    ${pushCard}
-    ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">Adaptívny cieľ</span></div>
-      <p class="small mt">${h(adaptive.reason)}</p>
-      <p class="muted small mt">Priemer ${adaptive.avg} kcal z ${adaptive.days} dní · trend ${adaptive.ch > 0 ? '+' : ''}${adaptive.ch} kg</p>
-      ${adaptive.adjust ? `<div class="row mt" style="gap:8px"><button class="btn sm primary" id="adaptYes">Nastaviť ${adaptive.newKcal} kcal</button><button class="btn sm ghost" id="adaptNo">Nechať ${p.target_kcal}</button></div>` : `<button class="btn sm ghost mt" id="adaptNo">OK</button>`}
-    </div>` : ''}
-    <div class="card">
-      <div class="row between mb"><div class="row" style="gap:8px"><span class="streak">🔥 ${strk}</span><span class="muted small">${strk === 1 ? 'deň v rade' : strk >= 2 && strk <= 4 ? 'dni v rade' : 'dní v rade'}</span></div>
-        <div class="dots">${week.map(d => `<span class="dot7 ${actSet.has(d) ? 'on' : ''} ${d === calc.today() ? 'today' : ''}" title="${d}">${['P', 'U', 'S', 'Š', 'P', 'S', 'N'][(new Date(d + 'T00:00:00').getDay() + 6) % 7]}</span>`).join('')}</div></div>
-      <div class="ring-wrap">${ring(sum.kcal, p.target_kcal)}
-        <div class="macros">
-          ${macroBar('Bielkoviny', sum.protein, p.target_protein, 'var(--protein)')}
-          ${macroBar('Sacharidy', sum.carbs, p.target_carbs, 'var(--carbs)')}
-          ${macroBar('Tuky', sum.fat, p.target_fat, 'var(--fat)')}
-        </div>
-      </div>
-      <div class="row between mt small muted"><span>Zjedené <b class="mono" style="color:var(--text)">${r0(sum.kcal)}</b> kcal</span><span>Cieľ <b class="mono" style="color:var(--text)">${p.target_kcal}</b> kcal</span></div>
-    </div>
-    <div class="grid3 mb">
-      <div class="stat"><b class="mono">${last ? last.trend.toFixed(1) : '–'}</b><span>kg trend</span></div>
-      <div class="stat"><b class="mono ${total < 0 ? 'pos' : total > 0 ? 'neg' : ''}">${total > 0 ? '+' : ''}${total.toFixed(1)}</b><span>kg od štartu</span></div>
-      <div class="stat"><b class="mono">${change == null ? '–' : (change > 0 ? '+' : '') + change.toFixed(1)}</b><span>kg za 7 dní</span></div>
-    </div>
-    <div class="grid2 mb">
-      <a class="card link" href="#/trening" style="margin:0"><div class="row between"><h3>Tréning</h3><span class="${trainedToday ? 'pos' : 'muted'}">${trainedToday ? '✓' : ''}</span></div><p class="muted small mt">${plan ? `${trainedWeek}/${p.training_days || plan.days.length} tento týždeň` : 'Vytvor si plán'}</p></a>
-      <div class="card" style="margin:0"><div class="row between"><h3>Voda</h3><span class="muted small mono">${water}/${waterGoal}</span></div><div class="water mt">${Array.from({ length: waterGoal }, (_, i) => `<button data-w="${i + 1}" class="${i < water ? 'on' : ''}"></button>`).join('')}</div></div>
-    </div>
-    ${Object.entries(MEALS).map(([k, lbl]) => {
-      const rows = foods.filter(f => f.meal === k); const s = calc.sumMacros(rows);
-      return `<div class="card meal"><div class="meal-h"><h3>${lbl}</h3><div class="row"><span class="muted small mono">${r0(s.kcal)} kcal</span><button class="btn sm primary" data-add="${k}">+ Pridať</button></div></div>
-        ${rows.length ? rows.map(f => `<div class="item"><div class="n"><b>${h(f.name)}</b><span>${h(f.brand || '')}${f.brand ? ' · ' : ''}${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)} · ` : ''}${r0(f.grams)} g · B ${r0(f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></div>`).join('') : `<div class="empty row between"><span>Zatiaľ nič.</span>${state.date === calc.today() ? `<a href="#" data-copy="${k}" class="small">↻ Ako včera</a>` : ''}</div>`}
-      </div>`;
-    }).join('')}
-    <div class="card"><div class="row between"><div><h3>Denný check-in</h3><p class="muted small">${checkin && (checkin.sleep_h || checkin.steps || checkin.mood) ? `Spánok ${checkin.sleep_h ?? '–'} h · ${checkin.steps ?? '–'} krokov · nálada ${checkin.mood ?? '–'}/5` : 'Spánok, kroky, nálada. 20 sekúnd.'}</p></div><a class="btn sm" href="#/checkin">${checkin?.mood ? 'Upraviť' : 'Vyplniť'}</a></div></div>
-  </div>${nav('#/')}`;
-
-  bindDatePicker($app, renderToday);
-  push.bindPushCard(renderToday);
-  $app.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
-  $app.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
-  $app.querySelectorAll('[data-copy]').forEach(b => b.onclick = async e => {
-    e.preventDefault();
-    const n = await db.copyMeal(uid, calc.addDays(state.date, -1), state.date, b.dataset.copy).catch(err => { toast(err.message, true); return -1; });
-    if (n === 0) toast('Včera tu nebolo nič zapísané', true); else if (n > 0) { toast('Skopírované z včera'); renderToday(); }
-  });
-  $app.querySelectorAll('[data-w]').forEach(b => b.onclick = async () => {
-    const n = Number(b.dataset.w); const val = n === water ? n - 1 : n;
-    await db.upsertCheckin({ user_id: uid, date: state.date, water: val, sleep_h: checkin?.sleep_h ?? null, steps: checkin?.steps ?? null, mood: checkin?.mood ?? null, note: checkin?.note ?? null });
-    renderToday();
-  });
-  $app.querySelector('#adaptYes')?.addEventListener('click', async () => { await v2.applyAdaptive(p, adaptive); toast(`Nový cieľ: ${adaptive.newKcal} kcal`); renderToday(); });
-  $app.querySelector('#adaptNo')?.addEventListener('click', async () => { await db.applyTarget(uid, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: p.target_kcal, reason: 'Ponechané používateľom', avg_intake: adaptive.avg, trend_change: adaptive.ch }, {}); renderToday(); });
-}
+// ---------- dnes: today.js ----------
 
 // ---------- jedlo: foods.js ----------
 
@@ -386,7 +292,7 @@ async function renderProfile() {
     <a class="btn mb" href="#/pripomienky">Pripomienky a notifikácie</a>
     <a class="btn mb" href="#/spravy">Správy</a>
     <button class="btn danger" id="out">Odhlásiť sa</button>
-    <p class="muted small center mt">Druhý dych · verzia 0.4 · ${new Date().getFullYear()}</p>
+    <p class="muted small center mt">Druhý dych · verzia 0.5 · ${new Date().getFullYear()}</p>
   </div>${nav('#/profil')}`;
   $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; };
 }
