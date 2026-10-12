@@ -1,6 +1,6 @@
-// Service worker: appka sa nainštaluje na plochu a načíta aj pri slabom signáli (dáta idú vždy online)
-const CACHE = 'druhydych-v2';
-const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './workouts.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
+// Service worker: appka sa nainštaluje na plochu, načíta aj pri slabom signáli a prijíma push notifikácie
+const CACHE = 'druhydych-v3';
+const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './push.js', './workouts.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -15,4 +15,21 @@ self.addEventListener('fetch', e => {
     fetch(e.request).then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return res; })
       .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
   );
+});
+
+// ---------- Push notifikácie ----------
+self.addEventListener('push', e => {
+  let d = { title: 'Druhý dych', body: '', url: '#/', tag: 'dd' };
+  try { d = { ...d, ...e.data.json() }; } catch (_) { if (e.data) d.body = e.data.text(); }
+  e.waitUntil(self.registration.showNotification(d.title, {
+    body: d.body, tag: d.tag, renotify: true, icon: './icon-192.png', badge: './icon-192.png', data: { url: d.url },
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const target = new URL(e.notification.data?.url || '#/', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if (c.url.startsWith(self.registration.scope)) { c.navigate(target); return c.focus(); } }
+    return self.clients.openWindow(target);
+  }));
 });
