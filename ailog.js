@@ -8,15 +8,23 @@ const h = (...a) => ctx.h(...a), r0 = (...a) => ctx.r0(...a), toast = (...a) => 
 const MEALS = () => ctx.MEALS;
 const r1 = v => Math.round(Number(v || 0) * 10) / 10;
 
+const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+// mikrofón: štýl je tu, aby sa nemuselo meniť celé v08.css
+if (typeof document !== 'undefined' && !document.getElementById('v10css')) {
+  const st = document.createElement('style'); st.id = 'v10css';
+  st.textContent = '.ai-mic{-webkit-appearance:none;appearance:none}.ai-mic.rec{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);animation:aiPulse 1.1s ease-in-out infinite}@keyframes aiPulse{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--accent) 28%,transparent)}}@media (prefers-reduced-motion:reduce){.ai-mic.rec{animation:none}}';
+  document.head.appendChild(st);
+}
 const EXAMPLES = ['2 vajcia a rožok', '150 g kuracieho a ryža', 'bryndzové halušky', 'skyr a banán', 'kebab a kofola'];
 
 // Karta s AI vstupom na obrazovke Jedlo
 export function aiBoxHtml() {
   const ex = EXAMPLES[new Date().getMinutes() % EXAMPLES.length];
   return `<section class="ai-box" id="aiBox">
-    <div class="ai-top"><span class="ai-spark">✦</span><b>Napíš alebo odfoť, čo si jedol</b></div>
+    <div class="ai-top"><span class="ai-spark">✦</span><b>${SR ? 'Napíš, nadiktuj alebo odfoť, čo si jedol' : 'Napíš alebo odfoť, čo si jedol'}</b></div>
     <div class="ai-in">
       <textarea id="aiText" rows="1" placeholder="napr. ${h(ex)}" enterkeyhint="send" maxlength="600"></textarea>
+      ${SR ? '<button type="button" class="ai-cam ai-mic" id="aiMic" aria-label="Nadiktovať jedlo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>' : ''}
       <label class="ai-cam" aria-label="Odfotiť jedlo"><input type="file" id="aiPhoto" accept="image/*" hidden>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></label>
       <button class="ai-go" id="aiGo" aria-label="Zapísať">→</button>
@@ -32,6 +40,21 @@ export function bindAiBox(root, getMeal, done) {
   ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
   const send = () => { const t = ta.value.trim(); if (!t) { ta.focus(); return; } openAiLog({ text: t }, getMeal(), done, () => { ta.value = ''; grow(); }); };
   go.onclick = send;
+  const mic = root.querySelector('#aiMic');
+  if (mic && SR) {
+    let rec = null, heard = '';
+    const stop = () => { try { rec && rec.stop(); } catch (_) { } };
+    mic.onclick = () => {
+      if (rec) return stop();
+      rec = new SR(); rec.lang = 'sk-SK'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1; heard = '';
+      mic.classList.add('rec');
+      rec.onresult = e => { heard = Array.from(e.results).map(r => r[0].transcript).join(' ').trim(); ta.value = heard; grow(); };
+      rec.onerror = e => { const m = { 'not-allowed': 'Povoľ mikrofón v nastaveniach prehliadača.', 'service-not-allowed': 'Povoľ mikrofón v nastaveniach prehliadača.', 'no-speech': 'Nepočul som nič, skús to znova.', 'network': 'Rozpoznávanie reči potrebuje internet.' }[e.error]; if (m) toast(m, true); };
+      // po dopovedaní rovno posielame; výsledok si človek aj tak pozrie a upraví pred uložením
+      rec.onend = () => { mic.classList.remove('rec'); rec = null; if (heard) send(); };
+      try { rec.start(); } catch (_) { mic.classList.remove('rec'); rec = null; }
+    };
+  }
   ph.onchange = async () => {
     const f = ph.files?.[0]; ph.value = ''; if (!f) return;
     try { const img = await shrinkToJpeg(f, 1024, 0.72); openAiLog({ image: img.b64, preview: img.url, text: ta.value.trim() }, getMeal(), done, () => { ta.value = ''; grow(); }); }
@@ -79,8 +102,12 @@ export async function openAiLog(input, meal, done, onSaved) {
   let res;
   try { res = await callAi({ text: input.text || '', image: input.image || '', mime: 'image/jpeg' }); }
   catch (e) {
-    bg.querySelector('.sheet').innerHTML = `<div class="ai-err"><b>Nepodarilo sa</b><p class="muted small mt">${h(e.message)}</p><button class="btn mt" data-x>Zavrieť</button></div>`;
+    // keď AI nejde, človeka nenecháme v slepej uličke: text pošleme rovno do vyhľadávania
+    const q = document.getElementById('q'), canSearch = q && input.text;
+    bg.querySelector('.sheet').innerHTML = `<div class="ai-err"><b>Nepodarilo sa</b><p class="muted small mt">${h(e.message)}</p>${canSearch ? '<button class="btn primary mt" data-s>Hľadať „' + h(input.text.slice(0, 24)) + '“ ručne</button>' : ''}<button class="btn mt" data-x>Zavrieť</button></div>`;
     bg.querySelector('[data-x]').onclick = () => bg.remove();
+    const sb = bg.querySelector('[data-s]');
+    if (sb) sb.onclick = () => { bg.remove(); q.value = input.text; q.dispatchEvent(new Event('input', { bubbles: true })); q.focus(); };
     return;
   }
   const items = (res.items || []).map(it => ({ ...it, sel: it.useEstimate || !it.matches?.length ? -1 : 0, open: false, off: false }));
