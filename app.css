@@ -137,3 +137,55 @@ select.input { appearance: none; }
 @keyframes spin { to { transform: rotate(360deg) } }
 .center { text-align: center; }
 .mt { margin-top: 14px; } .mb { margin-bottom: 14px; }
+
+/* ---------- v0.2 ---------- */
+.card.link { display: block; color: inherit; }
+.card.link:active { transform: scale(.99); }
+.streak { font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+.dots { display: flex; gap: 5px; }
+.dot7 { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-2); border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--muted); }
+.dot7.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.dot7.today:not(.on) { border-color: var(--accent); }
+.water { display: flex; gap: 4px; flex-wrap: wrap; }
+.water button { width: 22px; height: 30px; border-radius: 6px 6px 9px 9px; border: 1px solid var(--line); background: var(--bg-2); cursor: pointer; padding: 0; }
+.water button.on { background: var(--carbs); border-color: var(--carbs); }
+.chip { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 99px; background: var(--bg-2); color: var(--muted); font-weight: 700; }
+
+/* porovnanie fotiek */
+.cmp { position: relative; width: 100%; aspect-ratio: 3/4; border-radius: 14px; overflow: hidden; background: #000; user-select: none; }
+.cmp img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cmp-a { position: absolute; top: 0; left: 0; height: 100%; width: 50%; overflow: hidden; }
+.cmp-a img { width: 100vw; max-width: 528px; }
+.cmp-h { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; transform: translateX(-1px); }
+.cmp-h span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; border-radius: 50%; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.5); }
+.cmp-h span::after { content: '◂ ▸'; color: #000; font-size: 12px; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.cmp-l, .cmp-r { position: absolute; bottom: 10px; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,.6); }
+.cmp-l { left: 10px; } .cmp-r { right: 10px; }
+.range { width: 100%; margin-top: 10px; accent-color: var(--accent); }
+.timeline .tl-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.tl-date { min-width: 52px; font-weight: 700; } .tl-date span { display: block; font-weight: 400; font-size: 11px; color: var(--muted); }
+.tl-pics { display: flex; gap: 6px; flex: 1; }
+.tl-pic { position: relative; width: 31%; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; background: #000; }
+.tl-pic img { width: 100%; height: 100%; object-fit: cover; }
+.tl-del { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }
+
+/* tréning */
+.ex h3 { font-size: 15px; }
+.sets { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.set { display: flex; align-items: center; gap: 6px; }
+.set.done { opacity: .55; }
+.set.done .setno { background: var(--accent); color: var(--accent-ink); }
+.setno { width: 26px; height: 26px; border-radius: 50%; background: var(--bg-2); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex: 0 0 auto; }
+.input.sm { padding: 9px 10px; font-size: 14px; flex: 1; min-width: 0; }
+.chk { width: 40px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-2); color: var(--muted); font-weight: 800; cursor: pointer; flex: 0 0 auto; }
+.set.done .chk { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* kouč detail */
+.heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.hd { border-radius: 8px; padding: 6px 2px; text-align: center; background: var(--bg-2); }
+.hd span { display: block; font-size: 10px; color: var(--muted); } .hd b { font-size: 11px; }
+.hd.ok { background: #12332A; } .hd.ok b { color: var(--accent); }
+.hd.over { background: #3A2314; } .hd.over b { color: var(--accent-2); }
+.hd.under { background: #142A3A; } .hd.under b { color: var(--carbs); }
+.msg.mine { border-color: #1F5A45; }
+.nav a { min-width: 44px; font-size: 10px; }
