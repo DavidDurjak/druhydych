@@ -1,6 +1,8 @@
 // Vláknina, cukry a soľ za deň: karta pod hlavným kruhom na obrazovke Dnes (samo sa vloží, bez zásahu do today.js)
 import * as db from './data.js';
 import { ctx } from './app.js';
+import './meals.js';
+import './fasting.js';
 
 const root = document.getElementById('app');
 let busy = false;
