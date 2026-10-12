@@ -1,4 +1,4 @@
-// Vercel build: vygeneruje PNG ikony (192, 512) priamo z kódu, bez binárnych súborov v repozitári.
+// Vercel build: skopíruje appku do priečinka public/ a vygeneruje PNG ikony (192, 512) priamo z kódu.
 // Kreslí to isté, čo icon.svg: tmavé pozadie + zelená vlna "druhého dychu" s bodkou na konci.
 const fs = require('fs');
 const zlib = require('zlib');
@@ -62,4 +62,13 @@ function png(size) {
   const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(size, 0); ihdr.writeUInt32BE(size, 4); ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }
-for (const n of [192, 512]) { fs.writeFileSync(`icon-${n}.png`, png(n)); console.log('wrote icon-' + n + '.png'); }
+const OUT = 'public';
+const SKIP = new Set(['public', 'node_modules', '.git', '.vercel', 'supabase', 'build.js', 'vercel.json', 'package.json', 'schema.sql', 'README.md']);
+fs.rmSync(OUT, { recursive: true, force: true });
+fs.mkdirSync(OUT);
+for (const f of fs.readdirSync('.')) {
+  if (SKIP.has(f) || f.startsWith('.') || !fs.statSync(f).isFile()) continue;
+  fs.copyFileSync(f, `${OUT}/${f}`);
+}
+for (const n of [192, 512]) fs.writeFileSync(`${OUT}/icon-${n}.png`, png(n));
+console.log('build ok:', fs.readdirSync(OUT).join(', '));
