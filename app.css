@@ -189,3 +189,14 @@ select.input { appearance: none; }
 .hd.under { background: #142A3A; } .hd.under b { color: var(--carbs); }
 .msg.mine { border-color: #1F5A45; }
 .nav a { min-width: 44px; font-size: 10px; }
+
+/* ---------- v0.3: pripomienky ---------- */
+.sw { position: relative; display: inline-block; width: 44px; height: 26px; flex: 0 0 auto; }
+.sw input { opacity: 0; width: 0; height: 0; }
+.sw i { position: absolute; inset: 0; background: var(--bg-2); border: 1px solid var(--line); border-radius: 99px; transition: .15s; }
+.sw i::before { content: ''; position: absolute; width: 20px; height: 20px; left: 2px; top: 2px; background: var(--muted); border-radius: 50%; transition: .15s; }
+.sw input:checked + i { background: var(--accent); border-color: var(--accent); }
+.sw input:checked + i::before { transform: translateX(18px); background: var(--accent-ink); }
+.rrow { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.rrow .rl { flex: 1; font-size: 15px; }
+.input.tm { width: 96px; padding: 8px 10px; font-size: 14px; }
