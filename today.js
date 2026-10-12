@@ -4,6 +4,8 @@ import * as calc from './calc.js';
 import * as v2 from './app2.js';
 import * as push from './push.js';
 import { nextDay } from './workouts.js';
+import * as hw from './health.js';
+import * as rp from './report.js';
 import { ctx } from './app.js';
 
 const $app = () => ctx.$app;
@@ -28,7 +30,7 @@ const EMOJI = [
   [/protein|srvatk|whey/, '💪'], [/banan/, '🍌'], [/jablk/, '🍎'], [/jahod|malin|cucorie|ovoc/, '🍓'], [/pomaran|mandarin|citrus/, '🍊'], [/hrozn/, '🍇'], [/avokad/, '🥑'],
   [/brokolic|spenat|salat|zelenin|uhork|paprik|paradaj|mrkv/, '🥗'], [/orech|mandl|kesu|arasid/, '🥜'], [/cokolad|horalk|tycink|keks|susienk|oblat/, '🍫'],
   [/zmrzlin/, '🍦'], [/kolac|torta|buchta|palacink|lievanc|donut|sisk/, '🍰'], [/kofola|cola|limonad|dzus|džús|fanta|sprite|energet|red bull|monster/, '🥤'],
-  [/kava|espresso|cappuc/, '☕'], [/caj/, '🍵'], [/pivo/, '🍺'], [/polievk|vyvar|gulas/, '🍜'], [/olej|maslo/, '🫒'], [/med\b|dzem|nutella/, '🍯'], [/sushi/, '🍣'],
+  [/kava|espresso|cappuc/, '☕'], [/caj/, '🍵'], [/pivo/, '🍺'], [/polievk|vyvar|gulas/, '🍜'], [/olej|maslo/, '🫒'], [/med([^a-z]|$)|dzem|nutella/, '🍯'], [/sushi/, '🍣'],
 ];
 const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 export function foodEmoji(name, meal) {
@@ -120,6 +122,8 @@ export async function renderToday() {
   const pushCard = isToday ? await push.pushPromptCard().catch(() => '') : '';
   const left = p.target_kcal - sum.kcal, over = left < 0;
   const tip = insight({ p, sum, foods, water, waterGoal, strk, isToday });
+  const actCard = await hw.activityCard(uid, st.date).catch(() => '');
+  const repCard = isToday ? rp.reportCardHtml() : '';
 
   const week = Array.from({ length: 7 }, (_, i) => calc.addDays(wkStart, i));
   const weekStrip = `<div class="wk">
@@ -167,6 +171,7 @@ export async function renderToday() {
     ${weekStrip}
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
     ${pushCard}
+    ${repCard}
     ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">Adaptívny cieľ</span></div>
       <p class="small mt">${h(adaptive.reason)}</p>
       <p class="muted small mt">Priemer ${adaptive.avg} kcal z ${adaptive.days} dní, trend ${adaptive.ch > 0 ? '+' : ''}${adaptive.ch} kg</p>
@@ -198,6 +203,8 @@ export async function renderToday() {
         <div class="wt-b"><button class="wt-btn minus" data-wd="-1" aria-label="Uber pohár" ${water ? '' : 'disabled'}>−</button><button class="wt-btn" data-wd="1">+ 250 ml</button></div></div>
       <div class="wt-segs">${waterSegs}</div>
     </section>
+
+    ${actCard}
 
     <div class="duo">
       <a class="tile tr" href="#/trening">
