@@ -97,6 +97,7 @@ const BADGES = [
   { id: 'kg5', icon: '🏆', name: s => s.goal === 'gain' ? '+5 kg' : '−5 kg', test: s => s.goal === 'gain' ? s.change >= 5 : s.change <= -5 },
   { id: 'half', icon: '⛰️', name: 'Polovica programu', test: s => s.programDay >= 42 },
   { id: 'done', icon: '🥇', name: 'Celý program', test: s => s.programDay >= 84 },
+  { id: 'comeback', icon: '🌬️', name: 'Druhý dych', test: s => s.comebacks >= 1 },
 ];
 
 function bestStreak(dates) {
@@ -164,7 +165,10 @@ export async function renderProgress() {
     return `<i class="${cls}${d === today ? ' g-now' : ''}" title="${calc.fmtDate(d)}"></i>`;
   };
 
-  const stats = { totalItems, programDay, loggedDays: allLoggedDates.length, bestStreak: bStreak, proteinWeek, change, goal: p.goal };
+  // návrat po pauze aspoň 3 dni = odznak Druhý dych
+  const sortedLog = [...allLoggedDates].sort();
+  const comebacks = sortedLog.filter((d, i) => i > 0 && diffDays(sortedLog[i - 1], d) >= 4).length;
+  const stats = { totalItems, programDay, loggedDays: allLoggedDates.length, bestStreak: bStreak, proteinWeek, change, goal: p.goal, comebacks };
   const macroTot = avgP * 4 + avgC * 4 + avgF * 9 || 1;
   const goodDir = p.goal === 'gain' ? change > 0 : p.goal === 'lose' ? change < 0 : Math.abs(change) < 1;
 
