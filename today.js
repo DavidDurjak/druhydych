@@ -1,4 +1,4 @@
-// Obrazovka Dnes v0.5: pozdrav, týždenný pás, dýchajúci krúžok kalórií, tip dňa, farebné jedlá, voda v litroch, mini graf váhy
+// Obrazovka Dnes v0.5: pozdrav, týždenný pás, dýchajúce krúžok kalórií, tip dňa, farebné jedlá, voda v litroch, mini graf váhy
 import * as db from './data.js';
 import * as calc from './calc.js';
 import * as v2 from './app2.js';
@@ -17,10 +17,13 @@ const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)')
 
 // odporúčané rozdelenie kalórií počas dňa
 export const MEAL_META = {
-  breakfast: { label: 'Raňajky', icon: '🍳', share: 0.25, color: 'var(--m-breakfast)' },
-  lunch: { label: 'Obed', icon: '🍲', share: 0.35, color: 'var(--m-lunch)' },
-  dinner: { label: 'Večera', icon: '🌙', share: 0.30, color: 'var(--m-dinner)' },
-  snack: { label: 'Snack', icon: '🍎', share: 0.10, color: 'var(--m-snack)' },
+  breakfast: { label: 'Raňajky', icon: '🍳', color: 'var(--m-breakfast)' },
+  brunch: { label: 'Desiata', icon: '🥪', color: 'var(--m-brunch)' },
+  lunch: { label: 'Obed', icon: '🍲', color: 'var(--m-lunch)' },
+  afternoon: { label: 'Olovrant', icon: '🥨', color: 'var(--m-afternoon)' },
+  dinner: { label: 'Večera', icon: '🍽️', color: 'var(--m-dinner)' },
+  late: { label: 'Druhá večera', icon: '🌙', color: 'var(--m-late)' },
+  snack: { label: 'Snack', icon: '🍎', color: 'var(--m-snack)' },
 };
 
 // ikona jedla podľa názvu (bez diakritiky)
@@ -48,8 +51,8 @@ const LINES = [
   'Disciplína je rozhodnutie, ktoré urobíš aj keď sa ti nechce.',
   'Malé kroky každý deň porazia veľké plány raz za mesiac.',
   'Telo sa mení pomaly. Návyky rýchlejšie, ako si myslíš.',
-  'Dnešok je jeden z 84. Spravme z neho dobrý.',
-  'Keď nevieš, čo zjesť, daj si bielkoviny a zeleninu.',
+  'Dnešok je šanca. Spravme z neho dobrý deň.',
+  'Keď nevieš, čo zješť, daj si bielkoviny a zeleninu.',
   'Pohár vody teraz je lepší ako dva večer.',
   'Spánok je tréning, ktorý robíš so zatvorenými očami.',
   'Nikto nezačal ako hotový. Každý začal.',
@@ -63,6 +66,12 @@ function greeting() {
 const DAYS_LONG = ['nedeľa', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'];
 const MONTHS = ['januára', 'februára', 'marca', 'apríla', 'mája', 'júna', 'júla', 'augusta', 'septembra', 'októbra', 'novembra', 'decembra'];
 function longDate(iso) { const d = new Date(iso + 'T00:00:00'); return `${DAYS_LONG[d.getDay()]} ${d.getDate()}. ${MONTHS[d.getMonth()]}`; }
+const REL = { '-1': 'Včera', '0': 'Dnes', '1': 'Zajtra', '2': 'Pozajtra' };
+function dayTitle(iso) {
+  const diff = Math.round((new Date(iso + 'T00:00:00') - new Date(calc.today() + 'T00:00:00')) / 86400000);
+  return REL[diff] || DAYS_LONG[new Date(iso + 'T00:00:00').getDay()].replace(/^./, c => c.toUpperCase());
+}
+const kcalOf = rows => rows.reduce((a, r) => a + Number(r.kcal || 0), 0);
 const liters = glasses => String(+(glasses * 0.25).toFixed(2)).replace('.', ',');
 
 // SVG krúžok (r, hrúbka, percento)
@@ -84,7 +93,8 @@ function sparkline(points) {
 }
 
 // tip dňa podľa dát
-function insight({ p, sum, foods, water, waterGoal, strk, isToday }) {
+function insight({ p, sum, foods, water, waterGoal, strk, isToday, isFuture }) {
+  if (isFuture) return foods.length ? { icon: '🗓️', text: `Naplánované ${r0(sum.kcal)} kcal z ${p.target_kcal}. Zvyšok si môžeš doplňiť, alebo skopírovať celý deň cez ⋯.` } : { icon: '🗓️', text: 'Toto je plánovač. Pridaj jedlá dopredu, alebo skopíruj celý deň cez ⋯ a celý týždeň máš hotový za minútu.' };
   if (!isToday) return null;
   const hr = new Date().getHours();
   const protLeft = Math.round(p.target_protein - sum.protein);
@@ -100,7 +110,7 @@ function insight({ p, sum, foods, water, waterGoal, strk, isToday }) {
 // ---------- obrazovka ----------
 export async function renderToday() {
   const st = state(), p = st.profile, uid = p.id;
-  const isToday = st.date === calc.today();
+  const isToday = st.date === calc.today(), isFuture = st.date > calc.today();
   const wkStart = calc.weekStart(st.date), wkEnd = calc.addDays(wkStart, 6);
   const from30 = calc.addDays(calc.today(), -30);
   const [foods, weights, checkin, actDates, msgs, plan, wlogs, byDay] = await Promise.all([
@@ -123,11 +133,11 @@ export async function renderToday() {
   const adaptive = isToday && p.targets_mode !== 'custom' ? await v2.checkAdaptive(p, weights).catch(() => null) : null;
   const pushCard = isToday ? await push.pushPromptCard().catch(() => '') : '';
   const left = p.target_kcal - sum.kcal, over = left < 0;
-  const tip = insight({ p, sum, foods, water, waterGoal, strk, isToday });
+  const tip = insight({ p, sum, foods, water, waterGoal, strk, isToday, isFuture });
   const actCard = await hw.activityCard(uid, st.date).catch(() => '');
   // týždenný priemer (rozhoduje týždeň, nie jeden deň)
-  const wkDays = Object.keys(byDay).filter(d => d !== st.date && byDay[d]?.kcal > 0);
-  const wkVals = wkDays.map(d => byDay[d].kcal).concat(sum.kcal > 0 ? [sum.kcal] : []);
+  const wkDays = Object.keys(byDay).filter(d => d !== st.date && d <= calc.today() && byDay[d]?.kcal > 0);
+  const wkVals = wkDays.map(d => byDay[d].kcal).concat(sum.kcal > 0 && !isFuture ? [sum.kcal] : []);
   const wkAvg = wkVals.length ? wkVals.reduce((a, b) => a + b, 0) / wkVals.length : 0;
   const wkOk = wkAvg && Math.abs(wkAvg - p.target_kcal) <= p.target_kcal * 0.1;
   const weekLine = wkVals.length >= 2 ? `<div class="wk-avg ${wkOk ? 'ok' : ''}">Týždenný priemer <b>${r0(wkAvg)} kcal</b>${wkOk ? ' · v pláne ✓' : wkAvg > p.target_kcal ? ` · ${r0(wkAvg - p.target_kcal)} nad cieľ` : ` · ${r0(p.target_kcal - wkAvg)} pod cieľ`}</div>` : '';
@@ -138,7 +148,7 @@ export async function renderToday() {
   const backCard = comeback ? `<section class="back-card"><span class="back-i">🌬️</span><div><h3>Vitaj späť${p.name ? ', ' + h(p.name.split(' ')[0]) : ''}</h3><p>Pár dní pauza je v pohode. Druhý dych nie je o tom, koľkokrát vypadneš, ale koľkokrát sa vrátiš. Začni jedným jedlom.</p><a class="btn sm primary" href="#/jedlo?ai=1">Zapísať jedlo</a></div></section>` : '';
   const repCard = isToday ? rp.reportCardHtml() : '';
   // prvé dni bez jediného jedla: jasný prvý krok namiesto prázdnej obrazovky
-  const firstRun = isToday && day <= 3 && !foods.length && !Object.values(byDay).some(x => x?.kcal > 0);
+  const firstRun = isToday && day <= 3 && !foods.length && !Object.entries(byDay).some(([d, x]) => d <= calc.today() && x?.kcal > 0);
   // týždenný check-in a report dávajú zmysel až po prvom celom týždni
   const newcomer = (p.start_date || calc.today()) > calc.addDays(rp.defaultWeek(), 6);
   const firstCard = firstRun ? `<section class="back-card td-first"><span class="back-i">👋</span><div><h3>Začni prvým jedlom</h3><p>Napíš vlastnými slovami, čo si jedol, napríklad „2 vajcia a rožok“, alebo jedlo odfoť. Appka spočíta kalórie za teba.</p><a class="btn sm primary" href="#/jedlo?ai=1">Zapísať prvé jedlo</a></div></section>` : '';
@@ -152,39 +162,55 @@ export async function renderToday() {
       const pct = p.target_kcal ? k / p.target_kcal : 0;
       const future = d > calc.today();
       const dt = new Date(d + 'T00:00:00');
-      return `<button class="wk-d ${d === st.date ? 'sel' : ''} ${future ? 'fut' : ''} ${d === calc.today() ? 'now' : ''}" data-d="${d}" ${future ? 'disabled' : ''}>
+      return `<button class="wk-d ${d === st.date ? 'sel' : ''} ${future ? 'fut' : ''} ${d === calc.today() ? 'now' : ''}" data-d="${d}" aria-label="${longDate(d)}">
         <span class="wk-l">${['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'][dt.getDay()]}</span>
-        <span class="wk-r">${ringSvg(34, 3.5, pct, pct > 1.1 ? 'var(--m-dinner)' : 'var(--accent)')}<b>${dt.getDate()}</b></span></button>`;
+        <span class="wk-r">${ringSvg(34, 3.5, pct, pct > 1.1 ? 'var(--m-dinner)' : future ? 'var(--m-brunch)' : 'var(--accent)')}<b>${dt.getDate()}</b></span></button>`;
     }).join('')}
-    <button class="wk-nav" data-wk="7" aria-label="Ďalší týždeň" ${wkEnd >= calc.today() ? 'disabled' : ''}>›</button>
+    <button class="wk-nav" data-wk="7" aria-label="Ďalší týždeň">›</button>
   </div>`;
 
   const macro = (lbl, val, target, color) => {
-    const rest = Math.round(target - val);
-    return `<div class="mc">${ringSvg(54, 6, target ? val / target : 0, color)}<div class="mc-t"><b>${rest >= 0 ? rest : '+' + -rest} g</b><span>${lbl} ${rest >= 0 ? 'zostáva' : 'nad cieľ'}</span></div></div>`;
+    const pct = target ? Math.min(100, val / target * 100) : 0, over = target && val > target * 1.05;
+    return `<div class="mc"><div class="mc-h"><span>${lbl}</span><b>${r0(val)}<small> / ${r0(target)} g</small></b></div><div class="mc-b"><i style="width:${pct}%;background:${over ? 'var(--m-dinner)' : color}"></i></div></div>`;
   };
 
+  const mealRows = f => `<li><span class="fi">${foodEmoji(f.name, f.meal)}</span><div class="fn" data-edit="${f.id}" role="button" tabindex="0"><b>${h(f.name)}</b><span>${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)}, ` : ''}${r0(f.grams)} g</span></div><span class="fk">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></li>`;
   const mealCards = Object.entries(MEAL_META).map(([k, m]) => {
     const rows = foods.filter(f => f.meal === k); const s = calc.sumMacros(rows);
-    const goal = Math.round(p.target_kcal * m.share / 10) * 10;
+    const menu = `<button class="ml-more" data-mm="${k}" aria-label="Viac: ${m.label}">⋯</button>`;
+    const add = `<button class="ml-add" data-add="${k}" aria-label="Pridať do: ${m.label}">+</button>`;
+    if (!rows.length) return `<section class="ml empty" style="--mc:${m.color}"><span class="ml-ic">${m.icon}</span><div class="ml-t"><h3>${m.label}</h3></div>${menu}${add}</section>`;
     return `<section class="ml" style="--mc:${m.color}">
       <header class="ml-h">
         <span class="ml-ic">${m.icon}</span>
-        <div class="ml-t"><h3>${m.label}</h3><span><b>${r0(s.kcal)}</b> z ${goal} kcal</span></div>
-        <button class="ml-add" data-add="${k}" aria-label="Pridať do: ${m.label}">+</button>
+        <div class="ml-t"><h3>${m.label}</h3><span><b>${r0(s.kcal)}</b> kcal · B ${r0(s.protein)} · S ${r0(s.carbs)} · T ${r0(s.fat)}</span></div>
+        ${menu}${add}
       </header>
-      <div class="ml-bar"><i style="width:${Math.min(100, goal ? s.kcal / goal * 100 : 0)}%"></i></div>
-      ${rows.length ? `<ul class="ml-list">${rows.map(f => `<li><span class="fi">${foodEmoji(f.name, k)}</span><div class="fn" data-edit="${f.id}" role="button" tabindex="0"><b>${h(f.name)}</b><span>${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)}, ` : ''}${r0(f.grams)} g</span></div><span class="fk">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></li>`).join('')}</ul>`
-        : (isToday ? `<button class="ml-copy" data-copy="${k}">↻ Rovnako ako včera</button>` : '')}
+      <ul class="ml-list">${rows.map(mealRows).join('')}</ul>
     </section>`;
   }).join('');
+
+  // rozbor dňa: pomer žhín a rozloženie kalórií cez deň
+  const eKc = { p: sum.protein * 4, c: sum.carbs * 4, f: sum.fat * 9 }, eTot = eKc.p + eKc.c + eKc.f;
+  const pc = v => eTot ? Math.round(v / eTot * 100) : 0;
+  const mealKc = Object.entries(MEAL_META).map(([k, m]) => ({ k, m, kc: kcalOf(foods.filter(f => f.meal === k)) })).filter(x => x.kc > 0);
+  const analysis = foods.length ? `<details class="an"><summary><span>Rozbor dňa</span><i>▾</i></summary>
+    <div class="an-b">
+      <div class="an-t">Odkiaľ prichádzajú kalórie</div>
+      <div class="an-bar"><i style="width:${pc(eKc.p)}%;background:var(--protein)"></i><i style="width:${pc(eKc.c)}%;background:var(--carbs)"></i><i style="width:${pc(eKc.f)}%;background:var(--fat)"></i></div>
+      <div class="an-lg"><span><u style="background:var(--protein)"></u>Bielkoviny ${pc(eKc.p)} %</span><span><u style="background:var(--carbs)"></u>Sacharidy ${pc(eKc.c)} %</span><span><u style="background:var(--fat)"></u>Tuky ${pc(eKc.f)} %</span></div>
+      <div class="an-t mt">Rozloženie cez deň</div>
+      <div class="an-bar">${mealKc.map(x => `<i style="width:${x.kc / sum.kcal * 100}%;background:${x.m.color}"></i>`).join('')}</div>
+      <div class="an-lg">${mealKc.map(x => `<span><u style="background:${x.m.color}"></u>${x.m.label} ${r0(x.kc)}</span>`).join('')}</div>
+    </div></details>` : '';
 
   const waterSegs = Array.from({ length: waterGoal }, (_, i) => `<i class="${i < water ? 'on' : ''}"></i>`).join('');
 
   $app().innerHTML = `<div class="screen td">
     <header class="tdh">
-      <div><h1 class="tdh-g">${greeting()}, ${h(p.name?.split(' ')[0] || '')}</h1>
-        <p class="tdh-s">${isToday ? 'Dnes je ' : ''}${longDate(st.date)}, deň ${day} z 84</p></div>
+      <div class="tdh-l"><h1 class="tdh-g">${isToday ? `${greeting()}, ${h(p.name?.split(' ')[0] || '')}` : dayTitle(st.date)}</h1>
+        <label class="tdh-s"><span>${longDate(st.date)}</span><i>▾</i><input type="date" class="tdh-dp" value="${st.date}" aria-label="Vybrať dátum"></label></div>
+      ${isToday ? '' : '<button class="tdh-now" data-now>Dnes</button>'}
       <a class="tdh-streak ${strk ? 'on' : ''}" href="#/vaha" title="Dni v rade">🔥 ${strk}</a>
     </header>
     ${weekStrip}
@@ -200,7 +226,7 @@ export async function renderToday() {
     </div>` : ''}
 
     <section class="hero-k ${over ? 'over' : ''}">
-      <div class="hk-side"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>zjedené</span></div>
+      <div class="hk-side"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'naplánované' : 'zjedené'}</span></div>
       <div class="hk-ring">
         <div class="breath"></div>
         ${ringSvg(196, 14, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'big')}
@@ -218,8 +244,14 @@ export async function renderToday() {
 
     ${tip && !firstRun ? `<aside class="tip ${tip.quote ? 'q' : ''}"><span class="tip-i">${tip.icon}</span><p>${h(tip.text)}</p></aside>` : ''}
 
-    ${isToday ? `<a class="ai-bar" href="#/jedlo?ai=1"><span class="ai-spark">✦</span><span>Napíš alebo odfoť, čo si jedol</span><i>📷</i></a>` : ''}
+    <div class="qk">
+      <a class="qk-b" href="#/jedlo?q=1"><b>🔎</b><span>Hľadať</span></a>
+      <a class="qk-b" href="#/jedlo?scan=1"><b>▥</b><span>Kód</span></a>
+      <a class="qk-b ai" href="#/jedlo?ai=1"><b>✦</b><span>AI zápis</span></a>
+      <button class="qk-b" data-dm><b>⋯</b><span>Deň</span></button>
+    </div>
     <div class="meals">${mealCards}</div>
+    ${analysis}
 
     <section class="wt">
       <div class="wt-h"><div><h3>Voda</h3><p><b>${liters(water)} l</b> z ${liters(waterGoal)} l</p></div>
@@ -258,16 +290,24 @@ export async function renderToday() {
     requestAnimationFrame(step);
   });
 
-  root.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { st.date = b.dataset.d; renderToday(); });
-  root.querySelectorAll('[data-wk]').forEach(b => b.onclick = () => { const d = calc.addDays(st.date, Number(b.dataset.wk)); st.date = d > calc.today() ? calc.today() : d; renderToday(); });
+  const go = d => { st.date = d; renderToday(); };
+  root.querySelectorAll('[data-d]').forEach(b => b.onclick = () => go(b.dataset.d));
+  root.querySelectorAll('[data-wk]').forEach(b => b.onclick = () => go(calc.addDays(st.date, Number(b.dataset.wk))));
+  root.querySelector('[data-now]')?.addEventListener('click', () => go(calc.today()));
+  root.querySelector('.tdh-dp')?.addEventListener('change', e => { if (e.target.value) go(e.target.value); });
+  // potiahnutie do strán: predchádzajúci / ďalší deň
+  const scr = root.querySelector('.screen.td'); let sx = 0, sy = 0, t0 = 0, ok = false;
+  scr?.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; t0 = Date.now(); ok = !e.target.closest('.sheet-bg, .bd-panel, input, textarea'); }, { passive: true });
+  scr?.addEventListener('touchend', e => {
+    if (!ok) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 80 && Math.abs(dy) < 40 && Date.now() - t0 < 600) go(calc.addDays(st.date, dx < 0 ? 1 : -1));
+  }, { passive: true });
+  root.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => mealMenu(b.dataset.mm, foods, uid));
+  root.querySelector('[data-dm]')?.addEventListener('click', () => dayMenu(foods, uid));
   push.bindPushCard(renderToday);
   root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
   root.querySelectorAll('[data-edit]').forEach(el => el.onclick = () => { const f = foods.find(x => x.id === Number(el.dataset.edit)); if (f) openLogEdit(f, renderToday); });
   root.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
-  root.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
-    const n = await db.copyMeal(uid, calc.addDays(st.date, -1), st.date, b.dataset.copy).catch(err => { toast(err.message, true); return -1; });
-    if (n === 0) toast('Včera tu nebolo nič zapísané', true); else if (n > 0) { toast('Skopírované z včera'); renderToday(); }
-  });
   root.querySelectorAll('[data-wd]').forEach(b => b.onclick = async () => {
     const val = Math.max(0, Math.min(20, water + Number(b.dataset.wd)));
     await db.upsertCheckin({ user_id: uid, date: st.date, water: val, sleep_h: checkin?.sleep_h ?? null, steps: checkin?.steps ?? null, mood: checkin?.mood ?? null, note: checkin?.note ?? null });
@@ -276,4 +316,64 @@ export async function renderToday() {
   });
   root.querySelector('#adaptYes')?.addEventListener('click', async () => { await v2.applyAdaptive(p, adaptive); toast(`Nový cieľ: ${adaptive.newKcal} kcal`); renderToday(); });
   root.querySelector('#adaptNo')?.addEventListener('click', async () => { await db.applyTarget(uid, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: p.target_kcal, reason: 'Ponechané používateľom', avg_intake: adaptive.avg, trend_change: adaptive.ch }, {}); renderToday(); });
+}
+
+
+// ---------- ponuky ⋯ (kopírovanie, plánovanie dopredu, mazanie) ----------
+const SHORT = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'];
+const plural = n => n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek';
+const sheetBtn = (a, ic, t, cls = '') => `<button class="mm-b ${cls}" data-a="${a}"><span>${ic}</span>${t}</button>`;
+
+function copySheet({ uid, from, meal, title }) {
+  const sel = new Set(), days = Array.from({ length: 30 }, (_, i) => calc.addDays(from, i + 1));
+  const bg = ctx.sheet(`<h3>${title}</h3><p class="muted small mt">Skopíruje sa na vybrané dni. Ak tam už niečo je, pridá sa to k tomu.</p>
+    <div class="cp-q">${[[1, 'Nasl. deň'], [3, '3 dni'], [7, '7 dní'], [14, '14 dní'], [30, '30 dní']].map(([n, l]) => `<button data-n="${n}">${l}</button>`).join('')}</div>
+    <div class="cp-g">${days.map(d => { const dt = new Date(d + 'T00:00:00'); return `<button data-x="${d}"><small>${SHORT[dt.getDay()]}</small><b>${dt.getDate()}</b>${dt.getDate() === 1 || d === days[0] ? `<em>${MONTHS[dt.getMonth()].slice(0, 3)}</em>` : ''}</button>`; }).join('')}</div>
+    <button class="btn primary mt" id="cpGo" disabled>Vyber dni</button>`);
+  const upd = () => {
+    bg.querySelectorAll('[data-x]').forEach(b => b.classList.toggle('on', sel.has(b.dataset.x)));
+    const go = bg.querySelector('#cpGo'); go.disabled = !sel.size; go.textContent = sel.size ? `Skopírovať na ${sel.size} ${sel.size === 1 ? 'deň' : sel.size < 5 ? 'dni' : 'dní'}` : 'Vyber dni';
+  };
+  bg.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { sel.has(b.dataset.x) ? sel.delete(b.dataset.x) : sel.add(b.dataset.x); upd(); });
+  bg.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { sel.clear(); days.slice(0, Number(b.dataset.n)).forEach(d => sel.add(d)); upd(); });
+  bg.querySelector('#cpGo').onclick = async () => {
+    try { const n = await db.copyDay(uid, from, [...sel].sort(), meal); bg.remove(); toast(`Naplánované: ${n} ${plural(n)}`); renderToday(); }
+    catch (e) { toast(e.message, true); }
+  };
+}
+
+function mealMenu(meal, foods, uid) {
+  const st = state(), m = MEAL_META[meal], has = foods.some(f => f.meal === meal);
+  const bg = ctx.sheet(`<h3>${m.icon} ${m.label}</h3><div class="mm">
+    ${sheetBtn('prev', '↻', 'Rovnako ako deň predtým')}
+    ${has ? sheetBtn('copy', '📅', 'Kopírovať na iné dni') : ''}
+    ${has ? sheetBtn('clear', '🗑', 'Vymazať všetko', 'dng') : ''}</div>`);
+  bg.querySelector('[data-a=prev]').onclick = async () => {
+    try { const n = await db.copyMeal(uid, calc.addDays(st.date, -1), st.date, meal); bg.remove(); if (!n) toast('Deň predtým tu nebolo nič zapísané', true); else { toast(`Skopírované: ${n} ${plural(n)}`); renderToday(); } }
+    catch (e) { toast(e.message, true); }
+  };
+  bg.querySelector('[data-a=copy]')?.addEventListener('click', () => { bg.remove(); copySheet({ uid, from: st.date, meal, title: `${m.label} na ďalšie dni` }); });
+  const clr = bg.querySelector('[data-a=clear]');
+  clr?.addEventListener('click', async () => {
+    if (!clr.dataset.sure) { clr.dataset.sure = 1; clr.innerHTML = '<span>⚠️</span>Klikni znova a vymaže sa to'; return; }
+    try { await db.clearMeal(uid, st.date, meal); bg.remove(); renderToday(); } catch (e) { toast(e.message, true); }
+  });
+}
+
+function dayMenu(foods, uid) {
+  const st = state(), has = foods.length > 0;
+  const bg = ctx.sheet(`<h3>${longDate(st.date)}</h3><div class="mm">
+    ${sheetBtn('prev', '↻', 'Doplňiť z predchádzajúceho dňa')}
+    ${has ? sheetBtn('copy', '📅', 'Skopírovať celý deň na iné dni') : ''}
+    ${has ? sheetBtn('clear', '🗑', 'Vymazať celý deň', 'dng') : ''}</div>`);
+  bg.querySelector('[data-a=prev]').onclick = async () => {
+    try { const n = await db.copyDay(uid, calc.addDays(st.date, -1), [st.date]); bg.remove(); if (!n) toast('Deň predtým nebolo nič zapísané', true); else { toast(`Skopírované: ${n} ${plural(n)}`); renderToday(); } }
+    catch (e) { toast(e.message, true); }
+  };
+  bg.querySelector('[data-a=copy]')?.addEventListener('click', () => { bg.remove(); copySheet({ uid, from: st.date, meal: null, title: 'Celý deň na ďalšie dni' }); });
+  const clr = bg.querySelector('[data-a=clear]');
+  clr?.addEventListener('click', async () => {
+    if (!clr.dataset.sure) { clr.dataset.sure = 1; clr.innerHTML = '<span>⚠️</span>Klikni znova a vymaže sa celý deň'; return; }
+    try { for (const k of Object.keys(MEAL_META)) if (foods.some(f => f.meal === k)) await db.clearMeal(uid, st.date, k); bg.remove(); renderToday(); } catch (e) { toast(e.message, true); }
+  });
 }
