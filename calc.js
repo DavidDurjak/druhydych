@@ -1,7 +1,7 @@
 // Výpočty: kalorické ciele, makrá, trend váhy. Čistá logika bez závislostí.
 
 export const ACTIVITY = {
-  low:      { label: 'Sedavý (škola, žiadny šport)',      factor: 1.2 },
+  low:      { label: 'Sedavý (kancelária, škola, bez športu)', factor: 1.2 },
   light:    { label: 'Ľahký (1 až 2 tréningy týždenne)',  factor: 1.375 },
   moderate: { label: 'Stredný (3 až 4 tréningy týždenne)', factor: 1.55 },
   high:     { label: 'Vysoký (5+ tréningov týždenne)',    factor: 1.725 },
