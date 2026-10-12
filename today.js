@@ -1,4 +1,4 @@
-// Obrazovka Dnes v0.5: pozdrav, týždenný pás, dýchajúce krúžok kalórií, tip dňa, farebné jedlá, voda v litroch, mini graf váhy
+// Obrazovka Dnes v0.5: pozdrav, týždenný pás, dýchajúci krúžok kalórií, tip dňa, farebné jedlá, voda v litroch, mini graf váhy
 import * as db from './data.js';
 import * as calc from './calc.js';
 import * as v2 from './app2.js';
@@ -52,7 +52,7 @@ const LINES = [
   'Malé kroky každý deň porazia veľké plány raz za mesiac.',
   'Telo sa mení pomaly. Návyky rýchlejšie, ako si myslíš.',
   'Dnešok je šanca. Spravme z neho dobrý deň.',
-  'Keď nevieš, čo zješť, daj si bielkoviny a zeleninu.',
+  'Keď nevieš, čo zjesť, daj si bielkoviny a zeleninu.',
   'Pohár vody teraz je lepší ako dva večer.',
   'Spánok je tréning, ktorý robíš so zatvorenými očami.',
   'Nikto nezačal ako hotový. Každý začal.',
@@ -94,7 +94,7 @@ function sparkline(points) {
 
 // tip dňa podľa dát
 function insight({ p, sum, foods, water, waterGoal, strk, isToday, isFuture }) {
-  if (isFuture) return foods.length ? { icon: '🗓️', text: `Naplánované ${r0(sum.kcal)} kcal z ${p.target_kcal}. Zvyšok si môžeš doplňiť, alebo skopírovať celý deň cez ⋯.` } : { icon: '🗓️', text: 'Toto je plánovač. Pridaj jedlá dopredu, alebo skopíruj celý deň cez ⋯ a celý týždeň máš hotový za minútu.' };
+  if (isFuture) return foods.length ? { icon: '🗓️', text: `Naplánované ${r0(sum.kcal)} kcal z ${p.target_kcal}. Zvyšok si môžeš doplniť, alebo skopírovať celý deň cez ⋯.` } : { icon: '🗓️', text: 'Toto je plánovač. Pridaj jedlá dopredu, alebo skopíruj celý deň cez ⋯ a celý týždeň máš hotový za minútu.' };
   if (!isToday) return null;
   const hr = new Date().getHours();
   const protLeft = Math.round(p.target_protein - sum.protein);
@@ -190,7 +190,7 @@ export async function renderToday() {
     </section>`;
   }).join('');
 
-  // rozbor dňa: pomer žhín a rozloženie kalórií cez deň
+  // rozbor dňa: pomer živín a rozloženie kalórií cez deň
   const eKc = { p: sum.protein * 4, c: sum.carbs * 4, f: sum.fat * 9 }, eTot = eKc.p + eKc.c + eKc.f;
   const pc = v => eTot ? Math.round(v / eTot * 100) : 0;
   const mealKc = Object.entries(MEAL_META).map(([k, m]) => ({ k, m, kc: kcalOf(foods.filter(f => f.meal === k)) })).filter(x => x.kc > 0);
@@ -264,7 +264,7 @@ export async function renderToday() {
     <div class="duo">
       <a class="tile tr" href="#/trening">
         <span class="tile-ic">🏋️</span><h3>Tréning</h3>
-        <p>${plan ? (trainedToday ? 'Dnes hotovo ✓' : `Ďalší: ${h(nd?.name || 'deň 1')}`) : 'Vytvor si plán'}</p>
+        <p>${plan ? (trainedToday ? 'Dnes hotovo ✓' : `Ďalšie: ${h(nd?.name || 'deň 1')}`) : 'Vytvor si plán'}</p>
         ${plan ? `<div class="dots5">${Array.from({ length: Math.max(p.training_days || plan.days.length, 1) }, (_, i) => `<i class="${i < weekLogs.length ? 'on' : ''}"></i>`).join('')}</div><small>${weekLogs.length} z ${p.training_days || plan.days.length} tento týždeň</small>` : ''}
       </a>
       <a class="tile wg" href="#/vaha">
@@ -363,7 +363,7 @@ function mealMenu(meal, foods, uid) {
 function dayMenu(foods, uid) {
   const st = state(), has = foods.length > 0;
   const bg = ctx.sheet(`<h3>${longDate(st.date)}</h3><div class="mm">
-    ${sheetBtn('prev', '↻', 'Doplňiť z predchádzajúceho dňa')}
+    ${sheetBtn('prev', '↻', 'Doplniť z predchádzajúceho dňa')}
     ${has ? sheetBtn('copy', '📅', 'Skopírovať celý deň na iné dni') : ''}
     ${has ? sheetBtn('clear', '🗑', 'Vymazať celý deň', 'dng') : ''}</div>`);
   bg.querySelector('[data-a=prev]').onclick = async () => {
