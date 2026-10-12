@@ -5,6 +5,7 @@ import * as v2 from './app2.js';
 import * as push from './push.js';
 import * as fd from './foods.js';
 import * as td from './today.js';
+import * as pg from './progress.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -42,9 +43,9 @@ function sheet(html) {
   return bg;
 }
 // spodná lišta: max 5 položiek pre účastníka (6 pre kouča); Váha + Fotky = Pokrok
-const NAV_GROUP = { '#/vaha': '#/vaha', '#/fotky': '#/vaha', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil' };
+const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil' };
 function nav(active) {
-  const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/vaha', 'chart', 'Pokrok']];
+  const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
   items.push(['#/profil', 'user', 'Profil']);
   const cur = NAV_GROUP[active] || active;
@@ -54,11 +55,11 @@ function nav(active) {
 function progressTabs(path) {
   const scr = $app.querySelector('.screen'); if (!scr) return;
   const el = document.createElement('div');
-  el.className = 'seg mb ptabs';
-  el.innerHTML = `<a href="#/vaha" class="${path === '#/vaha' ? 'on' : ''}">Váha a miery</a><a href="#/fotky" class="${path === '#/fotky' ? 'on' : ''}">Fotky</a>`;
+  el.innerHTML = pg.progressTabs(path.slice(2));
+  const tabs = el.firstElementChild;
   const head = scr.querySelector(':scope > .topbar, :scope > h1');
   const h1 = scr.querySelector(':scope > .topbar h1, :scope > h1'); if (h1) h1.textContent = 'Pokrok';
-  if (head) head.after(el); else scr.prepend(el);
+  if (head) head.after(tabs); else scr.prepend(tabs);
 }
 function dateLabel(iso) {
   const d = new Date(iso + 'T00:00:00');
@@ -86,7 +87,7 @@ async function route() {
   if (!state.session) return renderAuth();
   if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
-  const views = { '#/': td.renderToday, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
+  const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
     '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders };
   let fn = views[path];
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
@@ -292,7 +293,7 @@ async function renderProfile() {
     <a class="btn mb" href="#/pripomienky">Pripomienky a notifikácie</a>
     <a class="btn mb" href="#/spravy">Správy</a>
     <button class="btn danger" id="out">Odhlásiť sa</button>
-    <p class="muted small center mt">Druhý dych · verzia 0.5 · ${new Date().getFullYear()}</p>
+    <p class="muted small center mt">Druhý dych · verzia 0.6 · ${new Date().getFullYear()}</p>
   </div>${nav('#/profil')}`;
   $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; };
 }
