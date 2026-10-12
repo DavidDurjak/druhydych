@@ -91,18 +91,22 @@ async function send(text) {
 }
 
 const TABS = [['a', 'Postava'], ['glow', 'Žiara'], ['gear', 'Výzbroj'], ['bg', 'Pozadie']];
+// každý typ má vlastný základný vzhľad; jazva, znak a ozdoba sa pridávajú len ručne
+const LOOK = { spartan: { cr: 'plume' }, samurai: { cr: 'horns' }, cyborg: { cr: 'fin' }, viking: { cr: 'horns' } };
+const base = a => ({ cr: 'none', mk: 'none', em: 'none', ...(LOOK[a] || {}) });
+const rnd = nm => { const r = randomBuddy(nm); r.mk = Math.random() < 0.2 ? r.mk : 'none'; r.em = Math.random() < 0.5 ? r.em : 'none'; if (Math.random() < 0.7) r.cr = base(r.a).cr; return r; };
 const VB = { top: '10 0 80 60', chest: '0 52 100 48', body: '0 36 100 64', face: '14 14 72 72', full: '0 0 100 100' };
 
 function setup(first) {
   const sheet = panel.querySelector('.bd-body');
-  let st = first ? { ...randomBuddy(), name: 'Dych' } : norm(ctx.state.profile.buddy);
+  let st = first ? norm({ ...PRESETS[0], name: 'Dych' }) : norm(ctx.state.profile.buddy);
   let tab = 'a', keep = 0;
   const tile = (key, id, label, over, vb, size = 60) => `<button class="bd-tile ${st[key] === id ? 'on' : ''}" data-k="${key}" data-v="${id}"><span>${avatarSvg({ ...st, ...over }, size, { vb })}</span><i>${label}</i></button>`;
   const dots = (key, list) => `<div class="bd-row">${list.map((c, i) => `<button class="bd-dot ${st[key] === i ? 'on' : ''}" data-k="${key}" data-v="${i}" data-n="1" style="background:${c}" aria-label="Farba ${i + 1}"></button>`).join('')}</div>`;
   const group = (title, body) => `<div class="bd-g"><div class="bd-gt">${title}</div>${body}</div>`;
   const grid = (key, list, over, vb) => `<div class="bd-grid">${list.map(([id, l]) => tile(key, id, l, { [key]: id, ...(over || {}) }, vb)).join('')}</div>`;
   const panes = {
-    a: () => group('Kto to bude', grid('a', ARCH, { cr: 'none', em: 'none', mk: 'none' }, VB.full)) + group('Farba panciera', dots('c', ARMOR))
+    a: () => group('Kto to bude', `<div class="bd-grid">${ARCH.map(([id, l]) => tile('a', id, l, { a: id, ...base(id) }, VB.full)).join('')}</div>`) + group('Farba panciera', dots('c', ARMOR))
       + (st.a === 'viking' ? group('Pleť', dots('sk', SKIN)) + group('Brada', dots('hc', HAIRC)) : ''),
     glow: () => group('Farba žiary (oči, línie, aura)', dots('g', GLOW)) + group('Znamenie', grid('mk', MARKS, { cr: 'none', em: 'none', fr: 'none' }, VB.face)),
     gear: () => group('Ramená', grid('sh', SHOULDERS, { cr: 'none', em: 'none', mk: 'none', fr: 'none' }, VB.body)) + group('Ozdoba hlavy', grid('cr', CRESTS, { em: 'none', mk: 'none', fr: 'none' }, VB.top)) + group('Znak na hrudi', grid('em', EMBLEMS, { cr: 'none', mk: 'none', fr: 'none' }, VB.chest)),
@@ -124,11 +128,11 @@ function setup(first) {
     sheet.querySelectorAll('[data-k]').forEach(el => el.onclick = () => {
       keep = sheet.querySelector('.bd-pane').scrollTop;
       const k = el.dataset.k, v = el.dataset.n ? Number(el.dataset.v) : el.dataset.v;
-      st[k] = v; draw();
+      st[k] = v; if (k === 'a') Object.assign(st, base(v)); draw();
     });
     sheet.querySelectorAll('[data-tab]').forEach(el => el.onclick = () => { st.name = sheet.querySelector('.bd-name').value; tab = el.dataset.tab; keep = 0; draw(); });
     sheet.querySelectorAll('[data-p]').forEach(el => el.onclick = () => { const p = PRESETS[Number(el.dataset.p)]; const nm = sheet.querySelector('.bd-name').value; st = norm({ ...p, name: nm || p.n }); keep = 0; draw(); });
-    sheet.querySelector('.bd-rnd').onclick = () => { const nm = sheet.querySelector('.bd-name').value; st = randomBuddy(nm); keep = 0; draw(); };
+    sheet.querySelector('.bd-rnd').onclick = () => { const nm = sheet.querySelector('.bd-name').value; st = rnd(nm); keep = 0; draw(); };
     sheet.querySelector('.bd-save').onclick = async () => {
       st.name = (sheet.querySelector('.bd-name').value.trim() || 'Dych').slice(0, 20);
       const { error } = await db.sb.from('profiles').update({ buddy: st }).eq('id', ctx.state.profile.id);
