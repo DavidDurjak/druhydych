@@ -8,6 +8,7 @@ import * as hw from './health.js';
 import * as rp from './report.js';
 import * as ck from './checkin.js';
 import { ctx } from './app.js';
+import { openLogEdit } from './logedit.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -48,9 +49,9 @@ const LINES = [
   'Malé kroky každý deň porazia veľké plány raz za mesiac.',
   'Telo sa mení pomaly. Návyky rýchlejšie, ako si myslíš.',
   'Dnešok je jeden z 84. Spravme z neho dobrý.',
-  'Keď nevieš, čo zjesť, daj si bielkoviny a zeleninu.',
+  'Keď nevieš, čo zješť, daj si bielkoviny a zeleninu.',
   'Pohár vody teraz je lepší ako dva večer.',
-  'Spánok je tréning, ktorý robíš so zatvorenými očami.',
+  'Spánok je tréning, ktorý robiš so zatvorenými očami.',
   'Nikto nezačal ako hotový. Každý začal.',
   'Zapísať aj zlý deň je víťazstvo. Schovať ho je prehra.',
 ];
@@ -173,7 +174,7 @@ export async function renderToday() {
         <button class="ml-add" data-add="${k}" aria-label="Pridať do: ${m.label}">+</button>
       </header>
       <div class="ml-bar"><i style="width:${Math.min(100, goal ? s.kcal / goal * 100 : 0)}%"></i></div>
-      ${rows.length ? `<ul class="ml-list">${rows.map(f => `<li><span class="fi">${foodEmoji(f.name, k)}</span><div class="fn"><b>${h(f.name)}</b><span>${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)}, ` : ''}${r0(f.grams)} g</span></div><span class="fk">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></li>`).join('')}</ul>`
+      ${rows.length ? `<ul class="ml-list">${rows.map(f => `<li><span class="fi">${foodEmoji(f.name, k)}</span><div class="fn" data-edit="${f.id}" role="button" tabindex="0"><b>${h(f.name)}</b><span>${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)}, ` : ''}${r0(f.grams)} g</span></div><span class="fk">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></li>`).join('')}</ul>`
         : (isToday ? `<button class="ml-copy" data-copy="${k}">↻ Rovnako ako včera</button>` : '')}
     </section>`;
   }).join('');
@@ -261,6 +262,7 @@ export async function renderToday() {
   root.querySelectorAll('[data-wk]').forEach(b => b.onclick = () => { const d = calc.addDays(st.date, Number(b.dataset.wk)); st.date = d > calc.today() ? calc.today() : d; renderToday(); });
   push.bindPushCard(renderToday);
   root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
+  root.querySelectorAll('[data-edit]').forEach(el => el.onclick = () => { const f = foods.find(x => x.id === Number(el.dataset.edit)); if (f) openLogEdit(f, renderToday); });
   root.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
   root.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
     const n = await db.copyMeal(uid, calc.addDays(st.date, -1), st.date, b.dataset.copy).catch(err => { toast(err.message, true); return -1; });
