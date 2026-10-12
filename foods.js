@@ -357,16 +357,31 @@ function openQuick(meal) {
 }
 
 // ---------- čiarový kód ----------
+// Safari (iPhone) nemá vstavaný BarcodeDetector, preto načítame ponyfill (ZXing cez WebAssembly)
+const BD_URL = 'https://cdn.jsdelivr.net/npm/barcode-detector@3.0.8/dist/es/ponyfill.min.js';
+let Detector = null;
+async function getDetector() {
+  if (Detector) return Detector;
+  if ('BarcodeDetector' in window) {
+    try { const f = await window.BarcodeDetector.getSupportedFormats(); if (f.includes('ean_13')) return (Detector = window.BarcodeDetector); } catch (_) { }
+  }
+  const m = await import(BD_URL);
+  return (Detector = m.BarcodeDetector);
+}
+
 async function openScan(meal, done) {
-  const hasDetector = 'BarcodeDetector' in window;
-  const bg = sheet(`<div class="row between"><h2>Čiarový kód</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
-    ${hasDetector ? '<video id="v" autoplay playsinline muted style="width:100%;border-radius:12px;background:#000;max-height:50vh;margin-top:12px"></video><p class="muted small mt">Namier na čiarový kód.</p>' : '<p class="muted small mt mb">Na iPhone zadaj číslo pod čiarovým kódom:</p>'}
+  const bg = sheet(`<div class="row between"><h2>Skenovať</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
+    <div class="scan mt"><video id="v" autoplay playsinline muted></video><div class="scan-frame"><i></i></div><p class="scan-msg" id="smsg">Spúšťam kameru…</p></div>
+    <p class="muted small mt">Namier kameru na čiarový kód na obale. Alebo zadaj číslo ručne:</p>
     <div class="input-row mt"><input class="input mono" id="code" inputmode="numeric" placeholder="8586..."><button class="btn sm primary" id="go">Hľadať</button></div>`);
-  let stream = null, raf = null;
-  const stop = () => { if (raf) cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop()); };
+  let stream = null, timer = null, closed = false;
+  const $msg = bg.querySelector('#smsg');
+  const stop = () => { closed = true; clearTimeout(timer); if (stream) stream.getTracks().forEach(t => t.stop()); };
   bg.querySelector('[data-x]').onclick = () => { stop(); bg.remove(); };
+  bg.addEventListener('click', e => { if (e.target === bg) stop(); });
   const finish = async code => {
     stop(); bg.remove();
+    if (navigator.vibrate) navigator.vibrate(60);
     toast('Hľadám ' + code);
     const local = await db.foodByBarcode(code).catch(() => null);
     if (local) return openAdd(fromDb(local), meal, done);
@@ -376,14 +391,32 @@ async function openScan(meal, done) {
     openFoodEditor({ barcode: code }, meal, done);
   };
   bg.querySelector('#go').onclick = () => { const c = bg.querySelector('#code').value.trim(); if (c) finish(c); };
-  bg.addEventListener('click', e => { if (e.target === bg) stop(); });
-  if (hasDetector) {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      const v = bg.querySelector('#v'); v.srcObject = stream;
-      const det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
-      const tick = async () => { try { const codes = await det.detect(v); if (codes.length) return finish(codes[0].rawValue); } catch (_) { } raf = requestAnimationFrame(tick); };
-      tick();
-    } catch (_) { toast('Kamera nedostupná, zadaj kód ručne.', true); }
+
+  try {
+    const dP = getDetector(); dP.catch(() => { });
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    if (closed) { stop(); return; }
+    const v = bg.querySelector('#v'); v.srcObject = stream; await v.play().catch(() => { });
+    let D;
+    try { D = await dP; } catch (_) { stop(); $msg.textContent = 'Čítačka kódov sa nenačítala (slabý internet?). Zadaj kód ručne.'; return; }
+    if (closed) return;
+    const det = new D({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] });
+    $msg.textContent = '';
+    let last = '', hits = 0;
+    const tick = async () => {
+      if (closed) return;
+      try {
+        if (v.readyState >= 2) {
+          const codes = await det.detect(v);
+          const c = codes.find(x => /^[0-9]{6,14}$/.test(x.rawValue))?.rawValue;
+          // rovnaký kód 2x po sebe = istota, že to nie je chybné čítanie
+          if (c) { hits = c === last ? hits + 1 : 1; last = c; if (hits >= 2) return finish(c); }
+        }
+      } catch (_) { }
+      timer = setTimeout(tick, 150);
+    };
+    tick();
+  } catch (e) {
+    $msg.textContent = e && e.name === 'NotAllowedError' ? 'Prístup ku kamere je zamietnutý. Povoľ ho v Nastaveniach iPhonu alebo zadaj kód ručne.' : 'Kamera sa nespustila. Zadaj kód ručne.';
   }
 }
