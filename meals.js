@@ -1,4 +1,4 @@
-// Hotové jedálčky: 3 štýly, 3 dni v rotácii, gramáž sa prepočíta na kalórie používateľa.
+// Hotové jedálničky: 3 štýly, 3 dni v rotácii, gramáž sa prepočíta na kalórie používateľa.
 // Karta sa sama vloží pod lištu rýchleho zápisu na obrazovke Dnes (bez zásahu do today.js).
 import * as db from './data.js';
 import * as calc from './calc.js';
@@ -11,13 +11,13 @@ const root = document.getElementById('app');
 const F = {
   oats: ['Ovsené vločky', 372, 13.5, 59, 7], milk: ['Mlieko 1,5 %', 46, 3.4, 4.9, 1.5], banana: ['Banán', 89, 1.1, 23, 0.3], almonds: ['Mandle', 579, 21, 22, 50],
   skyr: ['Skyr', 63, 11, 4, 0.2], berries: ['Lesné ovocie', 50, 0.8, 11, 0.4], egg: ['Vajcia', 143, 12.6, 0.7, 9.5], bread: ['Celozrnný chlieb', 247, 13, 41, 3.4],
-  tomato: ['Paradajky', 18, 0.9, 3.9, 0.2], pepper: ['Paprika', 31, 1, 6, 0.3], chicken: ['Kuracie prsia (suróve)', 120, 22.5, 0, 2.6], rice: ['Ryža (suchá)', 360, 7, 79, 0.6],
+  tomato: ['Paradajky', 18, 0.9, 3.9, 0.2], pepper: ['Paprika', 31, 1, 6, 0.3], chicken: ['Kuracie prsia (surové)', 120, 22.5, 0, 2.6], rice: ['Ryža (suchá)', 360, 7, 79, 0.6],
   broccoli: ['Brokolica', 34, 2.8, 7, 0.4], oil: ['Olivový olej', 884, 0, 0, 100], cottage: ['Cottage syr', 98, 11, 3.4, 4.3], apple: ['Jablko', 52, 0.3, 14, 0.2],
   potato: ['Zemiaky', 77, 2, 17, 0.1], salmon: ['Losos', 208, 20, 0, 13], cucumber: ['Uhorka', 15, 0.7, 3.6, 0.1], ham: ['Morčacia šunka', 100, 18, 1, 3],
   pasta: ['Cestoviny (suché)', 350, 12, 72, 1.5], beef: ['Hovädzie mleté (chudé)', 137, 21, 0, 5], pb: ['Arašidové maslo', 588, 25, 20, 50], yogurt: ['Biely jogurt', 61, 3.5, 4.7, 3.3],
-  tuna: ['Tuniak vo vlastnej šťave', 116, 26, 0, 1], sweet: ['Sladé zemiaky', 86, 1.6, 20, 0.1], zucchini: ['Cuketa', 17, 1.2, 3.1, 0.3], honey: ['Med', 304, 0.3, 82, 0],
+  tuna: ['Tuniak vo vlastnej šťave', 116, 26, 0, 1], sweet: ['Sladké zemiaky', 86, 1.6, 20, 0.1], zucchini: ['Cuketa', 17, 1.2, 3.1, 0.3], honey: ['Med', 304, 0.3, 82, 0],
   mushroom: ['Šampiňóny', 22, 3.1, 3.3, 0.3], whey: ['Srvátkový proteín', 400, 80, 8, 6], tofu: ['Tofu', 76, 8, 1.9, 4.8], lentils: ['Šošovica (suchá)', 353, 25, 60, 1.1],
-  hummus: ['Hummus', 166, 8, 14, 9.6], quinoa: ['Quinoa (suchá)', 368, 14, 64, 6], spinach: ['Špenát', 23, 2.9, 3.6, 0.4], ricecake: ['Ryžové chliebčeky', 387, 8, 82, 2.8],
+  hummus: ['Hummus', 166, 8, 14, 9.6], quinoa: ['Quinoa (suchá)', 368, 14, 64, 6], spinach: ['Špenát', 23, 2.9, 3.6, 0.4], ricecake: ['Ryžové chlebíčky', 387, 8, 82, 2.8],
   mozz: ['Mozzarella light', 165, 24, 1, 7], carrot: ['Mrkva', 41, 0.9, 10, 0.2],
 };
 const ORDER = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner'];
@@ -81,7 +81,7 @@ function openPlans() {
   const nextMon = calc.addDays(calc.weekStart(t), 7);
   const starts = [[t, 'Dnes'], [calc.addDays(t, 1), 'Zajtra'], [nextMon, 'Od pondelka']];
   let plan = PLANS[0].id, start = starts[1][0], len = 7;
-  const bg = ctx.sheet(`<h3>Hotový jedálček</h3>
+  const bg = ctx.sheet(`<h3>Hotový jedálniček</h3>
     <p class="pl-lead">Vyber štýl. Gramáže sa prepočítajú na tvojich ${target} kcal a jedlá sa zapíšu do plánovača. Potom ich môžeš ľubovoľne upraviť.</p>
     <div id="plList"></div>
     <p class="pl-s">Odkedy</p><div class="pl-o" id="plStart">${starts.map(([d, l], i) => `<button data-s="${d}" class="${i === 1 ? 'on' : ''}">${l}</button>`).join('')}</div>
@@ -132,7 +132,7 @@ function inject() {
   try {
     const b = document.createElement('button');
     b.id = 'planCard'; b.className = 'plan-card';
-    b.innerHTML = `<span class="pc-i">🗓️</span><span class="pc-t"><b>Hotový jedálček</b><small>Týždeň jedla na tvojich ${ctx.state.profile.target_kcal || ''} kcal, jedným ťuknutím</small></span><i>›</i>`;
+    b.innerHTML = `<span class="pc-i">🗓️</span><span class="pc-t"><b>Hotový jedálniček</b><small>Týždeň jedla na tvojich ${ctx.state.profile.target_kcal || ''} kcal, jedným ťuknutím</small></span><i>›</i>`;
     b.onclick = openPlans;
     qk.after(b);
   } finally { busy = false; }
