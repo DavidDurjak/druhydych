@@ -1,5 +1,5 @@
 // "Dojedz zvyšok dňa": návrhy jedál z toho, čo človek naozaj jedáva, ktoré sedia do zostávajúcich kalórií a bielkovín.
-// Samo sa vloží pod lištu "Napíš alebo odfoť" na obrazovke Dnes (bez zásahu do today.js).
+// Samo sa vloží pod lištu rýchleho zápisu na obrazovke Dnes (bez zásahu do today.js).
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
@@ -13,8 +13,8 @@ const SCALES = [0.5, 0.75, 1, 1.5, 2];
 const num = v => Number(v) || 0;
 const r0 = v => Math.round(v);
 
-function mealNow() { const h = new Date().getHours(); return h < 10 ? 'breakfast' : h < 14 ? 'lunch' : h < 18 ? 'snack' : 'dinner'; }
-const SHARE = { breakfast: 0.25, lunch: 0.35, dinner: 0.30, snack: 0.10 };
+function mealNow() { const h = new Date().getHours(); return h < 10 ? 'breakfast' : h < 12 ? 'brunch' : h < 14 ? 'lunch' : h < 17 ? 'afternoon' : h < 21 ? 'dinner' : 'late'; }
+const SHARE = { breakfast: 0.25, brunch: 0.10, lunch: 0.30, afternoon: 0.10, dinner: 0.25, late: 0.05, snack: 0.10 };
 
 function scaled(it, k0) {
   const g0 = num(it.grams);
@@ -78,7 +78,7 @@ async function loadPool(uid) {
 
 async function inject() {
   if (busy || !root || !ctx.state?.profile) return;
-  const bar = root.querySelector('.screen.td .ai-bar');
+  const bar = root.querySelector('.screen.td .qk');
   if (!bar || root.querySelector('#sugg')) return;
   const p = ctx.state.profile, date = ctx.state.date;
   if (date !== calc.today() || !p.target_kcal) return;
@@ -93,7 +93,7 @@ async function inject() {
     const goalP = remK > 700 ? p.target_protein * SHARE[meal] : remP;
     const pool = await loadPool(p.id);
     const list = pickSuggestions(pool, goalK, goalP);
-    const b = root.querySelector('.screen.td .ai-bar');
+    const b = root.querySelector('.screen.td .qk');
     if (!list.length || !b || root.querySelector('#sugg') || ctx.state.date !== date) return;
     const el = document.createElement('section');
     el.id = 'sugg'; el.className = 'sugg';
