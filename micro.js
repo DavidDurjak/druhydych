@@ -4,6 +4,7 @@ import { ctx } from './app.js';
 import './meals.js';
 import './fasting.js';
 import './fabpos.js';
+import './progfiber.js';
 
 const root = document.getElementById('app');
 let busy = false;
