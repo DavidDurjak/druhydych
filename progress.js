@@ -37,7 +37,7 @@ function paceVerdict(goal, weekly, weight) {
     return { cls: 'warn', text: 'Váha ide hore. Uber 150 až 200 kcal alebo pridaj kroky.' };
   }
   if (goal === 'gain') {
-    if (pct >= 0.75) return { cls: 'warn', text: 'Pribéraš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
+    if (pct >= 0.75) return { cls: 'warn', text: 'Priberáš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
     if (pct >= 0.15) return { cls: 'ok', text: 'Ideálne tempo naberania svalov.' };
     return { cls: 'mid', text: 'Váha sa nehýbe. Pridaj 150 až 200 kcal, najlepšie zo sacharidov.' };
   }
@@ -73,7 +73,7 @@ function kcalBars(days, daily, target) {
   const max = Math.max(target * 1.3, ...vals) || 1;
   const bw = (W / days.length) * 0.62, gap = W / days.length;
   const y = v => pt + (1 - v / max) * (H - pt - pb);
-  const label = days.length <= 7 ? (d => dayName(d)) : ((d, i) => (i % 7 === 0 ? calc.fmtDate(d).replace(/\.$/, '') : ''));
+  const label = days.length <= 7 ? (d => dayName(d)) : ((d, i) => (i % 7 === 0 ? calc.fmtDate(d).replace(/[.]$/, '') : ''));
   return `<svg class="pg-bars" viewBox="0 0 ${W} ${H}">
     <line x1="0" x2="${W}" y1="${y(target)}" y2="${y(target)}" class="pg-goal"/>
     ${days.map((d, i) => {
