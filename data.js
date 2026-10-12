@@ -311,3 +311,20 @@ export async function recentLogs(userId, limit = 25) {
   }
   return out;
 }
+
+// ---------- v0.6: Pokrok ----------
+// denné súčty kalórií a makier + počet zapísaných položiek
+export async function dailyTotals(userId, fromDate, toDate) {
+  const rows = must(await sb.from('food_logs').select('date,kcal,protein,carbs,fat').eq('user_id', userId).gte('date', fromDate).lte('date', toDate));
+  const out = {};
+  rows.forEach(r => {
+    const d = out[r.date] = out[r.date] || { kcal: 0, protein: 0, carbs: 0, fat: 0, n: 0 };
+    d.kcal += Number(r.kcal) || 0; d.protein += Number(r.protein) || 0; d.carbs += Number(r.carbs) || 0; d.fat += Number(r.fat) || 0; d.n++;
+  });
+  return out;
+}
+export async function foodCount(userId) {
+  const { count, error } = await sb.from('food_logs').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+  if (error) throw new Error(error.message);
+  return count || 0;
+}
