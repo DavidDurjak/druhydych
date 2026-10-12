@@ -97,7 +97,7 @@ async function inject() {
     if (!list.length || !b || root.querySelector('#sugg') || ctx.state.date !== date) return;
     const el = document.createElement('section');
     el.id = 'sugg'; el.className = 'sugg';
-    el.innerHTML = `<div class="sg-h"><h3>Čo zjeť ďalej</h3><span>zostáva ${r0(remK)} kcal${remP > 5 ? ` a ${r0(remP)} g bielkovín` : ''}</span></div>` +
+    el.innerHTML = `<div class="sg-h"><h3>Čo zjesť ďalej</h3><span>zostáva ${r0(remK)} kcal${remP > 5 ? ` a ${r0(remP)} g bielkovín` : ''}</span></div>` +
       list.map((c, i) => `<button class="sg" data-i="${i}"><span class="sg-t">${c.items.map(label).join(' + ')}</span><span class="sg-m">${r0(c.t.kcal)} kcal · ${r0(c.t.protein)} g bielkovín</span><span class="sg-a">Pridať</span></button>`).join('');
     b.after(el);
     el.querySelectorAll('.sg').forEach(btn => btn.onclick = async () => {
