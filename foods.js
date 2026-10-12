@@ -4,6 +4,7 @@ import * as calc from './calc.js';
 import { searchOFF, lookupBarcode } from './food.js';
 import { ctx } from './app.js';
 import { scanBarcode } from './scan.js';
+import { aiBoxHtml, bindAiBox } from './ailog.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -49,6 +50,7 @@ export async function renderFood() {
   $app().innerHTML = `<div class="screen">
     <div class="topbar"><h1>Pridať jedlo</h1>${ctx.datePicker()}</div>
     <div class="seg mb" id="mealseg">${Object.entries(MEALS()).map(([k, l]) => `<button data-meal="${k}" class="${k === meal ? 'on' : ''}">${l}</button>`).join('')}</div>
+    ${aiBoxHtml()}
     <div class="input-row mb">
       <input class="input" id="q" placeholder="Hľadaj akékoľvek jedlo alebo produkt" autocomplete="off" enterkeyhint="search">
       <button class="btn icon" id="scan" title="Čiarový kód" aria-label="Skenovať čiarový kód"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M15 8v8M18 8v8"/></svg></button>
@@ -68,26 +70,66 @@ export async function renderFood() {
   const pick = async k => { const f = pool.get(k); if (!f) return; openAdd(f.log ? await fromLog(f.log) : f, meal, done); };
   const bind = () => $res.querySelectorAll('[data-k]').forEach(el => el.onclick = () => pick(el.dataset.k));
 
+  // ---------- rýchle pridanie z Naposledy: jedno ťuknutie, hromadný výber, späť ----------
+  let multi = false; const chosen = new Set(); let added = [];
+  const logRow = l => ({ user_id: uid, date: state().date, meal, name: l.name, brand: l.brand || null, grams: l.grams, kcal: l.kcal, protein: l.protein, carbs: l.carbs, fat: l.fat,
+    source: l.source || 'manual', barcode: l.barcode || null, food_id: l.food_id || null, portion: l.portion || null, qty: l.qty ?? null });
+  const drawBar = () => {
+    let bar = $app().querySelector('.fast-bar');
+    const n = multi ? chosen.size : added.length;
+    if (!n) { bar?.remove(); return; }
+    if (!bar) { bar = document.createElement('div'); bar.className = 'fast-bar'; $app().appendChild(bar); }
+    if (multi) {
+      const kc = [...chosen].reduce((a, k) => a + Number(pool.get(k)?.log?.kcal || 0), 0);
+      bar.innerHTML = `<div><b>${n} ${n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'}</b><span>${r0(kc)} kcal</span></div><button class="btn primary sm" id="fbGo">Pridať do: ${MEALS()[meal].toLowerCase()}</button>`;
+      bar.querySelector('#fbGo').onclick = async () => {
+        const btn = bar.querySelector('#fbGo'); btn.disabled = true;
+        try { for (const k of chosen) { const l = pool.get(k).log; await db.addFood(logRow(l)); if (l.food_id) db.foodUsed(l.food_id); } bar.remove(); toast(`Pridané: ${n} ${n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'}`); location.hash = '#/'; }
+        catch (e) { toast(e.message, true); btn.disabled = false; }
+      };
+    } else {
+      const kc = added.reduce((a, r) => a + Number(r.kcal || 0), 0);
+      bar.innerHTML = `<div><b>Pridané: ${n}</b><span>${r0(kc)} kcal do: ${MEALS()[meal].toLowerCase()}</span></div><button class="btn sm" id="fbUndo">Späť</button><button class="btn primary sm" id="fbGo">Hotovo</button>`;
+      bar.querySelector('#fbUndo').onclick = async () => { const last = added.pop(); if (last) { await db.deleteFood(last.id).catch(() => { }); toast('Vrátené'); } drawBar(); };
+      bar.querySelector('#fbGo').onclick = () => { bar.remove(); location.hash = '#/'; };
+    }
+  };
+  const bindFast = () => {
+    $res.querySelector('#multi')?.addEventListener('click', e => { e.stopPropagation(); multi = !multi; chosen.clear(); showTab().then(drawBar); });
+    $res.querySelectorAll('[data-qa]').forEach(b => b.onclick = async e => {
+      e.stopPropagation(); if (b.classList.contains('ok')) return;
+      const l = pool.get(b.dataset.qa)?.log; if (!l) return;
+      b.classList.add('ok'); b.textContent = '✓';
+      try { const r = await db.addFood(logRow(l)); added.push(r); if (l.food_id) db.foodUsed(l.food_id); if (navigator.vibrate) navigator.vibrate(15); drawBar(); }
+      catch (err) { b.classList.remove('ok'); b.textContent = '+'; toast(err.message, true); }
+      setTimeout(() => { if (b.isConnected) { b.classList.remove('ok'); b.textContent = '+'; } }, 1400);
+    });
+    if (multi) $res.querySelectorAll('.res.fast').forEach(el => el.onclick = () => { const k = el.dataset.k; chosen.has(k) ? chosen.delete(k) : chosen.add(k); el.classList.toggle('on', chosen.has(k)); drawBar(); });
+  };
+
   async function showTab() {
     $res.innerHTML = '<div class="spinner"></div>';
     try {
       if (tab === 'recent') {
         const logs = await db.recentLogs(uid, 25);
-        $res.innerHTML = logs.length ? logs.map(l => {
+        $res.innerHTML = logs.length ? `<div class="fast-h"><span>${multi ? 'Vyber položky a pridaj naraz' : 'Ťukni na + a je to zapísané'}</span><button id="multi">${multi ? 'Zrušiť' : 'Vybrať viac'}</button></div>` + logs.map(l => {
           const k = put({ log: l });
-          return `<div class="res" data-k="${k}"><div class="n"><b>${h(l.name)}</b><span>${[l.brand, l.portion ? `${r1(l.qty)}× ${l.portion}` : `${r0(l.grams)} g`].filter(Boolean).map(h).join(' · ')}</span></div><span class="k mono">${r0(l.kcal)}</span></div>`;
-        }).join('') : '<p class="empty">Zatiaľ nič. Vyhľadaj jedlo hore alebo naskenuj čiarový kód.</p>';
+          return `<div class="res fast ${multi ? 'multi' : ''}" data-k="${k}">${multi ? `<span class="fchk" data-chk="${k}"></span>` : ''}<div class="n"><b>${h(l.name)}</b><span>${[l.brand, l.portion ? `${r1(l.qty)}× ${l.portion}` : `${r0(l.grams)} g`].filter(Boolean).map(h).join(' · ')}</span></div><span class="k mono">${r0(l.kcal)}</span>${multi ? '' : `<button class="qadd" data-qa="${k}" aria-label="Pridať">+</button>`}</div>`;
+        }).join('') : '<p class="empty">Zatiaľ nič. Napíš hore, čo si jedol, vyhľadaj jedlo alebo naskenuj čiarový kód.</p>';
       } else {
         const mine = (await db.myFoods(uid)).map(fromDb);
         $res.innerHTML = mine.length ? mine.map(f => row(f, put(f))).join('') : '<p class="empty">Tu sa zobrazia jedlá a recepty, ktoré pridáš ty. Pomôžeš tým aj ostatným.</p>';
       }
       bind();
+      if (tab === 'recent') bindFast();
     } catch (e) { $res.innerHTML = `<p class="empty">${h(e.message)}</p>`; }
   }
   showTab();
 
   $tabs.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; $tabs.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); showTab(); });
   ctx.bindDatePicker($app(), renderFood);
+  bindAiBox($app(), () => meal, m => { location.hash = '#/'; });
+  if (params.get('ai')) setTimeout(() => $app().querySelector('#aiText')?.focus(), 50);
   $app().querySelectorAll('[data-meal]').forEach(b => b.onclick = () => { meal = b.dataset.meal; $app().querySelectorAll('[data-meal]').forEach(x => x.classList.toggle('on', x === b)); });
 
   let ctrl = null, timer = null, seq = 0;
@@ -95,6 +137,7 @@ export async function renderFood() {
     const q = $q.value.trim();
     clearTimeout(timer);
     if (!q) { $tabs.style.display = ''; showTab(); return; }
+    if (multi) { multi = false; chosen.clear(); drawBar(); }
     $tabs.style.display = 'none';
     timer = setTimeout(async () => {
       const my = ++seq;
@@ -201,7 +244,7 @@ export function openFoodEditor(pre = {}, meal, done) {
   let portions = Array.isArray(pre.portions) ? pre.portions.map(p => ({ ...p })) : [];
   let basis = 100; // hodnoty zadané na 100 g alebo na porciu
   const bg = sheet(`<div class="row between"><h2>${edit ? 'Upraviť jedlo' : 'Nové jedlo'}</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
-    <p class="muted small mt mb">Hodnoty nájdeš na obale v tabuľke výživových hodnôt. Jedlo uvidia aj ostatní používatelia.</p>
+    <p class="muted small mt mb">Hodnoty nájdeš na obale v tabuľke výživých hodnôt. Jedlo uvidia aj ostatní používatelia.</p>
     <label class="field"><span>Názov</span><input class="input" id="name" maxlength="120" placeholder="Napr. Bryndzové halušky, Proteínová tyčinka" value="${h(pre.name || '')}"></label>
     <div class="grid2"><label class="field"><span>Značka / obchod (nepovinné)</span><input class="input" id="brand" maxlength="80" value="${h(pre.brand || '')}"></label>
     <label class="field"><span>Čiarový kód (nepovinné)</span><input class="input mono" id="barcode" inputmode="numeric" maxlength="14" value="${h(pre.barcode || '')}"></label></div>
