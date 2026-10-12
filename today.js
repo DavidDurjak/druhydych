@@ -49,9 +49,9 @@ const LINES = [
   'Malé kroky každý deň porazia veľké plány raz za mesiac.',
   'Telo sa mení pomaly. Návyky rýchlejšie, ako si myslíš.',
   'Dnešok je jeden z 84. Spravme z neho dobrý.',
-  'Keď nevieš, čo zješť, daj si bielkoviny a zeleninu.',
+  'Keď nevieš, čo zjesť, daj si bielkoviny a zeleninu.',
   'Pohár vody teraz je lepší ako dva večer.',
-  'Spánok je tréning, ktorý robiš so zatvorenými očami.',
+  'Spánok je tréning, ktorý robíš so zatvorenými očami.',
   'Nikto nezačal ako hotový. Každý začal.',
   'Zapísať aj zlý deň je víťazstvo. Schovať ho je prehra.',
 ];
