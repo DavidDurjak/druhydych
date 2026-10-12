@@ -21,11 +21,13 @@
   <link rel="stylesheet" href="progress.css">
   <link rel="stylesheet" href="v07.css">
   <link rel="stylesheet" href="v08.css">
+  <link rel="stylesheet" href="micro.css">
 </head>
 <body>
   <div id="app"><div class="hero"><div class="tag">Druhý dych</div><h1>Načítavam...</h1></div></div>
   <script type="module" src="app.js"></script>
   <script type="module" src="mydata.js"></script>
+  <script type="module" src="micro.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
