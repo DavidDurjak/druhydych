@@ -1,4 +1,4 @@
-// Obrazovka Dnes v0.5: pozdrav, týždenný pás, dýchajúci krúžok kalórií, tip dňa, farebné jedlá, voda v litroch, mini graf váhy
+// Obrazovka Dnes v0.5: pozdrav, týždenný pás, dýchajúci kružok kalórií, tip dňa, farebné jedlá, voda v litroch, mini graf váhy
 import * as db from './data.js';
 import * as calc from './calc.js';
 import * as v2 from './app2.js';
@@ -17,11 +17,11 @@ const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)')
 
 // odporúčané rozdelenie kalórií počas dňa
 export const MEAL_META = {
-  breakfast: { label: 'Raňajky', icon: '🍳', color: 'var(--m-breakfast)' },
-  brunch: { label: 'Desiata', icon: '🥪', color: 'var(--m-brunch)' },
-  lunch: { label: 'Obed', icon: '🍲', color: 'var(--m-lunch)' },
-  afternoon: { label: 'Olovrant', icon: '🥨', color: 'var(--m-afternoon)' },
-  dinner: { label: 'Večera', icon: '🍽️', color: 'var(--m-dinner)' },
+  breakfast: { label: 'Raňajky', icon: '🍳', color: 'var(--m-breakfast)', share: 0.25 },
+  brunch: { label: 'Desiata', icon: '🥪', color: 'var(--m-brunch)', share: 0.10 },
+  lunch: { label: 'Obed', icon: '🍲', color: 'var(--m-lunch)', share: 0.30 },
+  afternoon: { label: 'Olovrant', icon: '🥨', color: 'var(--m-afternoon)', share: 0.10 },
+  dinner: { label: 'Večera', icon: '🍽️', color: 'var(--m-dinner)', share: 0.25 },
   late: { label: 'Druhá večera', icon: '🌙', color: 'var(--m-late)' },
   snack: { label: 'Snack', icon: '🍎', color: 'var(--m-snack)' },
 };
@@ -102,7 +102,7 @@ function insight({ p, sum, foods, water, waterGoal, strk, isToday, isFuture }) {
   if (sum.kcal > p.target_kcal + 150) return { icon: '🧭', text: `Si ${r0(sum.kcal - p.target_kcal)} kcal nad cieľom. Jeden deň nič nepokazí, o výsledku rozhoduje týždenný trend.` };
   if (hr >= 15 && protLeft > p.target_protein * 0.45) return { icon: '💪', text: `Do cieľa bielkovín ti chýba ${protLeft} g. Pomôže skyr (11 g v 100 g), tvaroh alebo kuracie prsia (31 g v 100 g).` };
   if (hr >= 15 && water < waterGoal / 2) return { icon: '💧', text: `Zatiaľ máš ${liters(water)} l vody. Daj si pohár teraz, večer sa to dobieha ťažko.` };
-  if (strk >= 3) return { icon: '🔥', text: `${strk} dni v rade. Takto vzniká návyk, nepreruš to.` };
+  if (strk >= 3) return { icon: '🔥', text: `${strk} dni v rade. Takto vzniká návyk, neprerušuj to.` };
   const d = new Date(); const idx = (d.getFullYear() * 366 + d.getMonth() * 31 + d.getDate()) % LINES.length;
   return { icon: '🌿', text: LINES[idx], quote: true };
 }
@@ -177,15 +177,18 @@ export async function renderToday() {
   const mealRows = f => `<li><span class="fi">${foodEmoji(f.name, f.meal)}</span><div class="fn" data-edit="${f.id}" role="button" tabindex="0"><b>${h(f.name)}</b><span>${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)}, ` : ''}${r0(f.grams)} g</span></div><span class="fk">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></li>`;
   const mealCards = Object.entries(MEAL_META).map(([k, m]) => {
     const rows = foods.filter(f => f.meal === k); const s = calc.sumMacros(rows);
+    const rec = m.share ? Math.round(p.target_kcal * m.share / 10) * 10 : 0;
     const menu = `<button class="ml-more" data-mm="${k}" aria-label="Viac: ${m.label}">⋯</button>`;
     const add = `<button class="ml-add" data-add="${k}" aria-label="Pridať do: ${m.label}">+</button>`;
-    if (!rows.length) return `<section class="ml empty" style="--mc:${m.color}"><span class="ml-ic">${m.icon}</span><div class="ml-t"><h3>${m.label}</h3></div>${menu}${add}</section>`;
+    if (!rows.length) return `<section class="ml empty" style="--mc:${m.color}"><span class="ml-ic">${m.icon}</span><div class="ml-t"><h3>${m.label}</h3><span>${rec ? `odporúčané ~${rec} kcal` : 'podľa potreby'}</span></div>${menu}${add}</section>`;
+    const pct = rec ? Math.min(100, s.kcal / rec * 100) : 0;
     return `<section class="ml" style="--mc:${m.color}">
       <header class="ml-h">
         <span class="ml-ic">${m.icon}</span>
-        <div class="ml-t"><h3>${m.label}</h3><span><b>${r0(s.kcal)}</b> kcal · B ${r0(s.protein)} · S ${r0(s.carbs)} · T ${r0(s.fat)}</span></div>
+        <div class="ml-t"><h3>${m.label}</h3><span><b>${r0(s.kcal)}</b>${rec ? ` / ${rec}` : ''} kcal</span><span class="mx">B ${r0(s.protein)} · S ${r0(s.carbs)} · T ${r0(s.fat)}</span></div>
         ${menu}${add}
       </header>
+      ${rec ? `<div class="ml-bar"><i style="width:${pct}%;${s.kcal > rec * 1.15 ? 'background:var(--m-dinner)' : ''}"></i></div>` : ''}
       <ul class="ml-list">${rows.map(mealRows).join('')}</ul>
     </section>`;
   }).join('');
@@ -226,14 +229,16 @@ export async function renderToday() {
     </div>` : ''}
 
     <section class="hero-k ${over ? 'over' : ''}">
-      <div class="hk-side"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'naplánované' : 'zjedené'}</span></div>
       <div class="hk-ring">
         <div class="breath"></div>
-        ${ringSvg(196, 14, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'big')}
+        ${ringSvg(208, 15, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'big')}
         <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7CFFB2"/><stop offset="1" stop-color="#3FD5C4"/></linearGradient></defs></svg>
         <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span></div>
       </div>
-      <a class="hk-side" href="#/ciele" style="color:inherit" aria-label="Upraviť ciele"><b>${p.target_kcal}</b><span>cieľ ✎</span></a>
+      <div class="hk-stats">
+        <div class="hk-st"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'naplánované' : 'zjedené'}</span></div>
+        <a class="hk-st" href="#/ciele" aria-label="Upraviť ciele"><b>${p.target_kcal}</b><span>cieľ<i>✎</i></span></a>
+      </div>
       <div class="hk-macros">
         ${macro('Bielkoviny', sum.protein, p.target_protein, 'var(--protein)')}
         ${macro('Sacharidy', sum.carbs, p.target_carbs, 'var(--carbs)')}
