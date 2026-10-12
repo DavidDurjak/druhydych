@@ -1,0 +1,14 @@
+{
+  "name": "Druhý dych",
+  "short_name": "Druhý dych",
+  "description": "Druhý dych nie je dar. Dá sa naučiť.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0B0E12",
+  "theme_color": "#0B0E12",
+  "lang": "sk",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
