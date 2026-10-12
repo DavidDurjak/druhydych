@@ -8,6 +8,7 @@ import * as td from './today.js';
 import * as pg from './progress.js';
 import * as hw from './health.js';
 import * as rp from './report.js';
+import * as ck from './checkin.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -45,7 +46,7 @@ function sheet(html) {
   return bg;
 }
 // spodná lišta: max 5 položiek pre účastníka (6 pre kouča); Váha + Fotky = Pokrok
-const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil' };
+const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/' };
 function nav(active) {
   const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
@@ -90,7 +91,7 @@ async function route() {
   if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
-    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch };
+    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin };
   let fn = views[path];
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
@@ -296,7 +297,7 @@ async function renderProfile() {
     <a class="btn mb" href="#/pripomienky">Pripomienky a notifikácie</a>
     <a class="btn mb" href="#/spravy">Správy</a>
     <button class="btn danger" id="out">Odhlásiť sa</button>
-    <p class="muted small center mt">Druhý dych · verzia 0.7 · ${new Date().getFullYear()}</p>
+    <p class="muted small center mt">Druhý dych · verzia 0.8 · ${new Date().getFullYear()}</p>
   </div>${nav('#/profil')}`;
   $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; };
 }

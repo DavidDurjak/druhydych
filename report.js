@@ -2,6 +2,7 @@
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { weeklyReport, weeklyReportsAll, fmtSleep } from './health.js';
+import { checkinSummaryHtml, checkinAlert } from './checkin.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -97,6 +98,8 @@ export async function renderReport() {
       <div><small>Budúci týždeň</small><h3>${f.t}</h3><p>${f.d}</p></div>
     </section>
 
+    ${r.checkin || who ? checkinSummaryHtml(r.checkin) : !partial ? `<a class="wc-card" href="#/tyzden"><span class="wc-i">🌬️</span><div><h3>Doplň týždenný check-in</h3><p>60 sekúnd, kouč uvidí, ako sa máš.</p></div><span class="wc-go">›</span></a>` : ''}
+
     <section class="pg-card">
       <h3 class="mb">Čísla týždňa</h3>
       <div class="rp-grid">
@@ -135,9 +138,10 @@ export async function coachReportsHtml() {
   const from = defaultWeek();
   const all = await weeklyReportsAll(from).catch(() => []);
   if (!all.length) return '';
-  const sorted = all.slice().sort((a, b) => b.score - a.score);
+  // najprv tí, čo potrebujú pozornosť (signál z check-inu), potom podľa skóre
+  const sorted = all.slice().sort((a, b) => (checkinAlert(b.checkin) ? 1 : 0) - (checkinAlert(a.checkin) ? 1 : 0) || b.score - a.score);
   const avg = Math.round(all.reduce((s, x) => s + Number(x.score), 0) / all.length);
   return `<section class="card"><div class="row between mb"><h3>Týždenné reporty</h3><span class="chip">${calc.fmtDate(from)} · priemer ${avg}</span></div>
-    ${sorted.map(x => { const d = x.prev_score != null && (x.prev_score > 0 || x.score > 0) ? x.score - x.prev_score : null; return `<a class="rp-li" href="#/report?u=${x.user_id}&w=${from}"><b class="rp-li-s ${x.score >= 70 ? 'ok' : x.score >= 50 ? 'mid' : 'low'}">${x.score}</b><span>${h(x.name)}</span>${d != null ? `<em class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${sgn(d)}</em>` : ''}<i>›</i></a>`; }).join('')}
+    ${sorted.map(x => { const d = x.prev_score != null && (x.prev_score > 0 || x.score > 0) ? x.score - x.prev_score : null; return `<a class="rp-li" href="#/report?u=${x.user_id}&w=${from}"><b class="rp-li-s ${x.score >= 70 ? 'ok' : x.score >= 50 ? 'mid' : 'low'}">${x.score}</b><span>${h(x.name)}${checkinAlert(x.checkin) ? ` <small class="rp-alert">⚠ ${checkinAlert(x.checkin)}</small>` : x.checkin ? ' <small class="rp-ok">✓ check-in</small>' : ' <small class="rp-miss">bez check-inu</small>'}</span>${d != null ? `<em class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${sgn(d)}</em>` : ''}<i>›</i></a>`; }).join('')}
   </section>`;
 }
