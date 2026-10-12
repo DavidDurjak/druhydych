@@ -10,6 +10,7 @@ import * as hw from './health.js';
 import * as rp from './report.js';
 import * as ck from './checkin.js';
 import * as ad from './admin.js';
+import * as gl from './goals.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -47,7 +48,7 @@ function sheet(html) {
   return bg;
 }
 // spodná lišta: max 5 položiek pre účastníka (6 pre kouča); Váha + Fotky = Pokrok
-const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/', '#/admin': '#/profil', '#/napis': '#/profil' };
+const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/', '#/admin': '#/profil', '#/napis': '#/profil', '#/ciele': '#/profil' };
 function nav(active) {
   const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
@@ -93,7 +94,7 @@ async function route() {
   if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
-    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback };
+    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals };
   let fn = views[path];
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
@@ -190,10 +191,13 @@ async function renderOnboarding() {
       role: state.profile?.role || 'participant',
     };
     if (first) { profile.start_weight = w; profile.start_date = calc.today(); }
+    // vlastné ciele (Moje ciele) neprepisujeme, údaje sa len uložia
+    const custom = state.profile?.targets_mode === 'custom';
+    if (custom) { delete profile.target_kcal; delete profile.target_protein; delete profile.target_carbs; delete profile.target_fat; }
     try {
       state.profile = await db.upsertProfile(profile);
       await db.upsertWeight({ user_id: uid, date: calc.today(), weight_kg: w });
-      toast(first ? 'Štart nastavený. Zapíš prvé jedlo.' : 'Uložené, ciele sú prepočítané.');
+      toast(first ? 'Štart nastavený. Zapíš prvé jedlo.' : custom ? 'Uložené. Tvoje vlastné ciele ostali bez zmeny.' : 'Uložené, ciele sú prepočítané.');
       location.hash = '#/';
     } catch (err) { toast(err.message, true); }
   };
@@ -295,9 +299,10 @@ async function renderProfile() {
         <div class="stat"><b class="mono">${p.start_weight || '–'} kg</b><span>štartová váha</span></div>
         <div class="stat"><b class="mono">${p.start_date ? calc.fmtDate(p.start_date) : '–'}</b><span>štart</span></div>
       </div>
-      <p class="muted small mt">Cieľ: ${calc.GOAL[p.goal]?.label || '–'} · ${calc.ACTIVITY[p.activity]?.label || ''}</p>
+      <p class="muted small mt">Cieľ: ${calc.GOAL[p.goal]?.label || '–'} · ${calc.ACTIVITY[p.activity]?.label || ''} · ${p.targets_mode === 'custom' ? 'vlastné makrá' : 'automatické makrá'}</p>
     </div>
-    <a class="btn mb" href="#/onboarding">Upraviť údaje a prepočítať cieľ</a>
+    <a class="btn primary mb" href="#/ciele">🎯 Moje ciele: kalórie a makrá</a>
+    <a class="btn mb" href="#/onboarding">Upraviť údaje (váha, výška, cieľ, aktivita)</a>
     <a class="btn mb" href="#/hodinky">⌚ Hodinky a Apple Zdravie</a>
     <a class="btn mb" href="#/pripomienky">Pripomienky a notifikácie</a>
     <a class="btn mb" href="#/spravy">Správy</a>
