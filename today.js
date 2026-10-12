@@ -6,6 +6,7 @@ import * as push from './push.js';
 import { nextDay } from './workouts.js';
 import * as hw from './health.js';
 import * as rp from './report.js';
+import * as ck from './checkin.js';
 import { ctx } from './app.js';
 
 const $app = () => ctx.$app;
@@ -123,7 +124,19 @@ export async function renderToday() {
   const left = p.target_kcal - sum.kcal, over = left < 0;
   const tip = insight({ p, sum, foods, water, waterGoal, strk, isToday });
   const actCard = await hw.activityCard(uid, st.date).catch(() => '');
+  // týždenný priemer (rozhoduje týždeň, nie jeden deň)
+  const wkDays = Object.keys(byDay).filter(d => d !== st.date && byDay[d]?.kcal > 0);
+  const wkVals = wkDays.map(d => byDay[d].kcal).concat(sum.kcal > 0 ? [sum.kcal] : []);
+  const wkAvg = wkVals.length ? wkVals.reduce((a, b) => a + b, 0) / wkVals.length : 0;
+  const wkOk = wkAvg && Math.abs(wkAvg - p.target_kcal) <= p.target_kcal * 0.1;
+  const weekLine = wkVals.length >= 2 ? `<div class="wk-avg ${wkOk ? 'ok' : ''}">Týždenný priemer <b>${r0(wkAvg)} kcal</b>${wkOk ? ' · v pláne ✓' : wkAvg > p.target_kcal ? ` · ${r0(wkAvg - p.target_kcal)} nad cieľ` : ` · ${r0(p.target_kcal - wkAvg)} pod cieľ`}</div>` : '';
+  // návrat po výpadku: posledná aktivita pred 3 a viac dňami, dnes ešte nič
+  const prevAct = actDates.filter(d => d < calc.today()).sort().pop();
+  const gap = prevAct ? Math.round((new Date(calc.today()) - new Date(prevAct)) / 86400000) : 0;
+  const comeback = isToday && gap >= 3 && !actDates.includes(calc.today());
+  const backCard = comeback ? `<section class="back-card"><span class="back-i">🌬️</span><div><h3>Vitaj späť${p.name ? ', ' + h(p.name.split(' ')[0]) : ''}</h3><p>Pár dní pauza je v pohode. Druhý dych nie je o tom, koľkokrát vypadneš, ale koľkokrát sa vrátiš. Začni jedným jedlom.</p><a class="btn sm primary" href="#/jedlo?ai=1">Zapísať jedlo</a></div></section>` : '';
   const repCard = isToday ? rp.reportCardHtml() : '';
+  const weekCard = isToday ? await ck.weekCardHtml(uid).catch(() => '') : '';
 
   const week = Array.from({ length: 7 }, (_, i) => calc.addDays(wkStart, i));
   const weekStrip = `<div class="wk">
@@ -135,14 +148,14 @@ export async function renderToday() {
       const dt = new Date(d + 'T00:00:00');
       return `<button class="wk-d ${d === st.date ? 'sel' : ''} ${future ? 'fut' : ''} ${d === calc.today() ? 'now' : ''}" data-d="${d}" ${future ? 'disabled' : ''}>
         <span class="wk-l">${['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'][dt.getDay()]}</span>
-        <span class="wk-r">${ringSvg(34, 3.5, pct, pct > 1.08 ? 'var(--accent-2)' : 'var(--accent)')}<b>${dt.getDate()}</b></span></button>`;
+        <span class="wk-r">${ringSvg(34, 3.5, pct, pct > 1.1 ? 'var(--m-dinner)' : 'var(--accent)')}<b>${dt.getDate()}</b></span></button>`;
     }).join('')}
     <button class="wk-nav" data-wk="7" aria-label="Ďalší týždeň" ${wkEnd >= calc.today() ? 'disabled' : ''}>›</button>
   </div>`;
 
   const macro = (lbl, val, target, color) => {
     const rest = Math.round(target - val);
-    return `<div class="mc">${ringSvg(54, 6, target ? val / target : 0, color)}<div class="mc-t"><b>${rest >= 0 ? rest : '+' + -rest} g</b><span>${lbl} ${rest >= 0 ? 'zostáva' : 'navyše'}</span></div></div>`;
+    return `<div class="mc">${ringSvg(54, 6, target ? val / target : 0, color)}<div class="mc-t"><b>${rest >= 0 ? rest : '+' + -rest} g</b><span>${lbl} ${rest >= 0 ? 'zostáva' : 'nad cieľ'}</span></div></div>`;
   };
 
   const mealCards = Object.entries(MEAL_META).map(([k, m]) => {
@@ -170,7 +183,9 @@ export async function renderToday() {
     </header>
     ${weekStrip}
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
+    ${backCard}
     ${pushCard}
+    ${weekCard}
     ${repCard}
     ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">Adaptívny cieľ</span></div>
       <p class="small mt">${h(adaptive.reason)}</p>
@@ -182,9 +197,9 @@ export async function renderToday() {
       <div class="hk-side"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>zjedené</span></div>
       <div class="hk-ring">
         <div class="breath"></div>
-        ${ringSvg(196, 14, p.target_kcal ? sum.kcal / p.target_kcal : 0, over ? 'var(--accent-2)' : 'url(#kg)', 'big')}
+        ${ringSvg(196, 14, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'big')}
         <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7CFFB2"/><stop offset="1" stop-color="#3FD5C4"/></linearGradient></defs></svg>
-        <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal navyše' : 'kcal zostáva'}</span></div>
+        <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span></div>
       </div>
       <div class="hk-side"><b>${p.target_kcal}</b><span>cieľ</span></div>
       <div class="hk-macros">
@@ -193,9 +208,11 @@ export async function renderToday() {
         ${macro('Tuky', sum.fat, p.target_fat, 'var(--fat)')}
       </div>
     </section>
+    ${weekLine}
 
     ${tip ? `<aside class="tip ${tip.quote ? 'q' : ''}"><span class="tip-i">${tip.icon}</span><p>${h(tip.text)}</p></aside>` : ''}
 
+    ${isToday ? `<a class="ai-bar" href="#/jedlo?ai=1"><span class="ai-spark">✦</span><span>Napíš alebo odfoť, čo si jedol</span><i>📷</i></a>` : ''}
     <div class="meals">${mealCards}</div>
 
     <section class="wt">
