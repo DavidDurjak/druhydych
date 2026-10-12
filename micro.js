@@ -5,6 +5,7 @@ import './meals.js';
 import './fasting.js';
 import './fabpos.js';
 import './progfiber.js';
+import './searchfix.js';
 
 const root = document.getElementById('app');
 let busy = false;
