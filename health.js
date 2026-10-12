@@ -9,8 +9,8 @@ const h = (...a) => ctx.h(...a), toast = (...a) => ctx.toast(...a), nav = (...a)
 
 export const SYNC_URL = 'https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/health-sync';
 export const SHORTCUT_NAME = 'Druhý dych';
-// iCloud odkaz na hotovú Skratku (doplní sa, keď ju kouč raz vytvorí a zdieľa)
-export const SHORTCUT_ICLOUD = '';
+// iCloud odkaz na hotovú Skratku (v akcii Text je VLOZ SVOJU ADRESU, účastník si tam vloží svoju adresu)
+export const SHORTCUT_ICLOUD = 'https://www.icloud.com/shortcuts/37dbbdcf14f547a4985da8fc5492b377';
 export const STEP_GOAL = 8000;
 
 const must = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
@@ -83,6 +83,7 @@ export async function renderWatch() {
   const days = recent.filter(hasValues).reverse();
   const ios = isIOS();
   const connected = !!status?.last_sync;
+  const myUrl = SYNC_URL + '?t=' + token;
   const step = (n, title, body) => `<li class="hw-step"><span class="hw-n">${n}</span><div><h4>${title}</h4>${body}</div></li>`;
 
   $app().innerHTML = `<div class="screen hw">
@@ -101,22 +102,12 @@ export async function renderWatch() {
       <h3>iPhone a Apple Watch</h3>
       <p class="muted small mt">Funguje s Apple Watch aj s hodinkami a váhami, ktoré zapisujú do appky Zdravie (Garmin, Amazfit, Xiaomi, Withings a ďalšie). Nastavuje sa raz, potom to beží samo.</p>
       <ol class="hw-steps">
-        ${step(1, 'Skopíruj svoj kľúč', `<div class="hw-key"><code>${h(token)}</code><button class="btn sm primary" id="copyKey">Kopírovať</button></div><p class="muted small">Kľúč patrí len tebe. Nikomu ho neposielaj.</p>`)}
-        ${SHORTCUT_ICLOUD
-          ? step(2, 'Pridaj Skratku', `<a class="btn sm primary" href="${SHORTCUT_ICLOUD}">Pridať Skratku „${SHORTCUT_NAME}“</a><p class="muted small mt">Pri inštalácii vlož kľúč z kroku 1 a povoľ prístup k Zdraviu.</p>`)
-          : step(2, 'Vytvor Skratku „' + SHORTCUT_NAME + '“', `<p class="small">Otvor appku <b>Skratky</b>, ťukni na <b>+</b> a pridaj tieto akcie v tomto poradí:</p>
-            <ol class="hw-sub">
-              <li><b>Nájsť vzorky zdravia</b> (Find Health Samples): typ <b>Kroky</b> (Steps), Dátum začiatku <b>je dnes</b>, Zoskupiť podľa <b>Deň</b>.</li>
-              <li>To isté pre <b>Aktívna energia</b> (Active Energy).</li>
-              <li>To isté pre <b>Pokojová srdcová frekvencia</b> (Resting Heart Rate).</li>
-              <li>Voliteľné: <b>Hmotnosť</b> (Weight), Dátum začiatku je dnes, Zoradiť od najnovšieho, Limit 1.</li>
-              <li><b>Získať obsah URL</b> (Get Contents of URL): URL <code class="hw-url">${SYNC_URL}</code>, Metóda <b>POST</b>, Telo požiadavky <b>JSON</b> s poľami: <code>token</code> (text: tvoj kľúč), <code>steps</code>, <code>kcal</code>, <code>hr</code>, <code>weight</code> (vyber výsledky z bodov 1 až 4).</li>
-              <li><b>Zobraziť upozornenie</b> s výsledkom <b>Obsah URL</b>, aby si videl, že sa to podarilo.</li>
-            </ol>
-            <p class="muted small">Skratku pomenuj presne <b>${SHORTCUT_NAME}</b>, inak nepôjde tlačidlo Synchronizovať. Pri prvom spustení povoľ prístup k Zdraviu.</p>
-            <button class="btn sm ghost mt" id="copyUrl">Kopírovať URL</button>`)}
-        ${step(3, 'Nastav automatické spúšťanie', `<p class="small">Skratky → <b>Automatizácia</b> → <b>+</b> → <b>Čas dňa</b> → <b>21:30</b>, Denne → <b>Spustiť okamžite</b> → vyber Skratku „${SHORTCUT_NAME}“. Pridaj druhú na <b>13:00</b>, nech vidíš kroky aj cez deň.</p><p class="muted small">Ak je iPhone v tej chvíli zamknutý, Zdravie dáta nevydá. Preto je tu aj tlačidlo nižšie.</p>`)}
-        ${step(4, 'Vyskúšaj to', `<a class="btn sm primary" href="${runShortcutUrl()}">Synchronizovať teraz</a><p class="muted small mt">Otvorí Skratku, pošle dáta a ukáže výsledok. Potom sa vráť sem a obnov stránku.</p>`)}
+        ${step(1, 'Skopíruj svoju adresu', `<div class="hw-key"><code>${h(myUrl)}</code><button class="btn sm primary" id="copyKey">Kopírovať</button></div><p class="muted small">Adresa obsahuje tvoj osobný kľúč. Nikomu ju neposielaj.</p>`)}
+        ${step(2, 'Pridaj Skratku', `<a class="btn sm primary" href="${SHORTCUT_ICLOUD}">Pridať Skratku „${SHORTCUT_NAME}“</a><p class="muted small mt">Otvorí sa appka Skratky. Ťukni na <b>Pridať skratku</b>.</p>`)}
+        ${step(3, 'Vlož adresu do Skratky', `<p class="small">V Skratkách ťukni na kartu <b>${SHORTCUT_NAME}</b> (nie na ▶). V akcii <b>Text</b> zmaž <b>VLOZ SVOJU ADRESU</b>, podrž prst a daj <b>Vložiť</b>. Adresa musí začínať na <code>https://</code>.</p>`)}
+        ${step(4, 'Spusti ju prvýkrát', `<p class="small">Ťukni na <b>▶</b>. Pri otázkach na Zdravie zapni prepínače, vyber <b>Posledných 30 dní a budúce dáta</b> a daj <b>Povoliť</b>. Pri odosielaní daj <b>Vždy povoliť</b>. Na konci vyskočí „✅ Druhý dych: … krokov“.</p>`)}
+        ${step(5, 'Nastav automatické spúšťanie', `<p class="small">Skratky → <b>‹</b> vľavo hore → <b>Automatizácia</b> → <b>+</b> → modré tlačidlo <b>Automatizácia</b> → <b>Denná doba</b> → <b>21:30</b>, Každý deň (Hlásiť nechaj vypnuté). Potom pridaj akciu <b>Spustiť skratku</b> a vyber <b>${SHORTCUT_NAME}</b>. To isté zopakuj pre <b>13:00</b>.</p><p class="muted small">Ak je iPhone v tej chvíli zamknutý, Zdravie dáta nevydá. Kedykoľvek ich pošleš ručne tlačidlom nižšie.</p>`)}
+        ${step(6, 'Synchronizovať ručne', `<a class="btn sm ghost" href="${runShortcutUrl()}">Synchronizovať teraz</a>`)}
       </ol>
     </section>` : `
     <section class="card">
@@ -129,7 +120,7 @@ export async function renderWatch() {
       <h3 class="mb">Čo sa posiela</h3>
       <p class="small">Len denné súčty: kroky, aktívne kalórie, spánok, pokojový pulz a váha. Kroky a spánok sa zapíšu aj do check-inu, váha do váženia (len ak si sa v ten deň nevážil ručne).</p>
       <p class="muted small mt">Spálené kalórie sa k dennému cieľu nepripočítavajú. Cieľ už počíta s tvojou aktivitou a hodinky výdaj často nadhodnocujú.</p>
-      <button class="btn sm ghost mt" id="resetKey">Vygenerovať nový kľúč</button>
+      <button class="btn sm ghost mt" id="resetKey">Vygenerovať novú adresu</button>
     </section>
   </div>${nav('#/hodinky')}`;
 
@@ -137,10 +128,9 @@ export async function renderWatch() {
     try { await navigator.clipboard.writeText(text); toast(msg); }
     catch (_) { window.prompt('Skopíruj:', text); }
   };
-  $app().querySelector('#copyKey')?.addEventListener('click', () => copy(token, 'Kľúč skopírovaný'));
-  $app().querySelector('#copyUrl')?.addEventListener('click', () => copy(SYNC_URL, 'URL skopírovaná'));
+  $app().querySelector('#copyKey')?.addEventListener('click', () => copy(myUrl, 'Adresa skopírovaná'));
   $app().querySelector('#resetKey').onclick = async () => {
-    if (!confirm('Starý kľúč prestane fungovať a v Skratke ho budeš musieť vymeniť. Pokračovať?')) return;
-    await healthToken(true); toast('Nový kľúč vytvorený'); renderWatch();
+    if (!confirm('Stará adresa prestane fungovať a v Skratke ju budeš musieť vymeniť za novú. Pokračovať?')) return;
+    await healthToken(true); toast('Nová adresa vytvorená'); renderWatch();
   };
 }
