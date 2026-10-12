@@ -119,7 +119,7 @@ export async function renderToday() {
   const weekLogs = wlogs.filter(w => w.done && w.date >= calc.weekStart());
   const trainedToday = wlogs.some(w => w.done && w.date === st.date);
   const nd = plan ? plan.days[nextDay(plan, wlogs) - 1] : null;
-  const adaptive = isToday ? await v2.checkAdaptive(p, weights).catch(() => null) : null;
+  const adaptive = isToday && p.targets_mode !== 'custom' ? await v2.checkAdaptive(p, weights).catch(() => null) : null;
   const pushCard = isToday ? await push.pushPromptCard().catch(() => '') : '';
   const left = p.target_kcal - sum.kcal, over = left < 0;
   const tip = insight({ p, sum, foods, water, waterGoal, strk, isToday });
@@ -206,7 +206,7 @@ export async function renderToday() {
         <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7CFFB2"/><stop offset="1" stop-color="#3FD5C4"/></linearGradient></defs></svg>
         <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span></div>
       </div>
-      <div class="hk-side"><b>${p.target_kcal}</b><span>cieľ</span></div>
+      <a class="hk-side" href="#/ciele" style="color:inherit" aria-label="Upraviť ciele"><b>${p.target_kcal}</b><span>cieľ ✎</span></a>
       <div class="hk-macros">
         ${macro('Bielkoviny', sum.protein, p.target_protein, 'var(--protein)')}
         ${macro('Sacharidy', sum.carbs, p.target_carbs, 'var(--carbs)')}
