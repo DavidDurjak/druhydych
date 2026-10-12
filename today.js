@@ -136,6 +136,11 @@ export async function renderToday() {
   const comeback = isToday && gap >= 3 && !actDates.includes(calc.today());
   const backCard = comeback ? `<section class="back-card"><span class="back-i">🌬️</span><div><h3>Vitaj späť${p.name ? ', ' + h(p.name.split(' ')[0]) : ''}</h3><p>Pár dní pauza je v pohode. Druhý dych nie je o tom, koľkokrát vypadneš, ale koľkokrát sa vrátiš. Začni jedným jedlom.</p><a class="btn sm primary" href="#/jedlo?ai=1">Zapísať jedlo</a></div></section>` : '';
   const repCard = isToday ? rp.reportCardHtml() : '';
+  // prvé dni bez jediného jedla: jasný prvý krok namiesto prázdnej obrazovky
+  const firstRun = isToday && day <= 3 && !foods.length && !Object.values(byDay).some(x => x?.kcal > 0);
+  // týždenný check-in a report dávajú zmysel až po prvom celom týždni
+  const newcomer = (p.start_date || calc.today()) > calc.addDays(rp.defaultWeek(), 6);
+  const firstCard = firstRun ? `<section class="back-card td-first"><span class="back-i">👋</span><div><h3>Začni prvým jedlom</h3><p>Napíš vlastnými slovami, čo si jedol, napríklad „2 vajcia a rožok“, alebo jedlo odfoť. Appka spočíta kalórie za teba.</p><a class="btn sm primary" href="#/jedlo?ai=1">Zapísať prvé jedlo</a></div></section>` : '';
   const weekCard = isToday ? await ck.weekCardHtml(uid).catch(() => '') : '';
 
   const week = Array.from({ length: 7 }, (_, i) => calc.addDays(wkStart, i));
@@ -183,10 +188,10 @@ export async function renderToday() {
     </header>
     ${weekStrip}
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
-    ${backCard}
-    ${pushCard}
-    ${weekCard}
-    ${repCard}
+    ${firstCard || backCard}
+    ${firstRun ? '' : pushCard}
+    ${newcomer ? '' : weekCard}
+    ${newcomer ? '' : repCard}
     ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">Adaptívny cieľ</span></div>
       <p class="small mt">${h(adaptive.reason)}</p>
       <p class="muted small mt">Priemer ${adaptive.avg} kcal z ${adaptive.days} dní, trend ${adaptive.ch > 0 ? '+' : ''}${adaptive.ch} kg</p>
@@ -210,7 +215,7 @@ export async function renderToday() {
     </section>
     ${weekLine}
 
-    ${tip ? `<aside class="tip ${tip.quote ? 'q' : ''}"><span class="tip-i">${tip.icon}</span><p>${h(tip.text)}</p></aside>` : ''}
+    ${tip && !firstRun ? `<aside class="tip ${tip.quote ? 'q' : ''}"><span class="tip-i">${tip.icon}</span><p>${h(tip.text)}</p></aside>` : ''}
 
     ${isToday ? `<a class="ai-bar" href="#/jedlo?ai=1"><span class="ai-spark">✦</span><span>Napíš alebo odfoť, čo si jedol</span><i>📷</i></a>` : ''}
     <div class="meals">${mealCards}</div>
