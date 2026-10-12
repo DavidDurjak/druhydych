@@ -3,6 +3,7 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { generatePlan, nextDay, EXERCISES } from './workouts.js';
 import { ctx } from './app.js';
+import * as rp from './report.js';
 
 // ctx sa naplní až po načítaní app.js, preto lenivé gettery
 const $app = () => ctx.$app;
@@ -121,6 +122,7 @@ export async function renderTraining() {
   $app().querySelectorAll('[data-day]').forEach(b => b.onclick = async () => {
     if (todayLog && todayLog.plan_day !== Number(b.dataset.day) && !confirm('Dnes už máš rozrobený iný deň. Prepnúť?')) return;
     await db.upsertWorkoutLog({ user_id: uid, date: state.date, plan_day: Number(b.dataset.day), day_name: plan.days[Number(b.dataset.day) - 1].name, sets: [], done: false });
+    if (todayLog && todayLog.plan_day !== Number(b.dataset.day)) { /* starý záznam ostáva, nový deň má vlastný riadok */ }
     renderTraining();
   });
   const collect = () => sets.map(s => {
@@ -196,6 +198,7 @@ export async function renderMessages() {
   const msgs = await db.listMessages(uid);
   const unread = msgs.filter(m => m.to_user === uid && !m.read_at).map(m => m.id);
   await db.markRead(unread);
+  const coaches = state.profile.role === 'coach' ? [] : null;
   $app().innerHTML = `<div class="screen">
     <h1 class="mb">Správy od kouča</h1>
     ${state.profile.role !== 'coach' ? `<form id="mf" class="card"><textarea class="input" name="b" rows="2" placeholder="Napíš koučovi..."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>` : ''}
@@ -242,6 +245,7 @@ export async function renderCoach() {
   });
   const order = { bad: 0, warn: 1, ok: 2 };
   people.sort((a, b) => order[a.flag] - order[b.flag]);
+  const reportsHtml = await rp.coachReportsHtml().catch(() => '');
   const totalLoss = people.reduce((a, x) => a + (x.last ? x.startW - x.last.trend : 0), 0);
   $app().innerHTML = `<div class="screen">
     <div class="topbar"><h1>Kouč</h1><button class="btn sm ghost" id="csv">Export CSV</button></div>
@@ -250,6 +254,7 @@ export async function renderCoach() {
       <div class="stat"><b class="mono">${people.filter(x => x.flag === 'ok').length}</b><span>v pohode</span></div>
       <div class="stat"><b class="mono ${totalLoss > 0 ? 'pos' : ''}">${totalLoss.toFixed(1)}</b><span>kg dole spolu</span></div>
     </div>
+    ${reportsHtml}
     ${people.length ? people.map(x => `<a class="card link" href="#/kouc/${x.p.id}">
       <div class="row between"><div><h3><span class="flag ${x.flag}"></span>${h(x.p.name)}</h3><p class="muted small">${x.why}</p></div><div style="text-align:right"><b class="mono">${x.last ? x.last.trend.toFixed(1) : '–'} kg</b><p class="muted small mono">${x.last ? ((x.last.trend - x.startW) > 0 ? '+' : '') + (x.last.trend - x.startW).toFixed(1) + ' od štartu' : 'bez váženia'}</p></div></div>
       <div class="grid3 mt" style="gap:6px">
@@ -284,6 +289,7 @@ export async function renderCoachDetail(userId) {
       <div class="stat"><b class="mono ${last && last.trend < startW ? 'pos' : ''}">${last ? ((last.trend - startW) > 0 ? '+' : '') + (last.trend - startW).toFixed(1) : '–'}</b><span>od štartu (${startW.toFixed(1)})</span></div>
       <div class="stat"><b class="mono">${wlogs.filter(w => w.done).length}</b><span>tréningov / 14 d</span></div>
     </div>
+    <a class="rp-card" href="#/report?u=${userId}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre, rozpad bodov a zameranie na ďalší týždeň.</p></div><span class="rp-card-go">›</span></a>
     <div class="card">${ctx.weightChart(tr)}</div>
     <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieli, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
     ${photos.length ? `<a class="card link" href="#/kouc/${userId}/fotky"><div class="row between"><h3>Fotky (${photos.length})</h3><span class="muted small">Otvoriť →</span></div><div class="row mt" style="gap:6px">${photos.slice(-3).map(x => `<img src="${urls[x.path]}" style="width:31%;aspect-ratio:3/4;object-fit:cover;border-radius:10px">`).join('')}</div></a>` : '<div class="card"><p class="muted small">Zatiaľ žiadne fotky.</p></div>'}
