@@ -19,6 +19,7 @@ const ICONS = {
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
   photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>',
   dumbbell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19h16M7 15l4-4 3 3 5-6"/></svg>',
   chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg>',
 };
 
@@ -39,13 +40,24 @@ function sheet(html) {
   document.body.appendChild(bg);
   return bg;
 }
+// spodná lišta: max 5 položiek pre účastníka (6 pre kouča); Váha + Fotky = Pokrok
+const NAV_GROUP = { '#/vaha': '#/vaha', '#/fotky': '#/vaha', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil' };
 function nav(active) {
-  const items = [
-    ['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/vaha', 'scale', 'Váha'], ['#/fotky', 'photo', 'Fotky'],
-  ];
+  const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/vaha', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
   items.push(['#/profil', 'user', 'Profil']);
-  return `<nav class="nav">${items.map(([href, ic, lbl]) => `<a href="${href}" class="${active === href ? 'on' : ''}">${ICONS[ic]}<span>${lbl}</span></a>`).join('')}</nav>`;
+  const cur = NAV_GROUP[active] || active;
+  return `<nav class="nav">${items.map(([href, ic, lbl]) => `<a href="${href}" class="${cur === href ? 'on' : ''}"><span class="ic">${ICONS[ic]}</span><span class="lb">${lbl}</span></a>`).join('')}</nav>`;
+}
+// prepínač Váha / Fotky na obrazovke Pokrok
+function progressTabs(path) {
+  const scr = $app.querySelector('.screen'); if (!scr) return;
+  const el = document.createElement('div');
+  el.className = 'seg mb ptabs';
+  el.innerHTML = `<a href="#/vaha" class="${path === '#/vaha' ? 'on' : ''}">Váha a miery</a><a href="#/fotky" class="${path === '#/fotky' ? 'on' : ''}">Fotky</a>`;
+  const head = scr.querySelector(':scope > .topbar, :scope > h1');
+  const h1 = scr.querySelector(':scope > .topbar h1, :scope > h1'); if (h1) h1.textContent = 'Pokrok';
+  if (head) head.after(el); else scr.prepend(el);
 }
 function dateLabel(iso) {
   const d = new Date(iso + 'T00:00:00');
@@ -79,7 +91,7 @@ async function route() {
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
   fn = fn || renderToday;
-  try { await fn(); } catch (e) { console.error(e); toast(e.message, true); }
+  try { await fn(); if (path === '#/vaha' || path === '#/fotky') progressTabs(path); } catch (e) { console.error(e); toast(e.message, true); }
   window.scrollTo(0, 0);
 }
 
