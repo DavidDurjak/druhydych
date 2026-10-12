@@ -1,6 +1,6 @@
 // Service worker: appka sa nainštaluje na plochu, načíta aj pri slabom signáli a prijíma push notifikácie
-const CACHE = 'druhydych-v5';
-const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './push.js', './foods.js', './scan.js', './scan.css', './workouts.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
+const CACHE = 'druhydych-v6';
+const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './push.js', './foods.js', './scan.js', './scan.css', './today.js', './today.css', './workouts.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
