@@ -13,11 +13,11 @@ const MEALS = () => ctx.MEALS;
 const r1 = v => Math.round(Number(v || 0) * 10) / 10;
 
 export function defaultMeal() {
-  const hr = new Date().getHours();
-  return hr < 10 ? 'breakfast' : hr < 15 ? 'lunch' : hr < 21 ? 'dinner' : 'snack';
+  const m = new Date().getHours() * 60 + new Date().getMinutes();
+  return m < 570 ? 'breakfast' : m < 690 ? 'brunch' : m < 870 ? 'lunch' : m < 1020 ? 'afternoon' : m < 1230 ? 'dinner' : m < 1380 ? 'late' : 'snack';
 }
 
-// Jedlo z akéhokoľvek zdroja -> jednotný tvar s hodnotami na 100 g
+// Jedlo z akéhoľvek zdroja -> jednotný tvar s hodnotami na 100 g
 function fromDb(f) {
   return { id: f.id, name: f.name, brand: f.brand || '', barcode: f.barcode || null, kcal: Number(f.kcal), protein: Number(f.protein), carbs: Number(f.carbs), fat: Number(f.fat),
     portions: Array.isArray(f.portions) ? f.portions : [], verified: !!f.verified, is_recipe: !!f.is_recipe, mine: f.mine ?? (f.created_by === state().profile.id),
@@ -48,7 +48,7 @@ export async function renderFood() {
   const put = (f) => { const k = 'f' + pool.size; pool.set(k, f); return k; };
 
   $app().innerHTML = `<div class="screen">
-    <div class="topbar"><h1>Pridať jedlo</h1>${ctx.datePicker()}</div>
+    <div class="topbar"><h1>Pridať jedlo</h1>${ctx.datePicker(true)}</div>
     <div class="seg mb" id="mealseg">${Object.entries(MEALS()).map(([k, l]) => `<button data-meal="${k}" class="${k === meal ? 'on' : ''}">${l}</button>`).join('')}</div>
     ${aiBoxHtml()}
     <div class="input-row mb">
@@ -129,6 +129,8 @@ export async function renderFood() {
   $tabs.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; $tabs.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); showTab(); });
   ctx.bindDatePicker($app(), renderFood);
   bindAiBox($app(), () => meal, m => { location.hash = '#/'; });
+  if (params.get('scan')) setTimeout(() => $app().querySelector('#scan')?.click(), 80);
+  if (params.get('q')) setTimeout(() => $q.focus(), 50);
   if (params.get('ai')) setTimeout(() => $app().querySelector('#aiText')?.focus(), 50);
   $app().querySelectorAll('[data-meal]').forEach(b => b.onclick = () => { meal = b.dataset.meal; $app().querySelectorAll('[data-meal]').forEach(x => x.classList.toggle('on', x === b)); });
 
@@ -178,13 +180,13 @@ export async function renderFood() {
     const d = state().date, y = calc.addDays(d, -1);
     try {
       const n = await db.copyMeal(uid, y, d, meal);
-      if (!n) return toast(`Včera si nemal nič zapísané v: ${MEALS()[meal].toLowerCase()}`, true);
+      if (!n) return toast(`Deň predtým si nemal nič zapísané v: ${MEALS()[meal].toLowerCase()}`, true);
       toast(`Skopírované: ${n} ${n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'}`); location.hash = '#/';
     } catch (e) { toast(e.message, true); }
   };
 }
 
-// ---------- pridanie do denníka (porcie) ----------
+// ---------- pridanie do deníka (porcie) ----------
 export function openAdd(food, meal, done) {
   const portions = [{ label: 'g', g: 1 }, ...(food.portions || [])];
   let unit = 0, qty = 100;
@@ -301,7 +303,7 @@ export function openFoodEditor(pre = {}, meal, done) {
     const ps = portions.slice();
     if (basis === 'p' && !ps.some(p => Number(p.g) === num('#pg'))) ps.unshift({ label: '1 porcia', g: num('#pg') });
     row.portions = ps.filter(p => p.label && p.label.trim() && Number(p.g) > 0).map(p => ({ label: p.label.trim().slice(0, 30), g: Number(p.g) }));
-    if (row.barcode && !/^[0-9]{6,14}$/.test(row.barcode)) { $('#err').textContent = 'Čiarový kód má mať 6 až 14 číslic'; return; }
+    if (row.barcode && !/^[0-9]{6,14}$/.test(row.barcode)) { $('#err').textContent = 'Čiarový kód má byť 6 až 14 číslic'; return; }
     const err = validate(row); if (err) { $('#err').textContent = err; return; }
     $('#save').disabled = true;
     try {
@@ -315,7 +317,7 @@ export function openFoodEditor(pre = {}, meal, done) {
     }
   };
   $('#del')?.addEventListener('click', async () => {
-    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v denníku ostanú.')) return;
+    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v deníku ostanú.')) return;
     try { await db.deleteFoodItem(pre.id); bg.remove(); toast('Zmazané'); renderFood(); } catch (e) { toast(e.message, true); }
   });
 }
