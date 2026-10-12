@@ -9,6 +9,7 @@ import * as pg from './progress.js';
 import * as hw from './health.js';
 import * as rp from './report.js';
 import * as ck from './checkin.js';
+import * as ad from './admin.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -46,7 +47,7 @@ function sheet(html) {
   return bg;
 }
 // spodná lišta: max 5 položiek pre účastníka (6 pre kouča); Váha + Fotky = Pokrok
-const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/' };
+const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/', '#/admin': '#/profil', '#/napis': '#/profil' };
 function nav(active) {
   const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
@@ -87,11 +88,12 @@ window.addEventListener('hashchange', route);
 async function route() {
   const hash = location.hash || '#/';
   const path = hash.split('?')[0];
+  if (path !== state.curPath) { state.prevPath = state.curPath; state.curPath = path; }
   if (!state.session) return renderAuth();
   if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
-    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin };
+    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback };
   let fn = views[path];
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
@@ -147,7 +149,7 @@ async function renderOnboarding() {
       <div class="grid2">
         <label class="field"><span>Pohlavie</span><select class="input" name="sex" required>
           <option value="m" ${p.sex === 'm' ? 'selected' : ''}>Muž</option><option value="f" ${p.sex === 'f' ? 'selected' : ''}>Žena</option></select></label>
-        <label class="field"><span>Rok narodenia</span><input class="input" type="number" name="birth_year" required min="1950" max="2015" value="${p.birth_year || 2008}"></label>
+        <label class="field"><span>Rok narodenia</span><input class="input" type="number" inputmode="numeric" name="birth_year" required min="1930" max="${new Date().getFullYear() - 18}" placeholder="napr. 1998" value="${p.birth_year || ''}"></label>
       </div>
       <div class="grid2">
         <label class="field"><span>Výška (cm)</span><input class="input" type="number" name="height_cm" required min="120" max="230" value="${p.height_cm || ''}"></label>
@@ -159,14 +161,15 @@ async function renderOnboarding() {
         ${Object.entries(calc.ACTIVITY).map(([k, v]) => `<option value="${k}" ${(p.activity || 'light') === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
       <label class="field"><span>Koľko dní v týždni chceš trénovať</span><input class="input" type="number" name="training_days" min="0" max="7" value="${p.training_days ?? 3}"></label>
       <div id="preview" class="stat mb" style="display:none"></div>
-      <button class="btn primary" type="submit">Uložiť a začať</button>
+      ${p.onboarded ? '' : '<label class="row small mb" style="gap:10px;align-items:flex-start"><input type="checkbox" name="adult" required style="margin-top:3px"> <span>Mám aspoň 18 rokov. Beriem na vedomie, že appka nenahrádza lekára ani výživového poradcu a používam ju na vlastnú zodpovednosť.</span></label>'}
+      <button class="btn primary" type="submit">${p.onboarded ? 'Uložiť zmeny' : 'Uložiť a začať'}</button>
     </form>
   </div>`;
   const form = $app.querySelector('#onb');
   const preview = () => {
     const f = new FormData(form);
     const w = Number(f.get('weight')), hc = Number(f.get('height_cm'));
-    if (!w || !hc) return;
+    if (!w || !hc || Number(f.get('birth_year')) < 1930) return;
     const t = calc.targets({ sex: f.get('sex'), weightKg: w, heightCm: hc, birthYear: f.get('birth_year'), activity: f.get('activity'), goal: f.get('goal') });
     const el = $app.querySelector('#preview'); el.style.display = 'block';
     el.innerHTML = `<b>${t.kcal} kcal / deň</b><span>Bielkoviny ${t.protein} g · Sacharidy ${t.carbs} g · Tuky ${t.fat} g · (bazálny metabolizmus ${t.bmr}, výdaj ${t.tdee})</span>`;
@@ -176,6 +179,7 @@ async function renderOnboarding() {
     e.preventDefault();
     const f = new FormData(form);
     const w = Number(f.get('weight')), hc = Number(f.get('height_cm'));
+    if (new Date().getFullYear() - Number(f.get('birth_year')) < 18) { toast('Druhý dych je pre ľudí od 18 rokov.', true); return; }
     const t = calc.targets({ sex: f.get('sex'), weightKg: w, heightCm: hc, birthYear: f.get('birth_year'), activity: f.get('activity'), goal: f.get('goal') });
     const uid = state.session.user.id;
     const first = !state.profile?.onboarded;
@@ -189,7 +193,7 @@ async function renderOnboarding() {
     try {
       state.profile = await db.upsertProfile(profile);
       await db.upsertWeight({ user_id: uid, date: calc.today(), weight_kg: w });
-      toast('Štart nastavený. Ideme.');
+      toast(first ? 'Štart nastavený. Zapíš prvé jedlo.' : 'Uložené, ciele sú prepočítané.');
       location.hash = '#/';
     } catch (err) { toast(err.message, true); }
   };
@@ -280,6 +284,7 @@ async function renderCheckin() {
 // ---------- profil ----------
 async function renderProfile() {
   const p = state.profile;
+  const admin = await ad.isAdmin().catch(() => false);
   $app.innerHTML = `<div class="screen">
     <h1 class="mb">Profil</h1>
     <div class="card">
@@ -296,10 +301,12 @@ async function renderProfile() {
     <a class="btn mb" href="#/hodinky">⌚ Hodinky a Apple Zdravie</a>
     <a class="btn mb" href="#/pripomienky">Pripomienky a notifikácie</a>
     <a class="btn mb" href="#/spravy">Správy</a>
+    <a class="btn mb" href="#/napis">💬 Napíš nám: problém alebo nápad</a>
+    ${admin ? '<a class="btn mb" href="#/admin">📊 Admin prehľad</a>' : ''}
     <button class="btn danger" id="out">Odhlásiť sa</button>
-    <p class="muted small center mt">Druhý dych · verzia 0.8 · ${new Date().getFullYear()}</p>
+    <p class="muted small center mt">Druhý dych · verzia ${ad.APP_VERSION} · ${new Date().getFullYear()}</p>
   </div>${nav('#/profil')}`;
-  $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; };
+  $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; ad.resetAdmin(); };
 }
 
 // ---------- ctx pre app2.js ----------
