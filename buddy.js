@@ -2,46 +2,15 @@
 // Samo sa vloží do appky (bez zásahu do app.js). Odpovede robí edge funkcia coach-chat.
 import * as db from './data.js';
 import { ctx } from './app.js';
+import { avatarSvg, norm, randomBuddy, ARMOR, GLOW, SKIN, HAIRC, BGC, ARCH, SHOULDERS, CRESTS, EMBLEMS, MARKS, BGS, FRAMES, PRESETS } from './avatars.js';
 
 const root = document.getElementById('app');
-const COLORS = ['#7CFFB2', '#6FC3FF', '#FF8A7A', '#FFD66B', '#B79CFF', '#FFB38A', '#B9E86B', '#9FB3C8'];
-const EYES = ['dots', 'happy', 'wide', 'sleepy'];
-const MOUTHS = ['smile', 'grin', 'flat', 'open'];
-const ACCS = ['none', 'cap', 'glasses', 'band', 'crown', 'leaf'];
-const ACC_LABEL = { none: 'Nič', cap: 'Šiltovka', glasses: 'Okuliare', band: 'Čelenka', crown: 'Koruna', leaf: 'Lístok' };
-const DEFAULT = { name: 'Dych', c: 0, e: 0, m: 0, a: 0 };
-
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+export { avatarSvg };
 
-export function avatarSvg(b, size = 56) {
-  const col = COLORS[b.c] || COLORS[0], eyes = EYES[b.e] || 'dots', mouth = MOUTHS[b.m] || 'smile', acc = ACCS[b.a] || 'none';
-  const ink = '#10161d';
-  const E = {
-    dots: `<circle cx="23" cy="34" r="3.2" fill="${ink}"/><circle cx="41" cy="34" r="3.2" fill="${ink}"/>`,
-    happy: `<path d="M19 35q4-6 8 0M37 35q4-6 8 0" stroke="${ink}" stroke-width="2.8" fill="none" stroke-linecap="round"/>`,
-    wide: `<circle cx="23" cy="34" r="5" fill="#fff"/><circle cx="41" cy="34" r="5" fill="#fff"/><circle cx="23.8" cy="34.5" r="2.6" fill="${ink}"/><circle cx="41.8" cy="34.5" r="2.6" fill="${ink}"/>`,
-    sleepy: `<path d="M18 34h9M37 34h9" stroke="${ink}" stroke-width="2.8" stroke-linecap="round"/>`,
-  }[eyes];
-  const M = {
-    smile: `<path d="M25 44q7 6 14 0" stroke="${ink}" stroke-width="2.8" fill="none" stroke-linecap="round"/>`,
-    grin: `<path d="M23 43h18q-1 9-9 9t-9-9z" fill="${ink}"/><path d="M26 43h12v3H26z" fill="#fff"/>`,
-    flat: `<path d="M26 46h12" stroke="${ink}" stroke-width="2.8" stroke-linecap="round"/>`,
-    open: `<ellipse cx="32" cy="47" rx="5" ry="5.5" fill="${ink}"/>`,
-  }[mouth];
-  const A = {
-    none: '',
-    cap: `<path d="M10 24q2-16 22-16t22 16z" fill="#2D6BFF"/><path d="M44 22h16q-1 5-9 5h-7z" fill="#1F4FCC"/>`,
-    glasses: `<circle cx="23" cy="34" r="8" fill="none" stroke="${ink}" stroke-width="2.2"/><circle cx="41" cy="34" r="8" fill="none" stroke="${ink}" stroke-width="2.2"/><path d="M31 34h2" stroke="${ink}" stroke-width="2.2"/>`,
-    band: `<path d="M8 25q24-10 48 0" stroke="#FF4D6D" stroke-width="5" fill="none" stroke-linecap="round"/>`,
-    crown: `<path d="M14 18l5-12 8 8 5-10 5 10 8-8 5 12z" fill="#FFC93C" stroke="#E0A400" stroke-width="1.5" stroke-linejoin="round"/>`,
-    leaf: `<path d="M32 12q-2-8 7-9 1 8-7 9z" fill="#4CCB6E"/><path d="M32 12v-6" stroke="#2E9E4B" stroke-width="2"/>`,
-  }[acc];
-  return `<svg class="bd-av" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="34" r="26" fill="${col}"/><circle cx="14" cy="44" r="4.5" fill="#fff" opacity=".28"/><circle cx="50" cy="44" r="4.5" fill="#fff" opacity=".28"/>${E}${M}${A}</svg>`;
-}
-
-const buddy = () => ({ ...DEFAULT, ...(ctx.state?.profile?.buddy || {}) });
-let fab = null, panel = null, busy = false, opened = false;
+const buddy = () => norm(ctx.state?.profile?.buddy);
+let curAv = '', fab = null, panel = null, busy = false, opened = false;
 
 function showFab() {
   const on = !!root.querySelector('.nav') && !!ctx.state?.profile;
@@ -54,7 +23,7 @@ function showFab() {
   if (fab) {
     fab.style.display = on ? '' : 'none';
     const key = JSON.stringify(buddy());
-    if (fab.dataset.sig !== key) { fab.dataset.sig = key; fab.innerHTML = avatarSvg(buddy(), 50); }
+    if (fab.dataset.sig !== key) { fab.dataset.sig = key; fab.innerHTML = avatarSvg(buddy(), 64, { anim: true }); }
   }
 }
 
@@ -74,7 +43,7 @@ function bubble(role, text, extra = {}) {
   const log = panel.querySelector('.bd-log');
   const el = document.createElement('div');
   el.className = 'bd-m ' + role;
-  el.innerHTML = `<div class="bd-t">${fmt(text)}</div>`;
+  el.innerHTML = (role.startsWith('coach') ? `<div class="bd-mav">${curAv}</div>` : '') + `<div class="bd-t">${fmt(text)}</div>`;
   if (role === 'coach' && extra.id) {
     const r = document.createElement('div'); r.className = 'bd-rate';
     r.innerHTML = '<button data-v="1" aria-label="Pomohlo">👍</button><button data-v="-1" aria-label="Nepomohlo">👎</button>';
@@ -103,7 +72,7 @@ function typing(on) {
   if (!panel) return;
   panel.querySelector('.bd-typing')?.remove();
   if (!on) return;
-  const t = document.createElement('div'); t.className = 'bd-m coach bd-typing'; t.innerHTML = '<div class="bd-t"><i></i><i></i><i></i></div>';
+  const t = document.createElement('div'); t.className = 'bd-m coach bd-typing'; t.innerHTML = `<div class="bd-mav">${curAv}</div><div class="bd-t"><i></i><i></i><i></i></div>`;
   const log = panel.querySelector('.bd-log'); log.appendChild(t); log.scrollTop = log.scrollHeight;
 }
 
@@ -121,21 +90,45 @@ async function send(text) {
   } finally { busy = false; }
 }
 
+const TABS = [['a', 'Postava'], ['glow', 'Žiara'], ['gear', 'Výzbroj'], ['bg', 'Pozadie']];
+const VB = { top: '10 0 80 60', chest: '0 52 100 48', body: '0 36 100 64', face: '14 14 72 72', full: '0 0 100 100' };
+
 function setup(first) {
-  const b = buddy();
   const sheet = panel.querySelector('.bd-body');
-  let st = { ...b };
+  let st = first ? { ...randomBuddy(), name: 'Dych' } : norm(ctx.state.profile.buddy);
+  let tab = 'a', keep = 0;
+  const tile = (key, id, label, over, vb, size = 60) => `<button class="bd-tile ${st[key] === id ? 'on' : ''}" data-k="${key}" data-v="${id}"><span>${avatarSvg({ ...st, ...over }, size, { vb })}</span><i>${label}</i></button>`;
+  const dots = (key, list) => `<div class="bd-row">${list.map((c, i) => `<button class="bd-dot ${st[key] === i ? 'on' : ''}" data-k="${key}" data-v="${i}" data-n="1" style="background:${c}" aria-label="Farba ${i + 1}"></button>`).join('')}</div>`;
+  const group = (title, body) => `<div class="bd-g"><div class="bd-gt">${title}</div>${body}</div>`;
+  const grid = (key, list, over, vb) => `<div class="bd-grid">${list.map(([id, l]) => tile(key, id, l, { [key]: id, ...(over || {}) }, vb)).join('')}</div>`;
+  const panes = {
+    a: () => group('Kto to bude', grid('a', ARCH, { cr: 'none', em: 'none', mk: 'none' }, VB.full)) + group('Farba panciera', dots('c', ARMOR))
+      + (st.a === 'viking' ? group('Pleť', dots('sk', SKIN)) + group('Brada', dots('hc', HAIRC)) : ''),
+    glow: () => group('Farba žiary (oči, línie, aura)', dots('g', GLOW)) + group('Znamenie', grid('mk', MARKS, { cr: 'none', em: 'none', fr: 'none' }, VB.face)),
+    gear: () => group('Ramená', grid('sh', SHOULDERS, { cr: 'none', em: 'none', mk: 'none', fr: 'none' }, VB.body)) + group('Ozdoba hlavy', grid('cr', CRESTS, { em: 'none', mk: 'none', fr: 'none' }, VB.top)) + group('Znak na hrudi', grid('em', EMBLEMS, { cr: 'none', mk: 'none', fr: 'none' }, VB.chest)),
+    bg: () => group('Pozadie', grid('bs', BGS, { cr: 'none', em: 'none' }, VB.full)) + group('Farba pozadia', dots('bg', BGC)) + group('Rám', grid('fr', FRAMES, { cr: 'none', em: 'none' }, VB.full)),
+  };
   const draw = () => {
+    const name = sheet.querySelector('.bd-name')?.value ?? st.name;
+    st.name = name;
     sheet.innerHTML = `<div class="bd-setup">
-      <div class="bd-prev">${avatarSvg(st, 110)}</div>
-      <label class="bd-l">Meno pomocníka<input class="bd-name" maxlength="20" value="${esc(st.name)}" placeholder="Dych"></label>
-      <div class="bd-l">Farba<div class="bd-row">${COLORS.map((c, i) => `<button class="bd-dot ${st.c === i ? 'on' : ''}" data-k="c" data-v="${i}" style="background:${c}" aria-label="Farba ${i + 1}"></button>`).join('')}</div></div>
-      <div class="bd-l">Oči<div class="bd-row">${EYES.map((x, i) => `<button class="bd-opt ${st.e === i ? 'on' : ''}" data-k="e" data-v="${i}">${avatarSvg({ ...st, e: i, a: 0, m: 2 }, 38)}</button>`).join('')}</div></div>
-      <div class="bd-l">Ústa<div class="bd-row">${MOUTHS.map((x, i) => `<button class="bd-opt ${st.m === i ? 'on' : ''}" data-k="m" data-v="${i}">${avatarSvg({ ...st, m: i, a: 0 }, 38)}</button>`).join('')}</div></div>
-      <div class="bd-l">Doplnok<div class="bd-row">${ACCS.map((x, i) => `<button class="bd-chip ${st.a === i ? 'on' : ''}" data-k="a" data-v="${i}">${ACC_LABEL[x]}</button>`).join('')}</div></div>
-      <button class="bd-save">${first ? 'Hotovo, poďme na to' : 'Uložiť'}</button>
+      <div class="bd-top"><div class="bd-prev">${avatarSvg(st, 118, { anim: true })}</div>
+        <div class="bd-tc"><label class="bd-l">Meno pomocníka<input class="bd-name" maxlength="20" value="${esc(st.name)}" placeholder="Dych"></label>
+        <button class="bd-rnd" type="button">🎲 Náhodná postavička</button></div></div>
+      <div class="bd-pre"><span>Hotové postavy</span><div class="bd-prs">${PRESETS.map((p, i) => `<button data-p="${i}" aria-label="${esc(p.n)}"><span>${avatarSvg(norm(p), 50)}</span><i>${esc(p.n)}</i></button>`).join('')}</div></div>
+      <div class="bd-tabs" role="tablist">${TABS.map(([id, l]) => `<button role="tab" class="${tab === id ? 'on' : ''}" data-tab="${id}">${l}</button>`).join('')}</div>
+      <div class="bd-pane">${panes[tab]()}</div>
+      <div class="bd-foot"><button class="bd-save">${first ? 'Hotovo, poďme na to' : 'Uložiť'}</button></div>
     </div>`;
-    sheet.querySelectorAll('[data-k]').forEach(el => el.onclick = () => { st.name = sheet.querySelector('.bd-name').value; st[el.dataset.k] = Number(el.dataset.v); draw(); });
+    sheet.querySelector('.bd-pane').scrollTop = keep;
+    sheet.querySelectorAll('[data-k]').forEach(el => el.onclick = () => {
+      keep = sheet.querySelector('.bd-pane').scrollTop;
+      const k = el.dataset.k, v = el.dataset.n ? Number(el.dataset.v) : el.dataset.v;
+      st[k] = v; draw();
+    });
+    sheet.querySelectorAll('[data-tab]').forEach(el => el.onclick = () => { st.name = sheet.querySelector('.bd-name').value; tab = el.dataset.tab; keep = 0; draw(); });
+    sheet.querySelectorAll('[data-p]').forEach(el => el.onclick = () => { const p = PRESETS[Number(el.dataset.p)]; const nm = sheet.querySelector('.bd-name').value; st = norm({ ...p, name: nm || p.n }); keep = 0; draw(); });
+    sheet.querySelector('.bd-rnd').onclick = () => { const nm = sheet.querySelector('.bd-name').value; st = randomBuddy(nm); keep = 0; draw(); };
     sheet.querySelector('.bd-save').onclick = async () => {
       st.name = (sheet.querySelector('.bd-name').value.trim() || 'Dych').slice(0, 20);
       const { error } = await db.sb.from('profiles').update({ buddy: st }).eq('id', ctx.state.profile.id);
@@ -148,7 +141,8 @@ function setup(first) {
 
 async function renderChat() {
   const b = buddy();
-  panel.querySelector('.bd-head').innerHTML = `${avatarSvg(b, 38)}<div class="bd-hn"><b>${esc(b.name)}</b><span>tvoj pomocník a kouč</span></div><button class="bd-edit" aria-label="Upraviť postavičku">✎</button><button class="bd-x" aria-label="Zavrieť">×</button>`;
+  curAv = avatarSvg(b, 34, { anim: true });
+  panel.querySelector('.bd-head').innerHTML = `${avatarSvg(b, 44, { anim: true })}<div class="bd-hn"><b>${esc(b.name)}</b><span>tvoj pomocník a kouč</span></div><button class="bd-edit" aria-label="Upraviť postavičku">✎</button><button class="bd-x" aria-label="Zavrieť">×</button>`;
   panel.querySelector('.bd-x').onclick = closeChat;
   panel.querySelector('.bd-edit').onclick = () => setup(false);
   panel.querySelector('.bd-body').innerHTML = `<div class="bd-log"></div><div class="bd-chips"></div>
