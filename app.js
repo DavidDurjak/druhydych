@@ -2,11 +2,13 @@
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { searchBasic, searchOFF, lookupBarcode } from './food.js';
+import * as v2 from './app2.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
 
 const MEALS = { breakfast: 'Raňajky', lunch: 'Obed', dinner: 'Večera', snack: 'Snack' };
+export const ctx = {};
 const ICONS = {
   home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>',
   food: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3v8a3 3 0 0 0 3 3v7M10 3v8a3 3 0 0 1-3 3M17 3c-2 2-2 5-2 8h2v10"/></svg>',
@@ -14,6 +16,9 @@ const ICONS = {
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
   coach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-5-6.3"/></svg>',
   user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>',
+  dumbbell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg>',
 };
 
 // ---------- helpers ----------
@@ -35,7 +40,7 @@ function sheet(html) {
 }
 function nav(active) {
   const items = [
-    ['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/vaha', 'scale', 'Váha'], ['#/checkin', 'check', 'Check-in'],
+    ['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/vaha', 'scale', 'Váha'], ['#/fotky', 'photo', 'Fotky'],
   ];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
   items.push(['#/profil', 'user', 'Profil']);
@@ -67,8 +72,12 @@ async function route() {
   if (!state.session) return renderAuth();
   if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
-  const views = { '#/': renderToday, '#/onboarding': renderOnboarding, '#/jedlo': renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': renderCoach, '#/profil': renderProfile };
-  const fn = views[path] || renderToday;
+  const views = { '#/': renderToday, '#/onboarding': renderOnboarding, '#/jedlo': renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
+    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages };
+  let fn = views[path];
+  const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
+  if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
+  fn = fn || renderToday;
   try { await fn(); } catch (e) { console.error(e); toast(e.message, true); }
   window.scrollTo(0, 0);
 }
@@ -185,7 +194,11 @@ function macroBar(label, val, target, color) {
 
 async function renderToday() {
   const p = state.profile, uid = p.id;
-  const [foods, weights, checkin] = await Promise.all([db.listFood(uid, state.date), db.listWeights(uid), db.getCheckin(uid, state.date)]);
+  const from30 = calc.addDays(calc.today(), -30);
+  const [foods, weights, checkin, actDates, msgs, plan, wlogs] = await Promise.all([
+    db.listFood(uid, state.date), db.listWeights(uid), db.getCheckin(uid, state.date),
+    db.activityDates(uid, from30), db.listMessages(uid), db.getPlan(uid), db.listWorkoutLogs(uid, calc.weekStart()),
+  ]);
   const sum = calc.sumMacros(foods);
   const tr = calc.trend(weights.map(w => ({ date: w.date, weight: Number(w.weight_kg) })));
   const last = tr[tr.length - 1];
@@ -193,10 +206,27 @@ async function renderToday() {
   const startW = Number(p.start_weight || (weights[0]?.weight_kg ?? 0));
   const total = last ? Math.round((last.trend - startW) * 10) / 10 : 0;
   const day = Math.max(1, Math.round((new Date(calc.today()) - new Date(p.start_date || calc.today())) / 86400000) + 1);
+  const strk = calc.streak(actDates);
+  const week = calc.last7();
+  const actSet = new Set(actDates);
+  const unread = msgs.filter(m => m.to_user === uid && !m.read_at);
+  const lastMsg = msgs.find(m => m.to_user === uid);
+  const water = checkin?.water || 0, waterGoal = p.water_goal || 8;
+  const trainedWeek = wlogs.filter(w => w.done).length;
+  const trainedToday = wlogs.some(w => w.done && w.date === state.date);
+  const adaptive = state.date === calc.today() ? await v2.checkAdaptive(p, weights).catch(() => null) : null;
 
   $app.innerHTML = `<div class="screen">
     <div class="topbar"><div><div class="brand"><span class="dot"></span> Ahoj, ${h(p.name?.split(' ')[0] || '')}</div><div class="date">Deň ${day} z 84 · týždeň ${Math.min(12, Math.ceil(day / 7))}</div></div>${datePicker()}</div>
+    ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
+    ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">AI cieľ</span></div>
+      <p class="small mt">${h(adaptive.reason)}</p>
+      <p class="muted small mt">Priemer ${adaptive.avg} kcal z ${adaptive.days} dní · trend ${adaptive.ch > 0 ? '+' : ''}${adaptive.ch} kg</p>
+      ${adaptive.adjust ? `<div class="row mt" style="gap:8px"><button class="btn sm primary" id="adaptYes">Nastaviť ${adaptive.newKcal} kcal</button><button class="btn sm ghost" id="adaptNo">Nechať ${p.target_kcal}</button></div>` : `<button class="btn sm ghost mt" id="adaptNo">OK</button>`}
+    </div>` : ''}
     <div class="card">
+      <div class="row between mb"><div class="row" style="gap:8px"><span class="streak">🔥 ${strk}</span><span class="muted small">${strk === 1 ? 'deň v rade' : strk >= 2 && strk <= 4 ? 'dni v rade' : 'dní v rade'}</span></div>
+        <div class="dots">${week.map(d => `<span class="dot7 ${actSet.has(d) ? 'on' : ''} ${d === calc.today() ? 'today' : ''}" title="${d}">${['P', 'U', 'S', 'Š', 'P', 'S', 'N'][(new Date(d + 'T00:00:00').getDay() + 6) % 7]}</span>`).join('')}</div></div>
       <div class="ring-wrap">${ring(sum.kcal, p.target_kcal)}
         <div class="macros">
           ${macroBar('Bielkoviny', sum.protein, p.target_protein, 'var(--protein)')}
@@ -211,18 +241,29 @@ async function renderToday() {
       <div class="stat"><b class="mono ${total < 0 ? 'pos' : total > 0 ? 'neg' : ''}">${total > 0 ? '+' : ''}${total.toFixed(1)}</b><span>kg od štartu</span></div>
       <div class="stat"><b class="mono">${change == null ? '–' : (change > 0 ? '+' : '') + change.toFixed(1)}</b><span>kg za 7 dní</span></div>
     </div>
+    <div class="grid2 mb">
+      <a class="card link" href="#/trening" style="margin:0"><div class="row between"><h3>Tréning</h3><span class="${trainedToday ? 'pos' : 'muted'}">${trainedToday ? '✓' : ''}</span></div><p class="muted small mt">${plan ? `${trainedWeek}/${p.training_days || plan.days.length} tento týždeň` : 'Vytvor si plán'}</p></a>
+      <div class="card" style="margin:0"><div class="row between"><h3>Voda</h3><span class="muted small mono">${water}/${waterGoal}</span></div><div class="water mt">${Array.from({ length: waterGoal }, (_, i) => `<button data-w="${i + 1}" class="${i < water ? 'on' : ''}"></button>`).join('')}</div></div>
+    </div>
     ${Object.entries(MEALS).map(([k, lbl]) => {
       const rows = foods.filter(f => f.meal === k); const s = calc.sumMacros(rows);
       return `<div class="card meal"><div class="meal-h"><h3>${lbl}</h3><div class="row"><span class="muted small mono">${r0(s.kcal)} kcal</span><button class="btn sm primary" data-add="${k}">+ Pridať</button></div></div>
         ${rows.length ? rows.map(f => `<div class="item"><div class="n"><b>${h(f.name)}</b><span>${h(f.brand || '')}${f.brand ? ' · ' : ''}${r0(f.grams)} g · B ${r0(f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></div>`).join('') : '<div class="empty">Zatiaľ nič.</div>'}
       </div>`;
     }).join('')}
-    <div class="card"><div class="row between"><div><h3>Denný check-in</h3><p class="muted small">${checkin ? `Spánok ${checkin.sleep_h ?? '–'} h · ${checkin.steps ?? '–'} krokov · nálada ${checkin.mood ?? '–'}/5` : 'Spánok, kroky, nálada. 20 sekúnd.'}</p></div><a class="btn sm" href="#/checkin">${checkin ? 'Upraviť' : 'Vyplniť'}</a></div></div>
+    <div class="card"><div class="row between"><div><h3>Denný check-in</h3><p class="muted small">${checkin && (checkin.sleep_h || checkin.steps || checkin.mood) ? `Spánok ${checkin.sleep_h ?? '–'} h · ${checkin.steps ?? '–'} krokov · nálada ${checkin.mood ?? '–'}/5` : 'Spánok, kroky, nálada. 20 sekúnd.'}</p></div><a class="btn sm" href="#/checkin">${checkin?.mood ? 'Upraviť' : 'Vyplniť'}</a></div></div>
   </div>${nav('#/')}`;
 
   bindDatePicker($app, renderToday);
   $app.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
   $app.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
+  $app.querySelectorAll('[data-w]').forEach(b => b.onclick = async () => {
+    const n = Number(b.dataset.w); const val = n === water ? n - 1 : n;
+    await db.upsertCheckin({ user_id: uid, date: state.date, water: val, sleep_h: checkin?.sleep_h ?? null, steps: checkin?.steps ?? null, mood: checkin?.mood ?? null, note: checkin?.note ?? null });
+    renderToday();
+  });
+  $app.querySelector('#adaptYes')?.addEventListener('click', async () => { await v2.applyAdaptive(p, adaptive); toast(`Nový cieľ: ${adaptive.newKcal} kcal`); renderToday(); });
+  $app.querySelector('#adaptNo')?.addEventListener('click', async () => { await db.applyTarget(uid, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: p.target_kcal, reason: 'Ponechané používateľom', avg_intake: adaptive.avg, trend_change: adaptive.ch }, {}); renderToday(); });
 }
 
 // ---------- jedlo ----------
@@ -281,7 +322,8 @@ function defaultMeal() {
 }
 function resRow(f, i, pool) {
   const g = f.grams || 100;
-  return `<div class="res" data-pick="${i}" data-pool="${pool}"><div class="n"><b>${h(f.name)}</b><span>${f.brand ? h(f.brand) + ' · ' : ''}${pool === 'recent' ? `${r0(g)} g` : '100 g'} · B ${r0(f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${r0(f.kcal)}</span></div>`;
+  const kcal = pool === 'recent' ? r0(f.kcal) : r0(f.kcal);
+  return `<div class="res" data-pick="${i}" data-pool="${pool}"><div class="n"><b>${h(f.name)}</b><span>${f.brand ? h(f.brand) + ' · ' : ''}${pool === 'recent' ? `${r0(g)} g` : '100 g'} · B ${r0(pool === 'recent' ? f.protein : f.protein)} · S ${r0(f.carbs)} · T ${r0(f.fat)}</span></div><span class="k mono">${kcal}</span></div>`;
 }
 function openAdd(food, meal, done, editable = false) {
   // recent položky majú hodnoty za zalogované gramy -> prepočítaj na 100 g
@@ -425,61 +467,10 @@ async function renderCheckin() {
   $app.querySelector('#cf').onsubmit = async e => {
     e.preventDefault(); const f = new FormData(e.target);
     try {
-      await db.upsertCheckin({ user_id: uid, date: state.date, sleep_h: f.get('sleep') ? Number(f.get('sleep')) : null, steps: f.get('steps') ? Number(f.get('steps')) : null, mood: mood || null, note: f.get('note') || null });
+      await db.upsertCheckin({ user_id: uid, date: state.date, sleep_h: f.get('sleep') ? Number(f.get('sleep')) : null, steps: f.get('steps') ? Number(f.get('steps')) : null, mood: mood || null, note: f.get('note') || null, water: c.water ?? null });
       toast('Uložené. Dobrá práca.'); location.hash = '#/';
     } catch (err) { toast(err.message, true); }
   };
-}
-
-// ---------- kouč ----------
-async function renderCoach() {
-  if (state.profile.role !== 'coach') { location.hash = '#/'; return; }
-  const from = calc.addDays(calc.today(), -6);
-  $app.innerHTML = `<div class="screen"><h1>Kouč</h1><div class="spinner"></div></div>${nav('#/kouc')}`;
-  const { profiles, weights, foods, checkins } = await db.coachOverview(from);
-  const people = profiles.filter(p => p.role !== 'coach' && p.onboarded).map(p => {
-    const w = weights.filter(x => x.user_id === p.id);
-    const tr = calc.trend(w.map(x => ({ date: x.date, weight: Number(x.weight_kg) })));
-    const last = tr[tr.length - 1];
-    const startW = Number(p.start_weight || w[0]?.weight_kg || 0);
-    const fd = foods.filter(x => x.user_id === p.id);
-    const daysLogged = new Set(fd.map(x => x.date)).size;
-    const kcalByDay = {}; fd.forEach(x => kcalByDay[x.date] = (kcalByDay[x.date] || 0) + Number(x.kcal));
-    const avg = daysLogged ? Object.values(kcalByDay).reduce((a, b) => a + b, 0) / daysLogged : 0;
-    const lastFood = fd.length ? fd.map(x => x.date).sort().pop() : null;
-    const lastWeigh = w.length ? w[w.length - 1].date : null;
-    const ci = checkins.filter(x => x.user_id === p.id);
-    const sleep = ci.filter(x => x.sleep_h).reduce((a, x, _, arr) => a + Number(x.sleep_h) / arr.length, 0);
-    const ch7 = calc.trendChange(tr, 7);
-    let flag = 'ok', why = 'Loguje, ide podľa plánu';
-    const staleDays = lastFood ? Math.round((new Date(calc.today()) - new Date(lastFood)) / 86400000) : 99;
-    const daysSinceStart = Math.min(7, Math.max(1, Math.round((new Date(calc.today()) - new Date(p.start_date || calc.today())) / 86400000) + 1));
-    if (staleDays >= 3) { flag = 'bad'; why = `Nelogoval ${staleDays} dní`; }
-    else if (daysLogged < daysSinceStart * 0.6) { flag = 'warn'; why = `Logoval len ${daysLogged}/7 dní`; }
-    else if (p.goal === 'lose' && ch7 != null && ch7 >= 0 && tr.length > 10) { flag = 'warn'; why = 'Váha stagnuje, skontroluj príjem'; }
-    else if (p.target_kcal && avg > p.target_kcal * 1.15) { flag = 'warn'; why = `Priemer ${r0(avg)} kcal, cieľ ${p.target_kcal}`; }
-    return { p, last, startW, daysLogged, avg, lastFood, lastWeigh, sleep, ch7, flag, why };
-  });
-  const order = { bad: 0, warn: 1, ok: 2 };
-  people.sort((a, b) => order[a.flag] - order[b.flag]);
-  const totalLoss = people.reduce((a, x) => a + (x.last ? x.startW - x.last.trend : 0), 0);
-  $app.innerHTML = `<div class="screen">
-    <div class="topbar"><h1>Kouč</h1><span class="date">posledných 7 dní</span></div>
-    <div class="grid3 mb">
-      <div class="stat"><b class="mono">${people.length}</b><span>účastníkov</span></div>
-      <div class="stat"><b class="mono">${people.filter(x => x.flag === 'ok').length}</b><span>v pohode</span></div>
-      <div class="stat"><b class="mono ${totalLoss > 0 ? 'pos' : ''}">${totalLoss.toFixed(1)}</b><span>kg dole spolu</span></div>
-    </div>
-    ${people.length ? people.map(x => `<div class="card">
-      <div class="row between"><div><h3><span class="flag ${x.flag}"></span>${h(x.p.name)}</h3><p class="muted small">${x.why}</p></div><div class="right"><b class="mono">${x.last ? x.last.trend.toFixed(1) : '–'} kg</b><p class="muted small mono">${x.last ? ((x.last.trend - x.startW) > 0 ? '+' : '') + (x.last.trend - x.startW).toFixed(1) + ' od štartu' : 'bez váženia'}</p></div></div>
-      <div class="grid3 mt">
-        <div class="stat"><b class="mono" style="font-size:16px">${x.daysLogged}/7</b><span>dní s jedlom</span></div>
-        <div class="stat"><b class="mono" style="font-size:16px">${x.avg ? r0(x.avg) : '–'}</b><span>Ø kcal (cieľ ${x.p.target_kcal})</span></div>
-        <div class="stat"><b class="mono" style="font-size:16px">${x.sleep ? x.sleep.toFixed(1) + ' h' : '–'}</b><span>Ø spánok</span></div>
-      </div>
-      <p class="muted small mt">Cieľ: ${calc.GOAL[x.p.goal]?.label || '–'} · Posledné jedlo: ${x.lastFood ? calc.fmtDate(x.lastFood) : 'nikdy'} · Posledné váženie: ${x.lastWeigh ? calc.fmtDate(x.lastWeigh) : 'nikdy'}</p>
-    </div>`).join('') : '<div class="card"><p class="muted">Zatiaľ žiadni účastníci. Po registrácii a nastavení štartu sa tu objavia.</p></div>'}
-  </div>${nav('#/kouc')}`;
 }
 
 // ---------- profil ----------
@@ -498,16 +489,20 @@ async function renderProfile() {
       <p class="muted small mt">Cieľ: ${calc.GOAL[p.goal]?.label || '–'} · ${calc.ACTIVITY[p.activity]?.label || ''}</p>
     </div>
     <a class="btn mb" href="#/onboarding">Upraviť údaje a prepočítať cieľ</a>
+    <a class="btn mb" href="#/spravy">Správy</a>
     <button class="btn danger" id="out">Odhlásiť sa</button>
-    <p class="muted small center mt">Druhý dych · verzia 0.1 · ${new Date().getFullYear()}</p>
+    <p class="muted small center mt">Druhý dych · verzia 0.2 · ${new Date().getFullYear()}</p>
   </div>${nav('#/profil')}`;
   $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; };
 }
 
+// ---------- ctx pre app2.js ----------
+Object.assign(ctx, { $app, state, h, r0, toast, sheet, nav, datePicker, bindDatePicker, weightChart, MEALS });
+
 // ---------- boot ----------
 async function boot() {
   state.session = await db.getSession();
-  db.onAuthChange(s => { const was = !!state.session; state.session = s; if (!s) state.profile = null; if (!!s !== was) route(); });
+  db.onAuthChange(s => { const was = !!state.session; state.session = s; if (!s) state.profile = null; if (!!s !== was) { if (s) location.hash = '#/'; route(); } });
   route();
 }
 boot();
