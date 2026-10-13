@@ -11,6 +11,9 @@ import * as rp from './report.js';
 import * as ck from './checkin.js';
 import * as ad from './admin.js';
 import * as gl from './goals.js';
+import * as dtm from './diet.js';
+import * as gls from './glucose.js';
+import * as crd from './cards.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -48,7 +51,7 @@ function sheet(html) {
   return bg;
 }
 // spodná lišta: max 5 položiek pre účastníka (6 pre kouča); Váha + Fotky = Pokrok
-const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/', '#/admin': '#/profil', '#/napis': '#/profil', '#/ciele': '#/profil' };
+const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/', '#/admin': '#/profil', '#/napis': '#/profil', '#/ciele': '#/profil', '#/rezim': '#/profil', '#/karta': '#/profil', '#/cukor': '#/', '#/cukor-sprava': '#/' };
 function nav(active) {
   const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
@@ -95,7 +98,8 @@ async function route() {
   if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
-    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals };
+    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals,
+    '#/rezim': dtm.renderDiet, '#/cukor': gls.renderGlucose, '#/cukor-sprava': gls.renderGlucoseReport, '#/karta': crd.renderCards };
   let fn = views[path];
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
@@ -110,7 +114,7 @@ function renderAuth(mode = 'login') {
   <div class="hero">
     <div class="tag">Druhý dych</div>
     <h1>Druhý dych nie je dar.<br>Dá sa naučiť.</h1>
-    <p class="lead">12 týždňov. Jedlo, váha, pohýb a hlava na jednom mieste. Tvoj kouč vidí každý krok.</p>
+    <p class="lead">12 týždňov. Jedlo, váha, pohyb a hlava na jednom mieste. Tvoj kouč vidí každý krok.</p>
   </div>
   <div class="screen no-nav">
     <div class="card">
@@ -131,7 +135,7 @@ function renderAuth(mode = 'login') {
     try {
       if (mode === 'register') {
         const res = await db.signUp(f.get('email'), f.get('password'), f.get('name'));
-        if (!res.session) { toast('Účet vytvorený. Skontroluj e-mail a potvrdň registráciu.'); renderAuth('login'); return; }
+        if (!res.session) { toast('Účet vytvorený. Skontroluj e-mail a potvrď registráciu.'); renderAuth('login'); return; }
       } else {
         await db.signIn(f.get('email'), f.get('password'));
       }
@@ -163,7 +167,7 @@ async function renderOnboarding() {
         ${Object.entries(calc.ACTIVITY).map(([k, v]) => `<option value="${k}" ${(p.activity || 'light') === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
       <label class="field"><span>Koľko dní v týždni chceš trénovať</span><input class="input" type="number" name="training_days" min="0" max="7" value="${p.training_days ?? 3}"></label>
       <div id="preview" class="stat mb" style="display:none"></div>
-      ${p.onboarded ? '' : '<label class="row small mb" style="gap:10px;align-items:flex-start"><input type="checkbox" name="adult" required style="margin-top:3px"> <span>Mám aspoň 18 rokov. Beriem na vedomie, že appka nenahradíza lekára ani výživového poradcu a používam ju na vlastnú zodpovednosť.</span></label>'}
+      ${p.onboarded ? '' : '<label class="row small mb" style="gap:10px;align-items:flex-start"><input type="checkbox" name="adult" required style="margin-top:3px"> <span>Mám aspoň 18 rokov. Beriem na vedomie, že appka nenahrádza lekára ani výživového poradcu a používam ju na vlastnú zodpovednosť.</span></label>'}
       <button class="btn primary" type="submit">${p.onboarded ? 'Uložiť zmeny' : 'Uložiť a začať'}</button>
     </form>
   </div>`;
@@ -192,7 +196,7 @@ async function renderOnboarding() {
       role: state.profile?.role || 'participant',
     };
     if (first) { profile.start_weight = w; profile.start_date = calc.today(); }
-    // vlastné ciele (Moje ciele) neprepisujeme, údaje sa len uložia
+    // vlastné ciele (Moje ciele) neprepíšeme, údaje sa len uložia
     const custom = state.profile?.targets_mode === 'custom';
     if (custom) { delete profile.target_kcal; delete profile.target_protein; delete profile.target_carbs; delete profile.target_fat; }
     try {
