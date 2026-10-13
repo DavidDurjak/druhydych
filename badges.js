@@ -19,14 +19,14 @@ const LEVELS = [
 const CATS = [
   { k: 'days', i: '📅', t: 'Zapisovanie', d: 'dni so zapísaným jedlom', u: ['deň', 'dni', 'dní'], th: [1, 7, 30, 100, 200, 365], n: ['Prvý krok', 'Celý týždeň', 'Mesiac zápisov', 'Stovka dní', 'Dvojstovka', 'Celý rok'] },
   { k: 'streak', i: '🔥', t: 'Séria', d: 'dní v rade bez vynechania', u: ['deň', 'dni', 'dní'], th: [3, 7, 14, 30, 60, 100], n: ['Rozbeh', 'Týždeň v kuse', 'Dva týždne', 'Železná séria', 'Neotrasiteľný', 'Stovka v rade'] },
-  { k: 'perfect', i: '⭐', t: 'Dokonalé dni', d: 'kalórie aj bielkoviny v cieľi v ten istý deň', u: ['deň', 'dni', 'dní'], th: [1, 3, 7, 15, 30, 60], n: ['Dokonalý deň', 'Hattrick', 'Týždeň dokonalosti', 'Perfekcionista', 'Mesiac bez chyby', 'Legenda'] },
-  { k: 'kcal', i: '🎯', t: 'Kalórie v cieľi', d: 'dni v rozmedzí 10 % od cieľa', u: ['deň', 'dni', 'dní'], th: [1, 5, 15, 30, 60, 100], n: ['Presný zásah', 'Päť zásahov', 'Pod kontrolou', 'Mesiac presnosti', 'Strelec', 'Odstrelovač'] },
+  { k: 'perfect', i: '⭐', t: 'Dokonalé dni', d: 'kalórie aj bielkoviny v cieli v ten istý deň', u: ['deň', 'dni', 'dní'], th: [1, 3, 7, 15, 30, 60], n: ['Dokonalý deň', 'Hattrick', 'Týždeň dokonalosti', 'Perfekcionista', 'Mesiac bez chyby', 'Legenda'] },
+  { k: 'kcal', i: '🎯', t: 'Kalórie v cieli', d: 'dni v rozmedzí 10 % od cieľa', u: ['deň', 'dni', 'dní'], th: [1, 5, 15, 30, 60, 100], n: ['Presný zásah', 'Päť zásahov', 'Pod kontrolou', 'Mesiac presnosti', 'Strelec', 'Odstrelovač'] },
   { k: 'protein', i: '💪', t: 'Bielkoviny', d: 'dni so splneným cieľom bielkovín', u: ['deň', 'dni', 'dní'], th: [1, 5, 15, 30, 60, 100], n: ['Prvé bielkoviny', 'Päť dní', 'Svalový základ', 'Mesiac bielkovín', 'Stavba tela', 'Bielkovinový boh'] },
   { k: 'train', i: '🏋️', t: 'Tréning', d: 'dokončené tréningy', u: ['tréning', 'tréningy', 'tréningov'], th: [1, 5, 10, 25, 50, 100], n: ['Prvý tréning', 'Rozcvičený', 'Desiatka', 'Železo', 'Pravidelný hosť', 'Stovka'] },
   { k: 'weeks', i: '📆', t: 'Silné týždne', d: 'týždne s aspoň 5 zapísanými dňami', u: ['týždeň', 'týždne', 'týždňov'], th: [1, 2, 4, 8, 12, 24], n: ['Silný týždeň', 'Dva silné', 'Silný mesiac', 'Dva mesiace', 'Kvartál', 'Pol roka'] },
   { k: 'water', i: '💧', t: 'Voda', d: 'dni so splneným pitným režimom', u: ['deň', 'dni', 'dní'], th: [1, 5, 15, 30, 60, 100], n: ['Prvý pohár', 'Hydratovaný', 'Dva týždne vody', 'Mesiac vody', 'Studnica', 'Oceán'] },
   { k: 'meals', i: '🍽️', t: 'Zapísané jedlá', d: 'zapísané jedlá celkovo', u: ['jedlo', 'jedlá', 'jedál'], th: [10, 50, 100, 250, 500, 1000], n: ['Prvá desiatka', 'Päťdesiatka', 'Stovka jedál', 'Gurmán', 'Majster zápisu', 'Tisícka'] },
-  { k: 'weigh', i: '⚖️', t: 'Váženie', d: 'zapísané váženia', u: ['váženie', 'váženia', 'váženi'], th: [1, 5, 15, 30, 60, 100], n: ['Prvé váženie', 'Päť vážení', 'Sledujúč', 'Mesiac váženia', 'Analytik', 'Stovka vážení'] },
+  { k: 'weigh', i: '⚖️', t: 'Váženie', d: 'zapísané váženia', u: ['váženie', 'váženia', 'váženi'], th: [1, 5, 15, 30, 60, 100], n: ['Prvé váženie', 'Päť vážení', 'Sledovač', 'Mesiac váženia', 'Analytik', 'Stovka vážení'] },
   { k: 'lose', i: '📉', t: 'Zmena váhy', d: 'kg dole od štartu', u: ['kg', 'kg', 'kg'], th: [1, 2, 5, 10, 15, 20], n: ['Prvé kilo', 'Dve kilá', 'Päť kíl', 'Desiatka', 'Premena', 'Nový človek'], only: 'lose', dec: true },
   { k: 'gain', i: '📈', t: 'Zmena váhy', d: 'kg hore od štartu', u: ['kg', 'kg', 'kg'], th: [1, 2, 4, 6, 8, 10], n: ['Prvé kilo', 'Dve kilá', 'Štyri kilá', 'Šesť kíl', 'Osem kíl', 'Desať kíl'], only: 'gain', dec: true },
 ];
