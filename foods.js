@@ -29,6 +29,11 @@ function fromOff(f) { return { ...f, portions: [], source: 'off' }; }
 async function fromLog(l) {
   if (l.food_id) { const f = await db.getFood(l.food_id).catch(() => null); if (f) return { ...fromDb(f), lastPortion: l.portion, lastQty: l.qty, lastGrams: l.grams }; }
   const g = Number(l.grams) || 100, k = 100 / g;
+  // zápis bez väzby na databázu (odhad, rýchle pridanie): ak existuje rovnaké jedlo s podobnými kalóriami, použijeme ho, nech sa dá overiť lepok a alergény
+  if (l.name && g > 0) {
+    const f = await db.sb.from('foods').select('*').eq('name', l.name).order('pop', { ascending: false, nullsFirst: false }).limit(5).then(r => (r.data || []).find(x => Math.abs(Number(x.kcal) - l.kcal * k) <= Math.max(15, 0.15 * l.kcal * k)), () => null);
+    if (f) return { ...fromDb(f), lastGrams: g };
+  }
   return { name: l.name, brand: l.brand || '', barcode: l.barcode, kcal: l.kcal * k, protein: l.protein * k, carbs: l.carbs * k, fat: l.fat * k, portions: [], source: l.source || 'manual', lastGrams: g };
 }
 
