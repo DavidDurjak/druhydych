@@ -113,8 +113,16 @@ export async function renderToday() {
   const isToday = st.date === calc.today(), isFuture = st.date > calc.today();
   const wkStart = calc.weekStart(st.date), wkEnd = calc.addDays(wkStart, 6);
   const from30 = calc.addDays(calc.today(), -30);
+  // všetko naraz: hlavné dáta aj doplnkové karty (predtým išli karty po jednej, každá čakala na predošlú)
+  // doplnková karta, ktorá nestihne do 2,5 s, sa tentokrát vynechá (obrazovka nikdy nečaká na pomalú maličkosť)
+  const soft = (pr, d) => Promise.race([pr.catch(() => d), new Promise(r => setTimeout(() => r(d), 2500))]);
+  const weightsP = db.listWeights(uid);
+  const adaptP = isToday && p.targets_mode !== 'custom' ? soft(weightsP.then(w => v2.checkAdaptive(p, w)), null) : Promise.resolve(null);
+  const pushP = isToday ? soft(push.pushPromptCard(), '') : Promise.resolve('');
+  const actP = soft(hw.activityCard(uid, st.date), '');
+  const weekP = isToday ? soft(ck.weekCardHtml(uid), '') : Promise.resolve('');
   const [foods, weights, checkin, actDates, msgs, plan, wlogs, byDay] = await Promise.all([
-    db.listFood(uid, st.date), db.listWeights(uid), db.getCheckin(uid, st.date),
+    db.listFood(uid, st.date), weightsP, db.getCheckin(uid, st.date),
     db.activityDates(uid, from30), db.listMessages(uid), db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.weekStart(), -28)),
     db.foodByDay(uid, wkStart, wkEnd).catch(() => ({})),
   ]);
@@ -130,11 +138,9 @@ export async function renderToday() {
   const weekLogs = wlogs.filter(w => w.done && w.date >= calc.weekStart());
   const trainedToday = wlogs.some(w => w.done && w.date === st.date);
   const nd = plan ? plan.days[nextDay(plan, wlogs) - 1] : null;
-  const adaptive = isToday && p.targets_mode !== 'custom' ? await v2.checkAdaptive(p, weights).catch(() => null) : null;
-  const pushCard = isToday ? await push.pushPromptCard().catch(() => '') : '';
+  const [adaptive, pushCard, actCard, weekCard] = await Promise.all([adaptP, pushP, actP, weekP]);
   const left = p.target_kcal - sum.kcal, over = left < 0;
   const tip = insight({ p, sum, foods, water, waterGoal, strk, isToday, isFuture });
-  const actCard = await hw.activityCard(uid, st.date).catch(() => '');
   // týždenný priemer (rozhoduje týždeň, nie jeden deň)
   const wkDays = Object.keys(byDay).filter(d => d !== st.date && d <= calc.today() && byDay[d]?.kcal > 0);
   const wkVals = wkDays.map(d => byDay[d].kcal).concat(sum.kcal > 0 && !isFuture ? [sum.kcal] : []);
@@ -166,7 +172,6 @@ export async function renderToday() {
   // týždenný check-in a report dávajú zmysel až po prvom celom týždni
   const newcomer = (p.start_date || calc.today()) > calc.addDays(rp.defaultWeek(), 6);
   const firstCard = firstRun ? `<section class="back-card td-first"><span class="back-i">👋</span><div><h3>Začni prvým jedlom</h3><p>Napíš vlastnými slovami, čo si jedol, napríklad „2 vajcia a rožok“, alebo jedlo odfoť. Appka spočíta kalórie za teba.</p><a class="btn sm primary" href="#/jedlo?ai=1">Zapísať prvé jedlo</a></div></section>` : '';
-  const weekCard = isToday ? await ck.weekCardHtml(uid).catch(() => '') : '';
 
   const week = Array.from({ length: 7 }, (_, i) => calc.addDays(wkStart, i));
   const weekStrip = `<div class="wk">
@@ -178,14 +183,15 @@ export async function renderToday() {
       const dt = new Date(d + 'T00:00:00');
       return `<button class="wk-d ${d === st.date ? 'sel' : ''} ${future ? 'fut' : ''} ${d === calc.today() ? 'now' : ''}" data-d="${d}" aria-label="${longDate(d)}">
         <span class="wk-l">${['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'][dt.getDay()]}</span>
-        <span class="wk-r">${ringSvg(34, 3.5, pct, pct > 1.1 ? 'var(--m-dinner)' : future ? 'var(--m-brunch)' : 'var(--accent)')}<b>${dt.getDate()}</b></span></button>`;
+        <span class="wk-r">${ringSvg(34, 3.5, pct, pct > 1.1 ? 'var(--danger)' : future ? 'var(--m-brunch)' : 'var(--accent)')}<b>${dt.getDate()}</b></span></button>`;
     }).join('')}
     <button class="wk-nav" data-wk="7" aria-label="Ďalší týždeň">›</button>
   </div>`;
 
+  // makrá: bielkoviny, sacharidy a tuky jednou farbou, vláknina inou; prekročený cieľ = červená
   const macro = (lbl, val, target, color, noOver = false) => {
-    const pct = target ? Math.min(100, val / target * 100) : 0, over = !noOver && target && val > target * 1.05;
-    return `<div class="mc"><div class="mc-h"><span><u style="background:${color}"></u>${lbl}</span><b>${r0(val)}<small> / ${r0(target)} g</small></b></div><div class="mc-b"><i style="width:${pct}%;background:${over ? 'var(--m-dinner)' : color}"></i></div></div>`;
+    const pct = target ? Math.min(100, val / target * 100) : 0, over = !noOver && target && r0(val) > r0(target);
+    return `<div class="mc ${over ? 'over' : ''}"><div class="mc-h"><span><u style="background:${color}"></u>${lbl}</span><b>${r0(val)}<small> / ${r0(target)} g</small></b></div><div class="mc-b"><i style="width:${pct}%;background:${over ? 'var(--danger)' : color}"></i></div>${over ? `<em class="mc-o">+${r0(val - target)} g nad cieľ</em>` : ''}</div>`;
   };
   // vláknina z jedál, ktoré ju majú v databáze (cieľ: 14 g na 1000 kcal, aspoň 25 g)
   const fiber = foods.reduce((a, f) => a + Number(f.fiber || 0), 0);
@@ -216,7 +222,7 @@ export async function renderToday() {
         <div class="ml-t"><h3>${m.label}</h3><span><b>${r0(s.kcal)}</b>${rec ? ` / ${rec}` : ''} kcal</span><span class="mx">B ${r0(s.protein)} · S ${r0(s.carbs)} · T ${r0(s.fat)}</span></div>
         ${menu}${add}
       </header>
-      ${rec ? `<div class="ml-bar"><i style="width:${pct}%;${s.kcal > rec * 1.15 ? 'background:var(--m-dinner)' : ''}"></i></div>` : ''}
+      ${rec ? `<div class="ml-bar"><i style="width:${pct}%;${s.kcal > rec * 1.15 ? 'background:var(--danger)' : ''}"></i></div>` : ''}
       <ul class="ml-list">${rows.map(mealRows).join('')}</ul>
     </section>`;
   }).join('');
@@ -269,10 +275,10 @@ export async function renderToday() {
         <a class="hk-st" href="#/ciele" aria-label="Upraviť ciele"><b>${p.target_kcal}</b><span>cieľ<i>✎</i></span></a>
       </div>
       <div class="hk-macros">
-        ${macro('Bielkoviny', sum.protein, p.target_protein, 'var(--protein)')}
-        ${macro('Sacharidy', sum.carbs, p.target_carbs, 'var(--carbs)')}
-        ${macro('Tuky', sum.fat, p.target_fat, 'var(--fat)')}
-        ${macro('Vláknina', fiber, fiberGoal, 'var(--fiber)', true)}
+        ${macro('Bielkoviny', sum.protein, p.target_protein, 'var(--mac)')}
+        ${macro('Sacharidy', sum.carbs, p.target_carbs, 'var(--mac)')}
+        ${macro('Tuky', sum.fat, p.target_fat, 'var(--mac)')}
+        ${macro('Vláknina', fiber, fiberGoal, 'var(--fib)', true)}
       </div>
       ${fiberGap ? '<p class="hk-note">Vláknina sa počíta len z jedál, ktoré ju majú v databáze.</p>' : ''}
     </section>
