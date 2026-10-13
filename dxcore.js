@@ -222,7 +222,7 @@ export function attachSheet(bg, food, o) {
 // ---------- „Overil som obal“: ľudia doplňajú chýbajúce údaje, po zhode dvoch sa uloží pre všetkých ----------
 const eh = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 function verifyUI(box, food, c, redraw) {
-  if (!food || food.source !== 'db' || !food.id) return;
+  if (!food || !((food.source === 'db' && food.id) || (food.source === 'off' && food.barcode))) return;
   const vbox = document.createElement('div'); vbox.className = 'dxv'; box.after(vbox);
   const needs = () => assess(food, c).some(x => x.level === 'unk');
   let open = false, done = false, busyV = false;
@@ -249,7 +249,20 @@ function verifyUI(box, food, c, redraw) {
       const err = vbox.querySelector('#dxverr');
       if (!g && !sel.l && al === null) { err.textContent = 'Vyber aspoň jeden údaj z obalu.'; return; }
       busyV = true;
-      const { error } = await db.sb.rpc('verify_food', { p_food: food.id, p_gluten: g, p_lactose: sel.l, p_allergens: al });
+      let fid = food.id;
+      if (!fid) {
+        // produkt z Open Food Facts najprv ulozime do nasej databazy, nech sa da overit
+        try {
+          const ex = await db.foodByBarcode(food.barcode);
+          if (ex) fid = ex.id;
+          else {
+            const r1v = v => Math.round(Number(v) * 10) / 10, op = v => v != null && Number(v) >= 0 && Number(v) <= 100 ? r1v(v) : null;
+            const row = { name: String(food.name || '').slice(0, 120), brand: String(food.brand || '').split(',')[0].slice(0, 80) || null, barcode: food.barcode, kcal: Math.round(Number(food.kcal)), protein: r1v(food.protein), carbs: r1v(food.carbs), fat: r1v(food.fat), fiber: op(food.fiber), sugar: op(food.sugar), salt: op(food.salt) };
+            fid = (await db.createFood(row)).id;
+          }
+        } catch (e) { busyV = false; err.textContent = 'Produkt sa nepodarilo uložiť: ' + eh(e.message); return; }
+      }
+      const { error } = await db.sb.rpc('verify_food', { p_food: fid, p_gluten: g, p_lactose: sel.l, p_allergens: al });
       busyV = false;
       if (error) { err.textContent = /function|schema cache|does not exist/i.test(error.message) ? 'Overovanie sa ešte pripravuje. Skús to neskôr.' : 'Nepodarilo sa odoslať: ' + eh(error.message); return; }
       if (g && food.gluten == null) food.gluten = g;
@@ -262,6 +275,7 @@ function verifyUI(box, food, c, redraw) {
   // moje predchádzajúce overenie sa použije hneď aj pre mňa
   (async () => {
     try {
+      if (!food.id) return;
       const { data: u } = await db.sb.auth.getUser(); const uid = u?.user?.id; if (!uid) return;
       const { data } = await db.sb.from('food_checks').select('gluten,lactose,allergens').eq('user_id', uid).eq('food_id', food.id).maybeSingle();
       if (!data) return;
