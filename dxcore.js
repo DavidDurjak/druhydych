@@ -18,7 +18,7 @@ export const alName = k => AL_NAME[k] || k;
 export const DTYPES = {
   t1: { label: '1. typ', lo: 3.9, hi: 10, fast: 7, insulin: true },
   t2: { label: '2. typ', lo: 3.9, hi: 10, fast: 7, insulin: false },
-  pre: { label: 'Prediabetes, inzulínová rezistencia', lo: 3.9, hi: 7.8, fast: 5.6, insulin: false },
+  pre: { label: 'Prediabetes, inčulínová rezistencia', lo: 3.9, hi: 7.8, fast: 5.6, insulin: false },
   gdm: { label: 'Tehotenská cukrovka', lo: 3.9, hi: 7.8, fast: 5.3, insulin: false },
 };
 export const DEF = { modes: [], dtype: 't2', unit: 'mmol', lo: 3.9, hi: 10, fast: 7, sj: 10, mealCarb: null, insulin: false, allergens: [], hide: false, consent: null };
@@ -67,10 +67,10 @@ export function assess(f, c = cfg()) {
   const out = [], A = f.allergens, T = f.traces, known = Array.isArray(A);
   if (active('celiac', c)) {
     let r;
-    if (f.gluten === 'contains' || has(A, 'gluten')) r = ['bad', 'Lepok', 'Obsahuje lepok', 'Tomuto jedlu sa vyhni. Lepok je v pšenici, raži, jačmeni, ovse a špalde.'];
+    if (f.gluten === 'contains' || has(A, 'gluten')) r = ['bad', 'Lepok', 'Obsahuje lepok', 'Tomuto jedlu sa vyhni. Lepok je v pšenici, raži, jačmeni, ovse a špaldě.'];
     else if (f.gluten === 'traces' || has(T, 'gluten')) r = ['warn', 'Stopy lepku', 'Môže obsahovať stopy lepku', 'Výrobca uvádza možnú krížovú kontamináciu. Pri celiakii sa to berie vážne.'];
     else if (f.gluten === 'free') r = ['ok', 'Bez lepku', 'Bez lepku', 'Prirodzene bez lepku alebo označené výrobcom. Pri balených produktoch si aj tak pozri obal.'];
-    else if (known) r = ['warn', 'Over obal', 'Lepok nie je v zložení uvedený', 'Lepok sme v zložení nenašli, ale nie je to označené ako bezlepkové. Over obal (prečiarknutý klas alebo text „bez lepku“).'];
+    else if (known) r = ['warn', 'Over obal', 'Lepok nie je v zložení uvedený', 'Lepok sme v zložení nenašli, ale nie je to označené ako bezlepkové. Over obal (precičiarknutý klas alebo text „bez lepku“).'];
     else r = ['unk', 'Neoverené', 'Lepok zatiaľ neoverený', 'O tomto jedle nemáme údaj o lepku. Over zloženie na obale alebo sa spýtaj v prevádzke.'];
     out.push({ mode: 'celiac', level: r[0], short: r[1], text: r[2], more: r[3] });
   }
@@ -79,7 +79,7 @@ export function assess(f, c = cfg()) {
     if (f.lactose === 'high' || (f.lactose == null && has(A, 'milk'))) r = ['bad', 'Laktóza', 'Obsahuje laktózu', 'Obsahuje mlieko alebo mliečne zložky s laktózou.'];
     else if (f.lactose === 'low') r = ['warn', 'Málo laktózy', 'Malý obsah laktózy', 'Dlho zrejúce syry a maslo majú laktózy veľmi málo. Väčšina ľudí ich znáša, ty to poznáš najlepšie.'];
     else if (f.lactose === 'free') r = ['ok', 'Bez laktózy', 'Bez laktózy', 'Bez laktózy alebo bez mliečnych zložiek.'];
-    else if (known) r = ['ok', 'Bez mlieka', 'Bez mliečnych zložiek', 'Mlieko v zložení nie je uvedené. Pri balených produktoch si pozri obal.'];
+    else if (known) r = ['ok', 'Bez mlieka', 'Bez mliečných zložiek', 'Mlieko v zložení nie je uvedené. Pri balených produktoch si pozri obal.'];
     else r = ['unk', 'Neoverené', 'Laktóza zatiaľ neoverená', 'O tomto jedle nemáme údaj o laktóze. Over zloženie na obale.'];
     out.push({ mode: 'lactose', level: r[0], short: r[1], text: r[2], more: r[3] });
   }
@@ -215,7 +215,62 @@ export function attachSheet(bg, food, o) {
     box.innerHTML = parts.join('');
   };
   draw();
+  verifyUI(box, food, c, () => draw());
   return draw;
+}
+
+// ---------- „Overil som obal“: ľudia doplňajú chýbajúce údaje, po zhode dvoch sa uloží pre všetkých ----------
+const eh = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+function verifyUI(box, food, c, redraw) {
+  if (!food || food.source !== 'db' || !food.id) return;
+  const vbox = document.createElement('div'); vbox.className = 'dxv'; box.after(vbox);
+  const needs = () => assess(food, c).some(x => x.level === 'unk');
+  let open = false, done = false, busyV = false;
+  const sel = { g: null, l: null, al: new Set(), none: false };
+  const opt = (grp, val, lbl, on) => `<button type="button" class="dxo${on ? ' on' : ''}" data-${grp}="${val}">${lbl}</button>`;
+  const render = () => {
+    if (!needs() && !done) { vbox.innerHTML = ''; return; }
+    if (done) { vbox.innerHTML = '<div class="dxvt">Vďaka. Keď údaj potvrdia aspoň dvaja ľudia, uloží sa pre všetkých.</div>'; return; }
+    if (!open) { vbox.innerHTML = '<button type="button" class="dxvb" id="dxvopen">Máš obal pri sebe? Over údaj</button>'; vbox.querySelector('#dxvopen').onclick = () => { open = true; render(); }; return; }
+    vbox.innerHTML = `<div class="dxvf"><b>Čo je napísané na obale?</b>
+      <small>Lepok</small><div class="dxow">${opt('g', 'free', 'Bez lepku', sel.g === 'free')}${opt('g', 'contains', 'Obsahuje lepok', sel.g === 'contains')}${opt('g', 'traces', 'Môže obsahovať stopy', sel.g === 'traces')}</div>
+      <small>Laktóza</small><div class="dxow">${opt('l', 'free', 'Bez laktózy', sel.l === 'free')}${opt('l', 'low', 'Málo laktózy', sel.l === 'low')}${opt('l', 'high', 'Obsahuje mlieko', sel.l === 'high')}</div>
+      <small>Alergény, ktoré obal uvádza</small><div class="dxow">${ALLERGENS.map(([k, v]) => opt('a', k, v, sel.al.has(k))).join('')}${opt('n', '1', 'Žiadne alergény', sel.none)}</div>
+      <div class="dxow"><button type="button" class="btn primary" id="dxvsend">Odoslať</button><button type="button" class="btn" id="dxvcancel">Zrušiť</button></div><span id="dxverr" class="dxverr"></span></div>`;
+    vbox.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { sel.g = sel.g === b.dataset.g ? null : b.dataset.g; render(); });
+    vbox.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { sel.l = sel.l === b.dataset.l ? null : b.dataset.l; render(); });
+    vbox.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { const k = b.dataset.a; sel.al.has(k) ? sel.al.delete(k) : sel.al.add(k); if (sel.al.size) sel.none = false; render(); });
+    vbox.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { sel.none = !sel.none; if (sel.none) sel.al.clear(); render(); });
+    vbox.querySelector('#dxvcancel').onclick = () => { open = false; render(); };
+    vbox.querySelector('#dxvsend').onclick = async () => {
+      if (busyV) return;
+      const al = sel.none ? [] : (sel.al.size ? [...sel.al] : null);
+      let g = sel.g; if (!g && al && al.includes('gluten')) g = 'contains';
+      const err = vbox.querySelector('#dxverr');
+      if (!g && !sel.l && al === null) { err.textContent = 'Vyber aspoň jeden údaj z obalu.'; return; }
+      busyV = true;
+      const { error } = await db.sb.rpc('verify_food', { p_food: food.id, p_gluten: g, p_lactose: sel.l, p_allergens: al });
+      busyV = false;
+      if (error) { err.textContent = /function|schema cache|does not exist/i.test(error.message) ? 'Overovanie sa ešte pripravuje. Skús to neskôr.' : 'Nepodarilo sa odoslať: ' + eh(error.message); return; }
+      if (g && food.gluten == null) food.gluten = g;
+      if (sel.l && food.lactose == null) food.lactose = sel.l;
+      if (al && !Array.isArray(food.allergens)) food.allergens = al;
+      done = true; render(); redraw();
+    };
+  };
+  render();
+  // moje predchádzajúce overenie sa použije hneď aj pre mňa
+  (async () => {
+    try {
+      const { data: u } = await db.sb.auth.getUser(); const uid = u?.user?.id; if (!uid) return;
+      const { data } = await db.sb.from('food_checks').select('gluten,lactose,allergens').eq('user_id', uid).eq('food_id', food.id).maybeSingle();
+      if (!data) return;
+      if (food.gluten == null && data.gluten) food.gluten = data.gluten;
+      if (food.lactose == null && data.lactose) food.lactose = data.lactose;
+      if (!Array.isArray(food.allergens) && Array.isArray(data.allergens)) food.allergens = data.allergens;
+      render(); redraw();
+    } catch (_) { /* tabuľka ešte nemusí existovať */ }
+  })();
 }
 
 // ---------- štýly ----------
@@ -227,6 +282,10 @@ const CSS = `
 .dxb{border-radius:14px;padding:10px 12px;background:var(--bg-2);border-left:3px solid var(--line)}
 .dxb.ok{border-color:#7CFFB2}.dxb.warn{border-color:#FFC857}.dxb.bad{border-color:#FF5C7A;background:rgba(255,92,122,.08)}
 .dxb b{display:block;font-size:14px}.dxb span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+.dxv{margin-top:8px}.dxvb{width:100%;border:1px dashed var(--line);background:none;color:var(--text);border-radius:12px;padding:10px;font-size:13px;font-weight:600;cursor:pointer}
+.dxvf{border-radius:14px;padding:12px;background:var(--bg-2);display:flex;flex-direction:column;gap:6px}.dxvf small{color:var(--muted);font-size:12px;margin-top:4px}
+.dxow{display:flex;flex-wrap:wrap;gap:6px}.dxo{border:1px solid var(--line);background:none;color:var(--text);border-radius:99px;padding:6px 11px;font-size:12.5px;font-weight:600;cursor:pointer}.dxo.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.dxvt{font-size:12.5px;color:var(--muted);padding:8px 2px}.dxverr{font-size:12.5px;color:#FF8FA4}
 .dxb.bad b{color:#FF5C7A}
 .dxe{font-style:normal;font-weight:700;color:var(--text)}
 .dxn{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
