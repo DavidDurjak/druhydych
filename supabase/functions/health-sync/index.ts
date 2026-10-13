@@ -1,4 +1,4 @@
-// Druhý dych: príjem dát z Apple Zdravie (iOS Skratky) alebo iného zdroja cez osobný token
+// Fuelwind: príjem dát z Apple Zdravie (iOS Skratky) alebo iného zdroja cez osobný token
 // GET  /health-sync?t=TOKEN&steps=8432&kcal=540&sleep=7.2&hr=58&weight=79.4[&date=2026-10-12]
 // POST /health-sync  JSON alebo formulár s rovnakými poľami
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -80,5 +80,5 @@ Deno.serve(async (req) => {
   if (sleep != null) parts.push(`spánok ${Math.floor(sleep)} h ${Math.round((sleep % 1) * 60)} min`);
   if (hr != null) parts.push(`pokojový pulz ${Math.round(hr)}`);
   if (weight != null) parts.push(`váha ${weight.toFixed(1)} kg`);
-  return new Response(`✅ Druhý dych: ${parts.join(", ")}`, { headers: CORS });
+  return new Response(`✅ Fuelwind: ${parts.join(", ")}`, { headers: CORS });
 });
