@@ -120,8 +120,8 @@ async function inject() {
   if (busy || !root || !ctx.state?.profile) return;
   const uid = ctx.state.profile.id;
   if (!ensured || ensured.uid !== uid) { ensured = { uid, p: dx.ensure(uid) }; }
-  // odkaz v Profile
-  const link = root.querySelector('.screen a[href="#/ciele"]');
+  // odkaz v Profile (iba tlačidlo Moje ciele, nie malý odkaz „cieľ“ na obrazovke Dnes)
+  const link = root.querySelector('.screen a.btn[href="#/ciele"]');
   if (link && !root.querySelector('#dxlink')) {
     ensured.p.then(() => {
       if (!link.isConnected || root.querySelector('#dxlink')) return;
