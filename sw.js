@@ -1,5 +1,5 @@
 // Service worker: appka sa nainštaluje na plochu, načíta aj pri slabom signáli a prijíma push notifikácie
-const CACHE = 'druhydych-v33';
+const CACHE = 'fuelwind-v34';
 const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './push.js', './foods.js', './scan.js', './scan.css', './today.js', './logedit.js', './mydata.js', './micro.js', './meals.js', './fasting.js', './fabpos.js', './micro.css', './suggest.js', './suggest.css', './buddy.js', './avatars.js', './buddy.css', './today.css', './progress.js', './progress.css', './health.js', './report.js', './v07.css', './v08.css', './ailog.js', './checkin.js', './admin.js', './goals.js', './workouts.js', './dxcore.js', './diet.js', './glucose.js', './cards.js', './dxdash.js', './badges.js', './progfiber.js', './searchfix.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
@@ -24,10 +24,10 @@ self.addEventListener('fetch', e => {
 
 // ---------- Push notifikácie ----------
 self.addEventListener('push', e => {
-  let d = { title: 'Druhý dych', body: '', url: '#/', tag: 'dd' };
+  let d = { title: 'Fuelwind', body: '', url: '#/', tag: 'fw' };
   try { d = { ...d, ...e.data.json() }; } catch (_) { if (e.data) d.body = e.data.text(); }
   e.waitUntil(self.registration.showNotification(d.title, {
-    body: d.body, tag: d.tag, renotify: true, icon: './icon-192.png', badge: './icon-192.png', data: { url: d.url },
+    body: d.body, tag: d.tag, renotify: true, icon: 'https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon', badge: './icon-192.png', data: { url: d.url },
   }));
 });
 self.addEventListener('notificationclick', e => {

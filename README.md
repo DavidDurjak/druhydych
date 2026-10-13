@@ -1,6 +1,6 @@
-# Druhý dych
+# Fuelwind
 
-Druhý dych nie je dar. Dá sa naučiť.
+Fuelwind: jedlo, váha, tréning a kouč v jednej appke.
 
 Webová aplikácia (PWA) pre 12-týždňovú premenu: jedlo, váha, check-in a koučovský dashboard.
 Beží bez inštalácie z App Storu, otvorí sa z odkazu a dá sa pridať na plochu mobilu.

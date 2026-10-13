@@ -1,7 +1,7 @@
 {
-  "name": "Druhý dych",
-  "short_name": "Druhý dych",
-  "description": "Druhý dych nie je dar. Dá sa naučiť.",
+  "name": "Fuelwind",
+  "short_name": "Fuelwind",
+  "description": "Fuelwind: jedlo, váha, tréning a kouč v jednej appke.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

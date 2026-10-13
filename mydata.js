@@ -14,11 +14,11 @@ export async function exportMine(toast) {
   const { data, error } = await db.sb.rpc('export_my_data');
   if (error || !data) { toast(error?.message || 'Export sa nepodaril', true); return; }
   const day = new Date().toISOString().slice(0, 10);
-  save(`druhy-dych-moje-data-${day}.json`, JSON.stringify(data, null, 2), 'application/json');
+  save(`fuelwind-moje-data-${day}.json`, JSON.stringify(data, null, 2), 'application/json');
   // denník jedál ako CSV (otvoriteľný v Exceli)
   const rows = [['datum', 'jedlo', 'nazov', 'gramy', 'kcal', 'bielkoviny', 'sacharidy', 'tuky']];
   (data.food_logs || []).forEach(f => rows.push([f.date, f.meal, f.name, f.grams, f.kcal, f.protein, f.carbs, f.fat]));
-  save(`druhy-dych-jedla-${day}.csv`, '﻿' + rows.map(r => r.map(cell).join(';')).join('\n'), 'text/csv');
+  save(`fuelwind-jedla-${day}.csv`, '﻿' + rows.map(r => r.map(cell).join(';')).join('\n'), 'text/csv');
   toast('Dáta stiahnuté');
 }
 
