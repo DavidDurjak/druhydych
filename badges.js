@@ -26,7 +26,7 @@ const CATS = [
   { k: 'weeks', i: '📆', t: 'Silné týždne', d: 'týždne s aspoň 5 zapísanými dňami', u: ['týždeň', 'týždne', 'týždňov'], th: [1, 2, 4, 8, 12, 24], n: ['Silný týždeň', 'Dva silné', 'Silný mesiac', 'Dva mesiace', 'Kvartál', 'Pol roka'] },
   { k: 'water', i: '💧', t: 'Voda', d: 'dni so splneným pitným režimom', u: ['deň', 'dni', 'dní'], th: [1, 5, 15, 30, 60, 100], n: ['Prvý pohár', 'Hydratovaný', 'Dva týždne vody', 'Mesiac vody', 'Studnica', 'Oceán'] },
   { k: 'meals', i: '🍽️', t: 'Zapísané jedlá', d: 'zapísané jedlá celkovo', u: ['jedlo', 'jedlá', 'jedál'], th: [10, 50, 100, 250, 500, 1000], n: ['Prvá desiatka', 'Päťdesiatka', 'Stovka jedál', 'Gurmán', 'Majster zápisu', 'Tisícka'] },
-  { k: 'weigh', i: '⚖️', t: 'Váženie', d: 'zapísané váženia', u: ['váženie', 'váženia', 'váženi'], th: [1, 5, 15, 30, 60, 100], n: ['Prvé váženie', 'Päť vážení', 'Sledovač', 'Mesiac váženia', 'Analytik', 'Stovka vážení'] },
+  { k: 'weigh', i: '⚖️', t: 'Váženie', d: 'zapísané váženia', u: ['váženie', 'váženia', 'vážení'], th: [1, 5, 15, 30, 60, 100], n: ['Prvé váženie', 'Päť vážení', 'Sledovač', 'Mesiac váženia', 'Analytik', 'Stovka vážení'] },
   { k: 'lose', i: '📉', t: 'Zmena váhy', d: 'kg dole od štartu', u: ['kg', 'kg', 'kg'], th: [1, 2, 5, 10, 15, 20], n: ['Prvé kilo', 'Dve kilá', 'Päť kíl', 'Desiatka', 'Premena', 'Nový človek'], only: 'lose', dec: true },
   { k: 'gain', i: '📈', t: 'Zmena váhy', d: 'kg hore od štartu', u: ['kg', 'kg', 'kg'], th: [1, 2, 4, 6, 8, 10], n: ['Prvé kilo', 'Dve kilá', 'Štyri kilá', 'Šesť kíl', 'Osem kíl', 'Desať kíl'], only: 'gain', dec: true },
 ];
