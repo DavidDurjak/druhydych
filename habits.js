@@ -356,7 +356,7 @@ function cardHtml(hb) {
   let main;
   if (quit) {
     main = `<div class="hb-main"><div class="hb-big">${s.cleanDays >= 1 ? s.cleanDays : sinceLbl(s.cleanH)}<small>${s.cleanDays >= 1 ? pl(s.cleanDays, 'deň', 'dni', 'dní').replace(/^\d+ /, '') + ' bez' : 'bez'}</small></div>
-      <div class="hb-sub">${s.cleanDays >= 1 ? `<b>Naposledy ${calc.fmtDate(dkey(s.since))}. Odvtedy čisto.</b><br>` : s.lastUse && s.cleanH < 24 ? `<b>Posledné dnes ${new Date(s.lastUse).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })}. Odteraz sa počíta.</b><br>` : '<b>Prvý deň. Dnes rozhoduje.</b><br>'}${s.avoided > 0 ? `${r0(s.avoided)} ${it.u[2]} menej než predtým` : 'Každá odolaná chuť sa ráta'}</div></div>`;
+      <div class="hb-sub">${s.cleanDays >= 1 ? `<b>Čisto od ${calc.fmtDate(dkey(s.since))}</b><br>` : s.lastUse && s.cleanH < 24 ? `<b>Posledné dnes ${new Date(s.lastUse).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })}. Odteraz sa počíta.</b><br>` : '<b>Prvý deň. Dnes rozhoduje.</b><br>'}${s.avoided > 0 ? `${r0(s.avoided)} ${it.u[2]} menej než predtým` : 'Každá odolaná chuť sa ráta'}</div></div>`;
   } else {
     const pct = lim ? Math.min(100, s.todayQty / lim * 100) : 0;
     main = `<div class="hb-main"><div class="hb-big">${s.todayQty}<small>z ${lim} ${it.u[2]} dnes</small></div>
@@ -378,10 +378,8 @@ function bindCards(wrap, rerender) {
   wrap.querySelectorAll('[data-sos]').forEach(b => b.onclick = () => { const hb = cache.habits.find(x => x.id === Number(b.dataset.sos)); if (hb) openSOS(hb, rerender); });
 }
 
-const ASK = 'fw_hb_ask';
-const getAsk = () => { try { return localStorage.getItem(ASK); } catch (_) { return null; } };
-const setAsk = () => { try { localStorage.setItem(ASK, '1'); } catch (_) { /* súkromný režim */ } };
 let busy = false;
+const seen = new WeakSet();
 async function inject() {
   if (busy || !root || !ctx.state?.profile) return;
   const uid = ctx.state.profile.id;
@@ -392,7 +390,9 @@ async function inject() {
     (root.querySelector('#dxlink') || link).after(a);
   }
   const meals = root.querySelector('.screen.td .meals');
-  if (!meals || root.querySelector('#hbdash') || ctx.state.date !== calc.today()) return;
+  if (!meals || root.querySelector('#hbdash') || ctx.state.date !== calc.today() || seen.has(meals)) return;
+  // každú vykreslenú obrazovku skontroluje len raz (inak by pri každej zmene na stránke znova volal databázu)
+  seen.add(meals);
   busy = true;
   try {
     let c;
@@ -400,20 +400,17 @@ async function inject() {
     const m = root.querySelector('.screen.td .meals');
     if (!m || root.querySelector('#hbdash')) return;
     const hbs = activeHabits();
-    let html = '';
-    if (!hbs.length) {
-      if (getAsk()) return;
-      html = `<div class="hb hb-ask"><button class="x" aria-label="Zavrieť">×</button><h3>🚭 Fajčíš, vapuješ alebo piješ viac, než chceš?</h3><p>Zapni si režim Návyky. Jedno ťuknutie na zápis, séria dní, ušetrené peniaze, pomoc pri chuti a kouč, ktorý to vidí v súvislostiach s jedlom a váhou.</p><button class="btn primary" id="hbgo">Nastaviť</button></div>`;
-    } else html = hbs.map(cardHtml).join('');
-    const wrap = document.createElement('section'); wrap.id = 'hbdash'; wrap.innerHTML = html;
-    (root.querySelector('#dxdash') || m).before(wrap);
+    // bez návyku nič; ponuka je dlaždica v páse „Objav v appke“ (discover.js)
+    if (!hbs.length) return;
+    const wrap = document.createElement('section'); wrap.id = 'hbdash'; wrap.innerHTML = hbs.map(cardHtml).join('');
+    // pod jedlami: najprv zápis jedla, potom návyky
+    (root.querySelector('.screen.td #fw-discover') || root.querySelector('.screen.td details.an') || m).after(wrap);
     const rerender = async () => { await load(uid, true); const w = root.querySelector('#hbdash'); if (!w) return; w.innerHTML = activeHabits().map(cardHtml).join(''); bindCards(w, rerender); };
-    wrap.querySelector('.x')?.addEventListener('click', () => { setAsk(); wrap.remove(); });
-    wrap.querySelector('#hbgo')?.addEventListener('click', () => openSetup(null, rerender));
     bindCards(wrap, rerender);
   } catch (_) { /* nepodstatné */ } finally { busy = false; }
 }
-if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); inject(); }
+// prvé spustenie až po dokončení app.js (tento modul načítava priamo app.js, ctx ešte nemusí existovať)
+if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); setTimeout(inject, 0); }
 
 // ---------- obrazovka #/navyky ----------
 function chart(hb, s) {
