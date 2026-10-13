@@ -1,4 +1,4 @@
-// Druhý dych: hlavná aplikácia (routing + obrazovky)
+// Fuelwind: hlavná aplikácia (routing + obrazovky)
 import * as db from './data.js';
 import * as calc from './calc.js';
 import * as v2 from './app2.js';
@@ -112,8 +112,8 @@ async function route() {
 function renderAuth(mode = 'login') {
   $app.innerHTML = `
   <div class="hero">
-    <div class="tag">Druhý dych</div>
-    <h1>Druhý dych nie je dar.<br>Dá sa naučiť.</h1>
+    <div class="tag">Fuelwind</div>
+    <h1>Palivo pre telo.<br>Vietor v chrbte.</h1>
     <p class="lead">12 týždňov. Jedlo, váha, pohyb a hlava na jednom mieste. Tvoj kouč vidí každý krok.</p>
   </div>
   <div class="screen no-nav">
@@ -147,7 +147,7 @@ function renderAuth(mode = 'login') {
 async function renderOnboarding() {
   const p = state.profile || {};
   $app.innerHTML = `<div class="screen no-nav">
-    <div class="brand mb"><span class="dot"></span> Druhý dych</div>
+    <div class="brand mb"><span class="dot"></span> Fuelwind</div>
     <h1>Nastav si štart</h1>
     <p class="muted mb">Z týchto údajov ti appka vypočíta denný cieľ kalórií a makier. Všetko sa dá neskôr zmeniť v profile.</p>
     <form id="onb" class="card">
@@ -185,7 +185,7 @@ async function renderOnboarding() {
     e.preventDefault();
     const f = new FormData(form);
     const w = Number(f.get('weight')), hc = Number(f.get('height_cm'));
-    if (new Date().getFullYear() - Number(f.get('birth_year')) < 18) { toast('Druhý dych je pre ľudí od 18 rokov.', true); return; }
+    if (new Date().getFullYear() - Number(f.get('birth_year')) < 18) { toast('Fuelwind je pre ľudí od 18 rokov.', true); return; }
     const t = calc.targets({ sex: f.get('sex'), weightKg: w, heightCm: hc, birthYear: f.get('birth_year'), activity: f.get('activity'), goal: f.get('goal') });
     const uid = state.session.user.id;
     const first = !state.profile?.onboarded;
@@ -314,7 +314,7 @@ async function renderProfile() {
     <a class="btn mb" href="#/napis">💬 Napíš nám: problém alebo nápad</a>
     ${admin ? '<a class="btn mb" href="#/admin">📊 Admin prehľad</a>' : ''}
     <button class="btn danger" id="out">Odhlásiť sa</button>
-    <p class="muted small center mt">Druhý dych · verzia ${ad.APP_VERSION} · ${new Date().getFullYear()}</p>
+    <p class="muted small center mt">Fuelwind · verzia ${ad.APP_VERSION} · ${new Date().getFullYear()}</p>
   </div>${nav('#/profil')}`;
   $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; ad.resetAdmin(); };
 }
