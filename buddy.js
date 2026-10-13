@@ -143,12 +143,59 @@ function setup(first) {
   draw();
 }
 
+// ---------- história rozhovorov: každý deň zvlášť, dá sa vrátiť aj k starším ----------
+const dkey = d => new Date(d).toLocaleDateString('sv-SE');
+function dayLabel(iso) {
+  const k = dkey(iso), now = new Date();
+  if (k === dkey(now)) return 'Dnes';
+  if (k === dkey(new Date(now.getTime() - 864e5))) return 'Včera';
+  return new Date(iso).toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'numeric' });
+}
+const nMsg = n => `${n} ${n === 1 ? 'správa' : n < 5 ? 'správy' : 'správ'}`;
+function daySep(label) {
+  const log = panel?.querySelector('.bd-log'); if (!log) return;
+  const d = document.createElement('div'); d.className = 'bd-day'; d.textContent = label; log.appendChild(d);
+}
+async function openHistory() {
+  if (!panel) return;
+  const body = panel.querySelector('.bd-body');
+  body.innerHTML = '<div class="bd-hist"><p class="bd-hm">Načítavam...</p></div>';
+  const { data, error } = await db.sb.from('coach_msgs').select('role,content,created_at').eq('user_id', ctx.state.profile.id).order('created_at', { ascending: false }).limit(600);
+  if (!panel) return;
+  const back = () => renderChat();
+  if (error || !(data || []).length) {
+    body.innerHTML = `<div class="bd-hist"><button class="bd-hback">← Späť na chat</button><p class="bd-hm">${error ? 'História sa nenačítala. Skús to znova.' : 'Zatiaľ tu nie sú žiadne rozhovory. Napíš pomocníkovi a uložia sa sem.'}</p></div>`;
+    body.querySelector('.bd-hback').onclick = back; return;
+  }
+  const days = new Map();
+  data.slice().reverse().forEach(m => { const k = dkey(m.created_at); if (!days.has(k)) days.set(k, []); days.get(k).push(m); });
+  const keys = [...days.keys()].reverse();
+  const list = () => {
+    body.innerHTML = `<div class="bd-hist"><button class="bd-hback">← Späť na chat</button><div class="bd-hl">${keys.map(k => {
+      const ms = days.get(k), first = ms.find(x => x.role === 'user') || ms[0];
+      return `<button class="bd-hr" data-d="${k}"><b>${esc(dayLabel(ms[0].created_at))}</b><span>${esc(String(first.content).slice(0, 80))}</span><i>${nMsg(ms.length)}</i></button>`;
+    }).join('')}</div></div>`;
+    body.querySelector('.bd-hback').onclick = back;
+    body.querySelectorAll('[data-d]').forEach(b => b.onclick = () => show(b.dataset.d));
+  };
+  const show = k => {
+    const ms = days.get(k);
+    body.innerHTML = `<div class="bd-hbar"><button class="bd-hback">← História</button><b>${esc(dayLabel(ms[0].created_at))}</b></div><div class="bd-log"></div><div class="bd-hfoot"><button class="bd-hcont">Pokračovať v chate</button></div>`;
+    body.querySelector('.bd-hback').onclick = list;
+    body.querySelector('.bd-hcont').onclick = back;
+    ms.forEach(m => bubble(m.role === 'user' ? 'me' : 'coach', m.content));
+    const log = body.querySelector('.bd-log'); log.scrollTop = 0;
+  };
+  list();
+}
+
 async function renderChat() {
   const b = buddy();
   curAv = avatarSvg(b, 34, { anim: true });
-  panel.querySelector('.bd-head').innerHTML = `${avatarSvg(b, 44, { anim: true })}<div class="bd-hn"><b>${esc(b.name)}</b><span>tvoj pomocník a kouč</span></div><button class="bd-edit" aria-label="Upraviť postavičku">✎</button><button class="bd-x" aria-label="Zavrieť">×</button>`;
+  panel.querySelector('.bd-head').innerHTML = `${avatarSvg(b, 44, { anim: true })}<div class="bd-hn"><b>${esc(b.name)}</b><span>tvoj pomocník a kouč</span></div><button class="bd-hbtn" aria-label="História rozhovorov" title="História rozhovorov">🕘</button><button class="bd-edit" aria-label="Upraviť postavičku">✎</button><button class="bd-x" aria-label="Zavrieť">×</button>`;
   panel.querySelector('.bd-x').onclick = closeChat;
   panel.querySelector('.bd-edit').onclick = () => setup(false);
+  panel.querySelector('.bd-hbtn').onclick = openHistory;
   panel.querySelector('.bd-body').innerHTML = `<div class="bd-log"></div><div class="bd-chips"></div>
     <form class="bd-form"><textarea class="bd-in" rows="1" maxlength="1000" placeholder="Napíš, s čím ti mám pomôcť"></textarea><button class="bd-send" aria-label="Poslať">➤</button></form>`;
   const inp = panel.querySelector('.bd-in');
@@ -156,16 +203,21 @@ async function renderChat() {
   inp.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)) { e.preventDefault(); send(inp.value); } };
   panel.querySelector('.bd-form').onsubmit = e => { e.preventDefault(); send(inp.value); };
   // história
-  const { data } = await db.sb.from('coach_msgs').select('id,role,kind,content,meta').eq('user_id', ctx.state.profile.id).order('created_at', { ascending: false }).limit(16);
+  const { data } = await db.sb.from('coach_msgs').select('id,role,kind,content,meta,created_at').eq('user_id', ctx.state.profile.id).order('created_at', { ascending: false }).limit(30);
   if (!panel) return;
-  (data || []).reverse().forEach(m => bubble(m.role === 'user' ? 'me' : 'coach', m.content, m.role === 'coach' ? { id: m.id, action: m.meta?.action } : {}));
+  let prevDay = '';
+  (data || []).reverse().forEach(m => {
+    const k = dkey(m.created_at);
+    if (k !== prevDay) { daySep(dayLabel(m.created_at)); prevDay = k; }
+    bubble(m.role === 'user' ? 'me' : 'coach', m.content, m.role === 'coach' ? { id: m.id, action: m.meta?.action } : {});
+  });
   // ranná správa, ak ešte nie je
   typing(true);
   try {
     const r = await api({ mode: 'opener' });
     typing(false);
-    const last = data && data[0];
-    if (!(last && last.id === r.id)) bubble('coach', r.reply, { id: r.id, action: r.action });
+    const last = data && data[data.length - 1];
+    if (!(last && last.id === r.id)) { if (prevDay !== dkey(new Date())) daySep('Dnes'); bubble('coach', r.reply, { id: r.id, action: r.action }); }
     setChips(r.chips);
   } catch (e) {
     typing(false);
