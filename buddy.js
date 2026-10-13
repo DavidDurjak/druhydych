@@ -99,7 +99,7 @@ const VB = { top: '10 0 80 60', chest: '0 52 100 48', body: '0 36 100 64', face:
 
 function setup(first) {
   const sheet = panel.querySelector('.bd-body');
-  let st = first ? norm({ ...PRESETS[0], name: 'Dych' }) : norm(ctx.state.profile.buddy);
+  let st = first ? norm({ ...PRESETS[0], name: 'Gust' }) : norm(ctx.state.profile.buddy);
   let tab = 'a', keep = 0;
   const tile = (key, id, label, over, vb, size = 60) => `<button class="bd-tile ${st[key] === id ? 'on' : ''}" data-k="${key}" data-v="${id}"><span>${avatarSvg({ ...st, ...over }, size, { vb })}</span><i>${label}</i></button>`;
   const dots = (key, list) => `<div class="bd-row">${list.map((c, i) => `<button class="bd-dot ${st[key] === i ? 'on' : ''}" data-k="${key}" data-v="${i}" data-n="1" style="background:${c}" aria-label="Farba ${i + 1}"></button>`).join('')}</div>`;
@@ -117,7 +117,7 @@ function setup(first) {
     st.name = name;
     sheet.innerHTML = `<div class="bd-setup">
       <div class="bd-top"><div class="bd-prev">${avatarSvg(st, 118, { anim: true })}</div>
-        <div class="bd-tc"><label class="bd-l">Meno pomocníka<input class="bd-name" maxlength="20" value="${esc(st.name)}" placeholder="Dych"></label>
+        <div class="bd-tc"><label class="bd-l">Meno pomocníka<input class="bd-name" maxlength="20" value="${esc(st.name)}" placeholder="Gust"></label>
         <button class="bd-rnd" type="button">🎲 Náhodná postavička</button></div></div>
       <div class="bd-pre"><span>Hotové postavy</span><div class="bd-prs">${PRESETS.map((p, i) => `<button data-p="${i}" aria-label="${esc(p.n)}"><span>${avatarSvg(norm(p), 50)}</span><i>${esc(p.n)}</i></button>`).join('')}</div></div>
       <div class="bd-tabs" role="tablist">${TABS.map(([id, l]) => `<button role="tab" class="${tab === id ? 'on' : ''}" data-tab="${id}">${l}</button>`).join('')}</div>
@@ -134,7 +134,7 @@ function setup(first) {
     sheet.querySelectorAll('[data-p]').forEach(el => el.onclick = () => { const p = PRESETS[Number(el.dataset.p)]; const nm = sheet.querySelector('.bd-name').value; st = norm({ ...p, name: nm || p.n }); keep = 0; draw(); });
     sheet.querySelector('.bd-rnd').onclick = () => { const nm = sheet.querySelector('.bd-name').value; st = rnd(nm); keep = 0; draw(); };
     sheet.querySelector('.bd-save').onclick = async () => {
-      st.name = (sheet.querySelector('.bd-name').value.trim() || 'Dych').slice(0, 20);
+      st.name = (sheet.querySelector('.bd-name').value.trim() || 'Gust').slice(0, 20);
       const { error } = await db.sb.from('profiles').update({ buddy: st }).eq('id', ctx.state.profile.id);
       if (error) { ctx.toast(error.message, true); return; }
       ctx.state.profile.buddy = st; showFab(); renderChat();
