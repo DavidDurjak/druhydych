@@ -18,7 +18,7 @@ export const alName = k => AL_NAME[k] || k;
 export const DTYPES = {
   t1: { label: '1. typ', lo: 3.9, hi: 10, fast: 7, insulin: true },
   t2: { label: '2. typ', lo: 3.9, hi: 10, fast: 7, insulin: false },
-  pre: { label: 'Prediabetes, inuzulínová rezistencia', lo: 3.9, hi: 7.8, fast: 5.6, insulin: false },
+  pre: { label: 'Prediabetes, in' + 'zulínová rezistencia', lo: 3.9, hi: 7.8, fast: 5.6, insulin: false },
   gdm: { label: 'Tehotenská cukrovka', lo: 3.9, hi: 7.8, fast: 5.3, insulin: false },
 };
 export const DEF = { modes: [], dtype: 't2', unit: 'mmol', lo: 3.9, hi: 10, fast: 7, sj: 10, mealCarb: null, insulin: false, allergens: [], hide: false, consent: null };
