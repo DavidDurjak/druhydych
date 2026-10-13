@@ -73,6 +73,10 @@
 .mc-h small { font-size: 11.5px; color: var(--muted); font-weight: 600; }
 .mc-b { height: 6px; border-radius: 99px; background: var(--track); overflow: hidden; }
 .mc-b i { display: block; height: 100%; border-radius: 99px; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.mc { --mac: linear-gradient(90deg, #7CFFB2, #3FD5C4); --fib: #FFC857; }
+.mc.over .mc-h b { color: var(--danger); }
+.mc.over .mc-h u { background: var(--danger) !important; }
+.mc-o { font-style: normal; font-size: 11px; font-weight: 700; color: var(--danger); margin-top: -3px; }
 .hk-macros { gap: 16px 22px; }
 .hk-note { width: 100%; margin: 12px 0 0; font-size: 11.5px; color: var(--muted); text-align: center; }
 
