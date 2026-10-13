@@ -1,5 +1,5 @@
 // Hotové jedálničky: 3 štýly, 3 dni v rotácii, gramáž sa prepočíta na kalórie používateľa.
-// Karta sa sama vloží pod lištu rýchleho zápisu na obrazovke Dnes (bez zásahu do today.js).
+// Otvára sa z dlaždice v páse „Objav v appke“ na obrazovke Dnes (discover.js).
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
@@ -76,7 +76,7 @@ if (!document.getElementById('plan-css')) { const s = document.createElement('st
 const DNI = ['nedeľa', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'];
 const plural = n => n === 1 ? 'deň' : n < 5 ? 'dni' : 'dní';
 
-function openPlans() {
+export function openPlans() {
   const p = ctx.state.profile, uid = p.id, target = p.target_kcal || 2000, t = calc.today();
   const nextMon = calc.addDays(calc.weekStart(t), 7);
   const starts = [[t, 'Dnes'], [calc.addDays(t, 1), 'Zajtra'], [nextMon, 'Od pondelka']];
@@ -123,18 +123,4 @@ function openPlans() {
   };
 }
 
-let busy = false;
-function inject() {
-  if (busy || !root || !ctx.state?.profile) return;
-  const qk = root.querySelector('.screen.td .qk');
-  if (!qk || root.querySelector('#planCard')) return;
-  busy = true;
-  try {
-    const b = document.createElement('button');
-    b.id = 'planCard'; b.className = 'plan-card';
-    b.innerHTML = `<span class="pc-i">🗓️</span><span class="pc-t"><b>Hotový jedálniček</b><small>Týždeň jedla na tvojich ${ctx.state.profile.target_kcal || ''} kcal, jedným ťuknutím</small></span><i>›</i>`;
-    b.onclick = openPlans;
-    qk.after(b);
-  } finally { busy = false; }
-}
-if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); inject(); }
+// karta Hotový jedálniček je teraz dlaždica v páse „Objav v appke“ (discover.js) pod jedlami

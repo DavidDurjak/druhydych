@@ -51,7 +51,7 @@ async function flagsFor(rows) {
   if (ids.length) {
     const { data } = await db.sb.from('foods').select('id,gluten,lactose,allergens,traces').in('id', ids);
     (data || []).forEach(f => { m[f.id] = f; });
-    // moje vlastné overenia z obalu doplňajú chýbajúce údaje
+    // moje vlastné overenia z obalu dopĺňajú chýbajúce údaje
     try {
       const { data: own } = await db.sb.from('food_checks').select('food_id,gluten,lactose,allergens').eq('user_id', ctx.state.profile.id).in('food_id', ids);
       (own || []).forEach(o => {
@@ -126,6 +126,7 @@ async function build(date) {
   return glu + card;
 }
 
+const seen = new WeakSet();
 async function inject() {
   if (busy || !root || !ctx.state?.profile) return;
   const uid = ctx.state.profile.id;
@@ -142,7 +143,9 @@ async function inject() {
     });
   }
   const meals = root.querySelector('.screen.td .meals');
-  if (!meals || root.querySelector('#dxdash')) return;
+  if (!meals || root.querySelector('#dxdash') || seen.has(meals)) return;
+  // každú vykreslenú obrazovku skontroluje len raz (inak by pri každej zmene na stránke znova volal databázu)
+  seen.add(meals);
   busy = true;
   try {
     await ensured.p;
@@ -150,18 +153,19 @@ async function inject() {
     const m = root.querySelector('.screen.td .meals');
     if (!m || root.querySelector('#dxdash')) return;
     let html = '';
-    if (!dx.anyMode(c)) {
-      if (getAsk()) return;
-      html = `<div class="dxd dxask"><button class="x" aria-label="Zavrieť">×</button><h3>🩺 Máš cukrovku, celiakiu alebo alergiu?</h3><p>Zapni si režim a appka bude označovať jedlá, strážiť tvoje limity a ukáže, čo potrebuješ. Zapnutie trvá pol minúty.</p><a class="btn primary" href="#/rezim">Nastaviť režim</a></div>`;
-    } else html = await build(date);
+    // bez zapnutého režimu nič nad jedlami; ponuka je dlaždica v páse „Objav v appke“ (discover.js)
+    if (!dx.anyMode(c)) return;
+    html = await build(date);
     if (!html) return;
     const m2 = root.querySelector('.screen.td .meals');
     if (!m2 || root.querySelector('#dxdash') || ctx.state.date !== date) return;
     const wrap = document.createElement('section'); wrap.id = 'dxdash'; wrap.innerHTML = html;
     m2.before(wrap);
     wrap.querySelector('.x')?.addEventListener('click', () => { setAsk(); wrap.remove(); });
-    wrap.querySelector('#dxlow')?.addEventListener('click', () => openHypo({ uid, c: dx.cfg(), onDone: () => { wrap.remove(); inject(); } }));
-    wrap.querySelector('#dxre')?.addEventListener('click', () => openHypo({ uid, c: dx.cfg(), resume: true, onDone: () => { wrap.remove(); inject(); } }));
+    // po zápise nízkeho cukru sa karta vykreslí nanovo (povolí sa nová kontrola tej istej obrazovky)
+    const redo = () => { wrap.remove(); const mm = root.querySelector('.screen.td .meals'); if (mm) seen.delete(mm); inject(); };
+    wrap.querySelector('#dxlow')?.addEventListener('click', () => openHypo({ uid, c: dx.cfg(), onDone: redo }));
+    wrap.querySelector('#dxre')?.addEventListener('click', () => openHypo({ uid, c: dx.cfg(), resume: true, onDone: redo }));
   } catch (_) { /* nepodstatné */ } finally { busy = false; }
 }
 if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); inject(); }
