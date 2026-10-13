@@ -171,7 +171,7 @@ export async function renderGlucose() {
       ${s ? `<div class="card"><h3 class="mb">Podľa situácie</h3>${byCtx(inRange, c)}${rise.length ? `<p class="sec">Nárast po jedle (po − pred)</p>${rise.map(r => `<div class="item"><div class="n"><b>${h(r.meal)}</b><span>${r.n} ${r.n < 5 ? 'páry' : 'párov'} meraní</span></div><span class="k mono" style="color:${r.avg > 3 ? '#FFC857' : '#7CFFB2'}">${r.avg >= 0 ? '+' : '−'}${dx.fmtG(Math.abs(r.avg), u())}</span></div>`).join('')}` : '<p class="muted small mt">Ak zapíšeš cukor „pred jedlom“ aj „po jedle“ pri tom istom jedle, ukážem ti, ako ťa ktoré jedlo zdvíha.</p>'}</div>` : ''}
       <div class="card"><div class="row between"><div><b>Jednotky a rozsah</b><p class="muted small">${dx.unitLbl(u())} · cieľ ${dx.fmtG(c.lo, u())} až ${dx.fmtG(c.hi, u())}</p></div><a class="btn sm" href="#/rezim">Upraviť</a></div>
         <button class="btn ghost mt" id="csv">⬇️ Stiahnuť merania (CSV)</button></div>
-      <p class="muted small center">Druhý dych nie je zdravotnícka pomôcka a nenahrádza lekára. Nikdy nepočíta dávky inzulínu.</p>
+      <p class="muted small center">Fuelwind nie je zdravotnícka pomôcka a nenahrádza lekára. Nikdy nepočíta dávky inzulínu.</p>
     </div>${nav('#/')}`;
     bind();
   };
@@ -218,7 +218,7 @@ function exportCsv(rows, c) {
   const out = [['datum', 'cas', 'mmol_l', 'mg_dl', 'situacia', 'jedlo', 'inzulin_j', 'poznamka']];
   rows.forEach(r => out.push([r.date, tm(r.at), Number(r.mmol), Math.round(Number(r.mmol) * dx.MG), dx.CTX[r.ctx || 'other'], r.meal || '', r.insulin ?? '', r.note || '']));
   const url = URL.createObjectURL(new Blob(['﻿' + out.map(r => r.map(cell).join(';')).join('\n')], { type: 'text/csv' }));
-  const a = document.createElement('a'); a.href = url; a.download = `druhy-dych-cukor-${calc.today()}.csv`; document.body.appendChild(a); a.click(); a.remove();
+  const a = document.createElement('a'); a.href = url; a.download = `fuelwind-cukor-${calc.today()}.csv`; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
@@ -356,7 +356,7 @@ export async function renderGlucoseReport() {
         <p>${fdays ? `Dni so zapísaným jedlom: ${fdays} z ${days}. Priemerne ${avg('carbs')} g sacharidov (${n1(avg('carbs') / c.sj)} SJ) a ${avg('kcal')} kcal za deň.` : 'V tomto období nie je zapísané jedlo.'}${wch != null ? ` Trend váhy za obdobie: ${wch > 0 ? '+' : ''}${n1(wch)} kg.` : ''}</p>
         <h3>Jednotlivé merania</h3><table class="rp-t rp-all"><tr><th>Dátum</th><th>Čas</th><th>${dx.unitLbl(u)}</th><th>Situácia</th><th>Jedlo</th>${c.insulin ? '<th>Inzulín</th>' : ''}<th>Poznámka</th></tr>
         ${rows.slice().reverse().slice(0, 300).map(r => `<tr><td>${calc.fmtDate(r.date)}</td><td>${tm(r.at)}</td><td>${dx.fmtG(Number(r.mmol), u)}</td><td>${dx.CTX[r.ctx || 'other']}</td><td>${r.meal ? (MEALS[r.meal] || '') : ''}</td>${c.insulin ? `<td>${r.insulin != null ? n1(Number(r.insulin)) : ''}</td>` : ''}<td>${h(r.note || '')}</td></tr>`).join('')}</table>` : '<p>V tomto období nie sú zapísané žiadne merania.</p>'}
-      <p class="rp-foot">Údaje zadal pacient v aplikácii Druhý dych (${calc.fmtDate(calc.today())} ${calc.today().slice(0, 4)}). Prehľad slúži ako podklad na konzultáciu, nie je lekárska diagnostika.</p>
+      <p class="rp-foot">Údaje zadal pacient v aplikácii Fuelwind (${calc.fmtDate(calc.today())} ${calc.today().slice(0, 4)}). Prehľad slúži ako podklad na konzultáciu, nie je lekárska diagnostika.</p>
     </div></div>${nav('#/')}`;
   $app().querySelectorAll('[data-d]').forEach(b => b.onclick = () => { location.hash = '#/cukor-sprava?d=' + b.dataset.d; });
   $app().querySelector('#print').onclick = () => window.print();
