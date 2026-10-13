@@ -128,8 +128,8 @@ export async function renderReport() {
     requestAnimationFrame(step);
   }
   root.querySelector('#share')?.addEventListener('click', async () => {
-    const text = `Môj týždeň v Druhom dychu: ${score}/100${delta != null ? ` (${sgn(delta)})` : ''}. Jedlo ${r.days_logged}/7 dní, tréningy ${r.trainings}/${r.training_goal}. Ďalej: ${f.t.toLowerCase()}.`;
-    try { await navigator.share({ title: 'Druhý dych', text }); } catch (_) { }
+    const text = `Môj týždeň s Fuelwind: ${score}/100${delta != null ? ` (${sgn(delta)})` : ''}. Jedlo ${r.days_logged}/7 dní, tréningy ${r.trainings}/${r.training_goal}. Ďalej: ${f.t.toLowerCase()}.`;
+    try { await navigator.share({ title: 'Fuelwind', text }); } catch (_) { }
   });
 }
 
