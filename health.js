@@ -119,7 +119,7 @@ export async function renderWatch() {
     <section class="card">
       <h3 class="mb">Čo sa posiela</h3>
       <p class="small">Len denné súčty: kroky, aktívne kalórie, spánok, pokojový pulz a váha. Kroky a spánok sa zapíšu aj do check-inu, váha do váženia (len ak si sa v ten deň nevážil ručne).</p>
-      <p class="muted small mt">Spálené kalórie sa k dennému cieľu nepripóčitavajú. Cieľ už počíta s tvojou aktivitou a hodinky výdaj často nadhodnocujú.</p>
+      <p class="muted small mt">Spálené kalórie sa k dennému cieľu nepripočítavajú. Cieľ už počíta s tvojou aktivitou a hodinky výdaj často nadhodnocujú.</p>
       <button class="btn sm ghost mt" id="resetKey">Vygenerovať novú adresu</button>
     </section>
   </div>${nav('#/hodinky')}`;
