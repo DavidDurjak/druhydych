@@ -55,10 +55,10 @@ export async function renderDiet() {
       ${on('allergy') ? `<div class="card mt"><h3 class="mb">Tvoje alergény</h3><div class="dxal">${dx.ALLERGENS.map(([k, l]) => `<button type="button" data-a="${k}" class="${s.allergens.includes(k) ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
       ${s.modes.some(m => ['celiac', 'lactose', 'allergy'].includes(m)) ? `<label class="card row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="hide" ${s.hide ? 'checked' : ''} style="margin-top:3px"><span><b>Skryť nevhodné jedlá vo vyhľadávaní</b><br><span class="muted">Jedlá, ktoré obsahujú lepok, laktózu alebo tvoj alergén, sa nebudú zobrazovať. Vždy ich môžeš zobraziť jedným ťuknutím.</span></span></label>` : ''}
       ${s.modes.length ? `<a class="btn mb" href="#/karta">🌍 Karty do zahraničia (lepok, alergie, cukrovka)</a>` : ''}
-      ${s.modes.length ? `<div class="card"><label class="row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="cons" ${s.consent ? 'checked' : ''} style="margin-top:3px"><span>Súhlasím, aby Druhý dych ukladal údaje o mojom zdraví (zapnuté režimy, glykémiu) na účely týchto funkcií. Údaje vidím len ja, nevidí ich ani kouč. Súhlas môžem kedykoľvek odvolať vypnutím režimov a zmazaním meraní.</span></label></div>` : ''}
+      ${s.modes.length ? `<div class="card"><label class="row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="cons" ${s.consent ? 'checked' : ''} style="margin-top:3px"><span>Súhlasím, aby Fuelwind ukladal údaje o mojom zdraví (zapnuté režimy, glykémiu) na účely týchto funkcií. Údaje vidím len ja, nevidí ich ani kouč. Súhlas môžem kedykoľvek odvolať vypnutím režimov a zmazaním meraní.</span></label></div>` : ''}
       <button class="btn primary mb" id="save">Uložiť</button>
       ${s.modes.map(m => INFO[m] ? `<details class="dxi"><summary>${INFO[m][0]}</summary>${INFO[m][1]}</details>` : '').join('')}
-      <p class="muted small center mt">Druhý dych nie je zdravotnícka pomôcka a nenahrádza lekára ani dietológa. Údaje o lepku, laktóze a alergénoch pochádzajú od výrobcov a z databázy Open Food Facts a môžu byť neúplné. Pri celiakii a alergii vždy over aktuálny obal.</p>
+      <p class="muted small center mt">Fuelwind nie je zdravotnícka pomôcka a nenahrádza lekára ani dietológa. Údaje o lepku, laktóze a alergénoch pochádzajú od výrobcov a z databázy Open Food Facts a môžu byť neúplné. Pri celiakii a alergii vždy over aktuálny obal.</p>
     </div>${nav('#/profil')}`;
     bind();
   };

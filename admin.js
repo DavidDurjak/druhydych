@@ -135,7 +135,7 @@ export async function renderAdmin() {
   const aiShare = s.logs7 ? Math.round(s.logs_ai7 / s.logs7 * 100) : 0;
 
   $app().innerHTML = `<div class="screen">
-    <div class="topbar"><div><h1>Admin</h1><p class="muted small">Druhý dych · ${calc.fmtDate(s.today)}</p></div><button class="btn icon ghost" id="adRe" aria-label="Obnoviť">↻</button></div>
+    <div class="topbar"><div><h1>Admin</h1><p class="muted small">Fuelwind · ${calc.fmtDate(s.today)}</p></div><button class="btn icon ghost" id="adRe" aria-label="Obnoviť">↻</button></div>
 
     <div class="ad-k">
       <div><b>${s.onboarded}</b><span>používateľov</span>${s.new7 ? `<em>+${s.new7} za 7 dní</em>` : ''}</div>
