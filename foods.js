@@ -289,6 +289,12 @@ export function openFoodEditor(pre = {}, meal, done) {
       <label class="field"><span>Cukry</span><input class="input" id="sugar" type="number" inputmode="decimal" step="any" value="${pre.sugar ?? ''}"></label>
       <label class="field"><span>Soľ</span><input class="input" id="salt" type="number" inputmode="decimal" step="any" value="${pre.salt ?? ''}"></label>
       <label class="field"><span>Alkohol (% obj.)</span><input class="input" id="abv" type="number" inputmode="decimal" step="any" placeholder="napr. 12" value="${pre.alcohol ? r1(pre.alcohol / 0.79) : ''}"></label></div></details>
+    <details class="mb" ${pre.gluten || pre.lactose || Array.isArray(pre.allergens) ? 'open' : ''}><summary class="muted small">Lepok, laktóza, alergény (pre celiakiu, intoleranciu, alergie)</summary><div class="mt">
+      <div class="grid2"><label class="field"><span>Lepok</span><select class="input" id="fgl"><option value="">Neviem</option><option value="free" ${pre.gluten === 'free' ? 'selected' : ''}>Bez lepku</option><option value="contains" ${pre.gluten === 'contains' ? 'selected' : ''}>Obsahuje lepok</option></select></label>
+      <label class="field"><span>Laktóza</span><select class="input" id="flc"><option value="">Neviem</option><option value="free" ${pre.lactose === 'free' ? 'selected' : ''}>Bez laktózy</option><option value="low" ${pre.lactose === 'low' ? 'selected' : ''}>Málo laktózy</option><option value="high" ${pre.lactose === 'high' ? 'selected' : ''}>Obsahuje laktózu</option></select></label></div>
+      <label class="field"><span>Alergény</span><select class="input" id="fam"><option value="">Neviem</option><option value="none" ${Array.isArray(pre.allergens) && !pre.allergens.length ? 'selected' : ''}>Žiadne alergény</option><option value="some" ${Array.isArray(pre.allergens) && pre.allergens.length ? 'selected' : ''}>Obsahuje:</option></select></label>
+      <div id="falw" class="row mb" style="flex-wrap:wrap;gap:6px;${Array.isArray(pre.allergens) && pre.allergens.length ? '' : 'display:none'}">${dx.ALLERGENS.map(([k, v]) => `<label class="small"><input type="checkbox" data-fal="${k}" ${(pre.allergens || []).includes(k) ? 'checked' : ''}> ${h(v)}</label>`).join('')}</div>
+      <p class="muted small">Vypĺňaj len to, čo vieš z obalu. „Neviem“ appka ukáže ako neoverené, nič nehádže.</p></div></details>
     <p class="small muted mb">Porcie (napr. 1 kus, 1 lyžica, 1 tanier), aby sa nemuselo vážiť:</p>
     <div id="plist"></div>
     <button class="btn sm ghost mb" id="padd">＋ Pridať porciu</button>
@@ -305,6 +311,7 @@ export function openFoodEditor(pre = {}, meal, done) {
   };
   drawP();
   $('[data-x]').onclick = () => bg.remove();
+  $('#fam').onchange = () => { $('#falw').style.display = $('#fam').value === 'some' ? '' : 'none'; };
   $('#padd').onclick = () => { portions.push({ label: portions.length ? '' : '1 kus', g: '' }); drawP(); bg.querySelector(`[data-pg="${portions.length - 1}"]`)?.focus(); };
   bg.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { basis = b.dataset.b === '100' ? 100 : 'p'; bg.querySelectorAll('[data-b]').forEach(x => x.classList.toggle('on', x === b)); $('#pgWrap').style.display = basis === 100 ? 'none' : ''; });
 
@@ -316,6 +323,11 @@ export function openFoodEditor(pre = {}, meal, done) {
     const row = { name: $('#name').value.trim(), brand: $('#brand').value.trim() || null, barcode: $('#barcode').value.trim() || null,
       kcal: num('#kcal') == null ? null : r0(num('#kcal') * k), protein: sc(num('#protein') ?? 0), carbs: sc(num('#carbs') ?? 0), fat: sc(num('#fat') ?? 0),
       fiber: sc(num('#fiber')), sugar: sc(num('#sugar')), salt: sc(num('#salt')), alcohol: r1((num('#abv') || 0) * 0.79) };
+    row.gluten = $('#fgl').value || null; row.lactose = $('#flc').value || null;
+    { const am = $('#fam').value, al = [...bg.querySelectorAll('[data-fal]:checked')].map(x => x.dataset.fal);
+      row.allergens = am === 'none' ? [] : am === 'some' && al.length ? al : null;
+      if (row.gluten === 'contains' && Array.isArray(row.allergens) && !row.allergens.includes('gluten')) row.allergens.push('gluten');
+      if ((row.lactose === 'high') && Array.isArray(row.allergens) && !row.allergens.includes('milk')) row.allergens.push('milk'); }
     const ps = portions.slice();
     if (basis === 'p' && !ps.some(p => Number(p.g) === num('#pg'))) ps.unshift({ label: '1 porcia', g: num('#pg') });
     row.portions = ps.filter(p => p.label && p.label.trim() && Number(p.g) > 0).map(p => ({ label: p.label.trim().slice(0, 30), g: Number(p.g) }));
@@ -336,6 +348,21 @@ export function openFoodEditor(pre = {}, meal, done) {
     if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v denníku ostanú.')) return;
     try { await db.deleteFoodItem(pre.id); bg.remove(); toast('Zmazané'); renderFood(); } catch (e) { toast(e.message, true); }
   });
+}
+
+// Lepok, laktóza a alergény receptu sa odvodia zo surovín. Ak o jednej nevieme, recept to nepredstiera.
+async function recipeFlags(items) {
+  const ids = [...new Set(items.map(i => i.food_id).filter(Boolean))];
+  const m = {};
+  if (ids.length) { const { data } = await db.sb.from('foods').select('id,gluten,lactose,allergens,traces').in('id', ids); (data || []).forEach(f => { m[f.id] = f; }); }
+  const L = items.map(i => m[i.food_id] || {});
+  const all = k => L.every(f => f[k] != null);
+  const gluten = L.some(f => f.gluten === 'contains') ? 'contains' : L.some(f => f.gluten === 'traces') ? 'traces' : all('gluten') ? 'free' : null;
+  const lactose = L.some(f => f.lactose === 'high') ? 'high' : L.some(f => f.lactose === 'low') ? 'low' : all('lactose') ? 'free' : null;
+  const known = L.every(f => Array.isArray(f.allergens));
+  const un = [...new Set(L.flatMap(f => Array.isArray(f.allergens) ? f.allergens : []))];
+  const tr = [...new Set(L.flatMap(f => Array.isArray(f.traces) ? f.traces : []))];
+  return { gluten, lactose, allergens: known ? un : null, traces: known ? (tr.length ? tr : null) : [...new Set([...un, ...tr])] };
 }
 
 // ---------- recepty ----------
@@ -394,6 +421,7 @@ export function openRecipeEditor(pre, meal, done) {
     const err = validate(row); if (err) { $('#err').textContent = err; return; }
     $('#save').disabled = true;
     try {
+      Object.assign(row, await recipeFlags(items));
       const saved = edit ? await db.updateFood(pre.id, row) : await db.createFood(row);
       bg.remove(); toast('Recept uložený');
       openAdd(fromDb(saved), meal, done);
