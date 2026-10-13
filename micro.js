@@ -6,6 +6,7 @@ import './fasting.js';
 import './fabpos.js';
 import './progfiber.js';
 import './searchfix.js';
+import './dxdash.js';
 
 const root = document.getElementById('app');
 let busy = false;
