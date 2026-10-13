@@ -158,7 +158,7 @@ export async function renderFood() {
       const hiddenN = raw.length - local.length;
       const addMore = `<button class="btn ghost mt" id="addQ">＋ Pridať „${h(q)}“ do databázy</button>`;
       $res.innerHTML = (hiddenN ? `<p class="dxh">Skryté: ${hiddenN} ${hiddenN === 1 ? 'jedlo' : hiddenN < 5 ? 'jedlá' : 'jedál'}, ktoré ti nevyhovujú. <a href="#" id="dxShow">Zobraziť</a></p>` : '')
-        + (local.length ? '<p class="sec">Databáza Druhý dych</p>' + local.map(f => row(fromDb(f), put(fromDb(f)))).join('') : '')
+        + (local.length ? '<p class="sec">Databáza Fuelwind</p>' + local.map(f => row(fromDb(f), put(fromDb(f)))).join('') : '')
         + '<div id="offBox"><div class="spinner"></div></div>' + addMore;
       bind();
       $res.querySelector('#addQ').onclick = () => openFoodEditor({ name: q }, meal, done);
