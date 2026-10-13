@@ -26,7 +26,10 @@ function u8ToB64(buf) {
 
 export async function currentSubscription() {
   if (!('serviceWorker' in navigator)) return null;
-  const reg = await navigator.serviceWorker.ready;
+  // getRegistration odpovie hneď; `ready` by pri prvom spustení čakal na stiahnutie celej offline cache
+  // a obrazovka Dnes by dovtedy visela na skeletone
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg?.pushManager) return null;
   return reg.pushManager.getSubscription();
 }
 
