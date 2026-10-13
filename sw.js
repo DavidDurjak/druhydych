@@ -1,5 +1,5 @@
 // Service worker: appka sa nainštaluje na plochu, načíta aj pri slabom signáli a prijíma push notifikácie
-const CACHE = 'druhydych-v32';
+const CACHE = 'druhydych-v33';
 const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './push.js', './foods.js', './scan.js', './scan.css', './today.js', './logedit.js', './mydata.js', './micro.js', './meals.js', './fasting.js', './fabpos.js', './micro.css', './suggest.js', './suggest.css', './buddy.js', './avatars.js', './buddy.css', './today.css', './progress.js', './progress.css', './health.js', './report.js', './v07.css', './v08.css', './ailog.js', './checkin.js', './admin.js', './goals.js', './workouts.js', './dxcore.js', './diet.js', './glucose.js', './cards.js', './dxdash.js', './badges.js', './progfiber.js', './searchfix.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
@@ -9,12 +9,17 @@ self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
   if (url.origin !== location.origin) return; // Supabase, Open Food Facts, fonty: vždy zo siete
-  e.respondWith(
-    fetch(e.request).then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return res; })
-      .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
-  );
+  // najprv z pamäte (appka sa otvorí hneď), na pozadí sa obnoví zo siete
+  e.respondWith(caches.open(CACHE).then(async c => {
+    const hit = await c.match(req);
+    const net = fetch(req).then(res => { if (res && res.ok) c.put(req, res.clone()); return res; }).catch(() => null);
+    if (hit) { e.waitUntil(net); return hit; }
+    return (await net) || (await caches.match('./index.html')) || Response.error();
+  }));
 });
 
 // ---------- Push notifikácie ----------
