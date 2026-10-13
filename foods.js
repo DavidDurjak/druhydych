@@ -5,6 +5,7 @@ import { searchOFF, lookupBarcode } from './food.js';
 import { ctx } from './app.js';
 import { scanBarcode } from './scan.js';
 import { aiBoxHtml, bindAiBox } from './ailog.js';
+import * as dx from './dxcore.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -17,10 +18,11 @@ export function defaultMeal() {
   return m < 570 ? 'breakfast' : m < 690 ? 'brunch' : m < 870 ? 'lunch' : m < 1020 ? 'afternoon' : m < 1230 ? 'dinner' : m < 1380 ? 'late' : 'snack';
 }
 
-// Jedlo z akéhokoJľvek zdroja -> jednotný tvar s hodnotami na 100 g
+// Jedlo z akéhokoľvek zdroja -> jednotný tvar s hodnotami na 100 g
 function fromDb(f) {
   return { id: f.id, name: f.name, brand: f.brand || '', barcode: f.barcode || null, kcal: Number(f.kcal), protein: Number(f.protein), carbs: Number(f.carbs), fat: Number(f.fat), fiber: f.fiber ?? null, sugar: f.sugar ?? null, salt: f.salt ?? null,
     portions: Array.isArray(f.portions) ? f.portions : [], verified: !!f.verified, is_recipe: !!f.is_recipe, mine: f.mine ?? (f.created_by === state().profile.id),
+    gluten: f.gluten ?? null, lactose: f.lactose ?? null, allergens: f.allergens ?? null, traces: f.traces ?? null, gi: f.gi ?? null,
     created_by: f.created_by, source: 'db', raw: f };
 }
 function fromOff(f) { return { ...f, portions: [], source: 'off' }; }
@@ -33,9 +35,9 @@ async function fromLog(l) {
 function per100Line(f) { return `${r0(f.kcal)} kcal · B ${r1(f.protein)} · S ${r1(f.carbs)} · T ${r1(f.fat)} na 100 g`; }
 function row(f, key) {
   const por = f.portions?.[0];
-  const sub = [f.brand, por ? `${h(por.label)} = ${r0(por.g)} g` : null].filter(Boolean).map(h).join(' · ');
+  const sub = [f.brand, por ? `${h(por.label)} = ${r0(por.g)} g` : null, dx.active('diabetes') ? `S ${r0(f.carbs * (por ? por.g : 100) / 100)} g` : null].filter(Boolean).map(h).join(' · ');
   const kcalShown = por ? r0(f.kcal * por.g / 100) : r0(f.kcal);
-  return `<div class="res" data-k="${key}"><div class="n"><b>${h(f.name)}${f.verified ? ' <span class="vf" title="Overené">✓</span>' : ''}${f.is_recipe ? ' <span class="chip">recept</span>' : ''}</b><span>${sub || '100 g'}</span></div><span class="k mono">${kcalShown}<small>${por ? '/' + h(por.label.replace(/^1 /, '')) : '/100 g'}</small></span></div>`;
+  return `<div class="res" data-k="${key}"><div class="n"><b>${h(f.name)}${f.verified ? ' <span class="vf" title="Overené">✓</span>' : ''}${f.is_recipe ? ' <span class="chip">recept</span>' : ''}</b><span>${sub || '100 g'}</span>${dx.chips(f)}</div><span class="k mono">${kcalShown}<small>${por ? '/' + h(por.label.replace(/^1 /, '')) : '/100 g'}</small></span></div>`;
 }
 
 // ---------- obrazovka ----------
@@ -43,7 +45,8 @@ export async function renderFood() {
   const params = new URLSearchParams((location.hash.split('?')[1]) || '');
   let meal = params.get('meal') || defaultMeal();
   const uid = state().profile.id;
-  let tab = 'recent';
+  dx.ensure(uid).then(() => { if ($app().querySelector('#results') && dx.anyMode()) $app().querySelector('#q')?.dispatchEvent(new Event('input')); }).catch(() => { });
+  let tab = 'recent', showHidden = false;
   const pool = new Map();
   const put = (f) => { const k = 'f' + pool.size; pool.set(k, f); return k; };
 
@@ -144,13 +147,17 @@ export async function renderFood() {
     timer = setTimeout(async () => {
       const my = ++seq;
       $res.innerHTML = '<div class="spinner"></div>';
-      const local = await db.searchFoods(q, 30).catch(() => []);
+      const raw = await db.searchFoods(q, dx.cfg().hide ? 50 : 30).catch(() => []);
       if (my !== seq) return;
+      const local = dx.cfg().hide && !showHidden ? raw.filter(f => !dx.isBad(f)).slice(0, 30) : raw;
+      const hiddenN = raw.length - local.length;
       const addMore = `<button class="btn ghost mt" id="addQ">＋ Pridať „${h(q)}“ do databázy</button>`;
-      $res.innerHTML = (local.length ? '<p class="sec">Databáza Druhý dych</p>' + local.map(f => row(fromDb(f), put(fromDb(f)))).join('') : '')
+      $res.innerHTML = (hiddenN ? `<p class="dxh">Skryté: ${hiddenN} ${hiddenN === 1 ? 'jedlo' : hiddenN < 5 ? 'jedlá' : 'jedál'}, ktoré ti nevyhovujú. <a href="#" id="dxShow">Zobraziť</a></p>` : '')
+        + (local.length ? '<p class="sec">Databáza Druhý dych</p>' + local.map(f => row(fromDb(f), put(fromDb(f)))).join('') : '')
         + '<div id="offBox"><div class="spinner"></div></div>' + addMore;
       bind();
       $res.querySelector('#addQ').onclick = () => openFoodEditor({ name: q }, meal, done);
+      $res.querySelector('#dxShow')?.addEventListener('click', e => { e.preventDefault(); showHidden = true; $q.dispatchEvent(new Event('input')); });
       if (ctrl) ctrl.abort(); ctrl = new AbortController();
       // našli sme dosť v našej databáze: Open Food Facts len na požiadanie (rýchlejšie, menej šumu)
       if (local.length >= 8) {
@@ -204,7 +211,8 @@ export function openAdd(food, meal, done) {
 
   const $qty = bg.querySelector('#qty'), $calc = bg.querySelector('#calc');
   const grams = () => unit === 0 ? Number($qty.value || 0) : Number($qty.value || 0) * portions[unit].g;
-  const upd = () => { const s = calc.scale(food, grams()); $calc.innerHTML = `<b class="mono">${s.kcal} kcal</b><span>${r0(grams())} g · B ${s.protein} g · S ${s.carbs} g · T ${s.fat} g</span>`; };
+  const dxDraw = dx.attachSheet(bg, food, { uid: state().profile.id, date: state().date, meal, grams: () => grams() });
+  const upd = () => { const s = calc.scale(food, grams()); $calc.innerHTML = `<b class="mono">${s.kcal} kcal</b><span>${r0(grams())} g · B ${s.protein} g · S ${s.carbs} g · T ${s.fat} g</span>`; dxDraw?.(); };
   const setUnit = i => { unit = i; bg.querySelectorAll('[data-u]').forEach(b => b.classList.toggle('on', Number(b.dataset.u) === i)); };
   $qty.value = qty; upd();
   bg.querySelector('[data-x]').onclick = () => bg.remove();
@@ -232,12 +240,19 @@ export function openAdd(food, meal, done) {
   bg.querySelector('#edit')?.addEventListener('click', e => { e.preventDefault(); bg.remove(); food.is_recipe ? openRecipeEditor(food.raw, meal, done) : openFoodEditor(food.raw, meal, done); });
 }
 
+const opt = v => v != null && Number(v) >= 0 && Number(v) <= 100 ? r1(Number(v)) : null;
 async function importOff(f) {
   const exist = await db.foodByBarcode(f.barcode);
   if (exist) return fromDb(exist);
-  const row = { name: f.name.slice(0, 120), brand: (f.brand || '').split(',')[0].slice(0, 80) || null, barcode: f.barcode, kcal: r0(f.kcal), protein: r1(f.protein), carbs: r1(f.carbs), fat: r1(f.fat) };
+  const row = { name: f.name.slice(0, 120), brand: (f.brand || '').split(',')[0].slice(0, 80) || null, barcode: f.barcode, kcal: r0(f.kcal), protein: r1(f.protein), carbs: r1(f.carbs), fat: r1(f.fat),
+    fiber: opt(f.fiber), sugar: opt(f.sugar), salt: opt(f.salt), gluten: f.gluten ?? null, lactose: f.lactose ?? null, allergens: f.allergens ?? null, traces: f.traces ?? null };
   if (validate(row)) return f; // nesedia hodnoty, neukladáme
-  return fromDb(await db.createFood(row));
+  try { return fromDb(await db.createFood(row)); }
+  catch (e) {
+    if (!/column|schema cache/i.test(e.message)) throw e;
+    for (const k of ['gluten', 'lactose', 'allergens', 'traces']) delete row[k];
+    return fromDb(await db.createFood(row));
+  }
 }
 
 // ---------- kontrola hodnôt (rovnaká ako v databáze) ----------
