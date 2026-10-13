@@ -26,7 +26,18 @@
     .sk .e { height: 84px; animation-delay: .45s; }
     @keyframes skp { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
     @media (prefers-reduced-motion: reduce) { .sk i { animation: none; } }
+    /* snímka obrazovky Dnes z minulého otvorenia: vidno ju hneď, ťukať sa dá až na čerstvú verziu (lišta funguje hneď) */
+    html.fw-snap #app .screen { pointer-events: none; }
+    /* prepínanie obrazoviek: tenký pásik hore a stlmená stará obrazovka, ak načítanie trvá dlhšie než chvíľku */
+    html.fw-loading::after { content: ''; position: fixed; z-index: 200; left: 0; right: 0; top: env(safe-area-inset-top); height: 2.5px; pointer-events: none;
+      background: linear-gradient(90deg, transparent, #7CFFB2, #3FD5C4, transparent) no-repeat; background-size: 45% 100%; opacity: 0;
+      animation: fwin .2s 160ms forwards, fwbar 1.1s linear infinite; }
+    html.fw-loading:not(.fw-snap) #app > .screen { opacity: .55; transition: opacity .2s ease 160ms; }
+    @keyframes fwin { to { opacity: 1; } }
+    @keyframes fwbar { from { background-position: -60% 0; } to { background-position: 160% 0; } }
+    @media (prefers-reduced-motion: reduce) { html.fw-loading::after { animation: fwin .2s 160ms forwards; background-size: 100% 100%; } }
   </style>
+  <link rel="modulepreload" href="vendor/supabase.mjs">
   <link rel="modulepreload" href="app.js">
   <link rel="modulepreload" href="mydata.js">
   <link rel="modulepreload" href="micro.js">
@@ -54,6 +65,7 @@
   <link rel="modulepreload" href="searchfix.js">
   <link rel="modulepreload" href="dxdash.js">
   <link rel="modulepreload" href="habits.js">
+  <link rel="modulepreload" href="discover.js">
   <link rel="modulepreload" href="avatars.js">
   <link rel="modulepreload" href="config.js">
   <link rel="modulepreload" href="workouts.js">
@@ -75,6 +87,20 @@
 </head>
 <body>
   <div id="app"><div class="sk" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><i class="e"></i></div></div>
+  <script>
+    // okamžitý štart: ak je používateľ prihlásený a appku dnes už otvoril, ukáže sa posledná obrazovka Dnes hneď,
+    // ešte pred načítaním kódu a dát; čerstvé dáta ju o chvíľu nahradia
+    (function () {
+      try {
+        var h = location.hash || '#/';
+        if (h !== '#/' || !localStorage.getItem('sb-uxzwqyjbzkcveoxsdqdv-auth-token')) return;
+        var s = JSON.parse(localStorage.getItem('fw_snap') || 'null');
+        if (!s || !s.h || s.d !== new Date().toLocaleDateString('sv-SE')) return;
+        document.getElementById('app').innerHTML = s.h;
+        document.documentElement.classList.add('fw-snap', 'fw-loading');
+      } catch (e) { /* bez snímky */ }
+    })();
+  </script>
   <script type="module" src="app.js"></script>
   <script type="module" src="mydata.js"></script>
   <script type="module" src="micro.js"></script>
