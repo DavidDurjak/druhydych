@@ -1,4 +1,4 @@
-// Cukry a soľ za deň: karta pod hlavným kruhom na obrazovke Dnes (vláknina je teraz priamo v hlavnej karte)
+// Cukry a soľ za deň: karta pod jedlami na obrazovke Dnes (vláknina je teraz priamo v hlavnej karte)
 import * as db from './data.js';
 import { ctx } from './app.js';
 import './meals.js';
@@ -7,15 +7,19 @@ import './fabpos.js';
 import './progfiber.js';
 import './searchfix.js';
 import './dxdash.js';
+import './discover.js';
 
 const root = document.getElementById('app');
 let busy = false;
+const seen = new WeakSet();
 const n1 = v => String(Math.round(v * 10) / 10).replace('.', ',');
 
 async function inject() {
   if (busy || !root || !ctx.state?.profile) return;
   const meals = root.querySelector('.screen.td .meals');
-  if (!meals || root.querySelector('#micro')) return;
+  if (!meals || root.querySelector('#micro') || seen.has(meals)) return;
+  // každú vykreslenú obrazovku skontroluje len raz (inak by pri každej zmene na stránke znova volal databázu)
+  seen.add(meals);
   busy = true;
   try {
     const p = ctx.state.profile, date = ctx.state.date;
@@ -34,7 +38,8 @@ async function inject() {
     const el = document.createElement('section');
     el.id = 'micro'; el.className = 'micro';
     el.innerHTML = `<h3>Cukry a soľ</h3>${row('Cukry', sugar, 50, 'g', true)}${row('Soľ', salt, 5, 'g', true)}<p class="mi-n">Počíta sa z jedál, ktoré majú tieto údaje. Odporúčania WHO: cukry do 50 g, soľ do 5 g.</p>`;
-    m.before(el);
+    // pod jedlami, nad pôstom a vodou (zápis jedla je prvý, čísla navyše až potom)
+    (root.querySelector('.screen.td #fast') || root.querySelector('.screen.td .wt') || m).before(el);
   } catch (_) { /* nepodstatné */ } finally { busy = false; }
 }
 if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); inject(); }

@@ -63,7 +63,7 @@ function png(size) {
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }
 const OUT = 'public';
-const SKIP = new Set(['public', 'node_modules', '.git', '.vercel', 'supabase', 'build.js', 'vercel.json', 'package.json', 'schema.sql', 'README.md']);
+const SKIP = new Set(['public', 'node_modules', '.git', '.vercel', 'supabase', 'build.js', 'vercel.json', 'package.json', 'package-lock.json', 'schema.sql', 'README.md']);
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT);
 for (const f of fs.readdirSync('.')) {
@@ -71,4 +71,13 @@ for (const f of fs.readdirSync('.')) {
   fs.copyFileSync(f, `${OUT}/${f}`);
 }
 for (const n of [192, 512]) fs.writeFileSync(`${OUT}/icon-${n}.png`, png(n));
+// Supabase knižnica ako jeden ES modul z našej domény (rýchly štart, offline cache). Keď sa niečo nepodarí,
+// appka si ju sama stiahne z CDN (data.js), takže nasadenie nikdy nespadne kvôli tomuto kroku.
+try {
+  const umd = fs.readFileSync(require.resolve('@supabase/supabase-js/dist/umd/supabase.js'), 'utf8');
+  if (!/^var supabase=/.test(umd)) throw new Error('neočakávaný formát UMD');
+  fs.mkdirSync(`${OUT}/vendor`, { recursive: true });
+  fs.writeFileSync(`${OUT}/vendor/supabase.mjs`, umd + '\nexport const createClient = supabase.createClient;\nexport default supabase;\n');
+  console.log('vendor ok: supabase-js', require('@supabase/supabase-js/package.json').version);
+} catch (e) { console.warn('vendor preskočené:', e.message); }
 console.log('build ok:', fs.readdirSync(OUT).join(', '));

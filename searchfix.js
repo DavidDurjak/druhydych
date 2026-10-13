@@ -21,8 +21,10 @@ export function variants(q) {
   return [...out].slice(0, 6);
 }
 
-const sb = db.sb;
-if (sb && !sb.__sf) {
+// obalí sa až keď je Supabase klient pripravený (knižnica sa načítava asynchrónne)
+db.ready.then(() => {
+  const sb = db.sb;
+  if (sb.__sf) return;
   const orig = sb.rpc.bind(sb);
   sb.__sf = true;
   sb.rpc = (name, args, ...rest) => {
@@ -38,4 +40,4 @@ if (sb && !sb.__sf) {
       return { ...first, data: data.slice(0, Math.min(Math.max(args.lim || 30, 1), 50)) };
     })();
   };
-}
+}).catch(() => { /* bez obalu funguje bežné vyhľadávanie */ });
