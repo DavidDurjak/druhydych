@@ -51,6 +51,16 @@ async function flagsFor(rows) {
   if (ids.length) {
     const { data } = await db.sb.from('foods').select('id,gluten,lactose,allergens,traces').in('id', ids);
     (data || []).forEach(f => { m[f.id] = f; });
+    // moje vlastné overenia z obalu doplňajú chýbajúce údaje
+    try {
+      const { data: own } = await db.sb.from('food_checks').select('food_id,gluten,lactose,allergens').eq('user_id', ctx.state.profile.id).in('food_id', ids);
+      (own || []).forEach(o => {
+        const f = m[o.food_id] || (m[o.food_id] = { id: o.food_id });
+        if (f.gluten == null && o.gluten) f.gluten = o.gluten;
+        if (f.lactose == null && o.lactose) f.lactose = o.lactose;
+        if (!Array.isArray(f.allergens) && Array.isArray(o.allergens)) f.allergens = o.allergens;
+      });
+    } catch (_) { /* tabuľka ešte nemusí existovať */ }
   }
   return m;
 }
