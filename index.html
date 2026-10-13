@@ -2,9 +2,9 @@
 <html lang="sk">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Druhý dych</title>
-  <meta name="description" content="Druhý dych nie je dar. Dá sa naučiť. 12-týždňová premena: jedlo, váha, pohyb a hlava.">
+  <meta name="description" content="Druhý dych nie je dar. Dá sa naučiť. 12-týždyňová premena: jedlo, váha, pohýb a hlava.">
   <meta name="theme-color" content="#0B0E12">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,6 +32,11 @@
   <script type="module" src="micro.js"></script>
   <script type="module" src="suggest.js"></script>
   <script type="module" src="buddy.js"></script>
+  <script>
+    // bez približovania: ani dvojitým ťuknutím, ani roztiahnutím prstov (appka sa ovláda rýchlym ťukaním)
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+    document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  </script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

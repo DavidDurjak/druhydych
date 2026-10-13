@@ -13,3 +13,5 @@
 /* výber jedla dňa: 7 možností sa zalomí do riadkov, nič nevyteká mimo obrazovky */
 #em, #mealseg { flex-wrap: wrap; }
 #em button, #mealseg button { flex: 1 1 calc(25% - 4px); min-width: 0; padding: 9px 4px; font-size: 13px; line-height: 1.15; white-space: normal; }
+/* bez približovania: dvojité ťuknutie ani roztiahnutie prstov nič nepriblíži, posúvanie funguje */
+html, body, * { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; }
