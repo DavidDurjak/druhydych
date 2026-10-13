@@ -18,7 +18,7 @@ export const alName = k => AL_NAME[k] || k;
 export const DTYPES = {
   t1: { label: '1. typ', lo: 3.9, hi: 10, fast: 7, insulin: true },
   t2: { label: '2. typ', lo: 3.9, hi: 10, fast: 7, insulin: false },
-  pre: { label: 'Prediabetes, inčulínová rezistencia', lo: 3.9, hi: 7.8, fast: 5.6, insulin: false },
+  pre: { label: 'Prediabetes, inuzulínová rezistencia', lo: 3.9, hi: 7.8, fast: 5.6, insulin: false },
   gdm: { label: 'Tehotenská cukrovka', lo: 3.9, hi: 7.8, fast: 5.3, insulin: false },
 };
 export const DEF = { modes: [], dtype: 't2', unit: 'mmol', lo: 3.9, hi: 10, fast: 7, sj: 10, mealCarb: null, insulin: false, allergens: [], hide: false, consent: null };
@@ -67,10 +67,10 @@ export function assess(f, c = cfg()) {
   const out = [], A = f.allergens, T = f.traces, known = Array.isArray(A);
   if (active('celiac', c)) {
     let r;
-    if (f.gluten === 'contains' || has(A, 'gluten')) r = ['bad', 'Lepok', 'Obsahuje lepok', 'Tomuto jedlu sa vyhni. Lepok je v pšenici, raži, jačmeni, ovse a špaldě.'];
+    if (f.gluten === 'contains' || has(A, 'gluten')) r = ['bad', 'Lepok', 'Obsahuje lepok', 'Tomuto jedlu sa vyhni. Lepok je v pšenici, raži, jačmeni, ovse a špalde.'];
     else if (f.gluten === 'traces' || has(T, 'gluten')) r = ['warn', 'Stopy lepku', 'Môže obsahovať stopy lepku', 'Výrobca uvádza možnú krížovú kontamináciu. Pri celiakii sa to berie vážne.'];
     else if (f.gluten === 'free') r = ['ok', 'Bez lepku', 'Bez lepku', 'Prirodzene bez lepku alebo označené výrobcom. Pri balených produktoch si aj tak pozri obal.'];
-    else if (known) r = ['warn', 'Over obal', 'Lepok nie je v zložení uvedený', 'Lepok sme v zložení nenašli, ale nie je to označené ako bezlepkové. Over obal (precičiarknutý klas alebo text „bez lepku“).'];
+    else if (known) r = ['warn', 'Over obal', 'Lepok nie je v zložení uvedený', 'Lepok sme v zložení nenašli, ale nie je to označené ako bezlepkové. Over obal (prečiarknutý klas alebo text „bez lepku“).'];
     else r = ['unk', 'Neoverené', 'Lepok zatiaľ neoverený', 'O tomto jedle nemáme údaj o lepku. Over zloženie na obale alebo sa spýtaj v prevádzke.'];
     out.push({ mode: 'celiac', level: r[0], short: r[1], text: r[2], more: r[3] });
   }
@@ -79,7 +79,7 @@ export function assess(f, c = cfg()) {
     if (f.lactose === 'high' || (f.lactose == null && has(A, 'milk'))) r = ['bad', 'Laktóza', 'Obsahuje laktózu', 'Obsahuje mlieko alebo mliečne zložky s laktózou.'];
     else if (f.lactose === 'low') r = ['warn', 'Málo laktózy', 'Malý obsah laktózy', 'Dlho zrejúce syry a maslo majú laktózy veľmi málo. Väčšina ľudí ich znáša, ty to poznáš najlepšie.'];
     else if (f.lactose === 'free') r = ['ok', 'Bez laktózy', 'Bez laktózy', 'Bez laktózy alebo bez mliečnych zložiek.'];
-    else if (known) r = ['ok', 'Bez mlieka', 'Bez mliečných zložiek', 'Mlieko v zložení nie je uvedené. Pri balených produktoch si pozri obal.'];
+    else if (known) r = ['ok', 'Bez mlieka', 'Bez mliečnych zložiek', 'Mlieko v zložení nie je uvedené. Pri balených produktoch si pozri obal.'];
     else r = ['unk', 'Neoverené', 'Laktóza zatiaľ neoverená', 'O tomto jedle nemáme údaj o laktóze. Over zloženie na obale.'];
     out.push({ mode: 'lactose', level: r[0], short: r[1], text: r[2], more: r[3] });
   }
