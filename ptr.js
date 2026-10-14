@@ -1,4 +1,4 @@
-// Potiahnutie obrazovky nadol (keď si úplne navrchu) obnoví aktuálnu obrazovku čerstvými dátami a skontroluje novú verziu appky.
+// Potiahnutie obrazovky nadol (keď si úplné navrchu) obnoví aktuálnu obrazovku čerstvými dátami a skontroluje novú verziu appky.
 // Nereloaduje celú stránku: len znova spustí router, takže sa nič nezablikne.
 const OK = new Set(['', '#/', '#/jedlo', '#/pokrok', '#/vaha', '#/navyky', '#/profil', '#/tyzden', '#/report', '#/trening']);
 const MAX = 100, GO = 60;
@@ -39,34 +39,40 @@ async function refresh() {
   setTimeout(done, 150);
 }
 
+// touchmove s možnosťou zablokovať posun sa pripája len počas ťahu zhora; inak by prehliadač pri každom posune čakal na tento skript (sekanie)
+let moving = false;
+const on = () => { if (!moving) { moving = true; document.addEventListener('touchmove', onMove, { passive: false }); } };
+const off = () => { if (moving) { moving = false; document.removeEventListener('touchmove', onMove); } };
 document.addEventListener('touchstart', e => {
-  y0 = null; armed = false;
+  off(); y0 = null; armed = false;
   if (busy || e.touches.length !== 1 || !OK.has(path())) return;
   if ((window.scrollY || document.documentElement.scrollTop) > 0) return;
   const t = e.target;
   if (document.querySelector('.sheet-bg') || t.closest?.('input,textarea,select,[contenteditable],svg.chart') || scrolled(t)) return;
   y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; pull = 0;
+  on();
 }, { passive: true });
 
-document.addEventListener('touchmove', e => {
-  if (y0 == null || busy) return;
+function onMove(e) {
+  if (y0 == null || busy) return off();
   const dy = e.touches[0].clientY - y0, dx = Math.abs(e.touches[0].clientX - x0);
   if (!armed) {
-    if (dy < 0 || (dy < 10 && dx > dy)) { if (dy < -6 || dx > 16) y0 = null; return; }
+    if (dy < 0 || (dy < 10 && dx > dy)) { if (dy < -6 || dx > 16) { y0 = null; off(); } return; }
     if (dy < 10) return;
     armed = true;
   }
-  if ((window.scrollY || 0) > 0) { y0 = null; hide(); return; }
+  if ((window.scrollY || 0) > 0) { y0 = null; off(); hide(); return; }
   pull = Math.min(MAX, (dy - 10) * 0.65);
   if (e.cancelable) e.preventDefault();
   show(pull, false);
-}, { passive: false });
+}
 
 const end = () => {
+  off();
   if (y0 == null) return;
   const go = armed && pull >= GO * 0.9;
   y0 = null; armed = false;
   if (go) refresh(); else if (!busy) hide();
 };
 document.addEventListener('touchend', end, { passive: true });
-document.addEventListener('touchcancel', () => { y0 = null; armed = false; if (!busy) hide(); }, { passive: true });
+document.addEventListener('touchcancel', () => { off(); y0 = null; armed = false; if (!busy) hide(); }, { passive: true });
