@@ -127,7 +127,7 @@ async function openFriends() {
         <div class="fr-add"><input class="input" id="frIn" maxlength="6" placeholder="ABC123" autocapitalize="characters" autocomplete="off"><button class="btn primary" id="frAdd">Pridať</button></div></div>
       <p class="fr-note">Kamaráti vidia len počty dní so zápisom, dní v cieli a tréningov. Nikdy nevidia tvoje kalórie, jedlá ani váhu.</p>`;
     body.querySelector('[data-x]').onclick = () => bg.remove();
-    const text = `Poď sa so mnou pretekáť vo Fuelwind. Môj kód: ${code}. Pridaj sa tu: ${linkFor(code)}`;
+    const text = `Poď sa so mnou pretekatť vo Fuelwind. Môj kód: ${code}. Pridaj sa tu: ${linkFor(code)}`;
     body.querySelector('#frShare').onclick = async () => {
       try {
         if (navigator.share) await navigator.share({ title: 'Fuelwind', text });
