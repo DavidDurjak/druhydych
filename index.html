@@ -26,7 +26,7 @@
     .sk .e { height: 84px; animation-delay: .45s; }
     @keyframes skp { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
     @media (prefers-reduced-motion: reduce) { .sk i { animation: none; } }
-    /* snímka obrazovky Dnes z minulého otvorenia: vidno ju hneď, ťukať sa dá až na čerstvú verziu (lišta funguje hneď) */
+    /* snímka obrazovky Dnes z minulého otvorenia: vidno ju hneď, ťuknúť sa dá až na čerstvú verziu (lišta funguje hneď) */
     html.fw-snap #app .screen { pointer-events: none; }
     /* prepínanie obrazoviek: tenký pásik hore a stlmená stará obrazovka, ak načítanie trvá dlhšie než chvíľku */
     html.fw-loading::after { content: ''; position: fixed; z-index: 200; left: 0; right: 0; top: env(safe-area-inset-top); height: 2.5px; pointer-events: none;
@@ -112,6 +112,7 @@
   <script type="module" src="favs.js"></script>
   <script type="module" src="shopping.js"></script>
   <script type="module" src="sharecard.js"></script>
+  <script type="module" src="welcome.js"></script>
   <script type="module" src="buddy.js"></script>
   <script>
     // bez približovania: ani dvojitým ťuknutím, ani roztiahnutím prstov (appka sa ovláda rýchlym ťukaním)
