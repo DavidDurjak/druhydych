@@ -1,5 +1,5 @@
 // Kamaráti: týždenná tabuľka s ľuďmi, ktorých si pozveš kódom alebo odkazom.
-// Kamaráti vidia len počty dní so zápisom, dní v cieľi a tréningov za 7 dní, nikdy kalórie ani váhu.
+// Kamaráti vidia len počty dní so zápisom, dní v cieli a tréningov za 7 dní, nikdy kalórie ani váhu.
 // Karta sa vloží pod jedlá na obrazovke Dnes (bez zásahu do today.js). Pozvánka: #/kamarat/KÓD.
 import { sb } from './data.js';
 import { ctx } from './app.js';
@@ -55,17 +55,17 @@ async function openFriends() {
     try { rows = await board(force); } catch (e) { body.innerHTML = '<p class="fr-sub">Tabuľku sa nepodarilo načítať. Skús to o chvíľu.</p>'; return; }
     const others = rows.filter(r => !r.me).length;
     body.innerHTML = `<div class="fr-h"><h3>👥 Kamaráti</h3><button class="del" data-x aria-label="Zavrieť">×</button></div>
-      <p class="fr-sub">Posledných 7 dní. Body: 10 za deň so zápisom, 10 za deň v cieľi kalórií, 10 za deň s bielkovinami a 20 za tréning.</p>
+      <p class="fr-sub">Posledných 7 dní. Body: 10 za deň so zápisom, 10 za deň v cieli kalórií, 10 za deň s bielkovinami a 20 za tréning.</p>
       ${others ? rows.map((r, i) => `<div class="fr-row${r.me ? ' me' : ''}"><div class="fr-rk">${medal(i)}</div>
-        <div class="fr-n"><b>${h(r.name || 'Kamarát')}${r.me ? ' (ty)' : ''}</b><small>${r.logged} ${days(r.logged)} zápisu · ${r.ontarget} v cieľi · ${r.workouts} ${trn(r.workouts)}</small></div>
+        <div class="fr-n"><b>${h(r.name || 'Kamarát')}${r.me ? ' (ty)' : ''}</b><small>${r.logged} ${days(r.logged)} zápisu · ${r.ontarget} v cieli · ${r.workouts} ${trn(r.workouts)}</small></div>
         <div class="fr-p">${r.points}<small>bodov</small></div></div>`).join('')
         : `<div class="fr-empty"><b>Zatiaľ si tu sám</b>Pozvi kamaráta. Keď zadá tvoj kód alebo otvorí odkaz, uvidíte sa navzájom v tabuľke.</div>`}
       <div class="fr-box"><small class="muted">Tvoj kód</small><div class="fr-code">${h(code || '…')}</div>
         <div class="fr-btns"><button class="btn primary" id="frShare">Poslať pozvánku</button><button class="btn ghost" id="frCopy">Kopírovať kód</button></div></div>
       <div class="fr-box"><b style="font-size:14px">Mám kód od kamaráta</b>
         <div class="fr-add"><input class="input" id="frIn" maxlength="6" placeholder="ABC123" autocapitalize="characters" autocomplete="off"><button class="btn primary" id="frAdd">Pridať</button></div></div>
-      <p class="fr-note">Kamaráti vidia len počty dní so zápisom, dní v cieľi a tréningov. Nikdy nevidia tvoje kalórie, jedlá ani váhu.</p>`;
-    const text = `Poď sa so mnou pretekat’ vo Fuelwind. Môj kód: ${code}. Pridaj sa tu: ${linkFor(code)}`;
+      <p class="fr-note">Kamaráti vidia len počty dní so zápisom, dní v cieli a tréningov. Nikdy nevidia tvoje kalórie, jedlá ani váhu.</p>`;
+    const text = `Poď sa so mnou pretekatť vo Fuelwind. Môj kód: ${code}. Pridaj sa tu: ${linkFor(code)}`;
     body.querySelector('#frShare').onclick = async () => {
       try {
         if (navigator.share) await navigator.share({ title: 'Fuelwind', text });

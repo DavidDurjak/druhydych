@@ -62,3 +62,5 @@ function installCard() {
 const run = () => { mailNote(); installCard(); };
 new MutationObserver(run).observe(document.documentElement, { childList: true, subtree: true });
 run();
+
+import('./friends.js').catch(() => { /* bez kamarátov */ });
