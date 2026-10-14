@@ -57,7 +57,7 @@ export function bindAiBox(root, getMeal, done) {
   }
   ph.onchange = async () => {
     const f = ph.files?.[0]; ph.value = ''; if (!f) return;
-    try { const img = await shrinkToJpeg(f, 1024, 0.72); openAiLog({ image: img.b64, preview: img.url, text: ta.value.trim() }, getMeal(), done, () => { ta.value = ''; grow(); }); }
+    try { const img = await shrinkToJpeg(f, 768, 0.7); openAiLog({ image: img.b64, preview: img.url, text: ta.value.trim() }, getMeal(), done, () => { ta.value = ''; grow(); }); }
     catch (_) { toast('Fotku sa nepodarilo načítať', true); }
   };
 }
