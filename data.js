@@ -2,7 +2,7 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 // Supabase knižnica je pribalená priamo v appke (vendor/supabase.mjs vyrába build.js pri nasadení): jeden súbor
-// z našej domény, ktorý si appka drží offline. Predtým sa ťahala z cudzieho CDN ako 6 súborov za sebou pri každom štarte.
+// z našej domény, ktorý si appka drží offline. Predtým sa ťahala z cudzieho CDN ako 6 súborov za sebou pri každnom štarte.
 // Záloha pre istotu: keby pribalený súbor chýbal, načíta sa rovnaká verzia z CDN.
 // Načítava sa asynchrónne (bez top-level await, aby sa nezmenilo poradie spúšťania modulov); app.js pri štarte čaká na `ready`.
 const SUPA_VER = '2.117.3';
@@ -277,7 +277,8 @@ export async function queueTestPush() {
 
 // ---------- v0.4: komunitná databáza jedál ----------
 export async function searchFoods(q, lim = 30) {
-  const { data, error } = await sb.rpc('search_foods', { q, lim });
+  let { data, error } = await sb.rpc('search_foods_v2', { q, lim });
+  if (error && /search_foods_v2|schema cache|does not exist/i.test(error.message)) ({ data, error } = await sb.rpc('search_foods', { q, lim }));
   if (error) throw new Error(error.message);
   return data || [];
 }
@@ -290,6 +291,11 @@ export async function foodByBarcode(code) {
   const { data, error } = await sb.from('foods').select('*').eq('barcode', code).maybeSingle();
   if (error) throw new Error(error.message);
   return data;
+}
+// fotky pre zoznam jedál (id -> adresa), napr. do záložky Nedávno
+export async function foodImages(ids) {
+  const { data } = await sb.from('foods').select('id,img').in('id', ids).not('img', 'is', null);
+  return new Map((data || []).map(r => [r.id, r.img]));
 }
 export async function myFoods(userId) {
   return must(await sb.from('foods').select('*').eq('created_by', userId).order('updated_at', { ascending: false }).limit(100));
