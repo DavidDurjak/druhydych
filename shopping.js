@@ -1,11 +1,11 @@
 // Nákupný zoznam z naplánovaných jedál: sčíta suroviny z denníka na najbližšie dni, zoradí ich podľa oddelení v obchode,
-// dá sa odškrtávať, skopírovať alebo poslať. Funguje aj pre jedlá, ktoré si naplánoval sam.
+// dá sa odškrtávať, skopírovať alebo poslať. Funguje aj pre jedlá, ktoré si naplánoval sám.
 import { sb } from './data.js';
 import { ctx } from './app.js';
 import { foodEmoji } from './foodimg.js';
 import * as calc from './calc.js';
 
-const CATS = [['veg', '🥬', 'Ovocie a zelenina'], ['meat', '🥩', 'Mäso a ryby'], ['dairy', '🥛', 'Mliečne a vajcia'], ['carb', '🍞', 'Pecivo a obilniny'], ['other', '🛒', 'Ostatné']];
+const CATS = [['veg', '🥬', 'Ovocie a zelenina'], ['meat', '🥩', 'Mäso a ryby'], ['dairy', '🥛', 'Mliečne a vajcia'], ['carb', '🍞', 'Pečivo a obilniny'], ['other', '🛒', 'Ostatné']];
 const EMO = { meat: '🍗🥩🐟', dairy: '🥚🥛🧀🧈', carb: '🍞🍝🍚🌽🥣', veg: '🍌🍎🍊🍓🍇🍉🍐🍑🥭🫐🥕🍅🥔🥦🥒🧅🥬' };
 const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 export function category(name) {
@@ -82,7 +82,7 @@ export async function openShopping(initialDays = 7) {
     const chk = ls.get();
     const all = cats.flatMap(c => c.items), left = all.filter(i => !chk[i.key]).length;
     body.innerHTML = `<div class="shop-h"><h3>🛒 Nákupný zoznam</h3><button class="del" data-x aria-label="Zavrieť">×</button></div>
-      <p class="shop-sub">${all.length ? `Z tvojho plánovаča od zajtra. Zostáva kúpiť: ${left} z ${all.length}.` : 'Na tieto dni nemáš naplánované jedlá. Naplánuj si ich cez Hotový jedálček alebo ich pridaj na budúce dni.'}</p>
+      <p class="shop-sub">${all.length ? `Z tvojho plánovača od zajtra. Zostáva kúpiť: ${left} z ${all.length}.` : 'Na tieto dni nemáš naplánované jedlá. Naplánuj si ich cez Hotový jedálniček alebo ich pridaj na budúce dni.'}</p>
       <div class="shop-r">${[3, 7, 14].map(n => `<button data-n="${n}" class="${n === days ? 'on' : ''}">${n} ${n === 1 ? 'deň' : n < 5 ? 'dni' : 'dní'}</button>`).join('')}</div>
       ${cats.map(c => `<p class="shop-c">${c.ic} ${c.label}</p>` + c.items.map(i => `<div class="shop-i ${chk[i.key] ? 'done' : ''}" data-k="${h(i.key)}"><span class="bx">✓</span><span class="nm">${h(i.name)}</span><span class="q">${qty(i.g, i.name)}</span></div>`).join('')).join('')}
       ${all.length ? `<div class="shop-a"><button class="btn" id="shopClr">Všetko kúpené</button><button class="btn primary" id="shopSend">${navigator.share ? 'Poslať' : 'Kopírovať'}</button></div>` : ''}`;

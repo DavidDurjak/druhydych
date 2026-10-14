@@ -90,7 +90,7 @@ if (typeof document !== 'undefined') {
   const addTab = tabs => {
     if (tabs.querySelector('#favTab') || !tabs.querySelector('[data-t="recent"]')) return;
     const b = document.createElement('button'); b.id = 'favTab'; b.textContent = '★ Obľúbené';
-    const mine = tabs.querySelector('[data-t="mine"]'); if (mine) mine.before(b); else tabs.appendChild(b);
+    const mine = tabs.querySelector('[data-t="mine"]'); if (mine) { mine.textContent = 'Moje'; mine.before(b); } else tabs.appendChild(b);
     b.onclick = () => showFavs(tabs);
   };
 
