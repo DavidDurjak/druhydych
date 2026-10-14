@@ -2,7 +2,7 @@
 import * as db from './data.js';
 import { sb } from './data.js';
 import * as calc from './calc.js';
-import { generatePlan, nextDay, EXERCISES, LEVELS, EMPHASIS, MUSCLE_LABEL, recommendLevel } from './workouts.js';
+import { generatePlan, nextDay, EXERCISES, LEVELS, EMPHASIS, MUSCLE_LABEL, MIN_DAYS, PRIORITY, SOURCES, alternatives } from './workouts.js';
 import { ctx } from './app.js';
 import * as rp from './report.js';
 
@@ -95,7 +95,8 @@ export async function renderTraining() {
   const todayLog = logs.find(l => l.date === state.date);
   const dayNo = todayLog ? todayLog.plan_day : nextDay(plan, logs);
   const day = plan.days[dayNo - 1];
-  const sets = todayLog?.sets?.length ? todayLog.sets : day.exercises.flatMap(e => Array.from({ length: e.sets }, (_, i) => ({ ex: e.id, set: i + 1, kg: lastKg[e.id] || '', reps: '', done: false })));
+  const have = todayLog?.sets?.length ? todayLog.sets : [];
+  const sets = day.exercises.flatMap(e => { const mine = have.filter(s => s.ex === e.id); return mine.length ? mine : Array.from({ length: e.sets }, (_, i) => ({ ex: e.id, set: i + 1, kg: lastKg[e.id] || '', reps: '', done: false })); });
   const doneCount = sets.filter(s => s.done).length;
 
   $app().innerHTML = `<div class="screen">
@@ -114,6 +115,7 @@ export async function renderTraining() {
     ${day.exercises.map(e => `<div class="card ex">
       <div class="row between"><h3>${h(e.name)}</h3><span class="muted small">${e.sets}× ${e.reps ? e.reps + ' op.' : Math.round(e.seconds / 60) + ' min'}</span></div>
       ${exMeta(e, lastKg[e.id])}
+      ${plan.meta?.v === 2 && e.id !== 'cardio' && e.reps ? `<button class="swapbtn" data-swap="${e.id}">Vymeniť cvik</button>` : ''}
       <div class="sets">${sets.filter(s => s.ex === e.id).map(s => `<div class="set ${s.done ? 'done' : ''}" data-ex="${e.id}" data-set="${s.set}">
         <span class="setno">${s.set}</span>
         ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="kg" value="${s.kg ?? ''}" data-f="kg"><input class="input sm" inputmode="numeric" placeholder="op." value="${s.reps ?? ''}" data-f="reps">` : `<span class="muted small" style="flex:1">${Math.round(e.seconds / 60)} min</span>`}
@@ -147,6 +149,50 @@ export async function renderTraining() {
   };
   $app().querySelector('#replan').onclick = () => renderPlanSetup();
   const up = $app().querySelector('#upgradePlan'); if (up) up.onclick = () => renderPlanSetup();
+  $app().querySelectorAll('[data-swap]').forEach(b => b.onclick = () => openSwap(plan, day.exercises.find(x => x.id === b.dataset.swap), todayLog));
+  $app().querySelector('#deloadNow')?.addEventListener('click', () => forceWeek(plan, 'deload'));
+  $app().querySelector('#skipDeload')?.addEventListener('click', () => forceWeek(plan, 'skip'));
+}
+// Výmena cviku: rovnaký sval, rovnaké vybavenie. Voľba sa pamätá v pláne.
+async function regen(plan, patch, startedAt) {
+  const m = plan.meta;
+  const np = generatePlan({ ...m.params, block: m.block, week: m.week, ...patch });
+  np.meta.startedAt = startedAt || m.startedAt || (plan.created_at || '').slice(0, 10) || calc.today();
+  const { data: row, error } = await sb.from('workout_plans').update({ name: np.name, days: np.days, meta: np.meta }).eq('id', plan.id).select().single();
+  if (error) throw new Error(error.message);
+  Object.assign(plan, row);
+}
+function openSwap(plan, e, todayLog) {
+  if (!e) return;
+  const m = plan.meta, orig = e.orig || e.id;
+  const alts = alternatives(e.id, m.params.equipment).filter(a => a.id !== e.id);
+  const list = [...(e.id !== orig ? [{ id: orig, name: EXERCISES[orig]?.name || orig, cue: 'Pôvodný cvik z plánu', back: true }] : []), ...alts];
+  const bg = sheet(`<div class="row between"><h2>Vymeniť cvik</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
+    <p class="muted small mb">${h(e.name)}. Vyber cvik na rovnaký sval. Tvoja voľba ostane v pláne.</p>
+    ${list.length ? list.map(a => `<button class="alt" data-alt="${a.id}"><b>${h(a.name)}</b><small>${h(a.cue || '')}</small></button>`).join('') : '<p class="empty">Pre tento cvik nie je alternatíva.</p>'}`);
+  bg.querySelector('[data-x]').onclick = () => bg.remove();
+  bg.querySelectorAll('[data-alt]').forEach(b => b.onclick = async () => {
+    const nid = b.dataset.alt; b.disabled = true;
+    try {
+      const swaps = { ...(m.params.swaps || {}) };
+      if (nid === orig) delete swaps[orig]; else swaps[orig] = nid;
+      await regen(plan, { swaps });
+      if (todayLog?.sets?.length) {
+        const mapped = todayLog.sets.map(s => s.ex === e.id ? { ...s, ex: nid } : s);
+        await db.upsertWorkoutLog({ user_id: state.profile.id, date: state.date, plan_day: todayLog.plan_day, day_name: todayLog.day_name, sets: mapped, done: !!todayLog.done });
+      }
+      bg.remove(); toast('Cvik vymenený'); renderTraining();
+    } catch (err) { toast(err.message || 'Nepodarilo sa vymeniť', true); b.disabled = false; }
+  });
+}
+// Deload hneď (si vyčerpaný) alebo preskočenie deloadu (cítiš sa sviežo)
+async function forceWeek(plan, mode) {
+  const m = plan.meta, mw = m.mesoWeeks;
+  try {
+    if (mode === 'deload') await regen(plan, { block: m.block, week: mw }, calc.addDays(calc.today(), -(mw - 1) * 7));
+    else await regen(plan, { block: m.block + 1, week: 1 }, calc.today());
+    toast(mode === 'deload' ? 'Deload zapnutý' : 'Nový blok začal'); renderTraining();
+  } catch (err) { toast(err.message || 'Nepodarilo sa upraviť', true); }
 }
 const WEEKS_MS = 7 * 86400000;
 function planWeek(plan) {
@@ -181,15 +227,19 @@ function planInfo(plan) {
   const m = plan.meta;
   if (!m || m.v !== 2) return `<div class="card" style="border-color:rgba(124,255,178,.35)"><p class="small">Toto je starší plán. Nový plán sa prispôsobí tvojej úrovni, cieľu a vybaveniu a týždenne sa vyvíja.</p><button class="btn sm primary" id="upgradePlan" style="margin-top:8px">Vytvoriť plán na mieru</button></div>`;
   const vol = m.volume || {};
-  const rows = Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 22 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
+  const rows = Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 30 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
   return `<div class="card plan-info">
     <div class="row between"><b>Blok ${(m.block || 0) + 1} · týždeň ${m.week} z ${m.mesoWeeks}</b><span class="chip" style="${m.deload ? 'background:#3A2F12;color:#FFD27A' : 'background:#12332A;color:var(--accent)'}">${m.deload ? 'Deload' : LEVELS[m.params.level]?.label}</span></div>
-    <p class="small" style="margin:6px 0 0">${m.deload ? 'Odľahčený týždeň: polovica sérií, rovnaké váhy a viac rezervy. Telo sa zotaví a ďalší blok pôjde lepšie.' : `Tento týždeň ťahaj série na ${RIR_TXT(m.rir)}.`}</p>
+    ${m.spec ? `<p class="small" style="margin:6px 0 0;color:var(--accent)">Špecializačný blok: ${(m.params.priority || []).map(k => PRIORITY[k]?.[0]).filter(Boolean).join(' a ')}</p>` : ''}
+    <p class="small" style="margin:6px 0 0">${m.deload ? 'Odporúčaný deload: polovica sérií, rovnaké váhy a viac rezervy. Ak sa cítiš sviežo, môžeš ho preskočiť.' : `Tento týždeň ťahaj série na ${RIR_TXT(m.rir)}.`}</p>
+    <div class="row" style="gap:8px;margin-top:8px">${m.deload ? '<button class="btn sm ghost" id="skipDeload">Preskočiť deload</button>' : '<button class="btn sm ghost" id="deloadNow">Som vyčerpaný, deload teraz</button>'}</div>
     <details style="margin-top:8px"><summary class="small" style="cursor:pointer">Prečo je plán takto zostavený</summary>
       <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${(m.why || []).map(t => `<li>${h(t)}</li>`).join('')}</ul>
       <p class="small" style="margin:8px 0 4px"><b>Progresia</b><br>${h(m.progression || '')}</p>
       <p class="small" style="margin:8px 0 4px"><b>Rozcvička</b><br>${h(m.warmup || '')}</p>
       <p class="small" style="margin:8px 0 4px"><b>Pracovné série na sval za týždeň</b></p>${rows}
+      <p class="small" style="margin:8px 0 4px"><b>Na čo sa plán opiera</b></p>
+      <ul class="small" style="margin:0 0 0 18px;padding:0;line-height:1.45;opacity:.85">${SOURCES.map(t => `<li>${h(t)}</li>`).join('')}</ul>
     </details>
   </div>`;
 }
@@ -201,38 +251,60 @@ function exMeta(e, last) {
 }
 if (typeof document !== 'undefined') {
   const st = document.createElement('style');
-  st.textContent = `.plan-info{margin-bottom:12px}.vrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0}.vrow span{flex:0 0 96px;color:var(--muted)}.vrow i{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.vrow i b{display:block;height:100%;background:var(--accent)}.vrow em{flex:0 0 28px;text-align:right;font-style:normal}.lvl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.lvl button{text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.lvl button.on{border-color:var(--accent);background:rgba(124,255,178,.10)}.lvl button b{display:block;font-size:15px}.lvl button small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}`;
+  st.textContent = `.plan-info{margin-bottom:12px}.vrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0}.vrow span{flex:0 0 96px;color:var(--muted)}.vrow i{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.vrow i b{display:block;height:100%;background:var(--accent)}.vrow em{flex:0 0 28px;text-align:right;font-style:normal}.swapbtn{margin:0 0 8px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer}.alt{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.alt b{display:block;font-size:14.5px}.alt small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}.chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;font-size:13.5px;cursor:pointer}.chips button.on{border-color:var(--accent);background:rgba(124,255,178,.12)}.lvl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.lvl button{text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.lvl button.on{border-color:var(--accent);background:rgba(124,255,178,.10)}.lvl button b{display:block;font-size:15px}.lvl button small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}`;
   document.head.appendChild(st);
 }
 async function renderPlanSetup() {
   const p = state.profile;
   const old = await db.getPlan(p.id).catch(() => null);
   const op = old?.meta?.params || {};
-  let days = Math.max(2, Math.min(6, op.days || p.training_days || 3));
   let level = op.level || 'beginner', equipment = op.equipment || 'gym';
+  let days = Math.max(MIN_DAYS[level], Math.min(6, op.days || p.training_days || 3));
   let emphasis = op.emphasis || (p.sex === 'f' ? 'lower' : 'balanced');
-  const preview = () => generatePlan({ goal: p.goal, days, level, equipment, emphasis, sex: p.sex, birthYear: p.birth_year, heightCm: p.height_cm, weightKg: p.start_weight });
+  let priority = Array.isArray(op.priority) ? op.priority.slice(0, 2) : [];
+  const preview = () => generatePlan({ goal: p.goal, days, level, equipment, emphasis, priority, sex: p.sex, birthYear: p.birth_year, heightCm: p.height_cm, weightKg: p.start_weight });
+  const volRows = vol => Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 30 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
   const draw = () => {
     const pl = preview(), m = pl.meta;
-    $app().querySelector('#planPrev').innerHTML = `<div class="card plan-info"><b>${h(m.split)}</b><p class="small" style="margin:6px 0 0">Blok trvá ${m.mesoWeeks} týždňov, potom sa pomocné cviky obmenia.</p></div>` +
+    $app().querySelector('#planPrev').innerHTML = `<div class="card plan-info"><b>${h(m.split)}</b><p class="small" style="margin:6px 0 0">Blok trvá ${m.mesoWeeks} týždňov, potom sa pomocné cviky obmenia.${level === 'elite' ? ' Každý druhý blok je špecializačný na tvoje prioritné partie.' : ''}</p></div>` +
       pl.days.map(d => `<div class="card"><h3>${h(d.name)}</h3><p class="muted small">${d.exercises.map(e => `${h(e.name)} ${e.sets}×${e.reps || Math.round(e.seconds / 60) + 'min'}`).join(' · ')}</p></div>`).join('') +
-      `<div class="card plan-info"><p class="small" style="margin:0 0 6px"><b>Pracovné série na sval za týždeň</b></p>${Object.keys(MUSCLE_LABEL).filter(k => m.volume[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, m.volume[k] / 22 * 100)}%"></b></i><em>${m.volume[k]}</em></div>`).join('')}</div>`;
+      `<div class="card plan-info"><p class="small" style="margin:0 0 6px"><b>Pracovné série na sval za týždeň</b></p>${volRows(m.volume)}</div>`;
   };
-  const seg = (id, items, cur) => `<div class="seg" id="${id}">${items.map(([k, t]) => `<button data-k="${k}" class="${k === cur ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+  const seg = (id, items, cur) => `<div class="seg" id="${id}">${items.map(([k, t]) => `<button data-k="${k}" class="${String(k) === String(cur) ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+  const dayItems = () => [2, 3, 4, 5, 6].filter(n => n >= MIN_DAYS[level]).map(n => [n, n]);
+  const lvlHtml = () => Object.entries(LEVELS).map(([k, v]) => `<button data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('');
+  const prioHtml = () => `<span>Prioritné partie pre špecializačný blok (až 2)</span><div class="chips" id="prio">${Object.entries(PRIORITY).map(([k, v]) => `<button type="button" data-k="${k}" class="${priority.includes(k) ? 'on' : ''}">${v[0]}</button>`).join('')}</div>`;
   $app().innerHTML = `<div class="screen">
     <h1 class="mb">Tvoj plán</h1>
     <p class="muted mb">Plán sa skladá z tvojho cieľa (${calc.GOAL[p.goal]?.label || ''}), váhy, výšky, úrovne a počtu dní. Každých pár týždňov sa sám vyvíja a po bloku obmení cviky.</p>
-    <label class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${Object.entries(LEVELS).map(([k, v]) => `<button data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('')}</div></label>
-    <label class="field"><span>Dní tréningu v týždni</span>${seg('dseg', [2, 3, 4, 5, 6].map(n => [n, n]), days)}</label>
-    <label class="field"><span>Kde cvičíš</span>${seg('eseg', [['gym', 'Posilňovňa'], ['home', 'Doma s jednoručkami']], equipment)}</label>
-    <label class="field"><span>Na čo sa zamerať</span>${seg('mseg', Object.entries(EMPHASIS), emphasis)}</label>
+    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${lvlHtml()}</div><p class="muted small" style="margin:0 0 4px">Nevieš ktorú? Ak ti váhy rastú takmer každý týždeň, si začiatočník. Ak prírastky trvajú týždne až mesiace, si stredne pokročilý. Ak sa posunú len raz za pár mesiacov, si pokročilý. Súťažná je pre tých, čo sa pripravujú na súťaž alebo cvičia viac ako 4 roky s presným režimom.</p></div>
+    <div class="field"><span>Dní tréningu v týždni</span><div id="dwrap">${seg('dseg', dayItems(), days)}</div></div>
+    <div class="field"><span>Kde cvičíš</span>${seg('eseg', [['gym', 'Posilňovňa'], ['home', 'Doma s jednoručkami']], equipment)}</div>
+    <div class="field"><span>Na čo sa zamerať</span>${seg('mseg', Object.entries(EMPHASIS), emphasis)}</div>
+    <div class="field" id="prioWrap" style="${level === 'elite' ? '' : 'display:none'}">${prioHtml()}</div>
     <div id="planPrev"></div>
     <button class="btn primary" id="save">Použiť tento plán</button>
   </div>${nav('#/trening')}`;
   draw();
-  const wire = (id, set) => $app().querySelectorAll(`#${id} [data-k]`).forEach(b => b.onclick = () => { set(b.dataset.k); $app().querySelectorAll(`#${id} [data-k]`).forEach(x => x.classList.toggle('on', x === b)); draw(); });
-  wire('lvl', v => level = v); wire('dseg', v => days = Number(v)); wire('eseg', v => equipment = v); wire('mseg', v => emphasis = v);
-  $app().querySelector('#save').onclick = async () => {
+  const root = () => $app();
+  const bindDays = () => root().querySelectorAll('#dseg [data-k]').forEach(b => b.onclick = () => { days = Number(b.dataset.k); root().querySelectorAll('#dseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  const bindLvl = () => root().querySelectorAll('#lvl [data-k]').forEach(b => b.onclick = () => {
+    level = b.dataset.k; days = Math.max(MIN_DAYS[level], days);
+    root().querySelector('#lvl').innerHTML = lvlHtml(); bindLvl();
+    root().querySelector('#dwrap').innerHTML = seg('dseg', dayItems(), days); bindDays();
+    root().querySelector('#prioWrap').style.display = level === 'elite' ? '' : 'none';
+    draw();
+  });
+  bindLvl(); bindDays();
+  root().querySelectorAll('#eseg [data-k]').forEach(b => b.onclick = () => { equipment = b.dataset.k; root().querySelectorAll('#eseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  root().querySelectorAll('#mseg [data-k]').forEach(b => b.onclick = () => { emphasis = b.dataset.k; root().querySelectorAll('#mseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  root().querySelectorAll('#prio [data-k]').forEach(b => b.onclick = () => {
+    const k = b.dataset.k;
+    if (priority.includes(k)) priority = priority.filter(x => x !== k); else priority = [...priority, k].slice(-2);
+    root().querySelectorAll('#prio [data-k]').forEach(x => x.classList.toggle('on', priority.includes(x.dataset.k)));
+    draw();
+  });
+  root().querySelector('#save').onclick = async () => {
     const pl = preview(); pl.meta.startedAt = calc.today();
     const saved = await db.savePlan(p.id, pl);
     if (saved?.id) { const { error } = await sb.from('workout_plans').update({ meta: pl.meta }).eq('id', saved.id); if (error) throw new Error(error.message); }
