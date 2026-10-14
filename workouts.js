@@ -25,14 +25,14 @@ export const EXERCISES = Object.fromEntries([
   L('db_bench', 'Tlak s jednoručkami na lavici alebo na podlahe', 'hrudník', { chest: 1, triceps: 0.5, shoulders: 0.4 }, 'compound', 'H', 'home', 'Lopatky stiahnuté, jednoručky klesajú pri hrudi, lakte šikmo od tela.', { sk: 0.22 }),
   L('db_flye', 'Rozpažovanie s jednoručkami', 'hrudník', { chest: 1 }, 'isolation', 'L', 'home', 'Ľahké váhy, lakte mierne pokrčené, dole pocítiš natiahnutie.', { sk: 0.08 }),
   // chrbát
-  L('pullup', 'Zhyby (alebo s dopomocou)', 'chrbát', { back: 1, biceps: 0.5 }, 'compound', 'H', 'gym', 'Úchop o niečo širší ako ramená, ťahaj lakte dole k bokom, hrudník k tyči.', {}),
-  L('latpull', 'Sťahovanie kladky k hrudníku', 'chrbát', { back: 1, biceps: 0.5 }, 'compound', 'H', 'gym', 'Mierne sa predkloň, ťahaj lakte dole a k bokom, tyč zastav tesne nad hrudníkom.', { sk: 0.55 }),
-  L('latpull_neutral', 'Sťahovanie kladky neutrálnym úchopom', 'chrbát', { back: 1, biceps: 0.5 }, 'compound', 'M', 'gym', 'Úzky úchop dlaňami k sebe, lakte pri tele, plný rozsah až do natiahnutia.', { sk: 0.5 }),
-  L('row_cable', 'Príťahy na spodnej kladke', 'chrbát', { back: 1, biceps: 0.5 }, 'compound', 'M', 'gym', 'Chrbát rovný, ťahaj lakte k bokom a stlač lopatky, bez hojdania trupu.', { sk: 0.5 }),
-  L('row_chest', 'Príťahy s oporou hrude na stroji', 'chrbát', { back: 1, biceps: 0.5 }, 'compound', 'M', 'gym', 'Hrudník pevne na opore, ťahaj lakte dozadu, dole nechaj lopatky natiahnuť.', { sk: 0.45 }),
-  L('row_db', 'Príťahy s jednoručkou', 'chrbát', { back: 1, biceps: 0.5 }, 'compound', 'M', 'both', 'Jedna ruka a koleno na lavici, lakte ťahaj k bedru, nekrúť trupom.', { sk: 0.22 }),
-  L('row_bent', 'Príťahy s dvoma jednoručkami v predklone', 'chrbát', { back: 1, biceps: 0.5 }, 'compound', 'M', 'home', 'Predklon s rovným chrbtom, lakte ťahaj k bokom, hore stlač lopatky.', { sk: 0.18 }),
-  L('row_bb', 'Príťahy s činkou v predklone', 'chrbát', { back: 1, biceps: 0.5 }, 'compound', 'H', 'gym', 'Trup takmer rovnobežne so zemou, činka k pupku, chrbát neguľať.', { sk: 0.5 }),
+  L('pullup', 'Zhyby (alebo s dopomocou)', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'H', 'gym', 'Úchop o niečo širší ako ramená, ťahaj lakte dole k bokom, hrudník k tyči.', {}),
+  L('latpull', 'Sťahovanie kladky k hrudníku', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'H', 'gym', 'Mierne sa predkloň, ťahaj lakte dole a k bokom, tyč zastav tesne nad hrudníkom.', { sk: 0.55 }),
+  L('latpull_neutral', 'Sťahovanie kladky neutrálnym úchopom', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'M', 'gym', 'Úzky úchop dlaňami k sebe, lakte pri tele, plný rozsah až do natiahnutia.', { sk: 0.5 }),
+  L('row_cable', 'Príťahy na spodnej kladke', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'M', 'gym', 'Chrbát rovný, ťahaj lakte k bokom a stlač lopatky, bez hojdania trupu.', { sk: 0.5 }),
+  L('row_chest', 'Príťahy s oporou hrude na stroji', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'M', 'gym', 'Hrudník pevne na opore, ťahaj lakte dozadu, dole nechaj lopatky natiahnuť.', { sk: 0.45 }),
+  L('row_db', 'Príťahy s jednoručkou', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'M', 'both', 'Jedna ruka a koleno na lavici, lakte ťahaj k bedru, nekrúť trupom.', { sk: 0.22 }),
+  L('row_bent', 'Príťahy s dvoma jednoručkami v predklone', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'M', 'home', 'Predklon s rovným chrbtom, lakte ťahaj k bokom, hore stlač lopatky.', { sk: 0.18 }),
+  L('row_bb', 'Príťahy s činkou v predklone', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'H', 'gym', 'Trup takmer rovnobežne so zemou, činka k pupku, chrbát neguľať.', { sk: 0.5 }),
   L('pullover_cable', 'Pullover na kladke (priame ruky)', 'chrbát', { back: 1 }, 'isolation', 'L', 'gym', 'Ruky takmer rovné, tlač kladku k stehnám, hore pocítiš natiahnutie lats.', { sk: 0.2 }),
   L('pullover_db', 'Pullover s jednoručkou', 'chrbát', { back: 1, chest: 0.3 }, 'isolation', 'L', 'home', 'Jednoručka za hlavu, lakte mierne pokrčené, dolu natiahni, hore k hrudi.', { sk: 0.2 }),
   // ramená
@@ -97,7 +97,11 @@ export const LEVELS = {
   beginner: { label: 'Začiatočník', desc: 'Do 6 mesiacov pravidelného cvičenia. Menej sérií, viac technikou a pomalý nárast váh.', blockWeeks: 8 },
   intermediate: { label: 'Stredne pokročilý', desc: '6 mesiacov až 2 roky pravidelného cvičenia. Dva tréningy na sval týždenne a rastúci objem v bloku.', blockWeeks: 6 },
   advanced: { label: 'Pokročilý', desc: 'Viac ako 2 roky poctivého cvičenia. Vyšší objem, bližšie k zlyhaniu a kratšie bloky.', blockWeeks: 5 },
+  elite: { label: 'Súťažný', desc: 'Viac ako 4 roky cvičenia alebo príprava na súťaž. Najvyšší objem, 5 až 6 dní, špecializačné bloky na slabé partie a riadená únava.', blockWeeks: 8, minDays: 5 },
 };
+export const MIN_DAYS = { beginner: 2, intermediate: 2, advanced: 3, elite: 5 };
+// Prioritné partie pre špecializačné bloky (súťažná úroveň)
+export const PRIORITY = { chest: ['Hrudník', ['chest']], back: ['Chrbát', ['back']], shoulders: ['Ramená', ['shoulders', 'reardelt']], arms: ['Ruky', ['biceps', 'triceps']], quads: ['Kvadricepsy', ['quads']], posterior: ['Zadok a zadné stehná', ['glutes', 'hams']], calves: ['Lýtka', ['calves']] };
 export const EMPHASIS = { balanced: 'Vyvážene', upper: 'Horná časť tela', lower: 'Zadok a nohy' };
 
 // Sloty: ktorý sval, aká rola a z akých cvikov sa vyberá (poradie = priorita, ďalšie sa striedajú po blokoch).
@@ -125,7 +129,7 @@ const SLOTS = {
     h_iso: S('hams', 'iso', ['legcurl_seated', 'legcurl']),
     g_main: S('glutes', 'main', ['hipthrust', 'bridge']),
     g_sec: S('glutes', 'sec', ['split_squat', 'step_up', 'lunge']),
-    calf: S('calves', 'iso', ['calf', 'calf_seated']),
+    calf: S('calves', 'iso', ['calf']),
     abs: S('core', 'iso', ['cable_crunch', 'legraise', 'plank']),
   },
   home: {
@@ -173,22 +177,22 @@ const SPLITS = {
     { n: 'Dolná časť', s: ['q_main', 'h_main', 'q_iso', 'h_iso', 'calf'] },
     { n: 'Tlaky (hrudník, ramená, triceps)', s: ['c_inc', 's_press', 'c_iso', 's_lat', 'tri_long', 'tri'] },
     { n: 'Ťahy (chrbát, biceps)', s: ['b_row2', 'b_vert+1', 's_rear', 'b_iso', 'bi2', 'bi'] },
-    { n: 'Nohy a zadok', s: ['g_main', 'q_sec+1', 'h_iso+1', 'calf+1', 'abs'] }] },
+    { n: 'Nohy a zadok', s: ['g_main', 'q_sec+1', 'q_iso', 'h_iso+1', 'calf+1', 'abs'] }] },
   6: { name: 'Tlaky, ťahy, nohy 2×', days: [
-    { n: 'Tlaky A', s: ['c_main', 's_press', 'c_inc', 's_lat', 'tri', 'tri_long'] },
+    { n: 'Tlaky A', s: ['c_main', 's_press', 'c_inc', 's_lat', 'tri'] },
     { n: 'Ťahy A', s: ['b_vert', 'b_row', 's_rear', 'bi', 'bi2', 'abs'] },
     { n: 'Nohy A', s: ['q_main', 'h_main', 'q_iso', 'h_iso', 'calf', 'abs+1'] },
-    { n: 'Tlaky B', s: ['c_inc+1', 's_press+1', 'c_iso', 's_lat+1', 'tri_long', 'tri+1'] },
-    { n: 'Ťahy B', s: ['b_vert+1', 'b_row2', 'b_iso', 's_rear+1', 'bi2', 'bi+1'] },
+    { n: 'Tlaky B', s: ['c_inc+1', 's_press+1', 'c_iso', 's_lat+1', 'tri_long'] },
+    { n: 'Ťahy B', s: ['b_vert+1', 'b_row2', 'b_iso', 's_rear+1', 'bi+1', 'bi2+1'] },
     { n: 'Nohy B', s: ['g_main', 'q_sec', 'h_iso+1', 'q_iso', 'calf+1', 'abs+2'] }] },
 };
 
 const REPS = { H: { b: '8-10', x: '6-8' }, M: { b: '10-12', x: '8-12' }, L: { b: '10-15', x: '10-15' }, X: { b: '12-20', x: '12-20' } };
 const REST = { H: 180, M: 120, L: 90, X: 60 };
-const BASE_SETS = { beginner: { main: 3, sec: 2, iso: 2 }, intermediate: { main: 3, sec: 3, iso: 3 }, advanced: { main: 4, sec: 3, iso: 3 } };
+const BASE_SETS = { beginner: { main: 3, sec: 2, iso: 2 }, intermediate: { main: 3, sec: 3, iso: 3 }, advanced: { main: 4, sec: 3, iso: 3 }, elite: { main: 4, sec: 4, iso: 3 } };
 // RIR podľa týždňa v bloku (posledný je deload) a prírastok sérií (hlavné cviky len polovica prírastku)
-const RIR = { beginner: [3, 3, 3, 2, 2, 2, 2, 4], intermediate: [3, 2, 2, 1, 1, 4], advanced: [3, 2, 1, 1, 4] };
-const RAMP = { beginner: [0, 0, 0, 1, 1, 1, 1, 0], intermediate: [0, 0, 1, 1, 2, 0], advanced: [0, 1, 1, 2, 0] };
+const RIR = { beginner: [3, 3, 3, 2, 2, 2, 2, 4], intermediate: [3, 2, 2, 1, 1, 4], advanced: [3, 2, 1, 1, 4], elite: [3, 2, 2, 1, 1, 1, 1, 4] };
+const RAMP = { beginner: [0, 0, 0, 1, 1, 1, 1, 0], intermediate: [0, 0, 1, 1, 2, 0], advanced: [0, 1, 1, 2, 0], elite: [0, 0, 1, 1, 1, 2, 2, 0] };
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const r25 = v => Math.max(5, Math.round(v / 2.5) * 2.5);
@@ -206,7 +210,7 @@ export function generatePlan(p = {}) {
   const goal = ['lose', 'maintain', 'gain'].includes(p.goal) ? p.goal : 'maintain';
   const level = LEVELS[p.level] ? p.level : 'beginner';
   const equipment = p.equipment === 'home' || p.gym === false ? 'home' : 'gym';
-  const days = clamp(Math.round(Number(p.days) || 3), 2, 6);
+  const days = clamp(Math.round(Number(p.days) || 3), MIN_DAYS[level], 6);
   const sex = p.sex === 'f' ? 'f' : 'm';
   const emphasis = EMPHASIS[p.emphasis] ? p.emphasis : (sex === 'f' ? 'lower' : 'balanced');
   const years = age(p.birthYear);
@@ -219,6 +223,10 @@ export function generatePlan(p = {}) {
   const week = clamp(Math.round(Number(p.week) || 1), 1, mesoWeeks);
   const deload = week === mesoWeeks;
   const pool = SLOTS[equipment];
+  const swaps = p.swaps && typeof p.swaps === 'object' ? p.swaps : {};
+  const priority = level === 'elite' ? (Array.isArray(p.priority) ? p.priority.filter(k => PRIORITY[k]).slice(0, 2) : []) : [];
+  const specOn = level === 'elite' && priority.length > 0 && block % 2 === 1;
+  const prioM = new Set(priority.flatMap(k => PRIORITY[k][1]));
 
   const splitKey = days === 3 && level !== 'beginner' ? '3u' : days;
   const split = SPLITS[splitKey];
@@ -229,10 +237,19 @@ export function generatePlan(p = {}) {
   const upperM = new Set(['chest', 'back', 'shoulders', 'reardelt', 'biceps', 'triceps']);
   const lowerM = new Set(['quads', 'hams', 'glutes']);
 
+  // špecializačný blok: prioritné svaly dostanú extra cviky v dňoch, kde sa už trénujú (cieľ 20 až 28 sérií týždne)
+  const EXTRA = { chest: ['c_iso', 'c_inc+1'], back: ['b_iso', 'b_row2+1'], shoulders: ['s_lat+1', 's_rear+1'], reardelt: [], biceps: ['bi2', 'bi+1'], triceps: ['tri_long', 'tri+1'], quads: ['q_iso', 'q_sec+1'], hams: ['h_iso+1', 'h_main+1'], glutes: ['g_sec', 'g_main+1'], calves: ['calf+1'] };
+  const daySlots = split.days.map(d => d.s.slice());
+  if (specOn) {
+    prioM.forEach(m => {
+      const dayIdx = split.days.map((d, i) => i).filter(i => daySlots[i].some(ref => pool[ref.split('+')[0]]?.m === m));
+      (EXTRA[m] || []).slice(0, prioM.size === 1 && m !== 'back' ? 2 : 1).forEach((ref, k) => { const i = dayIdx[k % Math.max(1, dayIdx.length)]; if (i != null && pool[ref.split('+')[0]]) daySlots[i].push(ref); });
+    });
+  }
   const plan = split.days.map((d, di) => {
     const used = new Set();
     const exercises = [];
-    d.s.forEach(ref => {
+    daySlots[di].forEach(ref => {
       const [key, offS] = ref.split('+');
       const slot = pool[key];
       if (!slot) return;
@@ -252,11 +269,15 @@ export function generatePlan(p = {}) {
         if (!used.has(c)) { id = c; break; }
       }
       if (!id) return;
+      const orig = id;
+      if (swaps[id] && EXERCISES[swaps[id]] && !used.has(swaps[id])) id = swaps[id];
       used.add(id);
       const ex = EXERCISES[id];
       // sety
       let sets = BASE_SETS[level][slot.role];
-      if (goal === 'lose' && slot.role === 'iso') sets = Math.max(2, sets - (level === 'beginner' ? 0 : 1));
+      if (goal === 'lose' && slot.role === 'iso' && level !== 'elite') sets = Math.max(2, sets - (level === 'beginner' ? 0 : 1));
+      if (specOn && prioM.has(slot.m) && prioM.size <= 2 && slot.m !== 'back') sets += 1;
+      if (specOn && !prioM.has(slot.m) && slot.role === 'iso') sets = Math.max(2, sets - 1);
       if (emphasis === 'upper' && upperM.has(slot.m)) sets += 1;
       if (emphasis === 'lower' && lowerM.has(slot.m)) sets += 1;
       if (emphasis === 'upper' && (slot.m === 'quads' || slot.m === 'hams') && slot.role !== 'main') sets = Math.max(2, sets - 0);
@@ -272,7 +293,7 @@ export function generatePlan(p = {}) {
       if (!deload && ex.type === 'isolation') rir = Math.max(0, rir - 1);
       if (older && !deload) rir = Math.min(4, rir + 1);
       const rest = REST[rr] || 60;
-      const o = { id, name: ex.name, muscle: ex.muscle, sets, reps, seconds: ex.id === 'cardio' ? 1200 : (ex.time ? 45 : null), rir: ex.time ? null : rir, rest: ex.time ? null : (isBeg && rr === 'H' ? 150 : rest), cue: ex.cue, role: slot.role };
+      const o = { id, orig, name: ex.name, muscle: ex.muscle, sets, reps, seconds: ex.id === 'cardio' ? 1200 : (ex.time ? 45 : null), rir: ex.time ? null : rir, rest: ex.time ? null : (isBeg && rr === 'H' ? 150 : rest), cue: ex.cue, role: slot.role };
       if (ex.sk && weightKg > 0 && !ex.time) {
         const bodyF = ex.u === 'lower' ? (sex === 'f' ? 0.75 : 1) : (sex === 'f' ? 0.55 : 1);
         o.startKg = r25(weightKg * ex.sk * bodyF * (isBeg ? 0.75 : 1));
@@ -284,7 +305,7 @@ export function generatePlan(p = {}) {
 
   // kardio podľa cieľa: pri chudnutí 2 až 3 ľahké relácie, nikdy tesne pred ťažkým dňom nôh
   let cardioSessions = 0;
-  if (goal === 'lose') cardioSessions = bmi >= 27 ? 3 : 2;
+  if (goal === 'lose') cardioSessions = level === 'elite' ? 2 : (bmi >= 27 ? 3 : 2);
   else if (goal === 'maintain') cardioSessions = 1;
   if (cardioSessions) {
     const hasHeavyLegs = d => d.exercises.some(e => e.id === 'squat' || e.id === 'hack' || e.id === 'goblet' || e.id === 'rdl' || e.id === 'db_rdl');
@@ -294,9 +315,10 @@ export function generatePlan(p = {}) {
 
   const vol = weeklyVolume(plan);
   const meta = {
-    v: 2, params: { goal, days, level, equipment, emphasis, sex, birthYear: p.birthYear || null, heightCm: heightCm || null, weightKg: weightKg || null },
+    v: 2, params: { goal, days, level, equipment, emphasis, sex, birthYear: p.birthYear || null, heightCm: heightCm || null, weightKg: weightKg || null, priority, swaps },
+    spec: specOn,
     block, week, mesoWeeks, deload, rir: RIR[level][week - 1], split: split.name, volume: vol,
-    why: explain({ goal, level, equipment, emphasis, days, sex, bmi, tall, older, split: split.name, mesoWeeks, cardioSessions }),
+    why: explain({ goal, level, equipment, emphasis, days, sex, bmi, tall, older, split: split.name, mesoWeeks, cardioSessions, specOn, priority }),
     progression: 'Dvojitá progresia: keď zvládneš všetky série na hornej hranici rozsahu opakovaní a stále ti ostane predpísaná rezerva, pridaj nabudúce váhu (horná časť tela približne 2,5 kg, nohy približne 5 kg, jednoručky 1 až 2 kg). Ak spadneš pod spodnú hranicu, váhu zníž.',
     warmup: 'Pred tréningom 5 minút ľahkého pohybu a pri prvom cviku 2 prípravné série: približne 50 % a 75 % pracovnej váhy (pár opakovaní).',
     stepsGoal: goal === 'lose' ? 9000 : 7000,
@@ -304,38 +326,65 @@ export function generatePlan(p = {}) {
   return { name: `${days}× týždenne · ${LEVELS[level].label.toLowerCase()} · ${goal === 'lose' ? 'chudnutie' : goal === 'gain' ? 'naberanie' : 'udržiavanie'}`, days: plan, meta };
 }
 
-// Pracovné série na sval za týždeň: priame 1, nepriame 0,5
+// Pracovné série na sval za týždeň: priame 1, výrazné nepriame 0,5, slabšie nepriame sa nepočítajú (Pelland 2025, zlomková metóda)
 export function weeklyVolume(daysPlan) {
   const v = {};
   (daysPlan || []).forEach(d => (d.exercises || []).forEach(e => {
     const ex = EXERCISES[e.id]; if (!ex || e.role === 'cardio') return;
-    Object.entries(ex.m).forEach(([k, w]) => { v[k] = (v[k] || 0) + e.sets * (w >= 1 ? 1 : 0.5); });
+    Object.entries(ex.m).forEach(([k, wt]) => { const f = wt >= 1 ? 1 : wt >= 0.5 ? 0.5 : 0; if (f) v[k] = (v[k] || 0) + e.sets * f; });
   }));
   Object.keys(v).forEach(k => { v[k] = Math.round(v[k] * 2) / 2; });
   return v;
 }
 
 function explain(c) {
-  const lv = LEVELS[c.level].label.toLowerCase();
   const out = [];
-  out.push(`Rozdelenie "${c.split}" tréne každý sval aspoň 2× týždenne. Pri rovnakom objeme je to o niečo lepšie než jeden dlhý tréning na sval.`);
+  out.push(`Rozdelenie "${c.split}" rozloží týždenný objem do viacerých dní. Viac než okolo 11 sérií na jeden sval v jednom tréningu už prináša málo, preto každý sval tréneme 2× až 3× týždenne.`);
   out.push(c.level === 'beginner'
-    ? 'Ako začiatočník rastieš aj z menšieho objemu. Preto je plán skôr kratší a dôležitejšia než množstvo je správna technika a pravidelnosť.'
+    ? 'Ako začiatočník rastieš už z malého objemu (minimum na rast je okolo 4 sérií na sval týždenne). Preto je plán krátky a dôležitejšia než množstvo je technika a pravidelnosť.'
     : c.level === 'intermediate'
-      ? 'Objem v bloku postupne rastie (pridávajú sa série), kým nepríde deload. Takto sa vyhneš tomu, že ťa v prvý deň zlomí príliš veľa sérií.'
-      : 'Ako pokročilý potrebuješ vyšší objem a bližšie k zlyhaniu. Preto je blok kratší, deload je častejší a pomocné cviky sa obmieňajú po každom bloku.');
-  if (c.goal === 'lose') out.push(`Pri chudnutí držíme ťažké váhy na základných cvikoch (to chráni svaly) a objem je o niečo nižší, lebo pri deficite sa horšie regeneruje. Pridali sme ${c.cardioSessions}× ľahké kardio, ktoré nezasahuje do regenerácie nôh.`);
-  if (c.goal === 'gain') out.push('Pri naberaní svalov máš plný objem a postupný nárast sérií v bloku. Pridávaj váhu hneď, ako zvládneš hornú hranicu opakovaní, a jedz v miernom prebytku.');
-  if (c.goal === 'maintain') out.push('Pri udržiavaní je objem stredný. Cieľom je pomaly pridávať váhu a udržať svaly, prípadne pomaly zlepšovať postavu.');
+      ? 'Pri stredne pokročilej úrovni sa pracuje s 10 až 20 sériami na sval týždenne. Objem v bloku postupne rastie, aby si sa na začiatku nezlomil a na konci mal čo pridávať.'
+      : c.level === 'advanced'
+        ? 'Pokročilý potrebuje vyšší objem a presnejšie riadenie únavy. Preto je blok kratší a pomocné cviky sa po každom bloku obmenia.'
+        : 'Súťažná úroveň striedavo beží vyvážený blok (10 až 20 sérií na sval) a špecializačný blok (20 až 30 sérií na 1 až 2 prioritné partie a 5 až 15 na ostatné). Vychádza to z odporúčaní pre pokročilých.');
+  if (c.specOn) out.push(`Práve beží špecializačný blok. Prioritné partie (${c.priority.map(k => PRIORITY[k][0].toLowerCase()).join(', ')}) majú viac sérií a extra cviky, ostatné svaly dostávajú udržiavací objem. Pozor na regeneráciu: spánok a kalorický príjem sú tu zásadné.`);
+  if (c.level === 'elite' && !c.specOn) out.push('Práve beží vyvážený blok, v ktorom sa všetky svaly trénujú rovnako. Nasledujúci blok bude špecializačný na vybrané partie.');
+  out.push('Série nepotrebuješ ťahať do úplného zlyhania. Meta-analýza z roku 2023 nenašla, že zlyhanie prináša viac svalu než ukončenie s malým zostávajúcim opakovaním. Preto je úroveň úsilia riadená rezervou (RIR) a zlyhanie sa hodí hlavne pri izolácii.');
+  if (c.goal === 'lose') out.push(c.level === 'elite'
+    ? `Pri chudnutí (príprava na súťaž) objem neznižujeme, pretože sval sa pri deficite chráni práve ťažkou prácou. Kardio je len ${c.cardioSessions}× nízkej intenzity, aby nebránilo regenerácii.`
+    : `Pri chudnutí držíme ťažké váhy na základných cvikoch a objem pomocných cvikov je o niečo nižší, lebo pri deficite sa horšie regeneruje. Pridali sme ${c.cardioSessions}× ľahké kardio.`);
+  if (c.goal === 'gain') out.push('Pri naberaní máš plný objem a postupný nárast sérií v bloku. Pridávaj váhu, keď zvládneš hornú hranicu opakovaní, a jedz v miernom prebytku.');
+  if (c.goal === 'maintain') out.push('Pri udržiavaní je objem stredný. Cieľom je pomaly pridávať váhu a udržať svaly.');
   if (c.emphasis === 'lower') out.push('Dôraz máš na zadok a nohy: tieto svaly dostávajú viac sérií a cviky, ktoré ich zaťažujú v natiahnutej polohe (rumunský ťah, hip thrust, bulharský drep).');
   if (c.emphasis === 'upper') out.push('Dôraz máš na hornú časť tela: hrudník, chrbát, ramená a ruky majú o niečo viac sérií.');
-  if (c.tall) out.push('Si vysoký, preto je základ pre nohy hack drep alebo leg press. Pri dlhých stehnových kostiach je to často pohodlnejšie a bezpečnejšie než klasický drep s činkou.');
+  if (c.tall) out.push('Pri vysokej postave býva klasický drep s činkou technicky náročnejší, preto je základ hack drep alebo leg press. Je to praktická voľba, nie pravidlo: ak ti drep s činkou ide, môžeš cvik vymeniť späť.');
   if (c.bmi >= 32) out.push('Pri vyššej hmotnosti sme pri tlakoch aj ťahoch zvolili stabilnejšie stroje a kardio je nízkonárazové (chôdza do kopca, bicykel).');
   if (c.older) out.push('Vzhľadom na vek nechávaš o jedno opakovanie viac v rezerve a dôraz je na kontrolovanú techniku.');
   if (c.equipment === 'home') out.push('Plán je na cvičenie doma s jednoručkami. Ak máš hrazdu, zhyby sú skvelý doplnok na chrbát.');
-  out.push(`Blok trvá ${c.mesoWeeks} týždňov. Posledný týždeň je deload (polovica sérií, rovnaké váhy, viac rezervy). Potom sa pomocné cviky obmenia a začne nový blok.`);
+  out.push(`Blok trvá ${c.mesoWeeks} týždňov. Posledný týždeň je odporúčaný deload (polovica sérií, rovnaké váhy, viac rezervy). Plánovaný deload rast svalov sám nezvýši (štúdia ukázala rovnaký rast ako bez pauzy), pomáha hlavne regenerácii. Preto ho môžeš pri dobrom pocite preskočiť alebo si ho dať skôr, ak si vyčerpaný. Pomocné cviky sa po bloku obmenia, základné ostanú, aby sa dal ďalej pridávať váha.`);
   return out;
 }
+
+// Alternatívy pre výmenu cviku: rovnaký hlavný sval, rovnaké vybavenie
+export function alternatives(id, equipment = 'gym') {
+  const ex = EXERCISES[id]; if (!ex || ex.type === 'cardio' || ex.time) return [];
+  const primary = Object.entries(ex.m).sort((a, b) => b[1] - a[1])[0]?.[0];
+  return Object.values(EXERCISES).filter(e => e.id !== id && !e.time && e.type !== 'cardio' && (e.eq === 'both' || e.eq === equipment) && Object.entries(e.m).sort((a, b) => b[1] - a[1])[0]?.[0] === primary)
+    .sort((a, b) => (a.type === ex.type ? 0 : 1) - (b.type === ex.type ? 0 : 1)).slice(0, 8).map(e => ({ id: e.id, name: e.name, cue: e.cue, type: e.type }));
+}
+
+// Zdroje, o ktoré sa plán opiera
+export const SOURCES = [
+  'Pelland a kol. 2025, Sports Medicine: meta-regresia 67 štúdií o týždennom objeme a frekvencii (minimum okolo 4 sérií týždenne, klesajúce výnosy, frekvencia pri rovnakom objeme pre rast svalov nie je rozhodujúca).',
+  'Baz-Valle a kol. 2022, Journal of Human Kinetics: stredný (12 až 20 sérií) vs. vysoký objem (nad 20) u trénovaných mužov, často bez rozdielu.',
+  'Heaselgrave a kol. 2018, Int. J. Sports Physiology and Performance: 9, 18 a 27 sérií týždenne pre biceps, 18 sérií rozložených do dvoch dní bolo najlepšie pre rast.',
+  'Refalo a kol. 2023, Sports Medicine: blízkosť k zlyhaniu, zlyhanie nie je jednoznačne lepšie pre rast než malá rezerva.',
+  'Kinoshita a kol. 2023, Frontiers in Physiology: tréning v natiahnutej polohe (lýtka v stoji) rastie lepšie než v skrátenej.',
+  'Baz-Valle a kol. 2019, PLoS ONE: pevný výber cvikov vs. náhodná obmena, bez rozdielu v raste, obmena zvyšuje len motiváciu.',
+  'Coleman a kol. 2024, PeerJ: jeden týždeň pauzy v 8-týždenném cykle rast svalov nezmenil, sila mierne klesla.',
+  'Helms a kol. 2014, J. Int. Soc. Sports Nutrition: odporúčania pre prípravu na súťaž (frekvencia 2 až 3×, objem 40 až 70 opakovaní na sval a tréning, obmedziť zlyhanie, najmenej kardia, ktoré stačí).',
+  'Helms a kol., Muscle and Strength Pyramid (2. vydanie): špecializačné bloky 8 až 12 týždňov, frekvencia podľa objemu, reaktívny deload.',
+];
 
 // Ktorý deň plánu je dnes na rade: ďalší po poslednom odcvičenom
 export function nextDay(plan, logs) {
