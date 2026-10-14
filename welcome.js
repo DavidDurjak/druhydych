@@ -1,10 +1,15 @@
 // Prvé spustenie: pokojná prvá obrazovka, jasná správa po registrácii a návod na pridanie na plochu (iPhone).
 const css = document.createElement('style');
 css.textContent = `
-.screen.td:has(.td-first) :is(#fw-discover,#fast,.wt,.duo,.ci,#fw-shop){display:none}
+/* 7 jedál dňa sa nezmestí do jedného riadka: dva riadky, nič nepretečie za okraj */
+.sheet .seg:has(> button:nth-child(6)){display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.sheet .seg:has(> button:nth-child(6)) button{min-width:0;padding:9px 2px;font-size:13px}
+.sheet,.sheet-bg{max-width:100vw;box-sizing:border-box}
+.sheet{min-width:0;overflow-x:hidden}
+body:has(.sheet-bg) .bd-fab{display:none!important}
 #aiText,#q{font-size:15px}
 #aiText::placeholder,#q::placeholder{font-size:14px}
-.fw-more{margin:14px 4px 4px;text-align:center;font-size:13px;color:var(--muted,#8b93a7);line-height:1.5}
+
 .fw-mail{border:1px solid rgba(122,255,178,.35);background:linear-gradient(160deg,rgba(122,255,178,.12),rgba(122,255,178,.03));border-radius:18px;padding:16px 16px 14px;margin-bottom:14px}
 .fw-mail h3{margin:0 0 6px;font-size:17px}.fw-mail p{margin:0;font-size:14px;line-height:1.5;color:var(--muted,#9aa3b8)}
 .fw-mail b{color:var(--text,#fff);word-break:break-all}
@@ -51,16 +56,6 @@ function installCard() {
   first.after(c);
 }
 
-function moreNote() {
-  const first = document.querySelector('.td-first');
-  const meals = document.querySelector('.screen.td .meals');
-  if (!first || !meals || document.querySelector('.fw-more')) return;
-  const n = document.createElement('div');
-  n.className = 'fw-more';
-  n.textContent = 'Po prvom jedle sa odomknú voda, váha, tréning a denný check-in.';
-  meals.after(n);
-}
-
-const run = () => { mailNote(); installCard(); moreNote(); };
+const run = () => { mailNote(); installCard(); };
 new MutationObserver(run).observe(document.documentElement, { childList: true, subtree: true });
 run();
