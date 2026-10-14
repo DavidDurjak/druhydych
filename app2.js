@@ -1,7 +1,8 @@
-// Druhý dych v0.2: nové obrazovky (fotky, tréning, kouč detail, správy, adaptívny cieľ)
+// Druhý dych v0.2: nové obrazovky (fotky, tréning, koč detail, správy, adaptívny cieľ)
 import * as db from './data.js';
+import { sb } from './data.js';
 import * as calc from './calc.js';
-import { generatePlan, nextDay, EXERCISES } from './workouts.js';
+import { generatePlan, nextDay, EXERCISES, LEVELS, EMPHASIS, MUSCLE_LABEL, recommendLevel } from './workouts.js';
 import { ctx } from './app.js';
 import * as rp from './report.js';
 
@@ -21,7 +22,7 @@ export async function renderPhotos(userId = state.profile.id, asCoach = false) {
   const poses = { front: 'Spredu', side: 'Zboku', back: 'Zozadu' };
   let pose = 'front';
   const cmp = () => {
-    if (dates.length < 2) return `<p class="empty">${dates.length ? 'Po druhej fotke sa tu objaví porovnanie pred/po.' : 'Zatiaľ žiadne fotky.'}</p>`;
+    if (dates.length < 2) return `<p class="empty">${dates.length ? 'Po druhej fotke sa tu objaí porovnanie pred/po.' : 'Zatiaľ žiadne fotky.'}</p>`;
     const a = byDate[first]?.[pose], b = byDate[last]?.[pose];
     if (!a || !b) return '<p class="empty">Pre túto pózu chýba fotka na začiatku alebo na konci.</p>';
     return `<div class="cmp" id="cmp"><img src="${b.url}" alt="po"><div class="cmp-a" id="cmpA"><img src="${a.url}" alt="pred"></div><div class="cmp-h" id="cmpH"><span></span></div>
@@ -33,7 +34,7 @@ export async function renderPhotos(userId = state.profile.id, asCoach = false) {
     <div class="seg mb" id="poseSeg">${Object.entries(poses).map(([k, v]) => `<button data-pose="${k}" class="${k === pose ? 'on' : ''}">${v}</button>`).join('')}</div>
     <div class="card" id="cmpWrap">${cmp()}</div>
     <h3 class="mb">Časová os</h3>
-    <div class="timeline" id="tl">${dates.length ? dates.slice().reverse().map(d => `<div class="tl-row"><div class="tl-date mono">${calc.fmtDate(d)}<span>${d.slice(0, 4)}</span></div><div class="tl-pics">${['front', 'side', 'back'].map(p => byDate[d][p] ? `<div class="tl-pic"><img src="${byDate[d][p].url}" loading="lazy">${asCoach ? '' : `<button class="tl-del" data-del="${byDate[d][p].id}">×</button>`}</div>` : '').join('')}</div></div>`).join('') : '<p class="empty">Odfoť sa raz týždenne, vždy v rovnakom svetle a oblečení. Najlepšie ráno.</p>'}</div>
+    <div class="timeline" id="tl">${dates.length ? dates.slice().reverse().map(d => `<div class="tl-row"><div class="tl-date mono">${calc.fmtDate(d)}<span>${d.slice(0, 4)}</span></div><div class="tl-pics">${['front', 'side', 'back'].map(p => byDate[d][p] ? `<div class="tl-pic"><img src="${byDate[d][p].url}" loading="lazy">${asCoach ? '' : `<button class="tl-del" data-del="${byDate[d][p].id}">×</button>`}</div>` : '').join('')}</div></div>`).join('') : '<p class="empty">Odfoť sa raz týždenne, vždy v rovnakom svetle a oblečení. Najlepšie rano.</p>'}</div>
   </div>${nav(asCoach ? '#/kouc' : '#/fotky')}`;
   const bindCmp = () => {
     const r = $app().querySelector('#cmpR'); if (!r) return;
@@ -48,7 +49,7 @@ export async function renderPhotos(userId = state.profile.id, asCoach = false) {
 }
 function openPhotoAdd(userId, done) {
   const bg = sheet(`<h2 class="mb">Nová fotka</h2>
-    <p class="muted small mb">Rovnaké miesto, svetlo a oblečenie ako minule. Fotka ostáva súkromná, vidí ju len kouč.</p>
+    <p class="muted small mb">Rovnaké miesto, svetlo a oblečenie ako minule. Fotka ostáva súkromná, vidí ju len koč.</p>
     <label class="field"><span>Dátum</span><input class="input" type="date" id="pd" value="${state.date}" max="${calc.today()}"></label>
     <label class="field"><span>Póza</span><div class="seg" id="ps"><button type="button" data-p="front" class="on">Spredu</button><button type="button" data-p="side">Zboku</button><button type="button" data-p="back">Zozadu</button></div></label>
     <label class="btn primary" style="display:flex"><input type="file" id="pf" accept="image/*" capture="environment" style="display:none">Odfotiť / vybrať</label>
@@ -88,6 +89,7 @@ export async function renderTraining() {
   const p = state.profile, uid = p.id;
   const [plan, logs, lastKg] = await Promise.all([db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.today(), -60)), db.lastWeights(uid)]);
   if (!plan) return renderPlanSetup();
+  await refreshPlan(plan, p);
   const ws = calc.weekStart();
   const weekDone = logs.filter(l => l.done && l.date >= ws).length;
   const todayLog = logs.find(l => l.date === state.date);
@@ -103,6 +105,7 @@ export async function renderTraining() {
       <div class="stat"><b class="mono">${logs.filter(l => l.done).length}</b><span>tréningov spolu</span></div>
       <div class="stat"><b class="mono" id="setCount">${doneCount}/${sets.length}</b><span>sérií dnes</span></div>
     </div>
+    ${planInfo(plan)}
     <div class="row between mb"><div class="seg" style="flex:1">${plan.days.map(d => `<button data-day="${d.day}" class="${d.day === dayNo ? 'on' : ''}">D${d.day}</button>`).join('')}</div></div>
     <div class="card ${todayLog?.done ? 'accent' : ''}">
       <div class="row between"><h2>${h(day.name)}</h2>${todayLog?.done ? '<span class="chip" style="background:#12332A;color:var(--accent)">Hotovo</span>' : ''}</div>
@@ -110,6 +113,7 @@ export async function renderTraining() {
     </div>
     ${day.exercises.map(e => `<div class="card ex">
       <div class="row between"><h3>${h(e.name)}</h3><span class="muted small">${e.sets}× ${e.reps ? e.reps + ' op.' : Math.round(e.seconds / 60) + ' min'}</span></div>
+      ${exMeta(e, lastKg[e.id])}
       <div class="sets">${sets.filter(s => s.ex === e.id).map(s => `<div class="set ${s.done ? 'done' : ''}" data-ex="${e.id}" data-set="${s.set}">
         <span class="setno">${s.set}</span>
         ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="kg" value="${s.kg ?? ''}" data-f="kg"><input class="input sm" inputmode="numeric" placeholder="op." value="${s.reps ?? ''}" data-f="reps">` : `<span class="muted small" style="flex:1">${Math.round(e.seconds / 60)} min</span>`}
@@ -142,26 +146,96 @@ export async function renderTraining() {
     toast(`Tréning hotový. ${s.filter(x => x.done).length} sérií.`); renderTraining();
   };
   $app().querySelector('#replan').onclick = () => renderPlanSetup();
+  const up = $app().querySelector('#upgradePlan'); if (up) up.onclick = () => renderPlanSetup();
+}
+const WEEKS_MS = 7 * 86400000;
+function planWeek(plan) {
+  const m = plan.meta; if (!m || m.v !== 2) return null;
+  const start = new Date((m.startedAt || plan.created_at || '').slice(0, 10) + 'T00:00:00');
+  if (isNaN(start)) return { week: m.week || 1, block: m.block || 0, rolled: false };
+  const now = new Date(calc.today() + 'T00:00:00');
+  const w = Math.floor((now - start) / WEEKS_MS) + 1;
+  return { elapsed: Math.max(1, w) };
+}
+// Týždenne posúva sety a rezervu, po konci bloku založí nový blok s obmenenými pomocnými cvikmi
+async function refreshPlan(plan, p) {
+  try {
+    const m = plan.meta; if (!m || m.v !== 2) return;
+    const pw = planWeek(plan); if (!pw || !pw.elapsed) return;
+    const mw = m.mesoWeeks || 6;
+    let block = m.block || 0, startedAt = (m.startedAt || plan.created_at || '').slice(0, 10), el = pw.elapsed;
+    while (el > mw) { block++; el -= mw; startedAt = calc.addDays(startedAt, mw * 7); }
+    const week = Math.min(el, mw);
+    if (block === m.block && week === m.week) return;
+    const np = generatePlan({ ...m.params, birthYear: m.params.birthYear, block, week });
+    np.meta.startedAt = startedAt;
+    if (block !== m.block) np.meta.newBlock = true;
+    const { data: row, error } = await sb.from('workout_plans').update({ name: np.name, days: np.days, meta: np.meta }).eq('id', plan.id).select().single();
+    if (error) throw error;
+    Object.assign(plan, row);
+    if (block !== m.block) toast('Nový tréningový blok. Pomocné cviky sú obmenené.');
+  } catch (_) { /* ostane aktuálny plán */ }
+}
+const RIR_TXT = r => r >= 4 ? 'veľmi ľahko, 4 opakovania v rezerve' : r === 3 ? '3 opakovania v rezerve' : r === 2 ? '2 opakovania v rezerve' : r === 1 ? '1 opakovanie v rezerve' : 'do zlyhania';
+function planInfo(plan) {
+  const m = plan.meta;
+  if (!m || m.v !== 2) return `<div class="card" style="border-color:rgba(124,255,178,.35)"><p class="small">Toto je starší plán. Nový plán sa prispôsobí tvojej úrovni, cieľu a vybaveniu a týždenne sa vyvíja.</p><button class="btn sm primary" id="upgradePlan" style="margin-top:8px">Vytvoriť plán na mieru</button></div>`;
+  const vol = m.volume || {};
+  const rows = Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 22 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
+  return `<div class="card plan-info">
+    <div class="row between"><b>Blok ${(m.block || 0) + 1} · týždeň ${m.week} z ${m.mesoWeeks}</b><span class="chip" style="${m.deload ? 'background:#3A2F12;color:#FFD27A' : 'background:#12332A;color:var(--accent)'}">${m.deload ? 'Deload' : LEVELS[m.params.level]?.label}</span></div>
+    <p class="small" style="margin:6px 0 0">${m.deload ? 'Odlľahčený týždeň: polovica sérií, rovnaké váhy a viac rezervy. Telo sa zotaví a ďalší blok pôjde lepšie.' : `Tento týždeň ťahaj série na ${RIR_TXT(m.rir)}.`}</p>
+    <details style="margin-top:8px"><summary class="small" style="cursor:pointer">Prečo je plán takto zostavený</summary>
+      <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${(m.why || []).map(t => `<li>${h(t)}</li>`).join('')}</ul>
+      <p class="small" style="margin:8px 0 4px"><b>Progresia</b><br>${h(m.progression || '')}</p>
+      <p class="small" style="margin:8px 0 4px"><b>Rozcvička</b><br>${h(m.warmup || '')}</p>
+      <p class="small" style="margin:8px 0 4px"><b>Pracovné série na sval za týždeň</b></p>${rows}
+    </details>
+  </div>`;
+}
+function exMeta(e, last) {
+  if (e.id === 'cardio' || !e.rest) return e.cue ? `<p class="muted small" style="margin:2px 0 6px">${h(e.cue)}</p>` : '';
+  const bits = [e.rir != null ? `rezerva ${e.rir}` : '', `pauza ${e.rest >= 120 ? Math.round(e.rest / 60 * 2) / 2 + ' min' : e.rest + ' s'}`];
+  if (!last && e.startKg) bits.push(`začni okolo ${e.startKg} kg`);
+  return `<p class="muted small" style="margin:2px 0 4px">${bits.join(' · ')}</p>${e.cue ? `<p class="muted small" style="margin:0 0 6px;opacity:.8">${h(e.cue)}</p>` : ''}`;
+}
+if (typeof document !== 'undefined') {
+  const st = document.createElement('style');
+  st.textContent = `.plan-info{margin-bottom:12px}.vrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0}.vrow span{flex:0 0 96px;color:var(--muted)}.vrow i{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.vrow i b{display:block;height:100%;background:var(--accent)}.vrow em{flex:0 0 28px;text-align:right;font-style:normal}.lvl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.lvl button{text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.lvl button.on{border-color:var(--accent);background:rgba(124,255,178,.10)}.lvl button b{display:block;font-size:15px}.lvl button small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}`;
+  document.head.appendChild(st);
 }
 async function renderPlanSetup() {
   const p = state.profile;
-  let days = Math.max(2, Math.min(5, p.training_days || 3));
-  const preview = () => generatePlan({ goal: p.goal, days, gym: true });
+  const old = await db.getPlan(p.id).catch(() => null);
+  const op = old?.meta?.params || {};
+  let days = Math.max(2, Math.min(6, op.days || p.training_days || 3));
+  let level = op.level || 'beginner', equipment = op.equipment || 'gym';
+  let emphasis = op.emphasis || (p.sex === 'f' ? 'lower' : 'balanced');
+  const preview = () => generatePlan({ goal: p.goal, days, level, equipment, emphasis, sex: p.sex, birthYear: p.birth_year, heightCm: p.height_cm, weightKg: p.start_weight });
   const draw = () => {
-    const pl = preview();
-    $app().querySelector('#planPrev').innerHTML = pl.days.map(d => `<div class="card"><h3>${h(d.name)}</h3><p class="muted small">${d.exercises.map(e => `${h(e.name)} ${e.sets}×${e.reps || Math.round(e.seconds / 60) + 'min'}`).join(' · ')}</p></div>`).join('');
+    const pl = preview(), m = pl.meta;
+    $app().querySelector('#planPrev').innerHTML = `<div class="card plan-info"><b>${h(m.split)}</b><p class="small" style="margin:6px 0 0">Blok trvá ${m.mesoWeeks} týždňov, potom sa pomocné cviky obmenia.</p></div>` +
+      pl.days.map(d => `<div class="card"><h3>${h(d.name)}</h3><p class="muted small">${d.exercises.map(e => `${h(e.name)} ${e.sets}×${e.reps || Math.round(e.seconds / 60) + 'min'}`).join(' · ')}</p></div>`).join('') +
+      `<div class="card plan-info"><p class="small" style="margin:0 0 6px"><b>Pracovné série na sval za týždeň</b></p>${Object.keys(MUSCLE_LABEL).filter(k => m.volume[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, m.volume[k] / 22 * 100)}%"></b></i><em>${m.volume[k]}</em></div>`).join('')}</div>`;
   };
+  const seg = (id, items, cur) => `<div class="seg" id="${id}">${items.map(([k, t]) => `<button data-k="${k}" class="${k === cur ? 'on' : ''}">${t}</button>`).join('')}</div>`;
   $app().innerHTML = `<div class="screen">
     <h1 class="mb">Tvoj plán</h1>
-    <p class="muted mb">Plán sa generuje z tvojho cieľa (${calc.GOAL[p.goal]?.label || ''}) a počtu dní. Cviky sú na gym, s postupným zvyšovaním váh.</p>
-    <label class="field"><span>Dní v týždni</span><div class="seg" id="dseg">${[2, 3, 4, 5].map(n => `<button data-n="${n}" class="${n === days ? 'on' : ''}">${n}</button>`).join('')}</div></label>
+    <p class="muted mb">Plán sa skladá z tvojho cieľa (${calc.GOAL[p.goal]?.label || ''}), váhy, výšky, úrovne a počtu dní. Každých pár týždňov sa sám vyvíja a po bloku obmení cviky.</p>
+    <label class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${Object.entries(LEVELS).map(([k, v]) => `<button data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('')}</div></label>
+    <label class="field"><span>Dní tréningu v týždni</span>${seg('dseg', [2, 3, 4, 5, 6].map(n => [n, n]), days)}</label>
+    <label class="field"><span>Kde cvičíš</span>${seg('eseg', [['gym', 'Posilňovňa'], ['home', 'Doma s jednoručkami']], equipment)}</label>
+    <label class="field"><span>Na čo sa zamerať</span>${seg('mseg', Object.entries(EMPHASIS), emphasis)}</label>
     <div id="planPrev"></div>
     <button class="btn primary" id="save">Použiť tento plán</button>
   </div>${nav('#/trening')}`;
   draw();
-  $app().querySelectorAll('[data-n]').forEach(b => b.onclick = () => { days = Number(b.dataset.n); $app().querySelectorAll('[data-n]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  const wire = (id, set) => $app().querySelectorAll(`#${id} [data-k]`).forEach(b => b.onclick = () => { set(b.dataset.k); $app().querySelectorAll(`#${id} [data-k]`).forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  wire('lvl', v => level = v); wire('dseg', v => days = Number(v)); wire('eseg', v => equipment = v); wire('mseg', v => emphasis = v);
   $app().querySelector('#save').onclick = async () => {
-    await db.savePlan(p.id, preview());
+    const pl = preview(); pl.meta.startedAt = calc.today();
+    const saved = await db.savePlan(p.id, pl);
+    if (saved?.id) { const { error } = await sb.from('workout_plans').update({ meta: pl.meta }).eq('id', saved.id); if (error) throw new Error(error.message); }
     if (p.training_days !== days) state.profile = await db.upsertProfile({ id: p.id, training_days: days });
     toast('Plán uložený'); renderTraining();
   };
@@ -200,23 +274,23 @@ export async function renderMessages() {
   await db.markRead(unread);
   const coaches = state.profile.role === 'coach' ? [] : null;
   $app().innerHTML = `<div class="screen">
-    <h1 class="mb">Správy od kouča</h1>
-    ${state.profile.role !== 'coach' ? `<form id="mf" class="card"><textarea class="input" name="b" rows="2" placeholder="Napíš koučovi..."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>` : ''}
-    ${msgs.length ? msgs.map(m => `<div class="card msg ${m.from_user === uid ? 'mine' : ''}"><p>${h(m.body)}</p><p class="muted small mt">${m.from_user === uid ? 'Ty' : 'Kouč'} · ${new Date(m.created_at).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>`).join('') : '<p class="empty">Zatiaľ žiadne správy.</p>'}
+    <h1 class="mb">Správy od koča</h1>
+    ${state.profile.role !== 'coach' ? `<form id="mf" class="card"><textarea class="input" name="b" rows="2" placeholder="Napíš kočovi..."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>` : ''}
+    ${msgs.length ? msgs.map(m => `<div class="card msg ${m.from_user === uid ? 'mine' : ''}"><p>${h(m.body)}</p><p class="muted small mt">${m.from_user === uid ? 'Ty' : 'Koč'} · ${new Date(m.created_at).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>`).join('') : '<p class="empty">Zatiaľ žiadne správy.</p>'}
   </div>${nav('#/spravy')}`;
   $app().querySelector('#mf')?.addEventListener('submit', async e => {
     e.preventDefault(); const body = new FormData(e.target).get('b').trim(); if (!body) return;
     const { data } = await db.sb.from('profiles').select('id').eq('role', 'coach').limit(1);
-    if (!data?.length) return toast('Kouč zatiaľ nie je nastavený', true);
+    if (!data?.length) return toast('Koč zatiaľ nie je nastavený', true);
     await db.sendMessage(uid, data[0].id, body); toast('Odoslané'); renderMessages();
   });
 }
 
-// ---------- KOUČ 2.0 ----------
+// ---------- KOČ 2.0 ----------
 export async function renderCoach() {
   if (state.profile.role !== 'coach') { location.hash = '#/'; return; }
   const from = calc.addDays(calc.today(), -6);
-  $app().innerHTML = `<div class="screen"><h1>Kouč</h1><div class="spinner"></div></div>${nav('#/kouc')}`;
+  $app().innerHTML = `<div class="screen"><h1>Koč</h1><div class="spinner"></div></div>${nav('#/kouc')}`;
   const { profiles, weights, foods, checkins, wlogs, photos } = await db.coachOverview2(from);
   const people = profiles.filter(p => p.role !== 'coach' && p.onboarded).map(p => {
     const w = weights.filter(x => x.user_id === p.id);
@@ -248,7 +322,7 @@ export async function renderCoach() {
   const reportsHtml = await rp.coachReportsHtml().catch(() => '');
   const totalLoss = people.reduce((a, x) => a + (x.last ? x.startW - x.last.trend : 0), 0);
   $app().innerHTML = `<div class="screen">
-    <div class="topbar"><h1>Kouč</h1><button class="btn sm ghost" id="csv">Export CSV</button></div>
+    <div class="topbar"><h1>Koč</h1><button class="btn sm ghost" id="csv">Export CSV</button></div>
     <div class="grid3 mb">
       <div class="stat"><b class="mono">${people.length}</b><span>účastníkov</span></div>
       <div class="stat"><b class="mono">${people.filter(x => x.flag === 'ok').length}</b><span>v pohode</span></div>
@@ -291,7 +365,7 @@ export async function renderCoachDetail(userId) {
     </div>
     <a class="rp-card" href="#/report?u=${userId}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre, rozpad bodov a zameranie na ďalší týždeň.</p></div><span class="rp-card-go">›</span></a>
     <div class="card">${ctx.weightChart(tr)}</div>
-    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieli, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
+    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieľi, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
     ${photos.length ? `<a class="card link" href="#/kouc/${userId}/fotky"><div class="row between"><h3>Fotky (${photos.length})</h3><span class="muted small">Otvoriť →</span></div><div class="row mt" style="gap:6px">${photos.slice(-3).map(x => `<img src="${urls[x.path]}" style="width:31%;aspect-ratio:3/4;object-fit:cover;border-radius:10px">`).join('')}</div></a>` : '<div class="card"><p class="muted small">Zatiaľ žiadne fotky.</p></div>'}
     ${targets.length ? `<div class="card"><h3 class="mb">Zmeny cieľa</h3>${targets.slice().reverse().map(t => `<div class="item"><div class="n"><b>${t.old_kcal} → ${t.new_kcal} kcal</b><span>${h(t.reason || '')}</span></div><span class="muted small mono">${calc.fmtDate(t.date)}</span></div>`).join('')}</div>` : ''}
     ${notes.length ? `<div class="card"><h3 class="mb">Poznámky z check-inov</h3>${notes.slice(0, 5).map(c => `<div class="item"><div class="n"><b>${calc.fmtDate(c.date)} · nálada ${c.mood ?? '–'}/5 · spánok ${c.sleep_h ?? '–'} h</b><span>${h(c.note)}</span></div></div>`).join('')}</div>` : ''}
