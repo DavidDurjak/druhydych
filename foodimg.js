@@ -51,10 +51,11 @@ export function thumb(f, cls = '') {
   return `<span class="ft ${img ? 'ph' : ''} ${cls}" data-fid="${f?.id || ''}" data-name="${esc(f?.name)}">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('ph');this.remove()">` : ''}<i>${foodEmoji(f?.name)}</i></span>`;
 }
 
+// obrázok mimo stránky sa nesmie načítavať s loading=lazy, inak sa nikdy nenatiahne
 function attach(el, u) {
   if (!u || el.classList.contains('ph')) return;
   const im = new Image();
-  im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.src = u;
+  im.alt = ''; im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.src = u;
   im.onload = () => { if (!el.classList.contains('ph')) { el.classList.add('ph'); el.prepend(im); } };
 }
 
