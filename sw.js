@@ -1,6 +1,6 @@
 // Service worker: appka sa nainštaluje na plochu, načíta aj pri slabom signáli a prijíma push notifikácie
-const CACHE = 'fuelwind-v58';
-const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './push.js', './foods.js', './scan.js', './scan.css', './today.js', './logedit.js', './mydata.js', './micro.js', './meals.js', './fasting.js', './fabpos.js', './micro.css', './suggest.js', './suggest.css', './buddy.js', './avatars.js', './buddy.css', './today.css', './progress.js', './progress.css', './health.js', './report.js', './v07.css', './v08.css', './ailog.js', './checkin.js', './admin.js', './goals.js', './workouts.js', './dxcore.js', './diet.js', './glucose.js', './cards.js', './dxdash.js', './habits.js', './discover.js', './foodimg.js', './favs.js', './shopping.js', './sharecard.js', './welcome.js', './friends.js', './ptr.js', './searchux.js', './navglass.js', './badges.js', './progfiber.js', './searchfix.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
+const CACHE = 'fuelwind-v59';
+const ASSETS = ['./', './index.html', './app.css', './app.js', './app2.js', './push.js', './foods.js', './scan.js', './scan.css', './today.js', './logedit.js', './mydata.js', './micro.js', './meals.js', './fasting.js', './fabpos.js', './micro.css', './suggest.js', './suggest.css', './buddy.js', './avatars.js', './buddy.css', './today.css', './progress.js', './progress.css', './health.js', './report.js', './v07.css', './v08.css', './ailog.js', './checkin.js', './admin.js', './goals.js', './workouts.js', './physique.js', './dxcore.js', './diet.js', './glucose.js', './cards.js', './dxdash.js', './habits.js', './discover.js', './foodimg.js', './favs.js', './shopping.js', './sharecard.js', './welcome.js', './friends.js', './ptr.js', './searchux.js', './navglass.js', './badges.js', './progfiber.js', './searchfix.js', './data.js', './calc.js', './food.js', './config.js', './manifest.json', './icon.svg'];
 
 const checked = new Map();
 self.addEventListener('install', e => {
@@ -14,7 +14,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return; // Supabase, Open Food Facts, fonty: vždy zo siete
-  // Súbory sú verzované číslom cache (CACHE), takže po nasadení sa vymenia samy. Obnova na pozadí je len poistka a beží najviac raz za 30 minút na súbor,
+  // Súbory sú verzované číslom cache (CACHE), takže po nasadení sa vymenia samé. Obnova na pozadí je len poistka a beží najviac raz za 30 minút na súbor,
   // inak by pri každom otvorení appky ďalších ~60 požiadaviek bojovalo o sieť s dátami.
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(req);
