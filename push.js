@@ -6,7 +6,7 @@ const $app = () => ctx.$app;
 const state = () => ctx.state;
 const h = (...a) => ctx.h(...a), toast = (...a) => ctx.toast(...a), nav = (...a) => ctx.nav(...a);
 
-const DEFAULTS = { tz: 'Europe/Bratislava', enabled: true, breakfast: '08:00', breakfast_on: true, brunch: '10:30', brunch_on: false, lunch: '12:30', lunch_on: true, afternoon: '15:30', afternoon_on: true, dinner: '19:00', dinner_on: true, late: '21:00', late_on: false, weigh: '07:00', weigh_on: true, checkin: '21:00', checkin_on: true, training: '17:00', training_on: true, water_on: true, photo_on: true, streak_on: true };
+const DEFAULTS = { tz: 'Europe/Bratislava', enabled: true, breakfast: '08:00', breakfast_on: true, brunch: '10:30', brunch_on: false, lunch: '12:30', lunch_on: true, afternoon: '15:30', afternoon_on: true, dinner: '19:00', dinner_on: true, late: '21:00', late_on: false, weigh: '07:00', weigh_on: true, checkin: '21:00', checkin_on: true, training: '17:00', training_on: true, water_on: true, photo_on: true, streak_on: true, summary_on: true };
 
 export function pushSupport() {
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -84,7 +84,7 @@ export async function renderReminders() {
   const rows = [
     ['weigh', 'Ranné váženie', '⚖️'], ['breakfast', 'Raňajky', '🍳'], ['brunch', 'Desiata', '🥪'], ['lunch', 'Obed', '🍲'], ['afternoon', 'Olovrant', '🥨'], ['dinner', 'Večera', '🍽️'], ['late', 'Druhá večera', '🌙'], ['training', 'Tréning', '🏋️'], ['checkin', 'Večerný check-in', '📝'],
   ];
-  const toggles = [['water_on', 'Voda (11:00, 14:00, 17:00, len ak chýba)', '💧'], ['photo_on', 'Týždenná fotka (nedeľa 10:00)', '📸'], ['streak_on', 'Streak v ohrození (21:30)', '🔥']];
+  const toggles = [['water_on', 'Voda (11:00, 14:00, 17:00, len ak chýba)', '💧'], ['photo_on', 'Týždenná fotka (nedeľa 10:00)', '📸'], ['streak_on', 'Streak v ohrození (21:30)', '🔥'], ['summary_on', 'Večerné zhrnutie dňa (20:30)', '📊']];
   const t5 = v => (v || '').slice(0, 5);
   $app().innerHTML = `<div class="screen">
     <div class="topbar"><h1>Pripomienky</h1><a class="btn sm ghost" href="#/profil">←</a></div>
@@ -105,7 +105,7 @@ export async function renderReminders() {
   $app().querySelector('#off')?.addEventListener('click', async () => { await disablePush(); toast('Vypnuté'); renderReminders(); });
   $app().querySelector('#rf').onsubmit = async e => {
     e.preventDefault(); const f = new FormData(e.target); const out = { user_id: uid, tz: s.tz };
-    ['enabled', 'breakfast_on', 'brunch_on', 'lunch_on', 'afternoon_on', 'dinner_on', 'late_on', 'weigh_on', 'checkin_on', 'training_on', 'water_on', 'photo_on', 'streak_on'].forEach(k => out[k] = f.get(k) === 'on');
+    ['enabled', 'breakfast_on', 'brunch_on', 'lunch_on', 'afternoon_on', 'dinner_on', 'late_on', 'weigh_on', 'checkin_on', 'training_on', 'water_on', 'photo_on', 'streak_on', 'summary_on'].forEach(k => out[k] = f.get(k) === 'on');
     ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner', 'late', 'weigh', 'checkin', 'training'].forEach(k => out[k] = f.get(k) || DEFAULTS[k]);
     try { await db.saveReminderSettings(out); toast('Uložené'); } catch (err) { toast(err.message, true); }
   };
