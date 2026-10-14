@@ -1,9 +1,14 @@
 // Prvé spustenie: pokojná prvá obrazovka, jasná správa po registrácii a návod na pridanie na plochu (iPhone).
 const css = document.createElement('style');
 css.textContent = `
-/* 7 jedál dňa sa nezmestí do jedného riadka: dva riadky, nič nepretečie za okraj */
-.sheet .seg:has(> button:nth-child(6)){display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-.sheet .seg:has(> button:nth-child(6)) button{min-width:0;padding:9px 2px;font-size:13px}
+/* výber jedla dňa v paneli: jeden riadok z tmavého skla, posúva sa do strán */
+.sheet .seg:has(> button:nth-child(6)){display:flex;flex-wrap:nowrap;gap:4px;padding:4px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04)),rgba(24,28,34,.52);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);
+  border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%)}
+.sheet .seg:has(> button:nth-child(6))::-webkit-scrollbar{display:none}
+.sheet .seg:has(> button:nth-child(6)) button{flex:0 0 auto;white-space:nowrap;scroll-snap-align:center;padding:10px 16px;font-size:14px;border-radius:12px;min-width:0}
+.sheet .seg:has(> button:nth-child(6)) button.on{background:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,.07));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 0 0 1px rgba(255,255,255,.10),0 4px 14px rgba(0,0,0,.28)}
 .sheet,.sheet-bg{max-width:100vw;box-sizing:border-box}
 .sheet{min-width:0;overflow-x:hidden}
 body:has(.sheet-bg) .bd-fab{display:none!important}
@@ -56,6 +61,15 @@ function installCard() {
   first.after(c);
 }
 
-const run = () => { mailNote(); installCard(); };
+function segScroll() {
+  document.querySelectorAll('.sheet .seg button.on').forEach(b => {
+    const p = b.parentElement;
+    if (p.scrollWidth <= p.clientWidth + 2 || p._fwOn === b) return;
+    p._fwOn = b;
+    p.scrollTo({ left: b.offsetLeft - (p.clientWidth - b.offsetWidth) / 2, behavior: p._fwInit ? 'smooth' : 'auto' });
+    p._fwInit = 1;
+  });
+}
+const run = () => { mailNote(); installCard(); segScroll(); };
 new MutationObserver(run).observe(document.documentElement, { childList: true, subtree: true });
 run();
