@@ -163,7 +163,7 @@ export async function renderTraining() {
 function contestDays(date) { if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null; return Math.round((new Date(date + 'T00:00:00') - new Date(calc.today() + 'T00:00:00')) / 86400000); }
 function contestCard(plan) {
   const date = plan.meta.params?.contestDate || '', left = contestDays(date);
-  if (left == null || left < -14) return `<div class="px-card"><b>🏆 Súťažný režim</b><p class="muted small">Zadaj dátum súťaže a appka ti bude ukazovať, čo robiť v ktorej fáze prípravy, vrátane posledného týždha.</p><input class="input" type="date" id="contestDate" min="${calc.today()}" aria-label="Dátum súťaže"></div>`;
+  if (left == null || left < -14) return `<div class="px-card"><b>🏆 Súťažný režim</b><p class="muted small">Zadaj dátum súťaže a appka ti bude ukazovať, čo robiť v ktorej fáze prípravy, vrátane posledného týždňa.</p><input class="input" type="date" id="contestDate" min="${calc.today()}" aria-label="Dátum súťaže"></div>`;
   const ph = contestPhase(left);
   return `<div class="px-card"><div class="row between"><b>🏆 ${h(ph.title)}</b><span class="chip" style="background:#12332A;color:var(--accent)">${left > 0 ? 'o ' + left + ' ' + (left === 1 ? 'deň' : left >= 2 && left <= 4 ? 'dni' : 'dní') : left === 0 ? 'dnes' : 'po súťaži'}</span></div>
     <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${ph.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>
@@ -179,7 +179,7 @@ async function saveContest(plan, date) {
   } catch (err) { toast(err.message || 'Nepodarilo sa uložiť', true); }
 }
 
-// Výmena cviku: rovnaký sval, rovnaké vybavenie. Voľba sa pämätá v pláne.
+// Výmena cviku: rovnaký sval, rovnaké vybavenie. Voľba sa pamätá v pláne.
 async function regen(plan, patch, startedAt) {
   const m = plan.meta;
   const np = generatePlan({ ...m.params, block: m.block, week: m.week, ...patch });
@@ -211,7 +211,7 @@ function openSwap(plan, e, todayLog) {
     } catch (err) { toast(err.message || 'Nepodarilo sa vymeniť', true); b.disabled = false; }
   });
 }
-// Deload hneď (si vyčerpaný) alebo preskokenie deloadu (cítiš sa sviežo)
+// Deload hneď (si vyčerpaný) alebo preskkočenie deloadu (cítiš sa sviežo)
 async function forceWeek(plan, mode) {
   const m = plan.meta, mw = m.mesoWeeks;
   try {
