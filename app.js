@@ -38,6 +38,7 @@ const ICONS = {
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const r0 = n => Math.round(Number(n || 0));
 function toast(msg, err = false) {
+  if (msg === STALE) return; // zastaraná obrazovka (používateľ medzitým preklikol), nie je to chyba
   document.querySelectorAll('.toast').forEach(t => t.remove());
   const t = document.createElement('div');
   t.className = 'toast' + (err ? ' err' : ''); t.textContent = msg;
@@ -57,9 +58,62 @@ function nav(active) {
   const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
   items.push(['#/profil', 'user', 'Profil']);
-  const cur = NAV_GROUP[active] || active;
-  return `<nav class="nav">${items.map(([href, ic, lbl]) => `<a href="${href}" class="${cur === href ? 'on' : ''}"><span class="ic">${ICONS[ic]}</span><span class="lb">${lbl}</span></a>`).join('')}</nav>`;
+  const cur = groupOf(active);
+  return `<nav class="nav" data-for="${active}">${items.map(([href, ic, lbl]) => `<a href="${href}" class="${cur === href ? 'on' : ''}"><span class="ic">${ICONS[ic]}</span><span class="lb">${lbl}</span></a>`).join('')}</nav>`;
 }
+// do ktorej záložky spodnej lišty patrí cesta
+function groupOf(path) {
+  const p = String(path || '#/').split('?')[0] || '#/';
+  if (p.startsWith('#/kouc/')) return '#/kouc';
+  return NAV_GROUP[p] || p;
+}
+const curPath = () => (location.hash || '#/').split('?')[0];
+
+// Ochrana: keď používateľ rýchlo preklikne (Pokrok → Tréning), pomalšia staršia obrazovka sa dokončí neskôr
+// a prepísala by novú. Zápis obrazovky inej záložky, než je práve otvorená, sa zahodí a stará obrazovka sa zastaví.
+const STALE = '__stale_screen__';
+const HTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+Object.defineProperty($app, 'innerHTML', {
+  configurable: true,
+  get() { return HTML.get.call(this); },
+  set(v) {
+    const m = typeof v === 'string' && v.match(/<nav class="nav" data-for="([^"]*)"/);
+    if (m && groupOf(m[1]) !== groupOf(curPath())) throw new Error(STALE);
+    HTML.set.call(this, v);
+  },
+});
+
+// Spodná lišta reaguje okamžite: záložka sa rozsvieti hneď pri ťuknutí (nie až keď sa načítajú dáta),
+// funguje aj ťuknutie počas dobiehajúceho scrollu na iPhone (vtedy Safari klik nepošle) a opätovné
+// ťuknutie na otvorenú záložku vyroluje hore.
+let navDown = null, navAt = 0;
+function navGo(a) {
+  const href = a.getAttribute('href');
+  if (!href) return;
+  a.closest('.nav')?.querySelectorAll('a').forEach(x => x.classList.toggle('on', x === a));
+  if (href === curPath() || (href === '#/' && curPath() === '#/')) {
+    if (window.scrollY > 40) window.scrollTo({ top: 0, behavior: 'smooth' }); else route();
+    return;
+  }
+  location.hash = href;
+}
+document.addEventListener('pointerdown', e => {
+  const a = e.target.closest?.('.nav a');
+  navDown = a ? { a, x: e.clientX, y: e.clientY } : null;
+}, { passive: true });
+document.addEventListener('pointerup', e => {
+  if (!navDown || e.pointerType === 'mouse') return;
+  const { a, x, y } = navDown; navDown = null;
+  if (Math.hypot(e.clientX - x, e.clientY - y) > 14 || !a.isConnected) return;
+  navAt = Date.now(); navGo(a);
+}, { passive: true });
+document.addEventListener('click', e => {
+  const a = e.target.closest?.('.nav a');
+  if (!a) return;
+  e.preventDefault();
+  if (Date.now() - navAt < 700) return; // už vybavené pri pointerup
+  navGo(a);
+});
 // prepínač Váha / Fotky na obrazovke Pokrok
 function progressTabs(path) {
   const scr = $app.querySelector('.screen'); if (!scr) return;
@@ -91,12 +145,38 @@ function bindDatePicker(root, rerender) {
 
 // ---------- router ----------
 window.addEventListener('hashchange', route);
+const DOC = document.documentElement;
+let routeSeq = 0, snapTimer = null;
+// profil si pamätáme v zariadení: appka nemusí pri štarte čakať na server, čerstvý sa načíta na pozadí
+const PROF = uid => 'fw_prof_' + uid;
+function cachedProfile(uid) { try { const p = JSON.parse(localStorage.getItem(PROF(uid)) || 'null'); return p?.id === uid ? p : null; } catch (_) { return null; } }
+function saveProfile(p) { try { if (p?.id) localStorage.setItem(PROF(p.id), JSON.stringify(p)); } catch (_) { /* plné úložisko */ } }
+async function loadProfile(uid) {
+  const cached = cachedProfile(uid);
+  const fresh = db.getProfile(uid).then(p => { if (p) { saveProfile(p); if (state.profile?.id === uid) Object.assign(state.profile, p); } return p; });
+  if (cached) { fresh.catch(() => null); return cached; }
+  return fresh;
+}
+// snímka obrazovky Dnes: pri ďalšom otvorení appky sa ukáže okamžite (index.html), kým sa načítajú čerstvé dáta
+function saveSnap(my) {
+  clearTimeout(snapTimer);
+  snapTimer = setTimeout(() => {
+    if (my !== routeSeq || curPath() !== '#/' || state.date !== calc.today() || document.querySelector('.sheet-bg')) return;
+    try { localStorage.setItem('fw_snap', JSON.stringify({ d: calc.today(), u: state.profile?.id, h: $app.innerHTML })); } catch (_) { /* plné úložisko */ }
+  }, 1800);
+}
 async function route() {
+  const my = ++routeSeq;
+  DOC.classList.add('fw-loading');
+  try { await routeInner(my); }
+  finally { if (my === routeSeq) DOC.classList.remove('fw-loading', 'fw-snap'); }
+}
+async function routeInner(my) {
   const hash = location.hash || '#/';
-  const path = hash.split('?')[0];
+  let path = hash.split('?')[0];
   if (path !== state.curPath) { state.prevPath = state.curPath; state.curPath = path; }
   if (!state.session) return renderAuth();
-  if (!state.profile) state.profile = await db.getProfile(state.session.user.id);
+  if (!state.profile) { const p = await loadProfile(state.session.user.id); if (my !== routeSeq) return; state.profile = p; }
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
     '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals,
@@ -104,9 +184,19 @@ async function route() {
   let fn = views[path];
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
-  fn = fn || td.renderToday;
-  try { await fn(); if (path === '#/vaha' || path === '#/fotky') progressTabs(path); } catch (e) { console.error(e); toast(e.message, true); }
+  if (!fn) { fn = td.renderToday; if (path !== '#/') { history.replaceState(null, '', '#/'); path = '#/'; state.curPath = path; } }
+  try {
+    await fn();
+    if (my !== routeSeq) return;
+    if (path === '#/vaha' || path === '#/fotky') progressTabs(path);
+  } catch (e) {
+    if (my !== routeSeq || e?.message === STALE) return; // medzitým otvorená iná obrazovka
+    console.error(e); toast(e.message, true);
+    return;
+  }
   window.scrollTo(0, 0);
+  saveProfile(state.profile); // po zmene cieľov alebo údajov ostane v pamäti aktuálny profil
+  if (path === '#/') saveSnap(my);
 }
 
 // ---------- auth ----------
@@ -317,7 +407,10 @@ async function renderProfile() {
     <button class="btn danger" id="out">Odhlásiť sa</button>
     <p class="muted small center mt">Fuelwind · verzia ${ad.APP_VERSION} · ${new Date().getFullYear()}</p>
   </div>${nav('#/profil')}`;
-  $app.querySelector('#out').onclick = async () => { await db.signOut(); state.profile = null; ad.resetAdmin(); };
+  $app.querySelector('#out').onclick = async () => {
+    try { localStorage.removeItem('fw_snap'); localStorage.removeItem(PROF(p.id)); } catch (_) { /* nič */ }
+    await db.signOut(); state.profile = null; ad.resetAdmin();
+  };
 }
 
 // ---------- ctx pre app2.js ----------
@@ -325,8 +418,13 @@ Object.assign(ctx, { $app, state, h, r0, toast, sheet, nav, datePicker, bindDate
 
 // ---------- boot ----------
 async function boot() {
+  await db.ready;
   state.session = await db.getSession();
-  db.onAuthChange(s => { const was = !!state.session; state.session = s; if (!s) state.profile = null; if (!!s !== was) { if (s) location.hash = '#/'; route(); } });
+  db.onAuthChange(s => {
+    const was = !!state.session; state.session = s;
+    if (!s) { state.profile = null; try { localStorage.removeItem('fw_snap'); } catch (_) { /* nič */ } }
+    if (!!s !== was) { if (s) location.hash = '#/'; route(); }
+  });
   route();
 }
 boot();

@@ -76,10 +76,13 @@ async function loadPool(uid) {
   return pool;
 }
 
+const seen = new WeakSet();
 async function inject() {
   if (busy || !root || !ctx.state?.profile) return;
   const bar = root.querySelector('.screen.td .qk');
-  if (!bar || root.querySelector('#sugg')) return;
+  if (!bar || root.querySelector('#sugg') || seen.has(bar)) return;
+  // každú vykreslenú obrazovku skontroluje len raz (inak by pri každej zmene na stránke znova volal databázu)
+  seen.add(bar);
   const p = ctx.state.profile, date = ctx.state.date;
   if (date !== calc.today() || !p.target_kcal) return;
   busy = true;

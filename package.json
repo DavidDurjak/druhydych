@@ -1,0 +1,8 @@
+{
+  "name": "fuelwind",
+  "private": true,
+  "description": "Fuelwind PWA. Závislosti slúžia len pri nasadení (build.js pribalí Supabase knižnicu do vendor/).",
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3"
+  }
+}

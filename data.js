@@ -1,8 +1,26 @@
 // Dátová vrstva: všetko, čo komunikuje so Supabase, je tu. UI túto vrstvu len volá.
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
-export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Supabase knižnica je pribalená priamo v appke (vendor/supabase.mjs vyrába build.js pri nasadení): jeden súbor
+// z našej domény, ktorý si appka drží offline. Predtým sa ťahala z cudzieho CDN ako 6 súborov za sebou pri každom štarte.
+// Záloha pre istotu: keby pribalený súbor chýbal, načíta sa rovnaká verzia z CDN.
+// Načítava sa asynchrónne (bez top-level await, aby sa nezmenilo poradie spúšťania modulov); app.js pri štarte čaká na `ready`.
+const SUPA_VER = '2.117.3';
+let client = null;
+export const ready = import('./vendor/supabase.mjs')
+  .catch(() => import(`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@${SUPA_VER}/+esm`))
+  .then(m => (client = m.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)));
+
+// `sb` sa správa presne ako Supabase klient (sb.from, sb.auth, sb.rpc…), len odkazuje na klienta vytvoreného po načítaní knižnice
+// (vlastnosti nastavené priamo na sb, napr. obal sb.rpc v searchfix.js, majú prednosť)
+export const sb = new Proxy({}, {
+  get(own, k) {
+    if (Object.prototype.hasOwnProperty.call(own, k)) return own[k];
+    if (!client) throw new Error('Pripájam sa, skús o sekundu.');
+    const v = client[k];
+    return typeof v === 'function' ? v.bind(client) : v;
+  },
+});
 
 function must({ data, error }) {
   if (error) throw new Error(error.message);
