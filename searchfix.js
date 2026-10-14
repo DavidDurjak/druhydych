@@ -28,7 +28,7 @@ db.ready.then(() => {
   const orig = sb.rpc.bind(sb);
   sb.__sf = true;
   sb.rpc = (name, args, ...rest) => {
-    if (name !== 'search_foods' || !args?.q) return orig(name, args, ...rest);
+    if ((name !== 'search_foods' && name !== 'search_foods_v2') || !args?.q) return orig(name, args, ...rest);
     return (async () => {
       const first = await orig(name, args, ...rest);
       if (first.error || (first.data || []).length >= 5) return first;

@@ -17,12 +17,13 @@ function parseOFF(p) {
     salt: salt == null ? null : Number(salt),
     fiber: fib == null ? null : Number(fib),
     source: 'off',
+    img: p.image_front_small_url || p.image_small_url || null,
     barcode: p.code || null,
     ...offTags(p),
   };
 }
 
-const FIELDS = 'product_name,product_name_sk,product_name_en,brands,nutriments,code,allergens_tags,traces_tags,labels_tags,ingredients_text,ingredients_text_sk';
+const FIELDS = 'image_front_small_url,image_small_url,product_name,product_name_sk,product_name_en,brands,nutriments,code,allergens_tags,traces_tags,labels_tags,ingredients_text,ingredients_text_sk';
 
 export async function searchOFF(q, { signal } = {}) {
   if (!q || q.length < 2) return [];
