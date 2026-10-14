@@ -1,7 +1,7 @@
 // Generátor tréningových plánov na mieru. Čistá logika bez závislostí.
 //
 // Z čoho vychádza (skrátene):
-// - Objem je hlavný motor rastu svalov: rátame pracovné série na sval za týždeň. Prínos série klesá, preto nie je cieľom "čo najviac".
+// - Objem je hlavný motor rastu svalov: rátame pracovné série na sval za týždeň. Prínos série klesa, preto nie je cieľom "čo najviac".
 //   Začiatočník potrebuje okolo 6 až 10 sérií na sval, stredne pokročilý 10 až 16, pokročilý 14 až 22.
 // - Každý sval aspoň 2× týždenne (rozloženie objemu do viacerých dní je pri rovnakom objeme mierne lepšie).
 // - Séria sa berie blízko zlyhania (RIR = opakovania v rezerve). V bloku sa RIR znižuje z 3 na 1, na konci je deload.
@@ -14,11 +14,11 @@ const L = (id, name, muscle, m, type, rr, eq, cue, extra = {}) => ({ id, name, m
 
 export const EXERCISES = Object.fromEntries([
   // hrudník
-  L('bench', 'Bench press s činkou', 'hrudník', { chest: 1, triceps: 0.5, shoulders: 0.4 }, 'compound', 'H', 'gym', 'Lopatky stiahnuté k sebe, nohy pevne na zemi, činka klesá k spodnej časti hrudníka.', { sk: 0.6, u: 'upper' }),
-  L('incline_db', 'Tlak s jednoručkami na šikmej lavici', 'hrudník', { chest: 1, triceps: 0.5, shoulders: 0.5 }, 'compound', 'M', 'gym', 'Lavica asi 30°, lakte šikmo od tela, dole pocíť natiahnutie hrudníka.', { sk: 0.22, u: 'upper' }),
+  L('bench', 'Bench press s činkou', 'hrudník', { chest: 1, triceps: 0.5, shoulders: 0.4 }, 'compound', 'H', 'gym', 'Lopatky stiahnuté k sebe, nohy pevne na zemi, činka klesa k spodnej časti hrudníka.', { sk: 0.6, u: 'upper' }),
+  L('incline_db', 'Tlak s jednoručkami na šikmej lavici', 'hrudník', { chest: 1, triceps: 0.5, shoulders: 0.5 }, 'compound', 'M', 'gym', 'Lavica asi 30°, lakte šikmo od tela, dole pocíti natiahnutie hrudníka.', { sk: 0.22, u: 'upper' }),
   L('machine_chest', 'Tlak na stroji na hrudník', 'hrudník', { chest: 1, triceps: 0.5, shoulders: 0.3 }, 'compound', 'M', 'gym', 'Rukoväte v úrovni stredu hrudníka, plný rozsah bez pádu ramien dopredu.', { sk: 0.45 }),
   L('flye', 'Rozpažovanie na stroji (pec deck)', 'hrudník', { chest: 1 }, 'isolation', 'L', 'gym', 'Lakte mierne pokrčené, na konci pohybu hrudník stiahni, dole pomalý návrat.', { sk: 0.25 }),
-  L('cable_flye', 'Rozpažovanie na kladkách zdola nahor', 'hrudník', { chest: 1 }, 'isolation', 'L', 'gym', 'Kladky nízko, ruky idú oblúkom k brade, na dne pocítiš natiahnutie.', { sk: 0.08 }),
+  L('cable_flye', 'Rozpažovanie na kladkách zdola nahor', 'hrudník', { chest: 1 }, 'isolation', 'L', 'gym', 'Kladky nízko, ruky idú obľúkom k brade, na dne pocítiš natiahnutie.', { sk: 0.08 }),
   L('dip', 'Dipy na bradlách', 'hrudník', { chest: 1, triceps: 0.7, shoulders: 0.3 }, 'compound', 'M', 'gym', 'Mierny predklon, zostup pod kontrolou, pri bolesti ramena vymeň za stroj.', {}),
   L('pushup', 'Kliky', 'hrudník', { chest: 1, triceps: 0.5, shoulders: 0.3 }, 'compound', 'M', 'both', 'Telo v jednej línii, hrudník až k zemi. Ak je to ťažké, rob ich s rukami na vyššej opore.', {}),
   L('pushup_decline', 'Kliky s nohami na zvýšenej opore', 'hrudník', { chest: 1, triceps: 0.5, shoulders: 0.5 }, 'compound', 'M', 'home', 'Nohy na stoličke, telo rovné, hrudník až k zemi.', {}),
@@ -32,7 +32,7 @@ export const EXERCISES = Object.fromEntries([
   L('row_chest', 'Príťahy s oporou hrude na stroji', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'M', 'gym', 'Hrudník pevne na opore, ťahaj lakte dozadu, dole nechaj lopatky natiahnuť.', { sk: 0.45 }),
   L('row_db', 'Príťahy s jednoručkou', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'M', 'both', 'Jedna ruka a koleno na lavici, lakte ťahaj k bedru, nekrúť trupom.', { sk: 0.22 }),
   L('row_bent', 'Príťahy s dvoma jednoručkami v predklone', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'M', 'home', 'Predklon s rovným chrbtom, lakte ťahaj k bokom, hore stlač lopatky.', { sk: 0.18 }),
-  L('row_bb', 'Príťahy s činkou v predklone', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'H', 'gym', 'Trup takmer rovnobežne so zemou, činka k pupku, chrbát neguľať.', { sk: 0.5 }),
+  L('row_bb', 'Príťahy s činkou v predklone', 'chrbát', { back: 1, biceps: 0.4 }, 'compound', 'H', 'gym', 'Trup takmer rovnobežne so zemou, činka k pupku, chrbát neguľovať.', { sk: 0.5 }),
   L('pullover_cable', 'Pullover na kladke (priame ruky)', 'chrbát', { back: 1 }, 'isolation', 'L', 'gym', 'Ruky takmer rovné, tlač kladku k stehnám, hore pocítiš natiahnutie lats.', { sk: 0.2 }),
   L('pullover_db', 'Pullover s jednoručkou', 'chrbát', { back: 1, chest: 0.3 }, 'isolation', 'L', 'home', 'Jednoručka za hlavu, lakte mierne pokrčené, dolu natiahni, hore k hrudi.', { sk: 0.2 }),
   // ramená
@@ -54,29 +54,29 @@ export const EXERCISES = Object.fromEntries([
   // triceps
   L('triceps_push', 'Tricepsové sťahovanie kladky', 'triceps', { triceps: 1 }, 'isolation', 'L', 'gym', 'Lakte pri tele, plne vystri, hore sa nenadvihuj.', { sk: 0.25 }),
   L('oh_triceps', 'Tricepsový tlak nad hlavou (kladka alebo jednoručka)', 'triceps', { triceps: 1 }, 'isolation', 'L', 'gym', 'Lakte smerujú hore, dole natiahni triceps, hore plne vystri.', { sk: 0.15 }),
-  L('skull', 'Francúzsky tlak', 'triceps', { triceps: 1 }, 'isolation', 'L', 'gym', 'Lakte pevne, činka klesá k čelu alebo za hlavu, tlač do plného vystretia.', { sk: 0.2 }),
+  L('skull', 'Francúzsky tlak', 'triceps', { triceps: 1 }, 'isolation', 'L', 'gym', 'Lakte pevne, činka klesa k čelu alebo za hlavu, tlač do plného vystretia.', { sk: 0.2 }),
   L('skull_db', 'Francúzsky tlak s jednoručkami', 'triceps', { triceps: 1 }, 'isolation', 'L', 'home', 'Ľahni si, lakte pevne, jednoručky klesajú k čelu.', { sk: 0.1 }),
-  L('oh_triceps_db', 'Tricepsový tlak nad hlavou s jednoručkou', 'triceps', { triceps: 1 }, 'isolation', 'L', 'home', 'Lakte hore pri hlave, jednoručka klesá za hlavu a dole natiahne triceps.', { sk: 0.12 }),
+  L('oh_triceps_db', 'Tricepsový tlak nad hlavou s jednoručkou', 'triceps', { triceps: 1 }, 'isolation', 'L', 'home', 'Lakte hore pri hlave, jednoručka klesa za hlavu a dole natiahne triceps.', { sk: 0.12 }),
   // kvadricepsy
-  L('squat', 'Drep s činkou', 'nohy', { quads: 1, glutes: 0.6, hams: 0.2 }, 'compound', 'H', 'gym', 'Činka na chrbte, kolená v smere špičiek, drep do hĺbky, kde udržíš rovný chrbát.', { sk: 0.7, u: 'lower' }),
+  L('squat', 'Drep s činkou', 'nohy', { quads: 1, glutes: 0.6, hams: 0.2 }, 'compound', 'H', 'gym', 'Činka na chrbte, kolená v smere špičiek, drep do hĺbky, kde udržiš rovný chrbát.', { sk: 0.7, u: 'lower' }),
   L('hack', 'Hack drep na stroji', 'nohy', { quads: 1, glutes: 0.5 }, 'compound', 'H', 'gym', 'Chodidlá o niečo nižšie, kolená vpred, plná hĺbka bez odlepenia panvy.', { sk: 0.6 }),
-  L('legpress', 'Leg press', 'nohy', { quads: 1, glutes: 0.5 }, 'compound', 'M', 'gym', 'Chodidlá v šírke ramien, spodok zastav, kým sa nezačne zakrúcať panva.', { sk: 1.0 }),
+  L('legpress', 'Leg press', 'nohy', { quads: 1, glutes: 0.5 }, 'compound', 'M', 'gym', 'Chodidlá v šírke ramien, spodok zastav, kým sa nezačne zakŕčať panva.', { sk: 1.0 }),
   L('goblet', 'Goblet drep s jednoručkou', 'nohy', { quads: 1, glutes: 0.5 }, 'compound', 'M', 'home', 'Jednoručku drž pri hrudi, hlboký drep, hrudník hore.', { sk: 0.25 }),
   L('split_squat', 'Bulharský drep (zadná noha na lavici)', 'nohy', { quads: 1, glutes: 0.8 }, 'compound', 'M', 'both', 'Dlhší krok vpred, trup mierne dopredu, kolenom dolu pod kontrolou.', { sk: 0.2 }),
   L('lunge', 'Výpady s jednoručkami', 'nohy', { quads: 1, glutes: 0.7 }, 'compound', 'M', 'both', 'Krok vpred, zostup kolenom k zemi, odraz cez celú prednú nohu.', { sk: 0.18 }),
   L('step_up', 'Výstupy na lavicu s jednoručkami', 'nohy', { quads: 1, glutes: 0.7 }, 'compound', 'M', 'both', 'Stúpaj hlavne prednou nohou, nepomáhaj si odrazom zadnej.', { sk: 0.18 }),
   L('legext', 'Predkopávanie na stroji', 'nohy', { quads: 1 }, 'isolation', 'L', 'gym', 'Stroj nastav tak, aby kolená boli na osi, hore chvíľu podrž.', { sk: 0.35 }),
   // zadná strana
-  L('rdl', 'Rumunský mŕtvy ťah', 'zadná strana', { hams: 1, glutes: 0.7, back: 0.3 }, 'compound', 'M', 'gym', 'Panvu posúvaj dozadu, chrbát rovný, hlavne zadné stehná natiahni, činka pri nohách.', { sk: 0.7, u: 'lower' }),
-  L('db_rdl', 'Rumunský mŕtvy ťah s jednoručkami', 'zadná strana', { hams: 1, glutes: 0.7, back: 0.3 }, 'compound', 'M', 'both', 'Panvu posúvaj dozadu, jednoručky kĺzu po stehnách, chrbát rovný.', { sk: 0.3 }),
-  L('sl_rdl', 'Rumunský mŕtvy ťah na jednej nohe', 'zadná strana', { hams: 1, glutes: 0.8 }, 'compound', 'M', 'home', 'Stoj na jednej nohe, panvu posúvaj dozadu, zadná noha sa predlžuje.', { sk: 0.15 }),
+  L('rdl', 'Rumunský mŕtvy ťah', 'zadná strana', { hams: 1, glutes: 0.7, back: 0.3 }, 'compound', 'M', 'gym', 'Panvu posúvać dozadu, chrbát rovný, hlavne zadné stehná natiahni, činka pri nohách.', { sk: 0.7, u: 'lower' }),
+  L('db_rdl', 'Rumunský mŕtvy ťah s jednoručkami', 'zadná strana', { hams: 1, glutes: 0.7, back: 0.3 }, 'compound', 'M', 'both', 'Panvu posúvaj dozadu, jednoručky kľzu po stehnách, chrbát rovný.', { sk: 0.3 }),
+  L('sl_rdl', 'Rumunský mŕtvy ťah na jednej nohe', 'zadná strana', { hams: 1, glutes: 0.8 }, 'compound', 'M', 'home', 'Stoj na jednej nohe, panvu posúvaj dozadu, zadná noha sa predĺžuje.', { sk: 0.15 }),
   L('deadlift', 'Mŕtvy ťah', 'zadná strana', { hams: 0.8, glutes: 0.8, back: 0.7, quads: 0.4 }, 'compound', 'H', 'gym', 'Činka pri holeniach, chrbát rovný, odtlač zem a až potom narovnaj bedrá.', { sk: 0.9 }),
   L('trapbar', 'Mŕtvy ťah s hex činkou', 'zadná strana', { hams: 0.6, glutes: 0.8, back: 0.6, quads: 0.7 }, 'compound', 'H', 'gym', 'Stoj uprostred činky, hrudník hore, odtlač zem, stoj rovno.', { sk: 0.8 }),
   L('legcurl_seated', 'Zakopávanie na stroji v sede', 'zadná strana', { hams: 1 }, 'isolation', 'L', 'gym', 'Sedíš s natiahnutým bedrom, zadné stehná sú dole natiahnuté a to je výhodné pre rast.', { sk: 0.3 }),
   L('legcurl', 'Zakopávanie na stroji v ľahu', 'zadná strana', { hams: 1 }, 'isolation', 'L', 'gym', 'Panvu drž na lavici, zdvíhaj pätami k zadku, dole pomaly.', { sk: 0.25 }),
-  L('hamcurl_slider', 'Zakopávanie pätami po podlahe (uterák)', 'zadná strana', { hams: 1, glutes: 0.3 }, 'isolation', 'L', 'home', 'Ľahni si, päty na uteráku, bedrá hore a pomaly kĺž pätami od seba a späť.', {}),
+  L('hamcurl_slider', 'Zakopávanie pätami po podlahe (uterák)', 'zadná strana', { hams: 1, glutes: 0.3 }, 'isolation', 'L', 'home', 'Ľahni si, päty na uteračku, bedrá hore a pomaly kľž pätami od seba a späť.', {}),
   // zadok
-  L('hipthrust', 'Hip thrust', 'zadok', { glutes: 1, hams: 0.3 }, 'compound', 'M', 'gym', 'Lopatky na lavici, brada k hrudi, hore zadok stlač a nenaklaň bedrá.', { sk: 0.8, u: 'lower' }),
+  L('hipthrust', 'Hip thrust', 'zadok', { glutes: 1, hams: 0.3 }, 'compound', 'M', 'gym', 'Lopatky na lavici, brada k hrudi, hore zadok stlač a nenakloň bedrá.', { sk: 0.8, u: 'lower' }),
   L('bridge', 'Glute bridge s jednoručkou', 'zadok', { glutes: 1, hams: 0.3 }, 'compound', 'M', 'both', 'Jednoručka na bedrách, hore zadok stlač a chvíľu podrž.', { sk: 0.3 }),
   L('bridge_1l', 'Glute bridge na jednej nohe', 'zadok', { glutes: 1, hams: 0.3 }, 'compound', 'M', 'home', 'Jedna noha vystretá, panva rovno, hore zadok stlač.', {}),
   // lýtka, core
@@ -95,12 +95,12 @@ export const MUSCLE_LABEL = { chest: 'Hrudník', back: 'Chrbát', shoulders: 'Ra
 
 export const LEVELS = {
   beginner: { label: 'Začiatočník', desc: 'Do 6 mesiacov pravidelného cvičenia. Menej sérií, viac technikou a pomalý nárast váh.', blockWeeks: 8 },
-  intermediate: { label: 'Stredne pokročilý', desc: '6 mesiacov až 2 roky pravidelného cvičenia. Dva tréningy na sval týždenne a rastúci objem v bloku.', blockWeeks: 6 },
+  intermediate: { label: 'Stredne pokročilý', desc: '6 mesiacov až 2 roky pravidelného cvičenia. Dva tréningy na sval týždenne a rastúce objem v bloku.', blockWeeks: 6 },
   advanced: { label: 'Pokročilý', desc: 'Viac ako 2 roky poctivého cvičenia. Vyšší objem, bližšie k zlyhaniu a kratšie bloky.', blockWeeks: 5 },
-  elite: { label: 'Súťažný', desc: 'Viac ako 4 roky cvičenia alebo príprava na súťaž. Najvyšší objem, 5 až 6 dní, špecializačné bloky na slabé partie a riadená únava.', blockWeeks: 8, minDays: 5 },
+  elite: { label: 'Elite', desc: 'Viac ako 4 roky cvičenia alebo príprava na súťaž. Najvyšší objem, 5 až 6 dní, špecializačné bloky na slabé partie a riadená únava.', blockWeeks: 8, minDays: 5 },
 };
 export const MIN_DAYS = { beginner: 2, intermediate: 2, advanced: 3, elite: 5 };
-// Prioritné partie pre špecializačné bloky (súťažná úroveň)
+// Prioritné partie pre špecializačné bloky (úroveň Elite)
 export const PRIORITY = { chest: ['Hrudník', ['chest']], back: ['Chrbát', ['back']], shoulders: ['Ramená', ['shoulders', 'reardelt']], arms: ['Ruky', ['biceps', 'triceps']], quads: ['Kvadricepsy', ['quads']], posterior: ['Zadok a zadné stehná', ['glutes', 'hams']], calves: ['Lýtka', ['calves']] };
 export const EMPHASIS = { balanced: 'Vyvážene', upper: 'Horná časť tela', lower: 'Zadok a nohy' };
 
@@ -237,7 +237,7 @@ export function generatePlan(p = {}) {
   const upperM = new Set(['chest', 'back', 'shoulders', 'reardelt', 'biceps', 'triceps']);
   const lowerM = new Set(['quads', 'hams', 'glutes']);
 
-  // špecializačný blok: prioritné svaly dostanú extra cviky v dňoch, kde sa už trénujú (cieľ 20 až 28 sérií týždne)
+  // špecializačný blok: prioritné svaly dostanú extra cviky v dňoch, kde sa už trenúu (cieľ 20 až 28 sérií týždňe)
   const EXTRA = { chest: ['c_iso', 'c_inc+1'], back: ['b_iso', 'b_row2+1'], shoulders: ['s_lat+1', 's_rear+1'], reardelt: [], biceps: ['bi2', 'bi+1'], triceps: ['tri_long', 'tri+1'], quads: ['q_iso', 'q_sec+1'], hams: ['h_iso+1', 'h_main+1'], glutes: ['g_sec', 'g_main+1'], calves: ['calf+1'] };
   const daySlots = split.days.map(d => d.s.slice());
   if (specOn) {
@@ -315,7 +315,7 @@ export function generatePlan(p = {}) {
 
   const vol = weeklyVolume(plan);
   const meta = {
-    v: 2, params: { goal, days, level, equipment, emphasis, sex, birthYear: p.birthYear || null, heightCm: heightCm || null, weightKg: weightKg || null, priority, swaps },
+    v: 2, params: { goal, days, level, equipment, emphasis, sex, birthYear: p.birthYear || null, heightCm: heightCm || null, weightKg: weightKg || null, priority, swaps, contestDate: /^\d{4}-\d{2}-\d{2}$/.test(p.contestDate || '') ? p.contestDate : null },
     spec: specOn,
     block, week, mesoWeeks, deload, rir: RIR[level][week - 1], split: split.name, volume: vol,
     why: explain({ goal, level, equipment, emphasis, days, sex, bmi, tall, older, split: split.name, mesoWeeks, cardioSessions, specOn, priority }),
@@ -343,17 +343,17 @@ function explain(c) {
   out.push(c.level === 'beginner'
     ? 'Ako začiatočník rastieš už z malého objemu (minimum na rast je okolo 4 sérií na sval týždenne). Preto je plán krátky a dôležitejšia než množstvo je technika a pravidelnosť.'
     : c.level === 'intermediate'
-      ? 'Pri stredne pokročilej úrovni sa pracuje s 10 až 20 sériami na sval týždenne. Objem v bloku postupne rastie, aby si sa na začiatku nezlomil a na konci mal čo pridávať.'
+      ? 'Pri stredne pokročilej úrovni sa pracuje s 10 až 20 sériami na sval týždenne. Objem v bloku postupne rastie, aby si sa na začiatku nezlomil a na konci mal čo pridavať.'
       : c.level === 'advanced'
         ? 'Pokročilý potrebuje vyšší objem a presnejšie riadenie únavy. Preto je blok kratší a pomocné cviky sa po každom bloku obmenia.'
-        : 'Súťažná úroveň striedavo beží vyvážený blok (10 až 20 sérií na sval) a špecializačný blok (20 až 30 sérií na 1 až 2 prioritné partie a 5 až 15 na ostatné). Vychádza to z odporúčaní pre pokročilých.');
+        : 'ÚroveE0 Elite striedavo beží vyvážený blok (10 až 20 sérií na sval) a špecializačný blok (20 až 30 sérií na 1 až 2 prioritné partie a 5 až 15 na ostatné). Vychádza to z odporúčaní pre pokročilých.');
   if (c.specOn) out.push(`Práve beží špecializačný blok. Prioritné partie (${c.priority.map(k => PRIORITY[k][0].toLowerCase()).join(', ')}) majú viac sérií a extra cviky, ostatné svaly dostávajú udržiavací objem. Pozor na regeneráciu: spánok a kalorický príjem sú tu zásadné.`);
-  if (c.level === 'elite' && !c.specOn) out.push('Práve beží vyvážený blok, v ktorom sa všetky svaly trénujú rovnako. Nasledujúci blok bude špecializačný na vybrané partie.');
+  if (c.level === 'elite' && !c.specOn) out.push('Práve beží vyvážený blok, v ktorom sa všetky svaly trénujú rovnako. Nasledujúce blok bude špecializačný na vybrané partie.');
   out.push('Série nepotrebuješ ťahať do úplného zlyhania. Meta-analýza z roku 2023 nenašla, že zlyhanie prináša viac svalu než ukončenie s malým zostávajúcim opakovaním. Preto je úroveň úsilia riadená rezervou (RIR) a zlyhanie sa hodí hlavne pri izolácii.');
   if (c.goal === 'lose') out.push(c.level === 'elite'
     ? `Pri chudnutí (príprava na súťaž) objem neznižujeme, pretože sval sa pri deficite chráni práve ťažkou prácou. Kardio je len ${c.cardioSessions}× nízkej intenzity, aby nebránilo regenerácii.`
     : `Pri chudnutí držíme ťažké váhy na základných cvikoch a objem pomocných cvikov je o niečo nižší, lebo pri deficite sa horšie regeneruje. Pridali sme ${c.cardioSessions}× ľahké kardio.`);
-  if (c.goal === 'gain') out.push('Pri naberaní máš plný objem a postupný nárast sérií v bloku. Pridávaj váhu, keď zvládneš hornú hranicu opakovaní, a jedz v miernom prebytku.');
+  if (c.goal === 'gain') out.push('Pri naberaní máš plný objem a postupný nárast sérií v bloku. Pridávaj váhu, keď zvládneš hornú hranicu opakovaní, a jedz v mierom prebytku.');
   if (c.goal === 'maintain') out.push('Pri udržiavaní je objem stredný. Cieľom je pomaly pridávať váhu a udržať svaly.');
   if (c.emphasis === 'lower') out.push('Dôraz máš na zadok a nohy: tieto svaly dostávajú viac sérií a cviky, ktoré ich zaťažujú v natiahnutej polohe (rumunský ťah, hip thrust, bulharský drep).');
   if (c.emphasis === 'upper') out.push('Dôraz máš na hornú časť tela: hrudník, chrbát, ramená a ruky majú o niečo viac sérií.');
@@ -363,38 +363,4 @@ function explain(c) {
   if (c.equipment === 'home') out.push('Plán je na cvičenie doma s jednoručkami. Ak máš hrazdu, zhyby sú skvelý doplnok na chrbát.');
   out.push(`Blok trvá ${c.mesoWeeks} týždňov. Posledný týždeň je odporúčaný deload (polovica sérií, rovnaké váhy, viac rezervy). Plánovaný deload rast svalov sám nezvýši (štúdia ukázala rovnaký rast ako bez pauzy), pomáha hlavne regenerácii. Preto ho môžeš pri dobrom pocite preskočiť alebo si ho dať skôr, ak si vyčerpaný. Pomocné cviky sa po bloku obmenia, základné ostanú, aby sa dal ďalej pridávať váha.`);
   return out;
-}
-
-// Alternatívy pre výmenu cviku: rovnaký hlavný sval, rovnaké vybavenie
-export function alternatives(id, equipment = 'gym') {
-  const ex = EXERCISES[id]; if (!ex || ex.type === 'cardio' || ex.time) return [];
-  const primary = Object.entries(ex.m).sort((a, b) => b[1] - a[1])[0]?.[0];
-  return Object.values(EXERCISES).filter(e => e.id !== id && !e.time && e.type !== 'cardio' && (e.eq === 'both' || e.eq === equipment) && Object.entries(e.m).sort((a, b) => b[1] - a[1])[0]?.[0] === primary)
-    .sort((a, b) => (a.type === ex.type ? 0 : 1) - (b.type === ex.type ? 0 : 1)).slice(0, 8).map(e => ({ id: e.id, name: e.name, cue: e.cue, type: e.type }));
-}
-
-// Zdroje, o ktoré sa plán opiera
-export const SOURCES = [
-  'Pelland a kol. 2025, Sports Medicine: meta-regresia 67 štúdií o týždennom objeme a frekvencii (minimum okolo 4 sérií týždenne, klesajúce výnosy, frekvencia pri rovnakom objeme pre rast svalov nie je rozhodujúca).',
-  'Baz-Valle a kol. 2022, Journal of Human Kinetics: stredný (12 až 20 sérií) vs. vysoký objem (nad 20) u trénovaných mužov, často bez rozdielu.',
-  'Heaselgrave a kol. 2018, Int. J. Sports Physiology and Performance: 9, 18 a 27 sérií týždenne pre biceps, 18 sérií rozložených do dvoch dní bolo najlepšie pre rast.',
-  'Refalo a kol. 2023, Sports Medicine: blízkosť k zlyhaniu, zlyhanie nie je jednoznačne lepšie pre rast než malá rezerva.',
-  'Kinoshita a kol. 2023, Frontiers in Physiology: tréning v natiahnutej polohe (lýtka v stoji) rastie lepšie než v skrátenej.',
-  'Baz-Valle a kol. 2019, PLoS ONE: pevný výber cvikov vs. náhodná obmena, bez rozdielu v raste, obmena zvyšuje len motiváciu.',
-  'Coleman a kol. 2024, PeerJ: jeden týždeň pauzy v 8-týždenném cykle rast svalov nezmenil, sila mierne klesla.',
-  'Helms a kol. 2014, J. Int. Soc. Sports Nutrition: odporúčania pre prípravu na súťaž (frekvencia 2 až 3×, objem 40 až 70 opakovaní na sval a tréning, obmedziť zlyhanie, najmenej kardia, ktoré stačí).',
-  'Helms a kol., Muscle and Strength Pyramid (2. vydanie): špecializačné bloky 8 až 12 týždňov, frekvencia podľa objemu, reaktívny deload.',
-];
-
-// Ktorý deň plánu je dnes na rade: ďalší po poslednom odcvičenom
-export function nextDay(plan, logs) {
-  if (!plan?.days?.length) return 1;
-  const done = logs.filter(l => l.done).sort((a, b) => a.date < b.date ? 1 : -1);
-  if (!done.length) return 1;
-  return (done[0].plan_day % plan.days.length) + 1;
-}
-
-export function weekAdherence(logs, trainingDays, weekStart) {
-  const done = logs.filter(l => l.done && l.date >= weekStart).length;
-  return { done, target: Number(trainingDays || 0) };
 }
