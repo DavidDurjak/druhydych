@@ -1,10 +1,10 @@
-// Spodná lišta v štýle „tekuté sklo“: plávajúca matná kapsula, posuvná bublina pod aktívnou záložkou
-// a posúvanie prstom po lište (podržíš a ťaháš, pustíš na záložke a otvorí sa). Ťuknutie funguje ako doteraz.
+// Spodná lišta v štýle „tekuté sklo“: plávajúce matná kapsúla, posuvná bublina pod aktívnou záložkou
+// a poskúpaní prstom po lište (podržíš a ťaháš, pustíš na záložke a otvorí sa). Ťuknutie funguje ako doteraz.
 const CSS = `
 :root{--nav-h:78px}
 .nav{left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 8px);height:60px;padding:4px;border-radius:32px;align-items:stretch;justify-content:stretch;
   background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04)),rgba(24,28,34,.52);
-  -webkit-backdrop-filter:blur(26px) saturate(190%);backdrop-filter:blur(26px) saturate(190%);
+  -webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);transform:translateZ(0);
   border:1px solid rgba(255,255,255,.13);box-shadow:0 14px 34px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(255,255,255,.04);
   touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;max-width:560px;margin:0 auto}
 .nav a{position:relative;z-index:1;justify-content:center;gap:2px;padding-top:0;transition:color .18s,transform .18s}
@@ -94,5 +94,5 @@ const finish = (e, cancel) => {
 };
 document.addEventListener('pointerup', e => finish(e, false), { passive: true });
 document.addEventListener('pointercancel', e => finish(e, true), { passive: true });
-// po posunutí prstom nesmie vzniknúť aj bežné ťuknutie na pôvodnú záložku
+// po posunutí prstom nesmie vznikuť aj bežné ťuknutie na pôvodnú záložku
 document.addEventListener('click', e => { if (Date.now() - dragEnd < 600 && e.target.closest?.('.nav')) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
