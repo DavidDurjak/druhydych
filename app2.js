@@ -1,4 +1,4 @@
-// Druhý dych v0.2: nové obrazovky (fotky, tréning, koč detail, správy, adaptívny cieľ)
+// Druhý dych v0.2: nové obrazovky (fotky, tréning, kouč detail, správy, adaptívny cieľ)
 import * as db from './data.js';
 import { sb } from './data.js';
 import * as calc from './calc.js';
@@ -22,7 +22,7 @@ export async function renderPhotos(userId = state.profile.id, asCoach = false) {
   const poses = { front: 'Spredu', side: 'Zboku', back: 'Zozadu' };
   let pose = 'front';
   const cmp = () => {
-    if (dates.length < 2) return `<p class="empty">${dates.length ? 'Po druhej fotke sa tu objaí porovnanie pred/po.' : 'Zatiaľ žiadne fotky.'}</p>`;
+    if (dates.length < 2) return `<p class="empty">${dates.length ? 'Po druhej fotke sa tu objaví porovnanie pred/po.' : 'Zatiaľ žiadne fotky.'}</p>`;
     const a = byDate[first]?.[pose], b = byDate[last]?.[pose];
     if (!a || !b) return '<p class="empty">Pre túto pózu chýba fotka na začiatku alebo na konci.</p>';
     return `<div class="cmp" id="cmp"><img src="${b.url}" alt="po"><div class="cmp-a" id="cmpA"><img src="${a.url}" alt="pred"></div><div class="cmp-h" id="cmpH"><span></span></div>
@@ -34,7 +34,7 @@ export async function renderPhotos(userId = state.profile.id, asCoach = false) {
     <div class="seg mb" id="poseSeg">${Object.entries(poses).map(([k, v]) => `<button data-pose="${k}" class="${k === pose ? 'on' : ''}">${v}</button>`).join('')}</div>
     <div class="card" id="cmpWrap">${cmp()}</div>
     <h3 class="mb">Časová os</h3>
-    <div class="timeline" id="tl">${dates.length ? dates.slice().reverse().map(d => `<div class="tl-row"><div class="tl-date mono">${calc.fmtDate(d)}<span>${d.slice(0, 4)}</span></div><div class="tl-pics">${['front', 'side', 'back'].map(p => byDate[d][p] ? `<div class="tl-pic"><img src="${byDate[d][p].url}" loading="lazy">${asCoach ? '' : `<button class="tl-del" data-del="${byDate[d][p].id}">×</button>`}</div>` : '').join('')}</div></div>`).join('') : '<p class="empty">Odfoť sa raz týždenne, vždy v rovnakom svetle a oblečení. Najlepšie rano.</p>'}</div>
+    <div class="timeline" id="tl">${dates.length ? dates.slice().reverse().map(d => `<div class="tl-row"><div class="tl-date mono">${calc.fmtDate(d)}<span>${d.slice(0, 4)}</span></div><div class="tl-pics">${['front', 'side', 'back'].map(p => byDate[d][p] ? `<div class="tl-pic"><img src="${byDate[d][p].url}" loading="lazy">${asCoach ? '' : `<button class="tl-del" data-del="${byDate[d][p].id}">×</button>`}</div>` : '').join('')}</div></div>`).join('') : '<p class="empty">Odfoť sa raz týždenne, vždy v rovnakom svetle a oblečení. Najlepšie ráno.</p>'}</div>
   </div>${nav(asCoach ? '#/kouc' : '#/fotky')}`;
   const bindCmp = () => {
     const r = $app().querySelector('#cmpR'); if (!r) return;
@@ -49,7 +49,7 @@ export async function renderPhotos(userId = state.profile.id, asCoach = false) {
 }
 function openPhotoAdd(userId, done) {
   const bg = sheet(`<h2 class="mb">Nová fotka</h2>
-    <p class="muted small mb">Rovnaké miesto, svetlo a oblečenie ako minule. Fotka ostáva súkromná, vidí ju len koč.</p>
+    <p class="muted small mb">Rovnaké miesto, svetlo a oblečenie ako minule. Fotka ostáva súkromná, vidí ju len kouč.</p>
     <label class="field"><span>Dátum</span><input class="input" type="date" id="pd" value="${state.date}" max="${calc.today()}"></label>
     <label class="field"><span>Póza</span><div class="seg" id="ps"><button type="button" data-p="front" class="on">Spredu</button><button type="button" data-p="side">Zboku</button><button type="button" data-p="back">Zozadu</button></div></label>
     <label class="btn primary" style="display:flex"><input type="file" id="pf" accept="image/*" capture="environment" style="display:none">Odfotiť / vybrať</label>
@@ -184,7 +184,7 @@ function planInfo(plan) {
   const rows = Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 22 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
   return `<div class="card plan-info">
     <div class="row between"><b>Blok ${(m.block || 0) + 1} · týždeň ${m.week} z ${m.mesoWeeks}</b><span class="chip" style="${m.deload ? 'background:#3A2F12;color:#FFD27A' : 'background:#12332A;color:var(--accent)'}">${m.deload ? 'Deload' : LEVELS[m.params.level]?.label}</span></div>
-    <p class="small" style="margin:6px 0 0">${m.deload ? 'Odlľahčený týždeň: polovica sérií, rovnaké váhy a viac rezervy. Telo sa zotaví a ďalší blok pôjde lepšie.' : `Tento týždeň ťahaj série na ${RIR_TXT(m.rir)}.`}</p>
+    <p class="small" style="margin:6px 0 0">${m.deload ? 'Odľahčený týždeň: polovica sérií, rovnaké váhy a viac rezervy. Telo sa zotaví a ďalší blok pôjde lepšie.' : `Tento týždeň ťahaj série na ${RIR_TXT(m.rir)}.`}</p>
     <details style="margin-top:8px"><summary class="small" style="cursor:pointer">Prečo je plán takto zostavený</summary>
       <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${(m.why || []).map(t => `<li>${h(t)}</li>`).join('')}</ul>
       <p class="small" style="margin:8px 0 4px"><b>Progresia</b><br>${h(m.progression || '')}</p>
@@ -274,23 +274,23 @@ export async function renderMessages() {
   await db.markRead(unread);
   const coaches = state.profile.role === 'coach' ? [] : null;
   $app().innerHTML = `<div class="screen">
-    <h1 class="mb">Správy od koča</h1>
-    ${state.profile.role !== 'coach' ? `<form id="mf" class="card"><textarea class="input" name="b" rows="2" placeholder="Napíš kočovi..."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>` : ''}
-    ${msgs.length ? msgs.map(m => `<div class="card msg ${m.from_user === uid ? 'mine' : ''}"><p>${h(m.body)}</p><p class="muted small mt">${m.from_user === uid ? 'Ty' : 'Koč'} · ${new Date(m.created_at).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>`).join('') : '<p class="empty">Zatiaľ žiadne správy.</p>'}
+    <h1 class="mb">Správy od kouča</h1>
+    ${state.profile.role !== 'coach' ? `<form id="mf" class="card"><textarea class="input" name="b" rows="2" placeholder="Napíš koučovi..."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>` : ''}
+    ${msgs.length ? msgs.map(m => `<div class="card msg ${m.from_user === uid ? 'mine' : ''}"><p>${h(m.body)}</p><p class="muted small mt">${m.from_user === uid ? 'Ty' : 'Kouč'} · ${new Date(m.created_at).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>`).join('') : '<p class="empty">Zatiaľ žiadne správy.</p>'}
   </div>${nav('#/spravy')}`;
   $app().querySelector('#mf')?.addEventListener('submit', async e => {
     e.preventDefault(); const body = new FormData(e.target).get('b').trim(); if (!body) return;
     const { data } = await db.sb.from('profiles').select('id').eq('role', 'coach').limit(1);
-    if (!data?.length) return toast('Koč zatiaľ nie je nastavený', true);
+    if (!data?.length) return toast('Kouč zatiaľ nie je nastavený', true);
     await db.sendMessage(uid, data[0].id, body); toast('Odoslané'); renderMessages();
   });
 }
 
-// ---------- KOČ 2.0 ----------
+// ---------- KOUČ 2.0 ----------
 export async function renderCoach() {
   if (state.profile.role !== 'coach') { location.hash = '#/'; return; }
   const from = calc.addDays(calc.today(), -6);
-  $app().innerHTML = `<div class="screen"><h1>Koč</h1><div class="spinner"></div></div>${nav('#/kouc')}`;
+  $app().innerHTML = `<div class="screen"><h1>Kouč</h1><div class="spinner"></div></div>${nav('#/kouc')}`;
   const { profiles, weights, foods, checkins, wlogs, photos } = await db.coachOverview2(from);
   const people = profiles.filter(p => p.role !== 'coach' && p.onboarded).map(p => {
     const w = weights.filter(x => x.user_id === p.id);
@@ -322,7 +322,7 @@ export async function renderCoach() {
   const reportsHtml = await rp.coachReportsHtml().catch(() => '');
   const totalLoss = people.reduce((a, x) => a + (x.last ? x.startW - x.last.trend : 0), 0);
   $app().innerHTML = `<div class="screen">
-    <div class="topbar"><h1>Koč</h1><button class="btn sm ghost" id="csv">Export CSV</button></div>
+    <div class="topbar"><h1>Kouč</h1><button class="btn sm ghost" id="csv">Export CSV</button></div>
     <div class="grid3 mb">
       <div class="stat"><b class="mono">${people.length}</b><span>účastníkov</span></div>
       <div class="stat"><b class="mono">${people.filter(x => x.flag === 'ok').length}</b><span>v pohode</span></div>
@@ -365,7 +365,7 @@ export async function renderCoachDetail(userId) {
     </div>
     <a class="rp-card" href="#/report?u=${userId}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre, rozpad bodov a zameranie na ďalší týždeň.</p></div><span class="rp-card-go">›</span></a>
     <div class="card">${ctx.weightChart(tr)}</div>
-    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieľi, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
+    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieli, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
     ${photos.length ? `<a class="card link" href="#/kouc/${userId}/fotky"><div class="row between"><h3>Fotky (${photos.length})</h3><span class="muted small">Otvoriť →</span></div><div class="row mt" style="gap:6px">${photos.slice(-3).map(x => `<img src="${urls[x.path]}" style="width:31%;aspect-ratio:3/4;object-fit:cover;border-radius:10px">`).join('')}</div></a>` : '<div class="card"><p class="muted small">Zatiaľ žiadne fotky.</p></div>'}
     ${targets.length ? `<div class="card"><h3 class="mb">Zmeny cieľa</h3>${targets.slice().reverse().map(t => `<div class="item"><div class="n"><b>${t.old_kcal} → ${t.new_kcal} kcal</b><span>${h(t.reason || '')}</span></div><span class="muted small mono">${calc.fmtDate(t.date)}</span></div>`).join('')}</div>` : ''}
     ${notes.length ? `<div class="card"><h3 class="mb">Poznámky z check-inov</h3>${notes.slice(0, 5).map(c => `<div class="item"><div class="n"><b>${calc.fmtDate(c.date)} · nálada ${c.mood ?? '–'}/5 · spánok ${c.sleep_h ?? '–'} h</b><span>${h(c.note)}</span></div></div>`).join('')}</div>` : ''}
