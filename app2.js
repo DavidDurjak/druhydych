@@ -2,9 +2,10 @@
 import * as db from './data.js';
 import { sb } from './data.js';
 import * as calc from './calc.js';
-import { generatePlan, nextDay, EXERCISES, LEVELS, EMPHASIS, MUSCLE_LABEL, MIN_DAYS, PRIORITY, SOURCES, alternatives } from './workouts.js';
+import { contestPhase, generatePlan, nextDay, EXERCISES, LEVELS, EMPHASIS, MUSCLE_LABEL, MIN_DAYS, PRIORITY, SOURCES, alternatives } from './workouts.js';
 import { ctx } from './app.js';
 import * as rp from './report.js';
+import { physiqueCardHtml, openPhysique } from './physique.js';
 
 // ctx sa naplní až po načítaní app.js, preto lenivé gettery
 const $app = () => ctx.$app;
@@ -107,6 +108,8 @@ export async function renderTraining() {
       <div class="stat"><b class="mono" id="setCount">${doneCount}/${sets.length}</b><span>sérií dnes</span></div>
     </div>
     ${planInfo(plan)}
+    ${plan.meta?.v === 2 && plan.meta.params?.level !== 'beginner' ? physiqueCardHtml() : ''}
+    ${plan.meta?.v === 2 && plan.meta.params?.level === 'elite' ? contestCard(plan) : ''}
     <div class="row between mb"><div class="seg" style="flex:1">${plan.days.map(d => `<button data-day="${d.day}" class="${d.day === dayNo ? 'on' : ''}">D${d.day}</button>`).join('')}</div></div>
     <div class="card ${todayLog?.done ? 'accent' : ''}">
       <div class="row between"><h2>${h(day.name)}</h2>${todayLog?.done ? '<span class="chip" style="background:#12332A;color:var(--accent)">Hotovo</span>' : ''}</div>
@@ -148,12 +151,35 @@ export async function renderTraining() {
     toast(`Tréning hotový. ${s.filter(x => x.done).length} sérií.`); renderTraining();
   };
   $app().querySelector('#replan').onclick = () => renderPlanSetup();
+  $app().querySelector('#contestDate')?.addEventListener('change', e => saveContest(plan, e.target.value));
+  $app().querySelector('#contestClear')?.addEventListener('click', () => saveContest(plan, ''));
+  $app().querySelector('#physOpen')?.addEventListener('click', () => openPhysique({ profile: p, onApply: hint => renderPlanSetup({ hint }) }));
   const up = $app().querySelector('#upgradePlan'); if (up) up.onclick = () => renderPlanSetup();
   $app().querySelectorAll('[data-swap]').forEach(b => b.onclick = () => openSwap(plan, day.exercises.find(x => x.id === b.dataset.swap), todayLog));
   $app().querySelector('#deloadNow')?.addEventListener('click', () => forceWeek(plan, 'deload'));
   $app().querySelector('#skipDeload')?.addEventListener('click', () => forceWeek(plan, 'skip'));
 }
-// Výmena cviku: rovnaký sval, rovnaké vybavenie. Voľba sa pamätá v pláne.
+// Súťažný režim (Elite): odpočet a fázy prípravy
+function contestDays(date) { if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null; return Math.round((new Date(date + 'T00:00:00') - new Date(calc.today() + 'T00:00:00')) / 86400000); }
+function contestCard(plan) {
+  const date = plan.meta.params?.contestDate || '', left = contestDays(date);
+  if (left == null || left < -14) return `<div class="px-card"><b>🏆 Súťažný režim</b><p class="muted small">Zadaj dátum súťaže a appka ti bude ukazovať, čo robiť v ktorej fáze prípravy, vrátane posledného týždha.</p><input class="input" type="date" id="contestDate" min="${calc.today()}" aria-label="Dátum súťaže"></div>`;
+  const ph = contestPhase(left);
+  return `<div class="px-card"><div class="row between"><b>🏆 ${h(ph.title)}</b><span class="chip" style="background:#12332A;color:var(--accent)">${left > 0 ? 'o ' + left + ' ' + (left === 1 ? 'deň' : left >= 2 && left <= 4 ? 'dni' : 'dní') : left === 0 ? 'dnes' : 'po súťaži'}</span></div>
+    <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${ph.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>
+    <div class="row" style="gap:8px;margin-top:8px"><input class="input" type="date" id="contestDate" value="${h(date)}" aria-label="Dátum súťaže"><button class="btn sm ghost" id="contestClear">Zrušiť</button></div>
+    <p class="muted small" style="margin:8px 0 0">Všeobecné odporúčania z výskumu, nie lekárska rada. Pri zdravotných problémoch a pred extrémnymi krokmi sa poraď s lekárom alebo trénerom.</p></div>`;
+}
+async function saveContest(plan, date) {
+  try {
+    const m = plan.meta, meta = { ...m, params: { ...m.params, contestDate: date || null } };
+    const { error } = await sb.from('workout_plans').update({ meta }).eq('id', plan.id);
+    if (error) throw new Error(error.message);
+    plan.meta = meta; toast(date ? 'Dátum súťaže uložený' : 'Súťažný režim vypnutý'); renderTraining();
+  } catch (err) { toast(err.message || 'Nepodarilo sa uložiť', true); }
+}
+
+// Výmena cviku: rovnaký sval, rovnaké vybavenie. Voľba sa pämätá v pláne.
 async function regen(plan, patch, startedAt) {
   const m = plan.meta;
   const np = generatePlan({ ...m.params, block: m.block, week: m.week, ...patch });
@@ -185,7 +211,7 @@ function openSwap(plan, e, todayLog) {
     } catch (err) { toast(err.message || 'Nepodarilo sa vymeniť', true); b.disabled = false; }
   });
 }
-// Deload hneď (si vyčerpaný) alebo preskočenie deloadu (cítiš sa sviežo)
+// Deload hneď (si vyčerpaný) alebo preskokenie deloadu (cítiš sa sviežo)
 async function forceWeek(plan, mode) {
   const m = plan.meta, mw = m.mesoWeeks;
   try {
@@ -254,7 +280,7 @@ if (typeof document !== 'undefined') {
   st.textContent = `.plan-info{margin-bottom:12px}.vrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0}.vrow span{flex:0 0 96px;color:var(--muted)}.vrow i{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.vrow i b{display:block;height:100%;background:var(--accent)}.vrow em{flex:0 0 28px;text-align:right;font-style:normal}.swapbtn{margin:0 0 8px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer}.alt{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.alt b{display:block;font-size:14.5px}.alt small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}.chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;font-size:13.5px;cursor:pointer}.chips button.on{border-color:var(--accent);background:rgba(124,255,178,.12)}.lvl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.lvl button{text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.lvl button.on{border-color:var(--accent);background:rgba(124,255,178,.10)}.lvl button b{display:block;font-size:15px}.lvl button small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}`;
   document.head.appendChild(st);
 }
-async function renderPlanSetup() {
+async function renderPlanSetup(opts = {}) {
   const p = state.profile;
   const old = await db.getPlan(p.id).catch(() => null);
   const op = old?.meta?.params || {};
@@ -262,7 +288,9 @@ async function renderPlanSetup() {
   let days = Math.max(MIN_DAYS[level], Math.min(6, op.days || p.training_days || 3));
   let emphasis = op.emphasis || (p.sex === 'f' ? 'lower' : 'balanced');
   let priority = Array.isArray(op.priority) ? op.priority.slice(0, 2) : [];
-  const preview = () => generatePlan({ goal: p.goal, days, level, equipment, emphasis, priority, sex: p.sex, birthYear: p.birth_year, heightCm: p.height_cm, weightKg: p.start_weight });
+  const fromPhys = !!opts.hint;
+  if (fromPhys) { emphasis = opts.hint.emphasis; if (level === 'elite') priority = opts.hint.priority.slice(0, 2); }
+  const preview = () => generatePlan({ contestDate: op.contestDate, block: fromPhys && level === 'elite' && priority.length ? 1 : 0, goal: p.goal, days, level, equipment, emphasis, priority, sex: p.sex, birthYear: p.birth_year, heightCm: p.height_cm, weightKg: p.start_weight });
   const volRows = vol => Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 30 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
   const draw = () => {
     const pl = preview(), m = pl.meta;
@@ -277,7 +305,8 @@ async function renderPlanSetup() {
   $app().innerHTML = `<div class="screen">
     <h1 class="mb">Tvoj plán</h1>
     <p class="muted mb">Plán sa skladá z tvojho cieľa (${calc.GOAL[p.goal]?.label || ''}), váhy, výšky, úrovne a počtu dní. Každých pár týždňov sa sám vyvíja a po bloku obmení cviky.</p>
-    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${lvlHtml()}</div><p class="muted small" style="margin:0 0 4px">Nevieš ktorú? Ak ti váhy rastú takmer každý týždeň, si začiatočník. Ak prírastky trvajú týždne až mesiace, si stredne pokročilý. Ak sa posunú len raz za pár mesiacov, si pokročilý. Súťažná je pre tých, čo sa pripravujú na súťaž alebo cvičia viac ako 4 roky s presným režimom.</p></div>
+    ${fromPhys ? `<div class="card plan-info"><p class="small" style="margin:0">Plán je nastavený podľa tvojej analýzy postavy: ${level === 'elite' && priority.length ? 'prioritné partie ' + priority.map(k => PRIORITY[k]?.[0].toLowerCase()).join(' a ') + ', plán začne špecializačným blokom' : 'dôraz ' + (EMPHASIS[emphasis] || '').toLowerCase()}. Môžeš to ešte upraviť.</p></div>` : ''}
+    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${lvlHtml()}</div><p class="muted small" style="margin:0 0 4px">Nevieš ktorú? Ak ti váhy rastú takmer každý týždeň, si začiatočník. Ak prírastky trvajú týždne až mesiace, si stredne pokročilý. Ak sa posunú len raz za pár mesiacov, si pokročilý. Elite je pre tých, čo sa pripáravajú na súťaž alebo cvičia viac ako 4 roky s presným režimom.</p></div>
     <div class="field"><span>Dní tréningu v týždni</span><div id="dwrap">${seg('dseg', dayItems(), days)}</div></div>
     <div class="field"><span>Kde cvičíš</span>${seg('eseg', [['gym', 'Posilňovňa'], ['home', 'Doma s jednoručkami']], equipment)}</div>
     <div class="field"><span>Na čo sa zamerať</span>${seg('mseg', Object.entries(EMPHASIS), emphasis)}</div>
@@ -437,7 +466,7 @@ export async function renderCoachDetail(userId) {
     </div>
     <a class="rp-card" href="#/report?u=${userId}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre, rozpad bodov a zameranie na ďalší týždeň.</p></div><span class="rp-card-go">›</span></a>
     <div class="card">${ctx.weightChart(tr)}</div>
-    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieli, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
+    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieľi, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
     ${photos.length ? `<a class="card link" href="#/kouc/${userId}/fotky"><div class="row between"><h3>Fotky (${photos.length})</h3><span class="muted small">Otvoriť →</span></div><div class="row mt" style="gap:6px">${photos.slice(-3).map(x => `<img src="${urls[x.path]}" style="width:31%;aspect-ratio:3/4;object-fit:cover;border-radius:10px">`).join('')}</div></a>` : '<div class="card"><p class="muted small">Zatiaľ žiadne fotky.</p></div>'}
     ${targets.length ? `<div class="card"><h3 class="mb">Zmeny cieľa</h3>${targets.slice().reverse().map(t => `<div class="item"><div class="n"><b>${t.old_kcal} → ${t.new_kcal} kcal</b><span>${h(t.reason || '')}</span></div><span class="muted small mono">${calc.fmtDate(t.date)}</span></div>`).join('')}</div>` : ''}
     ${notes.length ? `<div class="card"><h3 class="mb">Poznámky z check-inov</h3>${notes.slice(0, 5).map(c => `<div class="item"><div class="n"><b>${calc.fmtDate(c.date)} · nálada ${c.mood ?? '–'}/5 · spánok ${c.sleep_h ?? '–'} h</b><span>${h(c.note)}</span></div></div>`).join('')}</div>` : ''}
