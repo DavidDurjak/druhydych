@@ -5,9 +5,18 @@ import { ctx } from './app.js';
 
 const h = (...a) => ctx.h(...a), toast = (...a) => ctx.toast(...a), sheet = (...a) => ctx.sheet(...a);
 
-export const LABEL = { shoulders: 'Ramená', chest: 'Hrudník', back: 'Chrbát', arms: 'Ruky', quads: 'Predné stehná', posterior: 'Zadok a zadné stehná', calves: 'Lýtka', core: 'Brucho a stred tela' };
-const POSES = [['front', 'Spredu', 'Povinná. Stoj uvoľnene, ruky pri tele.'], ['side', 'Zboku', 'Voliteľná. Ukáže držanie tela.'], ['back', 'Zozadu', 'Voliteľná. Ukáže chrbát a lýtka.']];
-const UPPER = ['chest', 'back', 'shoulders', 'arms'], LOWER = ['quads', 'posterior', 'calves'];
+export const LABEL = { shoulders: 'Predné a bočné ramená', reardelt: 'Zadné ramená', chest: 'Hrudník', lats: 'Šírka chrbta (lats)', backthick: 'Hrúbka chrbta a trapézy', biceps: 'Biceps', triceps: 'Triceps', quads: 'Predné stehná', hams: 'Zadné stehná', glutes: 'Zadok', calves: 'Lýtka', core: 'Brucho a stred tela',
+  back: 'Chrbát', arms: 'Ruky', posterior: 'Zadok a zadné stehná' };
+const ROW_ORDER = ['shoulders', 'reardelt', 'chest', 'lats', 'backthick', 'back', 'biceps', 'triceps', 'arms', 'quads', 'hams', 'glutes', 'posterior', 'calves', 'core'];
+const POSES = [
+  ['front', 'Spredu uvoľnene', 'Povinná. Stoj prirodzene, ruky pri tele.'],
+  ['frontbi', 'Spredu dvojitý biceps', 'Ukáže ramená, hrudník a ruky.'],
+  ['side', 'Zboku', 'Hrudník alebo triceps. Ukáže držanie tela.'],
+  ['back', 'Zozadu uvoľnene', 'Ukáže chrbát, zadok a lýtka.'],
+  ['backbi', 'Zozadu dvojitý biceps', 'Ukáže šírku a hrúbku chrbta.'],
+  ['abs', 'Brucho a nohy', 'Ruky za hlavou, jedna noha vpred.'],
+];
+const UPPER = ['chest', 'back', 'lats', 'backthick', 'shoulders', 'reardelt', 'arms', 'biceps', 'triceps'], LOWER = ['quads', 'posterior', 'hams', 'glutes', 'calves'];
 
 // ---------- kontrola kvality fotky ----------
 export function metricsOf(img) {
@@ -82,7 +91,7 @@ const CSS = `
 .px-card{margin-bottom:12px;padding:14px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(124,255,178,.10),rgba(124,255,178,.02))}
 .px-card b{display:block;font-size:15px}.px-card p{margin:4px 0 10px}
 .px-tip{margin:0 0 14px;padding:0;list-style:none}.px-tip li{position:relative;padding:0 0 8px 22px;font-size:13.5px;line-height:1.45}.px-tip li:before{content:'';position:absolute;left:2px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
-.px-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 12px}
+.px-slots{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0 12px}
 .px-slot{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:132px;border-radius:14px;border:1px dashed var(--line);background:var(--card-2);color:var(--text);cursor:pointer;overflow:hidden;text-align:center;padding:8px;font-size:12.5px}
 .px-slot b{font-size:13.5px}.px-slot small{color:var(--muted);font-size:11.5px;line-height:1.3}.px-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .px-slot.has{border-style:solid;border-color:var(--accent)}.px-slot.bad{border-style:solid;border-color:#ff7a7a}
@@ -124,8 +133,8 @@ export async function openPhysique({ profile, onApply }) {
 
   const showResult = (rec, prev) => {
     const r = rec.result, ms = r.muscles || {};
-    const rows = Object.keys(LABEL).map(k => {
-      const m = ms[k] || { score: 0, note: '' };
+    const rows = ROW_ORDER.filter(k => ms[k]).map(k => {
+      const m = ms[k];
       if (!m.score) return `<div class="px-m"><div class="r"><span>${LABEL[k]}</span><i></i><em>nevidno</em></div></div>`;
       const pv = prev?.result?.muscles?.[k]?.score, dl = pv ? m.score - pv : 0;
       return `<div class="px-m${m.score <= 2 ? ' low' : ''}"><div class="r"><span>${LABEL[k]}</span><i><b style="width:${m.score * 20}%"></b></i><em class="${dl > 0 ? 'up' : dl < 0 ? 'dn' : ''}">${m.score}/5${dl > 0 ? ' ▲' : dl < 0 ? ' ▼' : ''}</em></div>${m.note ? `<small>${h(m.note)}</small>` : ''}</div>`;
@@ -135,7 +144,7 @@ export async function openPhysique({ profile, onApply }) {
     body.innerHTML = head('Tvoja analýza') + `<p class="muted small">${fmtDate(rec.created_at)}${prev ? ' · porovnanie s ' + fmtDate(prev.created_at) : ''}</p>
       ${r.summary ? `<p class="px-sum">${h(r.summary)}</p>` : ''}
       ${prio.length ? `<p class="px-h">Priorita na zlepšenie</p><div class="px-prio">${prio.map(t => `<span>${h(t)}</span>`).join('')}</div>` : ''}
-      <p class="px-h">Hodnotenie partií</p>${rows}
+      <p class="px-h">Hodnotenie svalov</p>${rows}
       ${(r.strengths || []).length ? `<p class="px-h">Silné stránky</p><ul class="px-list">${r.strengths.map(t => `<li>${h(t)}</li>`).join('')}</ul>` : ''}
       ${r.proportions ? `<p class="px-h">Proporcie</p><p class="small" style="margin:0">${h(r.proportions)}</p>` : ''}
       ${r.posture ? `<p class="px-h">Držanie tela</p><p class="small" style="margin:0">${h(r.posture)}</p>` : ''}
@@ -172,11 +181,11 @@ export async function openPhysique({ profile, onApply }) {
     body.innerHTML = head('Nová analýza') + `
       <p class="muted small">Dobrá fotka rozhoduje o tom, či bude analýza presná.</p>
       <ul class="px-tip">
-        <li>Celá postava od hlavy po kolená alebo nižšie, telefón na výšku.</li>
+        <li>Celá postava od hlavy po kolená alebo nižšie, telefón na výšku. Na pózy dvojitý biceps a brucho stačí od hlavy po stehná.</li>
         <li>Telefón vo výške hrude, 2 až 3 metre od teba (oprieť o niečo alebo požiadať niekoho).</li>
         <li>Svetlo spredu alebo mierne zboku, ideálne od okna. Žiadne protisvetlo, blesk ani filtre.</li>
         <li>Plavky alebo krátke šortky, bez trička. Ženy športová podprsenka. Voľné oblečenie skrýva svaly.</li>
-        <li>Uvoľnený postoj, ruky pri tele. Rovnaké miesto a svetlo ako minule.</li>
+        <li>Rovnaké miesto, svetlo a pozadie ako minule. Čím viac póz pošleš, tým presnejšie hodnotenie každého svalu. Spredu uvoľnene je povinná, ostatné odporúčame.</li>
       </ul>
       <div class="px-slots">${POSES.map(([k, t, s]) => `<label class="px-slot" data-slot="${k}"><input type="file" accept="image/*" hidden data-f="${k}"><b>${t}</b><small>${s}</small></label>`).join('')}</div>
       <div id="pxMsg"></div>
@@ -190,7 +199,7 @@ export async function openPhysique({ profile, onApply }) {
       const k = inp.dataset.f, slot = body.querySelector(`[data-slot="${k}"]`);
       try {
         const img = await loadImg(f), q = qualityOf(img.width, img.height, metricsOf(img));
-        const j = toJpeg(img, 1280, 0.85);
+        const j = toJpeg(img, 1152, 0.82);
         picked[k] = { b64: j.b64, bad: q.hard.length > 0 };
         slot.className = 'px-slot ' + (q.hard.length ? 'bad' : 'has');
         slot.querySelectorAll('img,.tag').forEach(n => n.remove());
@@ -205,7 +214,7 @@ export async function openPhysique({ profile, onApply }) {
     go.onclick = async () => {
       const images = POSES.filter(([k]) => picked[k] && !picked[k].bad).map(([k]) => ({ pose: k, data: picked[k].b64 }));
       if (!images.length) return;
-      body.innerHTML = `<div class="px-load"><div class="ph"><img src="data:image/jpeg;base64,${images[0].data}" alt=""></div><b>Analyzujem tvoju postavu…</b><p class="muted small mt">Trvá to okolo pol minúty. Nezatváraj appku.</p></div>`;
+      body.innerHTML = `<div class="px-load"><div class="ph"><img src="data:image/jpeg;base64,${images[0].data}" alt=""></div><b>Analyzujem tvoju postavu…</b><p class="muted small mt">Trvá to okolo minúty. Nezatváraj appku.</p></div>`;
       try {
         const out = await callAi(images);
         const r = out?.result;
