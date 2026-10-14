@@ -211,7 +211,7 @@ function openSwap(plan, e, todayLog) {
     } catch (err) { toast(err.message || 'Nepodarilo sa vymeniť', true); b.disabled = false; }
   });
 }
-// Deload hneď (si vyčerpaný) alebo preskkočenie deloadu (cítiš sa sviežo)
+// Deload hneď (si vyčerpaný) alebo vynechanie deloadu (cítiš sa sviežo)
 async function forceWeek(plan, mode) {
   const m = plan.meta, mw = m.mesoWeeks;
   try {
@@ -306,7 +306,7 @@ async function renderPlanSetup(opts = {}) {
     <h1 class="mb">Tvoj plán</h1>
     <p class="muted mb">Plán sa skladá z tvojho cieľa (${calc.GOAL[p.goal]?.label || ''}), váhy, výšky, úrovne a počtu dní. Každých pár týždňov sa sám vyvíja a po bloku obmení cviky.</p>
     ${fromPhys ? `<div class="card plan-info"><p class="small" style="margin:0">Plán je nastavený podľa tvojej analýzy postavy: ${level === 'elite' && priority.length ? 'prioritné partie ' + priority.map(k => PRIORITY[k]?.[0].toLowerCase()).join(' a ') + ', plán začne špecializačným blokom' : 'dôraz ' + (EMPHASIS[emphasis] || '').toLowerCase()}. Môžeš to ešte upraviť.</p></div>` : ''}
-    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${lvlHtml()}</div><p class="muted small" style="margin:0 0 4px">Nevieš ktorú? Ak ti váhy rastú takmer každý týždeň, si začiatočník. Ak prírastky trvajú týždne až mesiace, si stredne pokročilý. Ak sa posunú len raz za pár mesiacov, si pokročilý. Elite je pre tých, čo sa pripáravajú na súťaž alebo cvičia viac ako 4 roky s presným režimom.</p></div>
+    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${lvlHtml()}</div><p class="muted small" style="margin:0 0 4px">Nevieš ktorú? Ak ti váhy rastú takmer každý týždeň, si začiatočník. Ak prírastky trvajú týždne až mesiace, si stredne pokročilý. Ak sa posunú len raz za pár mesiacov, si pokročilý. Elite je pre tých, čo idú na súťaž alebo cvičia viac ako 4 roky s presným režimom.</p></div>
     <div class="field"><span>Dní tréningu v týždni</span><div id="dwrap">${seg('dseg', dayItems(), days)}</div></div>
     <div class="field"><span>Kde cvičíš</span>${seg('eseg', [['gym', 'Posilňovňa'], ['home', 'Doma s jednoručkami']], equipment)}</div>
     <div class="field"><span>Na čo sa zamerať</span>${seg('mseg', Object.entries(EMPHASIS), emphasis)}</div>
@@ -466,7 +466,7 @@ export async function renderCoachDetail(userId) {
     </div>
     <a class="rp-card" href="#/report?u=${userId}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre, rozpad bodov a zameranie na ďalší týždeň.</p></div><span class="rp-card-go">›</span></a>
     <div class="card">${ctx.weightChart(tr)}</div>
-    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = v cieľi, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
+    <div class="card"><h3 class="mb">Posledných 14 dní</h3><div class="heat">${days14.map(d => { const f = fd[d]; const pct = f && p.target_kcal ? f.kcal / p.target_kcal : 0; const cls = !f ? 'none' : pct > 1.15 ? 'over' : pct < 0.7 ? 'under' : 'ok'; return `<div class="hd ${cls}" title="${d}"><span>${calc.fmtDate(d).split('.')[0]}</span><b>${f ? r0(f.kcal) : '–'}</b></div>`; }).join('')}</div><p class="muted small mt">zelená = cieľ splnený, oranžová = nad cieľ, modrá = pod 70 %, sivá = nelogoval</p></div>
     ${photos.length ? `<a class="card link" href="#/kouc/${userId}/fotky"><div class="row between"><h3>Fotky (${photos.length})</h3><span class="muted small">Otvoriť →</span></div><div class="row mt" style="gap:6px">${photos.slice(-3).map(x => `<img src="${urls[x.path]}" style="width:31%;aspect-ratio:3/4;object-fit:cover;border-radius:10px">`).join('')}</div></a>` : '<div class="card"><p class="muted small">Zatiaľ žiadne fotky.</p></div>'}
     ${targets.length ? `<div class="card"><h3 class="mb">Zmeny cieľa</h3>${targets.slice().reverse().map(t => `<div class="item"><div class="n"><b>${t.old_kcal} → ${t.new_kcal} kcal</b><span>${h(t.reason || '')}</span></div><span class="muted small mono">${calc.fmtDate(t.date)}</span></div>`).join('')}</div>` : ''}
     ${notes.length ? `<div class="card"><h3 class="mb">Poznámky z check-inov</h3>${notes.slice(0, 5).map(c => `<div class="item"><div class="n"><b>${calc.fmtDate(c.date)} · nálada ${c.mood ?? '–'}/5 · spánok ${c.sleep_h ?? '–'} h</b><span>${h(c.note)}</span></div></div>`).join('')}</div>` : ''}
