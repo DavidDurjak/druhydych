@@ -8,6 +8,7 @@ import { ctx } from './app.js';
 const root = document.getElementById('app');
 const $app = () => ctx.$app, st = () => ctx.state;
 const h = (...a) => ctx.h(...a), toast = (...a) => ctx.toast(...a), sheet = (...a) => ctx.sheet(...a), nav = (...a) => ctx.nav(...a);
+const num = v => Number(String(v ?? '').trim().replace(',', '.'));
 const r0 = v => Math.round(Number(v) || 0);
 const eur = v => (Math.round(v * 100) / 100).toLocaleString('sk-SK', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
 const pl = (n, a, b, c) => `${n} ${n === 1 ? a : n >= 2 && n <= 4 ? b : c}`;
@@ -302,10 +303,10 @@ export function openSetup(pre, onDone) {
       <p class="sec">Cieľ</p>
       <div class="seg mb" id="mode"><button data-m="quit" class="${mode === 'quit' ? 'on' : ''}">Skončiť úplne</button><button data-m="reduce" class="${mode === 'reduce' ? 'on' : ''}">Znížiť</button></div>
       <div class="grid2">
-        <label class="field"><span>Koľko denne doteraz</span><input class="input" id="base" type="number" inputmode="decimal" min="0" step="any" placeholder="napr. 10" value="${vals.base}"></label>
-        <label class="field" id="limWrap" style="${mode === 'reduce' ? '' : 'display:none'}"><span>Cieľ najviac denne</span><input class="input" id="lim" type="number" inputmode="decimal" min="0" step="any" placeholder="napr. 5" value="${vals.lim}"></label>
+        <label class="field"><span>Koľko denne doteraz</span><input class="input" id="base" type="text" inputmode="decimal" autocomplete="off" placeholder="napr. 10" value="${vals.base}"></label>
+        <label class="field" id="limWrap" style="${mode === 'reduce' ? '' : 'display:none'}"><span>Cieľ najviac denne</span><input class="input" id="lim" type="text" inputmode="decimal" autocomplete="off" placeholder="napr. 5" value="${vals.lim}"></label>
       </div>
-      <label class="field"><span>Cena za 1 ${it.u[0]} (EUR)</span><input class="input" id="cost" type="number" inputmode="decimal" min="0" step="0.01" value="${vals.cost ?? it.cost}"></label>
+      <label class="field"><span>Cena za 1 ${it.u[0]} (EUR)</span><input class="input" id="cost" type="text" inputmode="decimal" autocomplete="off" value="${vals.cost ?? it.cost}"></label>
       <p class="muted small">Z toho ti appka počíta ušetrené peniaze${kind === 'alcohol' ? ' a kalórie' : ''}.</p>
       <div id="warn"></div>
       <p class="err small" id="err"></p>
@@ -314,18 +315,18 @@ export function openSetup(pre, onDone) {
     box.querySelector('[data-x]').onclick = close;
     const keep = () => { const b = box.querySelector('#base'), l = box.querySelector('#lim'); if (b) vals.base = b.value; if (l) vals.lim = l.value; };
     box.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { keep(); kind = b.dataset.k; sub = ITEMS[kind][0].id; vals.cost = null; draw(); });
-    box.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { keep(); sub = b.dataset.s; vals.cost = edit ? Number(box.querySelector('#cost').value) : null; draw(); });
+    box.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { keep(); sub = b.dataset.s; vals.cost = edit ? num(box.querySelector('#cost').value) : null; draw(); });
     box.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; box.querySelectorAll('[data-m]').forEach(x => x.classList.toggle('on', x === b)); box.querySelector('#limWrap').style.display = mode === 'reduce' ? '' : 'none'; warn(); });
     const warn = () => {
       const w = box.querySelector('#warn'); if (!w) return;
-      const base = Number(box.querySelector('#base')?.value) || 0;
+      const base = num(box.querySelector('#base')?.value) || 0;
       if (kind === 'alcohol' && base >= 4) w.innerHTML = `<div class="hb-warn hb-danger"><b>Dôležité.</b> Pri pravidelnom pití ${base} a viac nápojov denne môže byť náhle vysadenie nebezpečné (triaška, kŕče, delírium). Nekonči zo dňa na deň sám. Poraď sa s lekárom, znižuj postupne a appka ti s tým pomôže. Pri silnej triaške, zmätenosti alebo kŕčoch volaj 112.</div>`;
       else if (kind === 'nicotine' && base >= 20 && mode === 'quit') w.innerHTML = `<div class="hb-warn"><b>Tip.</b> Pri ${base} a viac denne výrazne pomáha nikotínová náhrada (náplasť, žuvačky, sprej), zdvojnásobuje šancu na úspech. Lekárnik ti poradí bez receptu.</div>`;
       else w.innerHTML = '';
     };
     box.querySelector('#base')?.addEventListener('input', warn); warn();
     box.querySelector('#save')?.addEventListener('click', async () => {
-      const base = Number(box.querySelector('#base').value), lim = Number(box.querySelector('#lim').value), cost = Number(box.querySelector('#cost').value);
+      const base = num(box.querySelector('#base').value), lim = num(box.querySelector('#lim').value), cost = num(box.querySelector('#cost').value);
       const err = box.querySelector('#err');
       if (!(base >= 0) || box.querySelector('#base').value === '') { err.textContent = 'Napíš, koľko denne doteraz (môže byť aj odhad).'; return; }
       if (mode === 'reduce' && !(lim >= 0 && box.querySelector('#lim').value !== '')) { err.textContent = 'Napíš cieľ, najviac koľko denne.'; return; }
