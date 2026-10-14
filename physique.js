@@ -1,5 +1,5 @@
 // Analýza postavy z fotiek (AI). Len pre dospelých. Fotky sa neukladajú, ukladá sa iba výsledok.
-// Pred odoslaním sa fotka skontroluje v telefóne (svetlo, ostrosť, rozlíšenie, orientácia), aby sa AI nemísala na zlé fotky.
+// Pred odoslaním sa fotka skontroluje v telefóne (svetlo, ostrosť, rozlíšenie, orientácia), aby sa AI nemíňala na zlé fotky.
 import * as db from './data.js';
 import { ctx } from './app.js';
 
@@ -161,22 +161,22 @@ export async function openPhysique({ profile, onApply }) {
     const l = history[0], pr = (l.result.priorities || []).map(k => LABEL[k]).filter(Boolean);
     body.innerHTML = head('Analýza postavy') + `<div class="px-card"><b>Posledná analýza: ${fmtDate(l.created_at)}</b><p class="muted small">${pr.length ? 'Priorita: ' + h(pr.join(', ')) : 'Bez zvýraznenej priority'}</p><button class="btn sm primary" id="pxShow">Zobraziť</button></div>
       <button class="btn primary" id="pxNew">Nová analýza</button>
-      <p class="px-note">Odporúčame foriť raz za 4 až 8 týždňov, v rovnakom svetle a na rovnakom mieste, aby si videl skutočný pokrok.</p>`;
+      <p class="px-note">Odporúčame fotťi raz za 4 až 8 týždňov, v rovnakom svetle a na rovnakom mieste, aby si videl skutočný pokrok.</p>`;
     bindX();
     body.querySelector('#pxShow').onclick = () => showResult(l, history[1]);
     body.querySelector('#pxNew').onclick = capture;
   };
 
   function capture() {
-    const picked = {}; // pose -> { b64, bad }
+    const picked = {}; // pose -> { b64, url }
     body.innerHTML = head('Nová analýza') + `
       <p class="muted small">Dobrá fotka rozhoduje o tom, či bude analýza presná.</p>
       <ul class="px-tip">
         <li>Celá postava od hlavy po kolená alebo nižšie, telefón na výšku.</li>
-        <li>Telefón vo výške hrude, 2 až 3 metre od teba (oprieť o niečo alebo POŽIADAŤ niekoho).</li>
+        <li>Telefón vo výške hrude, 2 až 3 metre od teba (oprieť o niečo alebo požiadať niekoho).</li>
         <li>Svetlo spredu alebo mierne zboku, ideálne od okna. Žiadne protisvetlo, blesk ani filtre.</li>
         <li>Plavky alebo krátke šortky, bez trička. Ženy športová podprsenka. Voľné oblečenie skrýva svaly.</li>
-        <li>Uvoľný postoj, ruky pri tele. Rovnaké miesto a svetlo ako minule.</li>
+        <li>Uvoľnený postoj, ruky pri tele. Rovnaké miesto a svetlo ako minule.</li>
       </ul>
       <div class="px-slots">${POSES.map(([k, t, s]) => `<label class="px-slot" data-slot="${k}"><input type="file" accept="image/*" hidden data-f="${k}"><b>${t}</b><small>${s}</small></label>`).join('')}</div>
       <div id="pxMsg"></div>
