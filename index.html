@@ -37,6 +37,62 @@
     @keyframes fwbar { from { background-position: -60% 0; } to { background-position: 160% 0; } }
     @media (prefers-reduced-motion: reduce) { html.fw-loading::after { animation: fwin .2s 160ms forwards; background-size: 100% 100%; } }
   </style>
+  <script>
+    // rýchlosť: (1) sledovače zmien obrazovky sa zlúčia, takže všetky doplnkové karty prejdú stránku raz za snímku namiesto stoviek prechodov;
+    // (2) rovnaký dotaz na server, ktorý práve beží, sa nepošle dvakrát
+    (function () {
+      var O = window.MutationObserver;
+      if (O && !O.__fw) {
+        var queue = new Set(), armed = false;
+        var flush = function () {
+          if (!armed) return; armed = false;
+          var q = Array.from(queue); queue.clear();
+          q.forEach(function (w) { w._run(); });
+        };
+        var arm = function () {
+          if (armed) return; armed = true;
+          requestAnimationFrame(flush); setTimeout(flush, 120);
+        };
+        var W = function (cb) {
+          var self = this; this._buf = [];
+          this._o = new O(function (recs) {
+            // zmena samotného textu (napr. číslo, ktoré sa rozbieha na kalórie) nepridáva žiadny prvok, takže na ňu nikto nemusí reagovať
+            var keep = recs.filter(function (r) {
+              if (r.type !== 'childList') return true;
+              var i, a = r.addedNodes, d = r.removedNodes;
+              for (i = 0; i < a.length; i++) if (a[i].nodeType !== 3) return true;
+              for (i = 0; i < d.length; i++) if (d[i].nodeType !== 3) return true;
+              return false;
+            });
+            if (!keep.length) return;
+            self._buf.push.apply(self._buf, keep); queue.add(self); arm();
+          });
+          this._run = function () { var r = self._buf; self._buf = []; if (!r.length) return; try { cb.call(self, r, self); } catch (e) { setTimeout(function () { throw e; }); } };
+        };
+        W.prototype.observe = function (t, o) { return this._o.observe(t, o); };
+        W.prototype.disconnect = function () { this._o.disconnect(); this._buf = []; queue.delete(this); };
+        W.prototype.takeRecords = function () { var r = this._buf.concat(this._o.takeRecords()); this._buf = []; return r; };
+        W.__fw = true; window.MutationObserver = W;
+      }
+      var F = window.fetch, inflight = {};
+      if (F) window.fetch = function (input, init) {
+        try {
+          var url = typeof input === 'string' ? input : input && input.url;
+          var method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+          if (method !== 'GET' || !url || url.indexOf('.supabase.co/rest/v1/') < 0) return F.apply(this, arguments);
+          var h = (init && init.headers) || (input && input.headers), auth = '';
+          if (h) auth = typeof h.get === 'function' ? (h.get('authorization') || '') : (h.Authorization || h.authorization || '');
+          var key = url + '|' + auth;
+          if (!inflight[key]) {
+            inflight[key] = F.apply(this, arguments);
+            var done = function () { delete inflight[key]; };
+            inflight[key].then(done, done);
+          }
+          return inflight[key].then(function (r) { return r.clone(); });
+        } catch (e) { return F.apply(this, arguments); }
+      };
+    })();
+  </script>
   <link rel="modulepreload" href="vendor/supabase.mjs">
   <link rel="modulepreload" href="app.js">
   <link rel="modulepreload" href="mydata.js">
@@ -115,9 +171,8 @@
   <script type="module" src="welcome.js"></script>
   <script type="module" src="buddy.js"></script>
   <script>
-    // bez približovania: ani dvojitým ťuknutím, ani roztiahnutím prstov (appka sa ovláda rýchlym ťukaním)
+    // bez približovania: ani dvojitým ťuknutím, ani roztiahnutím prstov (appka sa ovláda rýchlym ťukaním); roztiahnutie na Androide blokuje touch-action v CSS
     ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
-    document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
   </script>
   <script>
     if ('serviceWorker' in navigator) {
