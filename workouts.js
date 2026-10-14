@@ -67,7 +67,7 @@ export const EXERCISES = Object.fromEntries([
   L('step_up', 'Výstupy na lavicu s jednoručkami', 'nohy', { quads: 1, glutes: 0.7 }, 'compound', 'M', 'both', 'Stúpaj hlavne prednou nohou, nepomáhaj si odrazom zadnej.', { sk: 0.18 }),
   L('legext', 'Predkopávanie na stroji', 'nohy', { quads: 1 }, 'isolation', 'L', 'gym', 'Stroj nastav tak, aby kolená boli na osi, hore chvíľu podrž.', { sk: 0.35 }),
   // zadná strana
-  L('rdl', 'Rumunský mŕtvy ťah', 'zadná strana', { hams: 1, glutes: 0.7, back: 0.3 }, 'compound', 'M', 'gym', 'Panvu posúvać dozadu, chrbát rovný, hlavne zadné stehná natiahni, činka pri nohách.', { sk: 0.7, u: 'lower' }),
+  L('rdl', 'Rumunský mŕtvy ťah', 'zadná strana', { hams: 1, glutes: 0.7, back: 0.3 }, 'compound', 'M', 'gym', 'Panvu posúvaj dozadu, chrbát rovný, hlavne zadné stehná natiahni, činka pri nohách.', { sk: 0.7, u: 'lower' }),
   L('db_rdl', 'Rumunský mŕtvy ťah s jednoručkami', 'zadná strana', { hams: 1, glutes: 0.7, back: 0.3 }, 'compound', 'M', 'both', 'Panvu posúvaj dozadu, jednoručky kľzu po stehnách, chrbát rovný.', { sk: 0.3 }),
   L('sl_rdl', 'Rumunský mŕtvy ťah na jednej nohe', 'zadná strana', { hams: 1, glutes: 0.8 }, 'compound', 'M', 'home', 'Stoj na jednej nohe, panvu posúvaj dozadu, zadná noha sa predĺžuje.', { sk: 0.15 }),
   L('deadlift', 'Mŕtvy ťah', 'zadná strana', { hams: 0.8, glutes: 0.8, back: 0.7, quads: 0.4 }, 'compound', 'H', 'gym', 'Činka pri holeniach, chrbát rovný, odtlač zem a až potom narovnaj bedrá.', { sk: 0.9 }),
@@ -346,14 +346,14 @@ function explain(c) {
       ? 'Pri stredne pokročilej úrovni sa pracuje s 10 až 20 sériami na sval týždenne. Objem v bloku postupne rastie, aby si sa na začiatku nezlomil a na konci mal čo pridavať.'
       : c.level === 'advanced'
         ? 'Pokročilý potrebuje vyšší objem a presnejšie riadenie únavy. Preto je blok kratší a pomocné cviky sa po každom bloku obmenia.'
-        : 'ÚroveE0 Elite striedavo beží vyvážený blok (10 až 20 sérií na sval) a špecializačný blok (20 až 30 sérií na 1 až 2 prioritné partie a 5 až 15 na ostatné). Vychádza to z odporúčaní pre pokročilých.');
+        : 'Úroveň Elite striedavo beží vyvážený blok (10 až 20 sérií na sval) a špecializačný blok (20 až 30 sérií na 1 až 2 prioritné partie a 5 až 15 na ostatné). Vychádza to z odporúčaní pre pokročilých.');
   if (c.specOn) out.push(`Práve beží špecializačný blok. Prioritné partie (${c.priority.map(k => PRIORITY[k][0].toLowerCase()).join(', ')}) majú viac sérií a extra cviky, ostatné svaly dostávajú udržiavací objem. Pozor na regeneráciu: spánok a kalorický príjem sú tu zásadné.`);
   if (c.level === 'elite' && !c.specOn) out.push('Práve beží vyvážený blok, v ktorom sa všetky svaly trénujú rovnako. Nasledujúce blok bude špecializačný na vybrané partie.');
   out.push('Série nepotrebuješ ťahať do úplného zlyhania. Meta-analýza z roku 2023 nenašla, že zlyhanie prináša viac svalu než ukončenie s malým zostávajúcim opakovaním. Preto je úroveň úsilia riadená rezervou (RIR) a zlyhanie sa hodí hlavne pri izolácii.');
   if (c.goal === 'lose') out.push(c.level === 'elite'
     ? `Pri chudnutí (príprava na súťaž) objem neznižujeme, pretože sval sa pri deficite chráni práve ťažkou prácou. Kardio je len ${c.cardioSessions}× nízkej intenzity, aby nebránilo regenerácii.`
     : `Pri chudnutí držíme ťažké váhy na základných cvikoch a objem pomocných cvikov je o niečo nižší, lebo pri deficite sa horšie regeneruje. Pridali sme ${c.cardioSessions}× ľahké kardio.`);
-  if (c.goal === 'gain') out.push('Pri naberaní máš plný objem a postupný nárast sérií v bloku. Pridávaj váhu, keď zvládneš hornú hranicu opakovaní, a jedz v mierom prebytku.');
+  if (c.goal === 'gain') out.push('Pri naberaní máš plný objem a postupný nárast sérií v bloku. Pridávaj váhu, keď zvládneš hornú hranicu opakovaní, a jedz v miernom prebytku.');
   if (c.goal === 'maintain') out.push('Pri udržiavaní je objem stredný. Cieľom je pomaly pridávať váhu a udržať svaly.');
   if (c.emphasis === 'lower') out.push('Dôraz máš na zadok a nohy: tieto svaly dostávajú viac sérií a cviky, ktoré ich zaťažujú v natiahnutej polohe (rumunský ťah, hip thrust, bulharský drep).');
   if (c.emphasis === 'upper') out.push('Dôraz máš na hornú časť tela: hrudník, chrbát, ramená a ruky majú o niečo viac sérií.');
@@ -363,4 +363,72 @@ function explain(c) {
   if (c.equipment === 'home') out.push('Plán je na cvičenie doma s jednoručkami. Ak máš hrazdu, zhyby sú skvelý doplnok na chrbát.');
   out.push(`Blok trvá ${c.mesoWeeks} týždňov. Posledný týždeň je odporúčaný deload (polovica sérií, rovnaké váhy, viac rezervy). Plánovaný deload rast svalov sám nezvýši (štúdia ukázala rovnaký rast ako bez pauzy), pomáha hlavne regenerácii. Preto ho môžeš pri dobrom pocite preskočiť alebo si ho dať skôr, ak si vyčerpaný. Pomocné cviky sa po bloku obmenia, základné ostanú, aby sa dal ďalej pridávať váha.`);
   return out;
+}
+
+// Alternatívy pre výmenu cviku: rovnaký hlavný sval, rovnaké vybavenie
+export function alternatives(id, equipment = 'gym') {
+  const ex = EXERCISES[id]; if (!ex || ex.type === 'cardio' || ex.time) return [];
+  const primary = Object.entries(ex.m).sort((a, b) => b[1] - a[1])[0]?.[0];
+  return Object.values(EXERCISES).filter(e => e.id !== id && !e.time && e.type !== 'cardio' && (e.eq === 'both' || e.eq === equipment) && Object.entries(e.m).sort((a, b) => b[1] - a[1])[0]?.[0] === primary)
+    .sort((a, b) => (a.type === ex.type ? 0 : 1) - (b.type === ex.type ? 0 : 1)).slice(0, 8).map(e => ({ id: e.id, name: e.name, cue: e.cue, type: e.type }));
+}
+
+// Zdroje, o ktoré sa plán opiera
+export const SOURCES = [
+  'Pelland a kol. 2025, Sports Medicine: meta-regresia 67 štúdií o týždennom objeme a frekvencii (minimum okolo 4 sérií týždenne, klesajúce výnosy, frekvencia pri rovnakom objeme pre rast svalov nie je rozhodujúca).',
+  'Baz-Valle a kol. 2022, Journal of Human Kinetics: stredný (12 až 20 sérií) vs. vysoký objem (nad 20) u trénovaných mužov, často bez rozdielu.',
+  'Heaselgrave a kol. 2018, Int. J. Sports Physiology and Performance: 9, 18 a 27 sérií týždenne pre biceps, 18 sérií rozložených do dvoch dní bolo najlepšie pre rast.',
+  'Refalo a kol. 2023, Sports Medicine: blízkosť k zlyhaniu, zlyhanie nie je jednoznačne lepšie pre rast než malá rezerva.',
+  'Kinoshita a kol. 2023, Frontiers in Physiology: tréning v natiahnutej polohe (lýtka v stoji) rastie lepšie než v skrátenej.',
+  'Baz-Valle a kol. 2019, PLoS ONE: pevný výber cvikov vs. náhodná obmena, bez rozdielu v raste, obmena zvyšuje len motíváciu.',
+  'Coleman a kol. 2024, PeerJ: jeden týždeň pauzy v 8-týždennom cykle rast svalov nezmenil, sila mierne klesla.',
+  'Helms a kol. 2014, J. Int. Soc. Sports Nutrition: odporúčania pre prípravu na súťaž (frekvencia 2 až 3×, objem 40 až 70 opakovaní na sval a tréning, obmedziť zlyhanie, najmenej kardia, ktoré stačí).',
+  'Escalante a kol. 2021, BMC Sports Science, Medicine and Rehabilitation: týždeň pred súťažou, sacharidové nabitie má oporu, manipulácia s vodou a sódikom nie a nesie riziká.',
+  'Iraki a kol. 2019, Sports: výživa kulturistov mimo súťažnej sezóny, miernejší nadbytok kalórií a bielkoviny okolo 1,6 až 2,2 g/kg.',
+  'Helms a kol., Muscle and Strength Pyramid (2. vydanie): špecializačné bloky 8 až 12 týždňov, frekvencia podľa objemu, reaktívny deload.',
+];
+
+// Ktorý deň plánu je dnes na rade: ďalší po poslednom odcvičenom
+export function nextDay(plan, logs) {
+  if (!plan?.days?.length) return 1;
+  const done = logs.filter(l => l.done).sort((a, b) => a.date < b.date ? 1 : -1);
+  if (!done.length) return 1;
+  return (done[0].plan_day % plan.days.length) + 1;
+}
+
+export function weekAdherence(logs, trainingDays, weekStart) {
+  const done = logs.filter(l => l.done && l.date >= weekStart).length;
+  return { done, target: Number(trainingDays || 0) };
+}
+
+// Súťažný režim: čo robiť podľa počtu dní do súťaže. Zámerne bez odvodňovania a diuretik.
+export function contestPhase(daysLeft) {
+  const w = Math.ceil(daysLeft / 7);
+  if (daysLeft < 0) return { id: 'after', title: 'Po súťaži', items: [
+    'Kalórie zvyšuj postupne, približne o 5 až 10 % týždenne, namiesto skoku naraz. Telo si potrebuje zvyknúť a hlad býva po diéte veľký.',
+    'Tréning vráť na normálny objem a týždeň alebo dva si dopraj ľahší režim.',
+    'Ak ťa po súťaži trápia nutkavé prejedanie, strach z jedla alebo výčitky, vyhľadaj odborníka. Je to bežné po náročnej príprave a dá sa to riešiť.'] };
+  if (daysLeft === 0) return { id: 'day', title: 'Dnes je súťaž', items: [
+    'Jedz iba jedlá, ktoré už poznáš a dobre ich znášaš, v menších porčiách po celý deň.',
+    'Vodu pi bežne. Nezacínaj dnes nič nové, ani doplňky.',
+    'Si pripravený. Uži si to.'] };
+  if (daysLeft <= 7) return { id: 'peak', title: 'Posledný týždeň', items: [
+    'Posledný ťažký tréning nôh urob 4 dni pred súťažou a hornej časti 3 dni pred. Potom už len ľahký tréning bez zlyhania a bez nových cvikov.',
+    'Posledné 2 až 3 dni zvýš sacharidy zhruba na 5 až 8 g na kg telesnej hmotnosti. Vyber jednoduché, ľahko stráviteľné jedlá (ryža, zemiaky, ovsené vločky, banány) a obmedz vlákninu. Bielkoviny a tuky nechaj tak. Túto dávku si odskúšaj už pri skúšobnom nabití 2 až 3 týždne vopred.',
+    'Vodu pi bežne, v bežnom množstve. Sodík nemeň oproti tomu, na čo si zvyknutý. Odvodňovanie a diuretiká appka zámerne neponuka: vedú ku kŕčom, poruchám srdcového rytmu a omdlievaniu a podľa výskumu formu nezlepšujú.',
+    'Spánok 7 až 9 hodín. Žiadne nové jedlá ani doplňky.',
+    'Pri závrate, búšení srdca alebo silných kŕčoch prestaň a vyhľadaj lekára.'] };
+  if (daysLeft <= 14) return { id: 'final', title: 'Dva týždne pred súťažou', items: [
+    'Nič nové. Jedlá, doplňky aj pózovanie len také, ktoré si už vyskúšal.',
+    'Tréning drž ako doteraz, objem môžeš v druhom týždni mierne znížiť, aby si prišiel svieži.',
+    'Ak máš trénera, teraz je čas dolačiť s ním posledný týždeň. Fotku postavy urob na kontrolu a nájdi, čo ešte treba dolačiť.'] };
+  if (w <= 16) return { id: 'prep', title: 'Príprava na súťaž', items: [
+    'Chudni pomaly, o približne 0,5 až 1 % telesnej hmotnosti týždenne. Rýchlejšie tempo znamená väčšiu stratu svalov.',
+    'Bielkoviny 2,3 až 3,1 g na kg beztukovej hmoty (pri diéte viac ako mimo sezóny).',
+    'Objem a intenzitu tréningu udrž, nezniž ich. Kardio pridávaj až keď sa váha zasekne a postupne.',
+    'Každých 6 až 12 týždňov zaraď 1 až 2 týždne udržiavacích kalórií, pomáha to držať svaly aj hlavu.',
+    'Fotku postavy rob raz za 2 až 4 týždne v rovnakom svetle a pozri, kde je pokrok.'] };
+  return { id: 'far', title: 'Do súťaže ešte ďaleko', items: [
+    'Príprava sa zvyčajne začína 12 až 20 týždňov pred súťažou. Dovtedy buduj svaly v mierom kalorickom nadbytku a drž formu pod kontrolou.',
+    'Pri analýze postavy zisti, ktoré partie zaostávajú, a daj im prioritu v špecializačných blokoch.'] };
 }
