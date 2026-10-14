@@ -1,3 +1,4 @@
+import * as db from './data.js';
 // Fotka pri každom jedle. Balené produkty majú fotku z Open Food Facts (ukladá sa do foods.img),
 // ostatné dostanú peknú ikonku podľa názvu, takže riadok nikdy nie je prázdny.
 const ascii = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -39,6 +40,7 @@ const CSS = `
 .res.hasft{gap:12px;justify-content:flex-start}
 .res.hasft .n{flex:1;min-width:0}
 .res.hasft .k{margin-left:auto}
+.fi.ph{width:42px!important;height:42px!important;background:#fff!important;overflow:hidden}.fi.ph img{width:100%;height:100%;object-fit:contain;padding:3px;box-sizing:border-box;display:block}
 .ft.sm{width:40px;height:40px;border-radius:11px}.ft.sm i{font-size:21px}
 `;
 if (!document.getElementById('ft-css')) { const el = document.createElement('style'); el.id = 'ft-css'; el.textContent = CSS; document.head.appendChild(el); }
@@ -46,16 +48,64 @@ if (!document.getElementById('ft-css')) { const el = document.createElement('sty
 // jedna dlaždica s fotkou alebo ikonkou; ak sa fotka nenačíta, ostane ikonka
 export function thumb(f, cls = '') {
   const img = f?.img || null;
-  return `<span class="ft ${img ? 'ph' : ''} ${cls}" data-fid="${f?.id || ''}">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('ph');this.remove()">` : ''}<i>${foodEmoji(f?.name)}</i></span>`;
+  return `<span class="ft ${img ? 'ph' : ''} ${cls}" data-fid="${f?.id || ''}" data-name="${esc(f?.name)}">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('ph');this.remove()">` : ''}<i>${foodEmoji(f?.name)}</i></span>`;
 }
 
-// doplní fotky do už vykreslených riadkov (napr. Nedávno: záznamy z denníka nemajú fotku, ale majú food_id)
-export function fillThumbs(root, map) {
-  root.querySelectorAll('.ft[data-fid]').forEach(el => {
-    const u = map.get(Number(el.dataset.fid));
-    if (!u || el.classList.contains('ph')) return;
-    const im = new Image();
-    im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.src = u;
-    im.onload = () => { el.classList.add('ph'); el.prepend(im); };
-  });
+function attach(el, u) {
+  if (!u || el.classList.contains('ph')) return;
+  const im = new Image();
+  im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.src = u;
+  im.onload = () => { if (!el.classList.contains('ph')) { el.classList.add('ph'); el.prepend(im); } };
 }
+
+// doplní fotky do už vykreslených riadkov (záznamy z denníka nemajú vždy food_id)
+export function fillThumbs(root, map) {
+  root.querySelectorAll('.ft[data-fid]').forEach(el => attach(el, map.get(Number(el.dataset.fid))));
+}
+
+function attachFi(el, u) {
+  if (!u || el.classList.contains('ph')) return;
+  const im = new Image();
+  im.alt = ''; im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.src = u;
+  im.onload = () => { el.classList.add('ph'); el.textContent = ''; el.appendChild(im); };
+}
+
+// fotka podľa názvu: záznamy z denníka (písané textom, AI) často nemajú food_id, tak ich spárujeme s databázou podľa názvu
+const KEY = 'fw_imgn1';
+let memo = null;
+const hits = () => {
+  if (memo) return memo;
+  memo = new Map();
+  try { Object.entries(JSON.parse(localStorage.getItem(KEY) || '{}')).forEach(([k, v]) => memo.set(k, v)); } catch (_) { }
+  return memo;
+};
+const saveHits = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.fromEntries([...hits()].filter(([, v]) => v).slice(-1500)))); } catch (_) { } };
+const miss = new Set();
+export async function imgByNames(names) {
+  const m = hits();
+  const todo = [...new Set(names.filter(n => n && !m.has(n) && !miss.has(n)))];
+  if (todo.length) {
+    await db.ready;
+    for (let i = 0; i < todo.length; i += 40) {
+      const chunk = todo.slice(i, i + 40);
+      try {
+        const { data } = await db.sb.rpc('img_for_names', { names: chunk });
+        (data || []).forEach(r => { if (r.img) m.set(r.n, r.img); else miss.add(r.n); });
+      } catch (_) { chunk.forEach(n => miss.add(n)); }
+    }
+    saveHits();
+  }
+  return m;
+}
+export async function hydrate(root = document) {
+  const els = [...root.querySelectorAll('.ft[data-name]:not(.ph)')].filter(e => e.dataset.name && e.dataset.h !== '1');
+  const fis = [...root.querySelectorAll('.ml-list .fi:not(.ph)')].filter(e => e.dataset.h !== '1' && e.parentNode.querySelector('.fn b'));
+  if (!els.length && !fis.length) return;
+  els.forEach(e => { e.dataset.h = '1'; });
+  fis.forEach(e => { e.dataset.h = '1'; e.dataset.name = e.parentNode.querySelector('.fn b').textContent; });
+  const m = await imgByNames([...els, ...fis].map(e => e.dataset.name));
+  els.forEach(el => attach(el, m.get(el.dataset.name)));
+  fis.forEach(el => attachFi(el, m.get(el.dataset.name)));
+}
+let tm = null;
+new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => hydrate(document).catch(() => { }), 120); }).observe(document.documentElement, { childList: true, subtree: true });
