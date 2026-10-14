@@ -10,6 +10,7 @@ const CSS = `
 .nav a{position:relative;z-index:1;justify-content:center;gap:2px;padding-top:0;transition:color .18s,transform .18s}
 .nav a .ic{width:auto;height:26px;background:none!important;transition:transform .2s cubic-bezier(.3,1.5,.5,1)}
 .nav a.on{color:var(--accent)}
+.nav a.on .fl{fill:currentColor;fill-opacity:.2}
 .nav a.hot{color:#fff}.nav a.hot .ic{transform:scale(1.14)}
 .nav a.on.hot{color:var(--accent)}
 .nav-lens{position:absolute;z-index:0;top:4px;bottom:4px;left:0;border-radius:28px;pointer-events:none;
@@ -22,7 +23,7 @@ const CSS = `
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
-const RING = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5" stroke-opacity=".38"/><path d="M12 3.5a8.5 8.5 0 0 1 8.2 6.3"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg>';
+const RING = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path class="fl" d="M13.4 2.6c.3 2.6 2.1 3.9 3.5 5.9 1.5 2.1 2.1 4.2 1.6 6.4-.7 3.1-3.4 5.2-6.5 5.2-3.3 0-5.9-2.4-5.9-5.6 0-2 .9-3.5 2.2-4.8.2 1.1.8 1.9 1.7 2.3-.4-2.9.5-5.9 3.4-11.4z"/><path d="M10.6 19.6c-1.4-.4-2.2-1.5-2.2-2.9 0-1.1.6-2 1.5-2.8.3.8.8 1.3 1.5 1.5.8.7 1.3 1.6 1.3 2.5 0 .8-.6 1.4-2.1 1.7z" stroke-width="1.5"/></svg>';
 let lastIdx = null, drag = null, dragEnd = 0;
 
 const items = nav => [...nav.querySelectorAll('a')];
