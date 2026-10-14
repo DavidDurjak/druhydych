@@ -1,6 +1,6 @@
 // Kamaráti: týždenná tabuľka s ľuďmi, ktorých si pozveš kódom alebo odkazom.
 // Kamaráti vidia len počty dní so zápisom, dní v cieli a tréningov za 7 dní, nikdy kalórie ani váhu.
-// Týždenná výzva: každý týždeň (pondelok až neděle) rovnaká výzva pre celú skupinu, vidno len počty dní a tréningov.
+// Týždenná výzva: každý týždeň (pondelok až nedeľa) rovnaká výzva pre celú skupinu, vidno len počty dní a tréningov.
 // Karta sa vloží pod jedlá na obrazovke Dnes (bez zásahu do today.js). Pozvánka: #/kamarat/KÓD.
 import { sb } from './data.js';
 import { ctx } from './app.js';
@@ -120,7 +120,7 @@ async function openFriends() {
       ${others ? rows.map((r, i) => `<div class="fr-row${r.me ? ' me' : ''}"><div class="fr-rk">${medal(i)}</div>
         <div class="fr-n"><b>${h(r.name || 'Kamarát')}${r.me ? ' (ty)' : ''}</b><small>${r.logged} ${days(r.logged)} zápisu · ${r.ontarget} v cieli · ${r.workouts} ${trn(r.workouts)}</small></div>
         <div class="fr-p">${r.points}<small>bodov</small></div></div>`).join('')
-        : `<div class="fr-empty"><b>Zatiaľ si tu sám</b>Pozvi kamaráta. Keď zadá tvoj kód alebo otvorí odkaz, uvidíte sa navzájom v tabuľk.</div>`}
+        : `<div class="fr-empty"><b>Zatiaľ si tu sám</b>Pozvi kamaráta. Keď zadá tvoj kód alebo otvorí odkaz, uvidíte sa navzájom v tabuľke.</div>`}
       <div class="fr-box"><small class="muted">Tvoj kód</small><div class="fr-code">${h(code || '…')}</div>
         <div class="fr-btns"><button class="btn primary" id="frShare">Poslať pozvánku</button><button class="btn ghost" id="frCopy">Kopírovať kód</button></div></div>
       <div class="fr-box"><b style="font-size:14px">Mám kód od kamaráta</b>
