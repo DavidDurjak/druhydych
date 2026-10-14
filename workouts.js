@@ -315,7 +315,7 @@ export function generatePlan(p = {}) {
 
   const vol = weeklyVolume(plan);
   const meta = {
-    v: 2, params: { goal, days, level, equipment, emphasis, sex, birthYear: p.birthYear || null, heightCm: heightCm || null, weightKg: weightKg || null, priority, swaps, contestDate: /^\d{4}-\d{2}-\d{2}$/.test(p.contestDate || '') ? p.contestDate : null },
+    v: 2, params: { goal, days, level, equipment, emphasis, sex, birthYear: p.birthYear || null, heightCm: heightCm || null, weightKg: weightKg || null, priority, swaps, contestDate: /^\d{4}-\d{2}-\d{2}$/.test(p.contestDate || '') ? p.contestDate : null, peakAck: /^\d{4}-\d{2}-\d{2}$/.test(p.peakAck || '') ? p.peakAck : null },
     spec: specOn,
     block, week, mesoWeeks, deload, rir: RIR[level][week - 1], split: split.name, volume: vol,
     why: explain({ goal, level, equipment, emphasis, days, sex, bmi, tall, older, split: split.name, mesoWeeks, cardioSessions, specOn, priority }),
@@ -401,7 +401,7 @@ export function weekAdherence(logs, trainingDays, weekStart) {
   return { done, target: Number(trainingDays || 0) };
 }
 
-// Súťažný režim: čo robiť podľa počtu dní do súťaže. Zámerne bez odvodňovania a diuretík.
+// Súťažný režim: čo robiť podľa počtu dní do súťaže. Profi peak week je zamknutý za súhlasom (peakProtocol).
 export function contestPhase(daysLeft) {
   const w = Math.ceil(daysLeft / 7);
   if (daysLeft < 0) return { id: 'after', title: 'Po súťaži', items: [
@@ -415,12 +415,12 @@ export function contestPhase(daysLeft) {
   if (daysLeft <= 7) return { id: 'peak', title: 'Posledný týždeň', items: [
     'Posledný ťažký tréning nôh urob 4 dni pred súťažou a hornej časti 3 dni pred. Potom už len ľahký tréning bez zlyhania a bez nových cvikov.',
     'Posledné 2 až 3 dni zvýš sacharidy zhruba na 5 až 8 g na kg telesnej hmotnosti. Vyber jednoduché, ľahko stráviteľné jedlá (ryža, zemiaky, ovsené vločky, banány) a obmedz vlákninu. Bielkoviny a tuky nechaj tak. Túto dávku si odskúšaj už pri skúšobnom nabití 2 až 3 týždne vopred.',
-    'Vodu pi bežne, v bežnom množstve. Sodík nemeň oproti tomu, na čo si zvyknutý. Odvodňovanie a diuretiká appka zámerne neponúka: vedú ku kŕčom, poruchám srdcového rytmu a omdlievaniu a podľa výskumu formu nezlepšujú.',
+    'Vodu pi bežne, v bežnom množstve. Sodík nemeň oproti tomu, na čo si zvyknutý. Podrobný profi plán na každý deň (voda, sodík, sacharidy) sa odomkne nižšie, po potvrdení, že ho robíš na vlastné riziko.',
     'Spánok 7 až 9 hodín. Žiadne nové jedlá ani doplnky.',
     'Pri závrate, búšení srdca alebo silných kŕčoch prestaň a vyhľadaj lekára.'] };
   if (daysLeft <= 14) return { id: 'final', title: 'Dva týždne pred súťažou', items: [
     'Nič nové. Jedlá, doplnky aj pózovanie len také, ktoré si už vyskúšal.',
-    'Tréning drž ako doteraz, objem môžeš v druhom týždni mierne znížiť, aby si prišiel svieži.',
+    'Tréning drž ako doteraz, objem môžeš v druhom týždni mierne znížiť, aby si prišiel svieží.',
     'Ak máš trénera, teraz je čas doladiť s ním posledný týždeň. Fotku postavy urob na kontrolu a nájdi, čo ešte treba doladiť.'] };
   if (w <= 16) return { id: 'prep', title: 'Príprava na súťaž', items: [
     'Chudni pomaly, o približne 0,5 až 1 % telesnej hmotnosti týždenne. Rýchlejšie tempo znamená väčšiu stratu svalov.',
@@ -431,4 +431,51 @@ export function contestPhase(daysLeft) {
   return { id: 'far', title: 'Do súťaže ešte ďaleko', items: [
     'Príprava sa zvyčajne začína 12 až 20 týždňov pred súťažou. Dovtedy buduj svaly v miernom kalorickom nadbytku a drž formu pod kontrolou.',
     'Pri analýze postavy zisti, ktoré partie zaostávajú, a daj im prioritu v špecializačných blokoch.'] };
+}
+
+// Profi peak week: denný plán pre dospelých súťažiacich. Odomyká sa až po potvrdení rizika.
+// Vychádza z publikovaných postupov (Escalante 2021, Chappell 2018, Helms 2014). Zámerne bez diuretik, laxatív, liekov a saunového vysúšania.
+export const PEAK_RISK = [
+  'Som dospelý (18+) a robím to dobrovoľne, na vlastné riziko.',
+  'Rozumiem, že úprava vody, sodíka a sacharidov môže spôsobiť kŕče, poruchy srdcového rytmu, omdlievanie alebo nebezpečne nízky sodík v krvi.',
+  'Plán som konzultoval alebo ho pred súťažou konzultujem s lekárom alebo skúseným trénerom.',
+];
+export function peakProtocol(daysLeft, kg) {
+  const w = Number(kg) > 30 ? Number(kg) : 0;
+  const per = (a, b) => w ? `${Math.round(w * a)} až ${Math.round(w * b)} g` : `${a} až ${b} g na kg`;
+  const L1 = x => (x / 1000).toFixed(1).replace('.', ',');
+  const lit = (a, b) => w ? `${L1(w * a)} až ${L1(w * b)} litra` : `${a} až ${b} ml na kg`;
+  const floor = a => w ? `${L1(w * a)} litra` : `${a} ml na kg`;
+  const d = Math.max(0, Math.min(7, Math.round(daysLeft)));
+  const out = { day: d, title: d === 0 ? 'Deň súťaže' : `Deň -${d}`, items: [] };
+  const it = out.items;
+  if (d >= 5) {
+    it.push(`Sacharidy: bežný príjem, zhruba ${per(3, 5)} denne. Hlavné je nechať telo zvyknúť si na vyššiu vodu.`);
+    it.push(`Voda: zvýš na ${lit(60, 80)} denne, rozlož ju rovnomerne cez deň, nikdy viac než asi 1 liter za hodinu.`);
+    it.push('Sodík: nemeň ho, drž sa toho, na čo si zvyknutý. Nič neškrtaj a nič nepridávaj.');
+    it.push(d === 7 ? 'Tréning: bežný, ešte s plným objemom. Dnes je posledný deň, kedy to môžeš odskúšať s trénerom.' : 'Tréning: bežný, posledný ťažký tréning nôh urob 4 dni pred súťažou.');
+  } else if (d >= 3) {
+    it.push(`Sacharidy: ${per(6, 8)} denne, rozdelené do 5 až 6 jedál. Ryža, zemiaky, ovsené vločky, ryžové koláče, med.`);
+    it.push('Tuky zníž na asi 0,5 až 0,8 g na kg a vlákninu obmedz, aby si nemal nafúknúte brucho.');
+    it.push(`Voda: stále ${lit(60, 80)} denne. Sodík bez zmeny.`);
+    it.push(d === 4 ? 'Tréning: posledný ťažký tréning nôh. Potom už len ľahko.' : d === 3 ? 'Tréning: posledná horná časť tela, ľahšie váhy a bez zlyhania.' : 'Tréning: len ľahká aktivácia, žiadny objem.');
+  } else if (d === 2) {
+    it.push(`Sacharidy: ${per(8, 10)} denne, ak si túto dávku odskúšal pri skúšobnom nabití. Ak nie, zostaň na ${per(6, 8)}.`);
+    it.push(`Voda: zníž na ${lit(40, 50)} denne, teda približne bežný príjem. Sodík bez zmeny.`);
+    it.push('Žiadny nový typ jedla. Ak sa brucho zdvíha alebo cítiš plynatosť, uber vlákninu a veľké objemy jedla.');
+    it.push('Žiadny tréning, len pózovanie a prochádzka.');
+  } else if (d === 1) {
+    it.push(`Sacharidy: ${per(6, 8)} vo viacerých menších jedlách, ľahko stráviteľné. Posledné veľké jedlo 3 až 4 hodiny pred spaním.`);
+    it.push(`Voda: ${lit(30, 40)} cez deň, pi po dúškoch. Neklesaj pod ${floor(20)} a vodu nikdy úplne nevynechaj.`);
+    it.push('Sodík: neškrtaj. Nízky sodík s nízkou vodou naraz je presne kombinácia, ktorá končí kŕčmi.');
+    it.push('Žiadne diuretiká, laxatíva ani saunu. Tieto kroky appka neponuka, pretože ide o priamy dôvod záchranných výjazdov z podí.');
+    it.push('Spánok 7 až 9 hodín. Pripraviť jedlo, vodu a elektrolyty na ráno.');
+  } else {
+    it.push('Ráno: malé ľahko stráviteľné jedlo so sacharidmi (ryža, banán, ryžový koláč s medom). Nič nové.');
+    it.push(`Voda: pi po dúškoch. Nechoď pod ${floor(20)} za deň. Pri silnom smäde pi, nikdy sa netráp.`);
+    it.push('Pred vstupom na pódium malé sacharidy (napríklad ryžový koláč s medom alebo hrozienka) a krátky ľahký pump s gumami. Cieľ je plné svaly, nie nafúknúte brucho.');
+    it.push('Po vystúpení pi, jedz a doplň elektrolyty. Nenechaj sa pozvať na veľkú večera hneď. Prvé hodiny jedz po menších častiach.');
+  }
+  it.push('Zastav a vyhľadaj lekára pri: silných kŕčoch, závrate, búšení srdca, bolesti hlavy s nevoľnosťou, zmätenosti alebo omdlievaní. Pri bolesti hlavy a nevoľnosti po veľa vode podozrievaj nízky sodík.');
+  return out;
 }
