@@ -17,6 +17,13 @@ if (orig) {
   };
 }
 
+function svgOf(m, px) {
+  const pad = 2, n = m.length, t = n + pad * 2;
+  let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (m[r][c]) d += `M${c + pad} ${r + pad}h1v1h-1z`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${t} ${t}" width="${px}" height="${px}" shape-rendering="crispEdges" role="img" aria-label="QR kód pozvánky"><rect width="${t}" height="${t}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
+
 function addQr() {
   const copy = document.querySelector('#frCopy');
   if (!copy || document.querySelector('#frQr')) return;
@@ -32,8 +39,8 @@ function addQr() {
   btn.onclick = async () => {
     if (!box.hidden) { box.hidden = true; return; }
     try {
-      const { qrSvg } = await import('./qr.js');
-      box.innerHTML = qrSvg(u, { px: 200 }) + '<small class="muted" style="display:block;margin-top:6px">Kamarát ho naskenuje fotoaparátom a pridá sa k tebe</small>';
+      const { qrMatrix } = await import('./qr.js');
+      box.innerHTML = svgOf(qrMatrix(u), 200) + '<small class="muted" style="display:block;margin-top:6px">Kamarát ho naskenuje fotoaparátom a pridá sa k tebe</small>';
       box.querySelector('svg').style.borderRadius = '12px';
       box.hidden = false;
     } catch (_) { ctx.toast('QR sa nepodarilo vytvoriť', true); }
