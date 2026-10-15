@@ -9,6 +9,7 @@ import * as rp from './report.js';
 import * as ck from './checkin.js';
 import { ctx } from './app.js';
 import { openLogEdit } from './logedit.js';
+import * as rd from './readiness.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -167,6 +168,7 @@ export async function renderToday() {
   const comeback = isToday && gap >= 3 && !actDates.includes(calc.today());
   const backCard = comeback ? `<section class="back-card"><span class="back-i">🌬️</span><div><h3>Vitaj späť${p.name ? ', ' + h(p.name.split(' ')[0]) : ''}</h3><p>Pár dní pauza je v pohode. Druhý dych nie je o tom, koľkokrát vypadneš, ale koľkokrát sa vrátiš. Začni jedným jedlom.</p><a class="btn sm primary" href="#/jedlo?ai=1">Zapísať jedlo</a></div></section>` : '';
   const repCard = isToday ? rp.reportCardHtml() : '';
+  const rdCard = isToday && !isFuture ? rd.readinessCardHtml({ ci: checkin, wlogs, date: st.date, p, dayName: nd?.name || '', trainedToday }) : '';
   // prvé dni bez jediného jedla: jasný prvý krok namiesto prázdnej obrazovky
   const firstRun = isToday && day <= 3 && !foods.length && !Object.entries(byDay).some(([d, x]) => d <= calc.today() && x?.kcal > 0);
   // týždenný check-in a report dávajú zmysel až po prvom celom týždni
@@ -251,6 +253,7 @@ export async function renderToday() {
       <a class="tdh-streak ${strk ? 'on' : ''}" href="#/vaha" title="Dni v rade">🔥 ${strk}</a>
     </header>
     ${weekStrip}
+    ${rdCard}
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
     ${firstCard || backCard}
     ${firstRun ? '' : pushCard}
@@ -325,6 +328,7 @@ export async function renderToday() {
   </div>${nav('#/')}`;
 
   const root = $app();
+  rd.bindReadiness(root, { uid, date: st.date, ci: checkin, onSaved: renderToday });
   // animácie: krúžky sa nabehnú, čísla dobehnú
   requestAnimationFrame(() => requestAnimationFrame(() => root.querySelectorAll('.rg-fill').forEach(c => c.setAttribute('stroke-dashoffset', c.dataset.off))));
   if (!reduceMotion()) root.querySelectorAll('[data-count]').forEach(el => {
