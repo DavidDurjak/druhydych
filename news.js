@@ -4,6 +4,7 @@ import { sb } from './data.js';
 import { isAdmin } from './admin.js';
 import { ctx } from './app.js';
 import './recap.js';
+import './firstlog.js';
 
 const h = (...a) => ctx.h(...a);
 const CATS = [['all', 'Všetko'], ['training', 'Tréning'], ['nutrition', 'Výživa'], ['recovery', 'Regenerácia']];

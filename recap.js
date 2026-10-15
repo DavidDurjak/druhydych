@@ -184,18 +184,27 @@ function cardData(D, me) {
   return { score, verdict: verdict(score), delta: delta != null ? `${sgn(delta)} oproti minulému týždňu` : '', stats: stats.slice(0, 4), period: `${calc.fmtDate(D.from)} – ${calc.fmtDate(calc.addDays(D.from, 6))}`, name: (me?.name || '').split(' ')[0] };
 }
 
+async function inviteText(me, base) {
+  let code = me?.friend_code || '';
+  if (!code && me?.id) { try { const { data } = await db.sb.from('profiles').select('friend_code').eq('id', me.id).maybeSingle(); code = data?.friend_code || ''; if (me) me.friend_code = code; } catch (_) { /* bez kódu */ } }
+  if (!code) return base;
+  return `${base}\nPridaj sa a porovnajme sa: ${location.origin}${location.pathname}#/kamarat/${code}`;
+}
+
 async function shareCard(D, me) {
   const d = cardData(D, me);
+  const text = await inviteText(me, `Môj týždeň s Fuelwind: ${d.score}/100`);
   try { await Promise.race([document.fonts.load('800 80px Sora'), new Promise(r => setTimeout(r, 1200))]); } catch (_) { /* náhradné písmo */ }
   const cv = draw(d);
   const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
   const file = new File([blob], 'fuelwind-tyzden.png', { type: 'image/png' });
   try {
-    if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: 'Fuelwind', text: `Môj týždeň s Fuelwind: ${d.score}/100` }); return; }
+    if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: 'Fuelwind', text }); return; }
   } catch (e) { if (e?.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text); } catch (_) { /* bez schránky */ }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fuelwind-tyzden.png';
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  ctx.toast('Kartička sa uložila do stiahnutých súborov');
+  ctx.toast('Kartička sa uložila, text s pozvánkou je v schránke');
 }
 
 let opened = false;
