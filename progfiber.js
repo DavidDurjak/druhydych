@@ -3,6 +3,7 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import './badges.js';
+import './speed.js';
 
 const root = document.getElementById('app');
 let busy = false;
