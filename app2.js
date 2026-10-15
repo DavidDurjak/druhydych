@@ -185,7 +185,7 @@ function peakBlock(plan, left) {
   const today = peakProtocol(left, kg), next = left > 0 ? peakProtocol(left - 1, kg) : null;
   const box = x => `<p class="small" style="margin:10px 0 4px"><b>${h(x.title)}</b></p><ul class="small" style="margin:0 0 0 18px;padding:0;line-height:1.5">${x.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>`;
   return `<div class="px-caut" style="margin-top:10px"><b>Profi peak week</b><p class="small" style="margin:4px 0 0">Dnes a zajtra podľa dátumu súťaže. Telesná hmotnosť pre výpočet: ${kg ? h(String(kg)) + ' kg' : 'nezadaná (uvedené v g a ml na kg)'}.</p>${box(today)}${next ? box(next) : ''}
-    <p class="small" style="margin:10px 0 0;opacity:.85">Plán je nad rámec bežných odporúčaní a robíš ho na vlastné riziko. Diuretiká, laxatíva, lieky ani saunové vysúšanie appka neponuka.</p>
+    <p class="small" style="margin:10px 0 0;opacity:.85">Plán je nad rámec bežných odporúčaní a robíš ho na vlastné riziko. Diuretiká, laxatíva, lieky ani saunové vysúšanie v appke nenájdeš.</p>
     <button class="btn sm ghost" id="peakLock" style="margin-top:8px">Skryť profi plán</button></div>`;
 }
 async function savePeakAck(plan, on) {
