@@ -17,6 +17,10 @@ if (orig) {
   };
 }
 
+const st = document.createElement('style');
+st.textContent = '.fr-btns{flex-wrap:wrap}#frQr{flex:1 1 100%!important}';
+document.head.appendChild(st);
+
 function svgOf(m, px) {
   const pad = 2, n = m.length, t = n + pad * 2;
   let d = '';

@@ -8,6 +8,7 @@ import './boost.js';
 import './workoutcard.js';
 import './workoutauto.js';
 import './invite.js';
+import './navblend.js';
 
 const root = document.getElementById('app');
 let busy = false;
