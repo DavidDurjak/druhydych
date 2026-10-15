@@ -58,7 +58,7 @@ export function readinessOf(ci, wlogs, date) {
   if (d1 && d2) why.push('tréning dva dni v rade');
   else if (d1) why.push('včera si trénoval');
   if (!why.length) why.push(level === 'g' ? 'spánok, energia aj svaly v poriadku' : 'všetko je na hrane');
-  return { score, level, why, d1, d2 };
+  return { score, level, why, d1, d2, sore: ci.soreness };
 }
 
 export function adviceOf(r, { p = {}, dayName = '', trainedToday = false } = {}) {
@@ -77,7 +77,7 @@ export function adviceOf(r, { p = {}, dayName = '', trainedToday = false } = {})
   else if (r.level === 'y') food = `Drž kalórie na cieli${kcal ? ` (${kcal} kcal)` : ''}, väčšinu sacharidov daj okolo tréningu a dopraj si ${protTxt}.`;
   else food = `Nejedz dnes menej, než je tvoj cieľ${kcal ? ` (${kcal} kcal)` : ''}. Bielkoviny ${prot ? prot + ' g' : 'podľa cieľa'} sú základ regenerácie.`;
   const sleepTip = r.why.includes('málo spánku') ? 'Dnes večer choď spať o hodinu skôr. Viac to pomôže než akýkoľvek doplnok.' : '';
-  const safe = r.level === 'g' ? '' : 'Ostrá bolesť kĺbu, tlak na hrudi alebo závrat nie je bežná únava. Netrénuj a rieš to s lekárom.';
+  const safe = r.level === 'r' || r.sore >= 4 ? 'Ostrá bolesť kĺbu, tlak na hrudi alebo závrat nie je bežná únava. Netrénuj a rieš to s lekárom.' : '';
   return { head, sub, train, food, sleepTip, safe };
 }
 
