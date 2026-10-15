@@ -98,7 +98,7 @@ function figure(c, ox, oy, sc, side, load, sticker) {
   c.restore();
 }
 
-// štýly: 'foto' (tvoja fotka), 'dark' (tmavé pozadie), 'clear' (priehQadné PNG na nalepenie do story)
+// štýly: 'foto' (tvoja fotka), 'dark' (tmavé pozadie), 'clear' (priehliadne PNG na nalepenie do story)
 export function draw(d, mode = 'dark', photo = null) {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const c = cv.getContext('2d');
@@ -196,7 +196,7 @@ async function open() {
   let mode = 'dark', photo = null, cv = draw(d, mode, photo);
   const bg = ctx.sheet(`<div class="row between"><h3>Karta tréningu</h3><button class="del" data-x aria-label="Zavrieť">×</button></div>
     <div class="wc-pv"><img alt="Náhľad karty tréningu"></div>
-    <div class="wc-seg"><button data-m="foto">Moja fotka</button><button data-m="dark" class="on">Tmavá</button><button data-m="clear">Prieh'ľadňá</button></div>
+    <div class="wc-seg"><button data-m="foto">Moja fotka</button><button data-m="dark" class="on">Tmavá</button><button data-m="clear">Priehľadná</button></div>
     <p class="muted small wc-hint"></p>
     <input type="file" accept="image/*" id="wcFile" hidden>
     <div class="row mt" style="gap:8px"><button class="btn" id="wcSave" style="flex:1">Uložiť</button><button class="btn primary" id="wcShare" style="flex:1">${navigator.canShare ? 'Zdieľať na story' : 'Stiahnuť'}</button></div>`);
