@@ -67,22 +67,23 @@ document.addEventListener('pointermove', e => {
   const { nav } = drag;
   if (!drag.on) {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) <= 14) return;
-    drag.on = true; nav.classList.add('drag');
+    drag.on = true; nav.classList.add('drag'); drag.orig = items(nav).findIndex(a => a.classList.contains('on'));
     try { nav.setPointerCapture(e.pointerId); } catch (_) { }
   }
   const g = geo(nav), lens = nav.querySelector('.nav-lens');
   const x = Math.max(g.r.left + g.left0 + g.w / 2, Math.min(g.r.right - g.left0 - g.w / 2, e.clientX));
   lens.style.transform = `translateX(${x - g.r.left - g.cl - g.w / 2}px) scale(1.1)`;
   const i = idxAt(nav, e.clientX);
-  if (i !== drag.idx) { drag.idx = i; items(nav).forEach((a, k) => a.classList.toggle('hot', k === i)); try { navigator.vibrate?.(6); } catch (_) { } }
+  if (i !== drag.idx) { drag.idx = i; items(nav).forEach((a, k) => { a.classList.toggle('hot', k === i); a.classList.toggle('on', k === i); }); try { navigator.vibrate?.(6); } catch (_) { } }
 }, { passive: true });
 const finish = (e, cancel) => {
   if (!drag || e.pointerId !== drag.id) return;
-  const { nav, on, idx } = drag; drag = null;
+  const { nav, on, idx, orig } = drag; drag = null;
   if (!on) return;
   dragEnd = Date.now(); nav.classList.remove('drag');
   items(nav).forEach(a => a.classList.remove('hot'));
-  const as = items(nav), cur = Math.max(0, as.findIndex(a => a.classList.contains('on')));
+  const as = items(nav), cur = Math.max(0, orig ?? 0);
+  if (cancel || idx == null) as.forEach((x, k) => x.classList.toggle('on', k === cur));
   const lens = nav.querySelector('.nav-lens'); if (lens) lens.style.transform = '';
   if (cancel || idx == null) { place(nav, cur, true); return; }
   place(nav, idx, true); lastIdx = idx;
