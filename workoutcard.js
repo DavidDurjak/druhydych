@@ -76,24 +76,43 @@ function path(c, list, ox, oy, sc) {
   list.forEach(({ e: [x, y, rx, ry, rot] }) => { c.beginPath(); c.ellipse(ox + x * sc, oy + y * sc, rx * sc, ry * sc, rot, 0, Math.PI * 2); c.fill(); });
 }
 const TORSO = [[62, 68], [138, 68], [135, 120], [125, 150], [119, 192], [81, 192], [75, 150], [65, 120]];
-function silhouette(c, ox, oy, sc, alpha) {
+function silCanvas(ox, oy, sc) {
   const t = document.createElement('canvas'); t.width = W; t.height = H;
   const x = t.getContext('2d'); x.fillStyle = x.strokeStyle = '#fff'; x.lineJoin = 'round'; x.lineWidth = 12 * sc;
   x.beginPath(); TORSO.forEach(([a, b], i) => i ? x.lineTo(ox + a * sc, oy + b * sc) : x.moveTo(ox + a * sc, oy + b * sc)); x.closePath(); x.fill(); x.stroke();
   path(x, FIG.sil.filter(o => o.e[3] !== 50), ox, oy, sc);
-  c.save(); c.globalAlpha = alpha; c.drawImage(t, 0, 0); c.restore();
+  return t;
 }
-function figure(c, ox, oy, sc, side, load, sticker) {
+// tenký obrys postavy (ako biela trasa na Strave): obrys = silueta bez svojej zmenšenej kópie
+function outline(c, ox, oy, sc, r, alpha) {
+  const t = silCanvas(ox, oy, sc), e = document.createElement('canvas'); e.width = W; e.height = H;
+  const x = e.getContext('2d'); x.drawImage(t, 0, 0);
+  x.globalCompositeOperation = 'destination-in';
+  for (let i = 0; i < 12; i++) { const an = i / 12 * Math.PI * 2; x.drawImage(t, Math.cos(an) * r, Math.sin(an) * r); }
+  const o = document.createElement('canvas'); o.width = W; o.height = H;
+  const y = o.getContext('2d'); y.drawImage(t, 0, 0); y.globalCompositeOperation = 'destination-out'; y.drawImage(e, 0, 0);
+  c.save(); c.globalAlpha = alpha; c.drawImage(o, 0, 0); c.restore();
+}
+function figure(c, ox, oy, sc, side, load, style) {
   c.save();
-  silhouette(c, ox, oy, sc, sticker ? .26 : .15);
   const parts = FIG[side];
-  for (const k in parts) {
-    const v = load[k] || 0;
-    if (!v) { c.fillStyle = 'rgba(255,255,255,.07)'; path(c, parts[k], ox, oy, sc); continue; }
-    const t = .5 + .5 * v;
-    c.shadowColor = `rgba(255,120,30,${.9 * v})`; c.shadowBlur = 44 * v + 10;
-    c.fillStyle = v > .7 ? `rgba(255,196,90,${t})` : `rgba(255,118,38,${t})`;
-    path(c, parts[k], ox, oy, sc); c.shadowBlur = 0;
+  if (style === 'clean') {
+    outline(c, ox, oy, sc, 3.2, .95);
+    for (const k in parts) {
+      const v = load[k] || 0; if (!v) continue;
+      c.shadowColor = `rgba(255,255,255,${.7 * v})`; c.shadowBlur = 26 * v; c.fillStyle = `rgba(255,255,255,${.32 + .55 * v})`;
+      path(c, parts[k], ox, oy, sc); c.shadowBlur = 0;
+    }
+  } else {
+    const t = silCanvas(ox, oy, sc); c.globalAlpha = .15; c.drawImage(t, 0, 0); c.globalAlpha = 1;
+    for (const k in parts) {
+      const v = load[k] || 0;
+      if (!v) { c.fillStyle = 'rgba(255,255,255,.07)'; path(c, parts[k], ox, oy, sc); continue; }
+      const a = .5 + .5 * v;
+      c.shadowColor = `rgba(255,120,30,${.9 * v})`; c.shadowBlur = 44 * v + 10;
+      c.fillStyle = v > .7 ? `rgba(255,196,90,${a})` : `rgba(255,118,38,${a})`;
+      path(c, parts[k], ox, oy, sc); c.shadowBlur = 0;
+    }
   }
   c.restore();
 }
@@ -109,7 +128,7 @@ export function draw(d, mode = 'dark', photo = null) {
       const iw = photo.width, ih = photo.height, k = Math.max(W / iw, H / ih), w = iw * k, h = ih * k;
       c.drawImage(photo, (W - w) / 2, (H - h) / 2, w, h);
       const sc = c.createLinearGradient(0, 0, 0, H);
-      sc.addColorStop(0, 'rgba(0,0,0,.50)'); sc.addColorStop(.3, 'rgba(0,0,0,.22)'); sc.addColorStop(.62, 'rgba(0,0,0,.30)'); sc.addColorStop(1, 'rgba(0,0,0,.72)');
+      sc.addColorStop(0, 'rgba(0,0,0,.30)'); sc.addColorStop(.35, 'rgba(0,0,0,.06)'); sc.addColorStop(.65, 'rgba(0,0,0,.08)'); sc.addColorStop(1, 'rgba(0,0,0,.50)');
       c.fillStyle = sc; c.fillRect(0, 0, W, H);
     } else {
       const g = c.createRadialGradient(W / 2, 1180, 60, W / 2, 1180, 900);
@@ -117,34 +136,37 @@ export function draw(d, mode = 'dark', photo = null) {
       c.fillStyle = g; c.fillRect(0, 0, W, H);
     }
   }
-  const shadow = on => { c.shadowColor = on ? 'rgba(0,0,0,.55)' : 'transparent'; c.shadowBlur = on ? 22 : 0; c.shadowOffsetY = on ? 3 : 0; };
+  const shadow = on => { c.shadowColor = on ? (mode === 'dark' ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.6)') : 'transparent'; c.shadowBlur = on ? 26 : 0; c.shadowOffsetY = on ? 3 : 0; };
   c.textAlign = 'center'; shadow(true);
   // štatistiky ako na Strave: malý popis, veľké číslo
   const big = d.s.volume > 0, t0 = d.s.top[0];
-  c.font = FONT(600, 40);
+  c.font = FONT(600, 36);
   const stats = [
     [big ? 'Objem' : 'Série', big ? `${nf(d.s.volume)} kg` : String(d.s.sets)],
     [big ? 'Série' : 'Cviky', big ? String(d.s.sets) : String(d.s.exCount)],
   ];
   if (t0) stats.push([fit(c, exName(t0.id), 760), t0.best ? `${kgs(t0.best.kg)} kg × ${t0.best.reps}` : `${t0.bw} op.`]);
-  let y = 300;
+  let y = 330;
   stats.forEach(([l, v]) => {
-    c.fillStyle = 'rgba(255,255,255,.92)'; c.font = FONT(600, 40); c.fillText(l, W / 2, y);
-    c.fillStyle = '#fff'; c.font = FONT(800, 104); let fs = 104; while (c.measureText(v).width > W - 160 && fs > 60) { fs -= 6; c.font = FONT(800, fs); }
-    c.fillText(v, W / 2, y + 104); y += 200;
+    c.fillStyle = 'rgba(255,255,255,.92)'; c.font = FONT(600, 36); c.fillText(l, W / 2, y);
+    c.fillStyle = '#fff'; c.font = FONT(800, 92); let fs = 92; while (c.measureText(v).width > W - 160 && fs > 56) { fs -= 6; c.font = FONT(800, fs); }
+    c.fillText(v, W / 2, y + 94); y += 178;
   });
   // rekord
   const pr = d.s.prs[0];
   if (pr || d.s.volPr) {
     shadow(false); c.font = FONT(800, 34);
     const t = pr ? `Nový rekord · ${fit(c, exName(pr.id), 600)}` : 'Najväčší objem v histórii'; const bw = Math.min(W - 80, c.measureText(t).width + 72), bx = W / 2 - bw / 2;
-    rr(c, bx, y - 20, bw, 78, 39); c.fillStyle = 'rgba(255,200,87,.92)'; c.fill();
-    c.fillStyle = '#2a1a00'; c.fillText(t, W / 2, y + 30); shadow(true);
+    rr(c, bx, y - 14, bw, 72, 36);
+    if (mode === 'dark') { c.fillStyle = 'rgba(255,200,87,.92)'; c.fill(); c.fillStyle = '#2a1a00'; }
+    else { c.fillStyle = 'rgba(255,255,255,.16)'; c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2.5; c.stroke(); c.fillStyle = '#fff'; }
+    c.fillText(t, W / 2, y + 33); shadow(true);
   }
   // postava
-  const sc = 1.5, fw = 200 * sc, gap = 30, ox = (W - (fw * 2 + gap)) / 2, oy = 1020;
+  const sc = 1.38, fw = 200 * sc, gap = 40, ox = (W - (fw * 2 + gap)) / 2, oy = 1010;
   shadow(false);
-  figure(c, ox, oy, sc, 'front', d.load, sticker); figure(c, ox + fw + gap, oy, sc, 'back', d.load, sticker);
+  const fst = mode === 'dark' ? 'fire' : 'clean';
+  figure(c, ox, oy, sc, 'front', d.load, fst); figure(c, ox + fw + gap, oy, sc, 'back', d.load, fst);
   // pätička
   shadow(true);
   c.save(); c.translate(W / 2 - 168, 1778); c.scale(2.3, 2.3);
