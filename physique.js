@@ -16,7 +16,7 @@ const POSES = [
   { k: 'side', t: 'Zboku', sub: 'Odporúčaná', why: 'Ukáže hrúbku hrudníka, triceps, zadok a držanie tela.',
     steps: ['Postav sa presne bokom, ľavým bokom k telefónu.', 'Ruky voľne pri tele alebo triceps napnutý tesne za telom. Hruď von, lopatky stiahnuté.', 'Hlava rovno, pozeraj pred seba. Celý od hlavy po päty.'] },
   { k: 'back', t: 'Zozadu uvoľnene', sub: 'Odporúčaná', why: 'Ukáže šírku chrbta, zadné ramená, zadok, zadné stehná a lýtka.',
-    steps: ['Chrbtom k telefónu, päty na šírku bokov, ruky voľne pri tele.', 'Ramená nezdvíhaj k ušám. Lakte mierne odtiahni od tela, nech je vidieť šírka chrbta.', 'Celý od hlavy po päty, lýtka musia byť v zábere.'] },
+    steps: ['Chrbtom k telefónu, päty na šírku bokov, ruky voľne pri tele.', 'Ramená nechaj dole, nezdvíhaj ich k hlave. Lakte mierne odtiahni od tela, nech je vidieť šírka chrbta.', 'Celý od hlavy po päty, lýtka musia byť v zábere.'] },
   { k: 'backbi', t: 'Zozadu dvojitý biceps', sub: 'Odporúčaná', why: 'Ukáže hrúbku chrbta, trapézy a zadné ramená napnuté.',
     steps: ['Chrbtom k telefónu, lakte do výšky ramien.', 'Stiahni lopatky a roztiahni chrbát do tvaru V. Napni zadok, zadné stehná a lýtka.', 'V zábere aspoň od hlavy po stehná, lepšie celý.'] },
   { k: 'abs', t: 'Brucho a nohy', sub: 'Odporúčaná', why: 'Ukáže brucho a predné stehná, kde je vidieť oddelenie svalov.',
@@ -73,7 +73,7 @@ export function qualityOf(w, hgt, m) {
   if (Math.min(w, hgt) < 700) hard.push('Fotka má nízke rozlíšenie. Použi hlavný fotoaparát, nie priblíženie ani snímku obrazovky.');
   if (hgt / w < 1.2) hard.push('Fotku urob na výšku, aby sa zmestila celá postava od hlavy po päty.');
   if (m.mean < 55) hard.push('Fotka je príliš tmavá. Postav sa čelom k oknu alebo zapni svetlo pred sebou.');
-  if (m.mean > 215) hard.push('Fotka je prežiárená. Vyhni sa priamemu slnku a blesku.');
+  if (m.mean > 215) hard.push('Fotka je presvetlená. Vyhni sa priamemu slnku a blesku.');
   if (!hard.length) {
     if (m.back && m.back.edge > 130 && m.back.center < m.back.edge * 0.55) soft.push('Silné protisvetlo, telo je v tieni. Otoč sa čelom k oknu alebo zapni svetlo pred sebou.');
     if (m.std < 30) soft.push('Fotka je plochá a bez kontrastu. Svetlo zboku zvýrazní svaly.');
@@ -264,7 +264,7 @@ export async function openPhysique({ profile, onApply }) {
     const badPhotos = (r.photos || []).filter(p => p.ok === false && p.issue).map(p => `<li><b>${h(POSE[p.pose]?.t || p.pose)}:</b> ${h(p.issue)}</li>`).join('');
     const retake = (r.retake || []).map(t => `<li>${h(t)}</li>`).join('');
     body.innerHTML = head('Tvoja analýza') + `<p class="muted small">${fmtDate(rec.created_at)}${cmp ? ' · porovnanie s ' + fmtDate(prev.created_at) : ''}</p>
-      ${r.level ? `<span class="px-lvl">Úrovenň rozvoja: <b>${h(r.level)}</b></span>` : ''}
+      ${r.level ? `<span class="px-lvl">Stupňeo rozvoja: <b>${h(r.level)}</b></span>` : ''}
       ${r.summary ? `<p class="px-sum">${h(r.summary)}</p>` : ''}
       ${prio.length ? `<p class="px-h">Priorita na zlepšenie</p><div class="px-prio">${prio.map(t => `<span>${h(t)}</span>`).join('')}</div>${pnotes ? `<ul class="px-pn">${pnotes}</ul>` : ''}` : ''}
       <p class="px-h">Hodnotenie svalov</p>${rows}
@@ -276,7 +276,7 @@ export async function openPhysique({ profile, onApply }) {
       ${(r.advice || []).length ? `<p class="px-h">Čo s tým v tréningu</p><ul class="px-list">${r.advice.map(t => `<li>${h(t)}</li>`).join('')}</ul>` : ''}
       ${badPhotos || retake ? `<p class="px-h">Ako fotiť nabudúce</p><ul class="px-list">${badPhotos}${retake}</ul>` : ''}
       ${r.caution ? `<div class="px-caut">${h(r.caution)}</div>` : ''}
-      <p class="px-note">Spoľahlivosť odhadu: ${conf}. Je to odhad AI z fotiek, nie lekárske ani súťažné posúdenie. Svetlo, pumpa a napnutie výsledok ovplyvňujú. Fotka nikdy nenahradí kouča, ktorý ťa vidí naживо.</p>
+      <p class="px-note">Spoľahlivosť odhadu: ${conf}. Je to odhad AI z fotiek, nie lekárske ani súťažné posúdenie. Svetlo, pumpa a napnutie výsledok ovplyvňujú. Fotka nikdy nenahradí kouča, ktorý ťa vidí osobne.</p>
       ${pkeys.length ? '<button class="btn primary mt" id="pxApply">Nastaviť plán podľa analýzy</button>' : ''}
       <button class="btn mt" id="pxNew">Nová analýza</button>
       <button class="btn ghost mt" id="pxDel">Zmazať túto analýzu</button>`;
@@ -382,7 +382,7 @@ export async function openPhysique({ profile, onApply }) {
     if (!list.length) return;
     const images = list.map(p => ({ pose: p.k, data: picked[p.k].b64 }));
     const steps = ['Kontrolujem kvalitu fotiek…', 'Hodnotím ramená a hrudník…', 'Hodnotím chrbát a ruky…', 'Hodnotím nohy a brucho…', 'Skladám odporúčania…'];
-    body.innerHTML = `<div class="px-load"><div class="strip">${list.map(p => `<div class="ph"><img src="${picked[p.k].url}" alt=""></div>`).join('')}</div><b id="pxStep">${steps[0]}</b><p class="muted small mt">Trvá to okolo minútu. Nezatváraj appku.</p></div>`;
+    body.innerHTML = `<div class="px-load"><div class="strip">${list.map(p => `<div class="ph"><img src="${picked[p.k].url}" alt=""></div>`).join('')}</div><b id="pxStep">${steps[0]}</b><p class="muted small mt">Trvá to približne minútu. Nezatváraj appku.</p></div>`;
     let si = 0; const iv = setInterval(() => { si = Math.min(si + 1, steps.length - 1); const el = body.querySelector('#pxStep'); if (el) el.textContent = steps[si]; }, 9000);
     try {
       const out = await callAi(images);
