@@ -10,6 +10,7 @@ import * as ck from './checkin.js';
 import { ctx } from './app.js';
 import { openLogEdit } from './logedit.js';
 import * as rd from './readiness.js';
+import { waterHtml, bindWater } from './water.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -135,7 +136,8 @@ export async function renderToday() {
   const strk = calc.streak(actDates);
   const unread = msgs.filter(m => m.to_user === uid && !m.read_at);
   const lastMsg = msgs.find(m => m.to_user === uid);
-  const water = checkin?.water || 0, waterGoal = p.water_goal || 8;
+  const waterGoal = p.water_goal || 8, goalMl = waterGoal * 250;
+  const waterMl = checkin?.water_ml ?? (checkin?.water || 0) * 250, water = waterMl / 250;
   const weekLogs = wlogs.filter(w => w.done && w.date >= calc.weekStart());
   const trainedToday = wlogs.some(w => w.done && w.date === st.date);
   const nd = plan ? plan.days[nextDay(plan, wlogs) - 1] : null;
@@ -243,8 +245,6 @@ export async function renderToday() {
       <div class="an-lg">${mealKc.map(x => `<span><u style="background:${x.m.color}"></u>${x.m.label} ${r0(x.kc)}</span>`).join('')}</div>
     </div></details>` : '';
 
-  const waterSegs = Array.from({ length: waterGoal }, (_, i) => `<i class="${i < water ? 'on' : ''}"></i>`).join('');
-
   $app().innerHTML = `<div class="screen td">
     <header class="tdh">
       <div class="tdh-l"><h1 class="tdh-g">${isToday ? `${greeting()}, ${h(p.name?.split(' ')[0] || '')}` : dayTitle(st.date)}</h1>
@@ -301,11 +301,7 @@ export async function renderToday() {
 
     ${analysis}
 
-    <section class="wt">
-      <div class="wt-h"><div><h3>Voda</h3><p><b>${liters(water)} l</b> z ${liters(waterGoal)} l</p></div>
-        <div class="wt-b"><button class="wt-btn minus" data-wd="-1" aria-label="Uber pohár" ${water ? '' : 'disabled'}>−</button><button class="wt-btn" data-wd="1">+ 250 ml</button></div></div>
-      <div class="wt-segs">${waterSegs}</div>
-    </section>
+    ${isFuture ? '' : waterHtml({ ml: waterMl, goalMl })}
 
     ${actCard}
 
@@ -357,12 +353,7 @@ export async function renderToday() {
   root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
   root.querySelectorAll('[data-edit]').forEach(el => el.onclick = () => { const f = foods.find(x => x.id === Number(el.dataset.edit)); if (f) openLogEdit(f, renderToday); });
   root.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
-  root.querySelectorAll('[data-wd]').forEach(b => b.onclick = async () => {
-    const val = Math.max(0, Math.min(20, water + Number(b.dataset.wd)));
-    await db.upsertCheckin({ user_id: uid, date: st.date, water: val, sleep_h: checkin?.sleep_h ?? null, steps: checkin?.steps ?? null, mood: checkin?.mood ?? null, note: checkin?.note ?? null });
-    if (val === waterGoal && Number(b.dataset.wd) > 0) toast('Denný cieľ vody splnený 💧');
-    renderToday();
-  });
+  if (!isFuture) bindWater(root, { uid, date: st.date, goalMl, ml: waterMl, isToday });
   root.querySelector('#adaptYes')?.addEventListener('click', async () => { await v2.applyAdaptive(p, adaptive); toast(`Nový cieľ: ${adaptive.newKcal} kcal`); renderToday(); });
   root.querySelector('#adaptNo')?.addEventListener('click', async () => { await db.applyTarget(uid, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: p.target_kcal, reason: 'Ponechané používateľom', avg_intake: adaptive.avg, trend_change: adaptive.ch }, {}); renderToday(); });
 }
