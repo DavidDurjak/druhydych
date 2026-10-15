@@ -264,7 +264,7 @@ export async function openPhysique({ profile, onApply }) {
     const badPhotos = (r.photos || []).filter(p => p.ok === false && p.issue).map(p => `<li><b>${h(POSE[p.pose]?.t || p.pose)}:</b> ${h(p.issue)}</li>`).join('');
     const retake = (r.retake || []).map(t => `<li>${h(t)}</li>`).join('');
     body.innerHTML = head('Tvoja analýza') + `<p class="muted small">${fmtDate(rec.created_at)}${cmp ? ' · porovnanie s ' + fmtDate(prev.created_at) : ''}</p>
-      ${r.level ? `<span class="px-lvl">Stupňeo rozvoja: <b>${h(r.level)}</b></span>` : ''}
+      ${r.level ? `<span class="px-lvl">Rozvoj svalov: <b>${h(r.level)}</b></span>` : ''}
       ${r.summary ? `<p class="px-sum">${h(r.summary)}</p>` : ''}
       ${prio.length ? `<p class="px-h">Priorita na zlepšenie</p><div class="px-prio">${prio.map(t => `<span>${h(t)}</span>`).join('')}</div>${pnotes ? `<ul class="px-pn">${pnotes}</ul>` : ''}` : ''}
       <p class="px-h">Hodnotenie svalov</p>${rows}
