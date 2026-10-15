@@ -8,19 +8,21 @@ const CSS = `
 .td .wk-r{width:38px;height:38px}
 .td .wk-r svg{width:100%;height:100%;z-index:1}
 .td .wk-r b{z-index:2}
-.wk-d.hit .wk-r::before{content:'';position:absolute;inset:3px;border-radius:50%;z-index:1;background:radial-gradient(circle at 35% 28%,#c4ffdd,#4fe39a 72%);box-shadow:0 0 14px rgba(124,255,178,.4)}
+.wk-d.hit .wk-r::before{content:'';position:absolute;inset:3px;border-radius:50%;z-index:1;background:radial-gradient(circle at 35% 25%,#e4fff0,#7dffb8 55%,#3fe08f);box-shadow:0 0 18px rgba(124,255,178,.55)}
+.wk-d.hit,.wk-d.fut.hit{opacity:1}
+.wk-d.hit .rg-fill{stroke:#b9ffd9}
 .wk-d.hit .wk-r b{color:var(--accent-ink);font-weight:800}
 .wk-d.over .wk-r b{color:#ffb35c}
 .wk-d.over .rg-fill{stroke:#ff9a4c}
 .wk-d.now:not(.hit) .wk-r{filter:drop-shadow(0 0 6px rgba(124,255,178,.35))}
-.wk-d.chain .wk-r::after{content:'';position:absolute;z-index:0;left:50%;top:calc(50% - 1.5px);width:var(--cw,48px);height:3px;border-radius:2px;background:var(--accent);opacity:.5}
+.wk-d.chain .wk-r::after{content:'';position:absolute;z-index:0;left:50%;top:calc(50% - 1.5px);width:var(--cw,48px);height:3px;border-radius:2px;background:linear-gradient(90deg,#b9ffd9,#7dffb8);opacity:.9;box-shadow:0 0 8px rgba(124,255,178,.5)}
 .wk-d .fg-t{display:none;position:absolute;z-index:3;top:-4px;right:-4px;width:15px;height:15px;border-radius:50%;place-items:center;background:var(--card-2);color:var(--accent);box-shadow:0 0 0 1.5px var(--accent)}
 .wk-d.tr .fg-t{display:grid}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
 const root = document.getElementById('app');
-const cache = {};   // dátum -> { pct, tr }: pri ďalejšom vykreslení sa stav ukáže hneď a potom sa upresní
+const cache = {};   // dátum -> { pct, tr }: pri ďalšom vykreslení sa stav ukáže hneď a potom sa upresní
 
 function paint(wk) {
   const bs = [...wk.querySelectorAll('.wk-d')];
@@ -54,5 +56,16 @@ function build(wk) {
   fill(wk);
 }
 
-function run() { const wk = document.querySelector('.td .wk'); if (wk) build(wk); }
+// nadpis je vždy pozdrav podľa denného času a meno, nech je vybraný ktorýkoľvek deň (dátum je pod ním)
+function greet() {
+  const hr = new Date().getHours();
+  return hr < 5 ? 'Dobrú noc' : hr < 10 ? 'Dobré ráno' : hr < 13 ? 'Dobrý deň' : hr < 18 ? 'Dobré popoludnie' : 'Dobrý večer';
+}
+function head() {
+  const g = document.querySelector('.td .tdh-g'), n = ctx.state?.profile?.name?.split(' ')[0];
+  if (!g || g.dataset.fg || !n) return;
+  g.dataset.fg = '1'; g.textContent = `${greet()}, ${n}`;
+}
+
+function run() { const wk = document.querySelector('.td .wk'); if (wk) build(wk); head(); }
 if (root) { new MutationObserver(run).observe(root, { childList: true, subtree: true }); run(); }
