@@ -40,6 +40,7 @@ const CSS = `
 .ft.ld{background:linear-gradient(90deg,var(--bg-2),var(--card-2),var(--bg-2));background-size:200% 100%;animation:ftS 1.2s linear infinite}
 @keyframes ftS{from{background-position:200% 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.ft.ld{animation:none}}
+.ft:not(.ph) img{opacity:0}
 .ft img{width:100%;height:100%;object-fit:contain;padding:3px;box-sizing:border-box;display:block}
 .res.hasft{gap:12px;justify-content:flex-start}
 .res.hasft .n{flex:1;min-width:0}
@@ -52,9 +53,9 @@ if (!document.getElementById('ft-css')) { const el = document.createElement('sty
 // jedna dlaždica s fotkou alebo ikonkou; ak sa fotka nenačíta, ostane ikonka
 export function thumb(f, cls = '') {
   const img = f?.img || hits().get(f?.name) || null;
-  // kým sa fotka hľadá, ukáže sa prázdna dlaždica; ikonka až keď je isté, že fotka neexistuje
-  const wait = !img && f?.name && !miss.has(f.name);
-  return `<span class="ft ${img ? 'ph' : wait ? 'ld' : ''} ${cls}" data-fid="${f?.id || ''}" data-name="${esc(f?.name)}">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('ph','ld');this.remove()">` : ''}<i>${foodEmoji(f?.name)}</i></span>`;
+  // kym sa fotka nacita, je to neutralna dlazdica (nie biela, nie emoji); ikonka az ked je iste, ze fotka neexistuje
+  const wait = !!img || (f?.name && !miss.has(f.name));
+  return `<span class="ft ${wait ? 'ld' : ''} ${cls}" data-fid="${f?.id || ''}" data-name="${esc(f?.name)}">${img ? `<img src="${esc(img)}" alt="" decoding="async" referrerpolicy="no-referrer" onload="var p=this.parentNode;p.classList.remove('ld');p.classList.add('ph')" onerror="this.parentNode.classList.remove('ph','ld');this.remove()">` : ''}<i>${foodEmoji(f?.name)}</i></span>`;
 }
 
 // obrázok mimo stránky sa nesmie načítavať s loading=lazy, inak sa nikdy nenatiahne
@@ -93,6 +94,8 @@ const miss = new Set();
 try { JSON.parse(localStorage.getItem(MK) || '[]').forEach(n => miss.add(n)); } catch (_) { }
 const failed = new Set();
 const saveMiss = () => { try { localStorage.setItem(MK, JSON.stringify([...miss].filter(n => !failed.has(n)).slice(-1500))); } catch (_) { } };
+const warm = u => { try { const i = new Image(); i.decoding = 'async'; i.referrerPolicy = 'no-referrer'; i.src = u; } catch (_) { } };
+try { [...hits().values()].filter(Boolean).slice(-80).forEach(warm); } catch (_) { }
 export async function imgByNames(names) {
   const m = hits();
   const todo = [...new Set(names.filter(n => n && !m.has(n) && !miss.has(n)))];
@@ -102,7 +105,7 @@ export async function imgByNames(names) {
       const chunk = todo.slice(i, i + 40);
       try {
         const { data } = await db.sb.rpc('img_for_names', { names: chunk });
-        (data || []).forEach(r => { if (r.img) m.set(r.n, r.img); else miss.add(r.n); });
+        (data || []).forEach(r => { if (r.img) { m.set(r.n, r.img); warm(r.img); } else miss.add(r.n); });
       } catch (_) { chunk.forEach(n => { miss.add(n); failed.add(n); }); }
     }
     saveHits(); saveMiss();
