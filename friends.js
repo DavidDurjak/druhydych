@@ -127,7 +127,7 @@ async function openFriends() {
         <div class="fr-add"><input class="input" id="frIn" maxlength="6" placeholder="ABC123" autocapitalize="characters" autocomplete="off"><button class="btn primary" id="frAdd">Pridať</button></div></div>
       <p class="fr-note">Kamaráti vidia len počty dní so zápisom, dní v cieli a tréningov. Nikdy nevidia tvoje kalórie, jedlá ani váhu.</p>`;
     body.querySelector('[data-x]').onclick = () => bg.remove();
-    const text = `Poď súťažiť so mnou vo Fuelwind. Môj kód: ${code}. Pridaj sa tu: ${linkFor(code)}`;
+    const text = `Pridaj sa a porovnajme sa vo Fuelwind. Každý týždeň uvidíme, kto zapisoval, trafil kalórie a trénoval viac. Odkaz: ${linkFor(code)} (kód ${code})`;
     body.querySelector('#frShare').onclick = async () => {
       try {
         if (navigator.share) await navigator.share({ title: 'Fuelwind', text });
@@ -189,7 +189,7 @@ if (typeof document !== 'undefined') {
     if (!meals || seen.has(meals) || root.querySelector('#fw-friends')) return;
     seen.add(meals);
     const b = document.createElement('button'); b.id = 'fw-friends'; b.className = 'fr-card';
-    b.innerHTML = '<span>👥</span><div><b>Kamaráti</b><small>Pozvi kamaráta a porovnávajte týždeň</small></div><i>›</i>';
+    b.innerHTML = '<span>👥</span><div><b>Kamaráti</b><small>Pridaj sa a porovnajme sa: pošli pozvánku</small></div><i>›</i>';
     b.onclick = openFriends;
     meals.after(b);
     try {
@@ -198,7 +198,7 @@ if (typeof document !== 'undefined') {
       const cm = chd?.cur?.week_start ? (() => { const ch = challengeFor(chd.cur.week_start), mine = (chd.cur.rows || []).find(r => r.me); return mine ? `${ch.title}: ${Math.min(mine[ch.key] || 0, ch.goal)}/${ch.goal}` : ''; })() : '';
       if (b.isConnected) {
         const mine = rows.find(r => r.me), pos = rows.findIndex(r => r.me) + 1;
-        const base = others ? `${pos}. miesto z ${rows.length} · ${mine?.points || 0} bodov` : 'Pozvi kamaráta a porovnávajte týždeň';
+        const base = others ? `${pos}. miesto z ${rows.length} · ${mine?.points || 0} bodov` : 'Pridaj sa a porovnajme sa: pošli pozvánku';
         b.querySelector('b').textContent = cm ? 'Výzva týždňa' : 'Kamaráti';
         b.querySelector('small').textContent = cm ? (others ? `${cm} · ${pos}. miesto z ${rows.length}` : cm) : base;
       }

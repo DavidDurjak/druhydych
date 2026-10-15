@@ -253,18 +253,8 @@ export async function renderToday() {
       <a class="tdh-streak ${strk ? 'on' : ''}" href="#/vaha" title="Dni v rade">🔥 ${strk}</a>
     </header>
     ${weekStrip}
-    ${rdCard}
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
     ${firstCard || backCard}
-    ${firstRun ? '' : pushCard}
-    ${newcomer ? '' : weekCard}
-    ${newcomer ? '' : repCard}
-    ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">Adaptívny cieľ</span></div>
-      <p class="small mt">${h(adaptive.reason)}</p>
-      <p class="muted small mt">Priemer ${adaptive.avg} kcal z ${adaptive.days} dní, trend ${adaptive.ch > 0 ? '+' : ''}${adaptive.ch} kg</p>
-      ${adaptive.adjust ? `<div class="row mt" style="gap:8px"><button class="btn sm primary" id="adaptYes">Nastaviť ${adaptive.newKcal} kcal</button><button class="btn sm ghost" id="adaptNo">Nechať ${p.target_kcal}</button></div>` : `<button class="btn sm ghost mt" id="adaptNo">OK</button>`}
-    </div>` : ''}
-
     <section class="hero-k ${over ? 'over' : ''}">
       <div class="hk-ring">
         <div class="breath"></div>
@@ -285,18 +275,30 @@ export async function renderToday() {
       </div>
       ${fiberGap ? '<p class="hk-note">Vláknina sa počíta len z jedál, ktoré ju majú v databáze.</p>' : ''}
     </section>
-    ${weekLine}
-    ${budLine}
-
-    ${tip && !firstRun ? `<aside class="tip ${tip.quote ? 'q' : ''}"><span class="tip-i">${tip.icon}</span><p>${h(tip.text)}</p></aside>` : ''}
-
     <div class="qk">
       <a class="qk-b" href="#/jedlo?q=1"><b>🔎</b><span>Hľadať</span></a>
       <a class="qk-b" href="#/jedlo?scan=1"><b>▥</b><span>Kód</span></a>
       <a class="qk-b ai" href="#/jedlo?ai=1"><b>✦</b><span>AI zápis</span></a>
       <button class="qk-b" data-dm><b>⋯</b><span>Deň</span></button>
     </div>
+    ${weekLine}
+    ${budLine}
+
+    ${tip && !firstRun ? `<aside class="tip ${tip.quote ? 'q' : ''}"><span class="tip-i">${tip.icon}</span><p>${h(tip.text)}</p></aside>` : ''}
+
     <div class="meals">${mealCards}</div>
+
+    <!-- kontext dňa: až pod zápisom -->
+    ${rdCard}
+    ${firstRun ? '' : pushCard}
+    ${newcomer ? '' : weekCard}
+    ${newcomer ? '' : repCard}
+    ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">Adaptívny cieľ</span></div>
+      <p class="small mt">${h(adaptive.reason)}</p>
+      <p class="muted small mt">Priemer ${adaptive.avg} kcal z ${adaptive.days} dní, trend ${adaptive.ch > 0 ? '+' : ''}${adaptive.ch} kg</p>
+      ${adaptive.adjust ? `<div class="row mt" style="gap:8px"><button class="btn sm primary" id="adaptYes">Nastaviť ${adaptive.newKcal} kcal</button><button class="btn sm ghost" id="adaptNo">Nechať ${p.target_kcal}</button></div>` : `<button class="btn sm ghost mt" id="adaptNo">OK</button>`}
+    </div>` : ''}
+
     ${analysis}
 
     <section class="wt">
