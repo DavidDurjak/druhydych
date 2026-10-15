@@ -2,7 +2,7 @@
 import * as db from './data.js';
 import { sb } from './data.js';
 import * as calc from './calc.js';
-import { contestPhase, generatePlan, nextDay, EXERCISES, LEVELS, EMPHASIS, MUSCLE_LABEL, MIN_DAYS, PRIORITY, SOURCES, alternatives } from './workouts.js';
+import { contestPhase, peakProtocol, PEAK_RISK, generatePlan, nextDay, EXERCISES, LEVELS, EMPHASIS, MUSCLE_LABEL, MIN_DAYS, PRIORITY, SOURCES, alternatives } from './workouts.js';
 import { ctx } from './app.js';
 import * as rp from './report.js';
 import { physiqueCardHtml, openPhysique } from './physique.js';
@@ -153,6 +153,10 @@ export async function renderTraining() {
   $app().querySelector('#replan').onclick = () => renderPlanSetup();
   $app().querySelector('#contestDate')?.addEventListener('change', e => saveContest(plan, e.target.value));
   $app().querySelector('#contestClear')?.addEventListener('click', () => saveContest(plan, ''));
+  const chks = [...$app().querySelectorAll('[data-peakchk]')], unlock = $app().querySelector('#peakUnlock');
+  chks.forEach(c => c.addEventListener('change', () => { unlock.disabled = !chks.every(x => x.checked); }));
+  unlock?.addEventListener('click', () => savePeakAck(plan, true));
+  $app().querySelector('#peakLock')?.addEventListener('click', () => savePeakAck(plan, false));
   $app().querySelector('#physOpen')?.addEventListener('click', () => openPhysique({ profile: p, onApply: hint => renderPlanSetup({ hint }) }));
   const up = $app().querySelector('#upgradePlan'); if (up) up.onclick = () => renderPlanSetup();
   $app().querySelectorAll('[data-swap]').forEach(b => b.onclick = () => openSwap(plan, day.exercises.find(x => x.id === b.dataset.swap), todayLog));
@@ -168,7 +172,29 @@ function contestCard(plan) {
   return `<div class="px-card"><div class="row between"><b>🏆 ${h(ph.title)}</b><span class="chip" style="background:#12332A;color:var(--accent)">${left > 0 ? 'o ' + left + ' ' + (left === 1 ? 'deň' : left >= 2 && left <= 4 ? 'dni' : 'dní') : left === 0 ? 'dnes' : 'po súťaži'}</span></div>
     <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${ph.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>
     <div class="row" style="gap:8px;margin-top:8px"><input class="input" type="date" id="contestDate" value="${h(date)}" aria-label="Dátum súťaže"><button class="btn sm ghost" id="contestClear">Zrušiť</button></div>
+    ${left >= 0 && left <= 7 ? peakBlock(plan, left) : ''}
     <p class="muted small" style="margin:8px 0 0">Všeobecné odporúčania z výskumu, nie lekárska rada. Pri zdravotných problémoch a pred extrémnymi krokmi sa poraď s lekárom alebo trénerom.</p></div>`;
+}
+function peakBlock(plan, left) {
+  const ack = plan.meta.params?.peakAck;
+  if (!ack) return `<div class="px-caut" style="margin-top:10px"><b>Profi peak week (na vlastné riziko)</b>
+    <p class="small" style="margin:6px 0 8px">Denný plán pre súťažiacich: sacharidové nabitie, voda a sodík. Pred odomknutím potvrď všetko nižšie.</p>
+    ${PEAK_RISK.map((t, i) => `<label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;font-size:13px;line-height:1.4"><input type="checkbox" data-peakchk="${i}" style="margin-top:3px"><span>${h(t)}</span></label>`).join('')}
+    <button class="btn sm primary" id="peakUnlock" disabled>Odomknúť profi peak week</button></div>`;
+  const kg = plan.meta.params?.weightKg || state.profile.start_weight;
+  const today = peakProtocol(left, kg), next = left > 0 ? peakProtocol(left - 1, kg) : null;
+  const box = x => `<p class="small" style="margin:10px 0 4px"><b>${h(x.title)}</b></p><ul class="small" style="margin:0 0 0 18px;padding:0;line-height:1.5">${x.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>`;
+  return `<div class="px-caut" style="margin-top:10px"><b>Profi peak week</b><p class="small" style="margin:4px 0 0">Dnes a zajtra podľa dátumu súťaže. Telesná hmotnosť pre výpočet: ${kg ? h(String(kg)) + ' kg' : 'nezadaná (uvedené v g a ml na kg)'}.</p>${box(today)}${next ? box(next) : ''}
+    <p class="small" style="margin:10px 0 0;opacity:.85">Plán je nad rámec bežných odporúčaní a robíš ho na vlastné riziko. Diuretiká, laxatíva, lieky ani saunové vysúšanie appka neponuka.</p>
+    <button class="btn sm ghost" id="peakLock" style="margin-top:8px">Skryť profi plán</button></div>`;
+}
+async function savePeakAck(plan, on) {
+  try {
+    const m = plan.meta, meta = { ...m, params: { ...m.params, peakAck: on ? calc.today() : null } };
+    const { error } = await sb.from('workout_plans').update({ meta }).eq('id', plan.id);
+    if (error) throw new Error(error.message);
+    plan.meta = meta; renderTraining();
+  } catch (err) { toast(err.message || 'Nepodarilo sa uložiť', true); }
 }
 async function saveContest(plan, date) {
   try {
@@ -290,7 +316,7 @@ async function renderPlanSetup(opts = {}) {
   let priority = Array.isArray(op.priority) ? op.priority.slice(0, 2) : [];
   const fromPhys = !!opts.hint;
   if (fromPhys) { emphasis = opts.hint.emphasis; if (level === 'elite') priority = opts.hint.priority.slice(0, 2); }
-  const preview = () => generatePlan({ contestDate: op.contestDate, block: fromPhys && level === 'elite' && priority.length ? 1 : 0, goal: p.goal, days, level, equipment, emphasis, priority, sex: p.sex, birthYear: p.birth_year, heightCm: p.height_cm, weightKg: p.start_weight });
+  const preview = () => generatePlan({ contestDate: op.contestDate, peakAck: op.peakAck, block: fromPhys && level === 'elite' && priority.length ? 1 : 0, goal: p.goal, days, level, equipment, emphasis, priority, sex: p.sex, birthYear: p.birth_year, heightCm: p.height_cm, weightKg: p.start_weight });
   const volRows = vol => Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 30 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
   const draw = () => {
     const pl = preview(), m = pl.meta;
