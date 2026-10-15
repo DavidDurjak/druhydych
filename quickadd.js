@@ -49,10 +49,11 @@ body.qa-open .bd-fab{display:none}
 .qa-row{display:flex;gap:10px;overflow-x:auto;margin:0 -18px;padding:2px 18px 6px;scroll-snap-type:x proximity;scroll-padding-left:18px;scrollbar-width:none}
 .qa-row::-webkit-scrollbar{display:none}
 .qa-m{flex:0 0 112px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 6px 14px;border-radius:24px;border:1px solid rgba(255,255,255,.1);
-  background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 18%,transparent),color-mix(in srgb,var(--c) 4%,transparent));color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 .qa-m i{font-style:normal;font-size:38px;line-height:1;display:block;animation:qaFloat 3.6s ease-in-out infinite;animation-delay:calc(var(--i,0)*-.5s)}
 .qa-m{box-shadow:inset 0 -4px 0 var(--c,transparent)}
-.qa-m.on{border-color:var(--c);background:linear-gradient(180deg,color-mix(in srgb,var(--c) 34%,transparent),color-mix(in srgb,var(--c) 6%,transparent))}
+.qa-m{border-color:color-mix(in srgb,var(--c) 28%,transparent)}
+.qa-m.on{border-color:var(--c);background:linear-gradient(180deg,color-mix(in srgb,var(--c) 40%,transparent),color-mix(in srgb,var(--c) 10%,transparent))}
 .qa-m small{font-size:11px;color:var(--muted);font-weight:600}.qa-m:active{transform:scale(.95)}
 
 .qa-w{display:flex;align-items:center;gap:14px;width:100%;padding:16px;border-radius:24px;border:1px solid rgba(110,190,255,.28);color:#fff;font:inherit;text-align:left;
