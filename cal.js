@@ -47,6 +47,8 @@ body:has(.cal-sh) .qa-fab,body:has(.cal-sh) .bd-fab{display:none!important}
 .cal-s b{display:block;font-size:21px;letter-spacing:-.02em}.cal-s span{font-size:11.5px;color:var(--muted)}
 .cal-lg{font-size:11.5px;color:var(--muted);text-align:center;margin:0 0 12px}
 .cal-f{display:flex;gap:8px}.cal-f .btn{flex:1}
+/* karta týždňa: boost.js jej ikonku prestavil na inline-block a emoji sa vtlačilo do rohu, tu sa vracia na stred */
+.rp-card .rp-card-i{display:grid;place-items:center;width:42px;height:42px;line-height:1;text-align:center}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
