@@ -9,6 +9,7 @@ import './workoutcard.js';
 import './workoutauto.js';
 import './invite.js';
 import './navblend.js';
+import './hdr.js';
 
 const root = document.getElementById('app');
 let busy = false;
