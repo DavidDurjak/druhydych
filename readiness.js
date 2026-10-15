@@ -3,6 +3,7 @@
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
+import { mountNews } from './news.js';
 
 const h = (...a) => ctx.h(...a);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -131,4 +132,5 @@ function openSheet({ uid, date, ci, onSaved }) {
 
 export function bindReadiness(root, opts) {
   root.querySelector('#rdOpen')?.addEventListener('click', () => openSheet(opts));
+  mountNews(root);
 }
