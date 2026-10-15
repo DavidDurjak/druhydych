@@ -7,6 +7,7 @@ import './speed.js';
 import './boost.js';
 import './workoutcard.js';
 import './workoutauto.js';
+import './invite.js';
 
 const root = document.getElementById('app');
 let busy = false;
