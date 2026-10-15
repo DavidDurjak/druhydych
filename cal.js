@@ -18,16 +18,17 @@ const CSS = `
 .tdh-cal .cal-ic::before{content:'';position:absolute;left:0;right:0;top:0;height:9px;background:linear-gradient(180deg,#8ff5bf,#4fe39a)}
 .tdh-cal .cal-ic b{position:relative;display:block;font-size:12px;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
 .tdh-cal svg{width:10px;height:10px;opacity:.7}
-.cal-sh{padding-top:16px}
+.cal-sh{padding-top:16px;border-top:1px solid rgba(255,255,255,.12);background:radial-gradient(120% 60% at 50% 0%,rgba(124,255,178,.10),transparent 70%),linear-gradient(180deg,rgba(30,36,46,.94),rgba(13,16,21,.98));-webkit-backdrop-filter:blur(26px) saturate(160%);backdrop-filter:blur(26px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.fwcal{background:none;border:0;box-shadow:none;padding:0;margin:0;border-radius:0}
 .cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-n{-webkit-appearance:none;appearance:none;width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:var(--bg-2);color:var(--text);font-size:22px;line-height:1;cursor:pointer}
 .cal-n:active{transform:scale(.94)}
 .cal-t{text-align:center}.cal-t b{display:block;font-size:23px;letter-spacing:-.03em}.cal-t span{color:var(--muted);font-size:13px;font-weight:600}
 .cal-w,.cal-g{display:grid;grid-template-columns:repeat(7,1fr);justify-items:center}
 .cal-w span{font-size:11px;font-weight:700;color:var(--muted);padding:2px 0 8px}
-.cal-g{row-gap:11px}
-.cal-d{position:relative;-webkit-appearance:none;appearance:none;width:42px;height:42px;padding:0;border:0;border-radius:50%;background:none;display:grid;place-items:center;color:var(--text);font:inherit;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer}
-.cal-d b{position:relative;z-index:2;font-weight:700}
+.cal-g{row-gap:11px}.cal-g>span{width:42px;height:42px}
+.cal-d{position:relative;-webkit-appearance:none;appearance:none;width:42px;height:42px;padding:0;margin:0;border:0;border-radius:50%;background:none;display:block;color:var(--text);font:inherit;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer}
+.cal-d b{position:absolute;left:0;top:0;width:100%;height:100%;z-index:2;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;text-align:center}
 .cal-d .cr{display:none;position:absolute;inset:0;border-radius:50%;z-index:1;background:conic-gradient(var(--accent) calc(var(--p) * 1%),rgba(255,255,255,.07) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3.5px),#000 calc(100% - 3px))}
 .cal-d.lg .cr{display:block}
 .cal-d.hit::before{content:'';position:absolute;inset:3.5px;border-radius:50%;z-index:1;background:radial-gradient(circle at 35% 25%,#c9fadf,#6be8a6 58%,#38c982);box-shadow:0 0 12px rgba(124,255,178,.35)}
@@ -70,9 +71,9 @@ async function load(y, m) {
 
 function openCal(sel, inp) {
   let [vy, vm] = sel.split('-').map(Number); vm -= 1;
-  const bg = ctx.sheet('<div class="cal"></div>');
+  const bg = ctx.sheet('<div class="fwcal"></div>');
   bg.querySelector('.sheet').classList.add('cal-sh');
-  const box = bg.querySelector('.cal'), today = calc.today();
+  const box = bg.querySelector('.fwcal'), today = calc.today();
   const pick = d => { bg.remove(); if (d !== sel) { inp.value = d; inp.dispatchEvent(new Event('change', { bubbles: true })); } };
 
   const draw = (data = {}) => {
