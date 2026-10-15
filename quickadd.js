@@ -52,7 +52,7 @@ body.qa-open .bd-fab{display:none}
   background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 .qa-m i{font-style:normal;font-size:38px;line-height:1;display:block;animation:qaFloat 3.6s ease-in-out infinite;animation-delay:calc(var(--i,0)*-.5s)}
 .qa-m{box-shadow:inset 0 -4px 0 var(--c,transparent)}
-.qa-m.on{border-color:rgba(124,255,178,.6);background:linear-gradient(180deg,rgba(124,255,178,.22),rgba(124,255,178,.05))}
+.qa-m.on{border-color:var(--c);background:linear-gradient(180deg,color-mix(in srgb,var(--c) 34%,transparent),color-mix(in srgb,var(--c) 6%,transparent))}
 .qa-m small{font-size:11px;color:var(--muted);font-weight:600}.qa-m:active{transform:scale(.95)}
 
 .qa-w{display:flex;align-items:center;gap:14px;width:100%;padding:16px;border-radius:24px;border:1px solid rgba(110,190,255,.28);color:#fff;font:inherit;text-align:left;
@@ -117,8 +117,8 @@ body.qa-open .bd-fab{display:none}
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
 // farby a ikony rovnaké ako pri jedlách na obrazovke Dnes (today.css, MEAL_META)
-const MEAL_ICO = { breakfast: '🍳', brunch: '🥪', lunch: '🍲', afternoon: '🥨', dinner: '🍽️', late: '🌙' };
-const ACC = { breakfast: 'raňajky', brunch: 'desiatu', lunch: 'obed', afternoon: 'olovrant', dinner: 'večeru', late: 'druhú večeru' };
+const MEAL_ICO = { breakfast: '🍳', brunch: '🥪', lunch: '🍲', afternoon: '🥨', dinner: '🍽️', late: '🌙', snack: '🍎' };
+const ACC = { breakfast: 'raňajky', brunch: 'desiatu', lunch: 'obed', afternoon: 'olovrant', dinner: 'večeru', late: 'druhú večeru', snack: 'snack' };
 const MEAL_COL = { breakfast: '#FFB547', brunch: '#FFD36E', lunch: '#FF7A59', afternoon: '#5CD6C0', dinner: '#8C8CFF', late: '#B58CFF', snack: '#FF6FA8' };
 const rgb = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 const hx = a => '#' + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
