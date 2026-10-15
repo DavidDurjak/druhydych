@@ -8,6 +8,7 @@ const h = (...a) => ctx.h(...a), r0 = (...a) => ctx.r0(...a), toast = (...a) => 
 const MEALS = () => ctx.MEALS;
 const r1 = v => Math.round(Number(v || 0) * 10) / 10;
 
+const IOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 // mikrofón: štýl je tu, aby sa nemuselo meniť celé v08.css
 if (typeof document !== 'undefined' && !document.getElementById('v10css')) {
@@ -43,18 +44,19 @@ export function bindAiBox(root, getMeal, done) {
   const mic = root.querySelector('#aiMic');
   if (mic && SR) {
     let rec = null, want = false, base = '', lastAt = 0, startedAt = 0, fatal = false, gotAny = false;
-    const finish = () => { want = false; mic.classList.remove('rec'); rec = null; if (ta.value.trim()) send(); };
+    const finish = () => { want = false; mic.classList.remove('rec'); rec = null; if (ta.value.trim()) send(); else if (!gotAny) ta.focus(); };
     const stop = () => { want = false; try { rec && rec.stop(); } catch (_) { finish(); } };
     const begin = () => {
       const r = new SR(); rec = r; r.lang = 'sk-SK'; r.interimResults = true; r.continuous = true; r.maxAlternatives = 1;
+      if (IOS) r.continuous = false; // iOS pri nepretržitom režime často nevráti žiadny text
       let seen = '';
       r.onresult = e => { seen = Array.from(e.results).map(x => x[0].transcript).join(' ').trim(); if (seen) { gotAny = true; lastAt = Date.now(); } ta.value = (base ? base + ' ' : '') + seen; grow(); };
       r.onerror = e => {
         if (['not-allowed', 'service-not-allowed', 'network', 'audio-capture'].includes(e.error)) fatal = true;
-        const m = { 'not-allowed': 'Povoľ mikrofón v nastaveniach prehliadača.', 'service-not-allowed': 'Povoľ mikrofón v nastaveniach prehliadača.', 'no-speech': 'Nepočul som nič, skús to znova.', 'network': 'Rozpoznávanie reči potrebuje internet.' }[e.error];
+        const m = { 'not-allowed': 'Povoľ mikrofón v nastaveniach prehliadača.', 'service-not-allowed': 'Povoľ mikrofón v nastaveniach prehliadača.', 'no-speech': 'Nepočul som nič. Skús znova, alebo použi mikrofón na klávesnici.', 'language-not-supported': 'Slovenčina na diktovanie tu nie je dostupná. Použi mikrofón na klávesnici.', 'network': 'Rozpoznávanie reči potrebuje internet.' }[e.error];
         if (m && (e.error !== 'no-speech' || !gotAny)) toast(m, true);
       };
-      // prehliadač diktovanie po pauze ukončí; kým človek hovorí (a nepresiahne ~90 s), potichu ho spustíme znova a text pripíšeme
+      // prehliadač diktovanie po paузe ukončí; kým človek hovorí (a nepresiahne ~90 s), potichu ho spustíme znova a text pripíšeme
       r.onend = () => {
         if (seen) base = ((base ? base + ' ' : '') + seen).trim();
         const now = Date.now(), fresh = gotAny ? now - lastAt < 6000 : now - startedAt < 8000;

@@ -18,7 +18,7 @@ if (orig) {
 }
 
 const st = document.createElement('style');
-st.textContent = '.fr-btns{flex-wrap:wrap}#frQr{flex:1 1 100%!important}';
+st.textContent = '.fr-btns{flex-wrap:wrap}.fr-btns #frShare,.fr-btns #frCopy{flex:1 1 calc(50% - 4px)!important;min-width:0}#frQr{flex:1 1 100%!important}';
 document.head.appendChild(st);
 
 function svgOf(m, px) {
