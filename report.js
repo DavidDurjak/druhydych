@@ -19,7 +19,7 @@ const FOCUS = {
   log: { i: '📝', t: 'Zapisuj jedlo každý deň', d: 'Aj nedokonalý zápis je lepší ako žiadny. Použi „Rovnako ako včera“ a skener, zaberie to minútu denne.' },
   kcal: { i: '🎯', t: 'Traf kalórie aspoň 5 dní zo 7', d: 'Plánuj večeru podľa toho, koľko ti zostáva. Najviac sa ujde cez víkend.' },
   training: { i: '🏋️', t: 'Odtrénuj všetky plánované tréningy', d: 'Daj si tréningy do kalendára ako stretnutie. Kratší tréning je lepší ako žiadny.' },
-  protein: { i: '💪', t: 'Bielkoviny ku každému jedlu', d: 'Tvaroh, vajcia, kuracie, skyr alebo strukoviny. Bielkoviny držia svaly a sýtosť.' },
+  protein: { i: '💪', t: 'Bielkoviny ku každnému jedlu', d: 'Tvaroh, vajcia, kuracie, skyr alebo strukoviny. Bielkoviny držia svaly a sýtosť.' },
   weigh: { i: '⚖️', t: 'Váž sa aspoň 3× ráno', d: 'Po WC, pred jedlom. Z viacerých vážení appka vypočíta presnejší trend.' },
 };
 
@@ -29,10 +29,9 @@ export function defaultWeek() {
   const ws = calc.weekStart(t);
   return new Date(t + 'T00:00:00').getDay() === 0 ? ws : calc.addDays(ws, -7);
 }
-// karta na Dnes: nedeľa od 18:00, pondelok a utorok
+// karta na Dnes: celý týždeň
 export function reportReady() {
-  const d = new Date(); const g = d.getDay();
-  return (g === 0 && d.getHours() >= 18) || g === 1 || g === 2;
+  return true; // karta týždňa je na Dnes celý týždeň (do nedeľe 18:00 ukazuje posledný ukončený týždeň)
 }
 export function reportCardHtml() {
   if (!reportReady()) return '';
