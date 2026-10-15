@@ -10,6 +10,7 @@ import './workoutauto.js';
 import './invite.js';
 import './navblend.js';
 import './hdr.js';
+import './cal.js';
 
 const root = document.getElementById('app');
 let busy = false;
