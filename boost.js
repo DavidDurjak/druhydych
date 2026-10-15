@@ -1,4 +1,4 @@
-// Živšia appka: horiaci ocheň série s oslavou mílňikov, pohyblivé odznaky, výraztechnejšia karta týždňa
+// Živšia appka: horiaci oheň série s oslavou míľnikov, pohyblivé odznaky, výraznejšia karta týždňa
 // a v plusku jedlá, ktoré si o tejto dobe zvykneš jesť (jedno ťuknutie).
 import * as db from './data.js';
 import * as calc from './calc.js';
@@ -39,6 +39,11 @@ const CSS = `
 .fx-cf{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;opacity:0;animation:fxCf var(--t,3s) ease-in var(--d,0s) both}
 @keyframes fxCf{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:.9;transform:translateY(105vh) translateX(var(--x,0)) rotate(var(--r,540deg))}}
 
+.fx-mini{position:fixed;z-index:250;top:calc(env(safe-area-inset-top,0px) + 62px);right:14px;display:flex;flex-direction:column;align-items:flex-end;padding:9px 14px;border-radius:16px;color:#fff;background:rgba(20,16,12,.88);border:1px solid rgba(255,150,60,.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 28px rgba(255,110,30,.28);animation:fxMini .45s cubic-bezier(.2,1.4,.4,1) both;transition:opacity .35s;pointer-events:none}
+.fx-mini b{font-size:15px}.fx-mini span{font-size:12px;color:rgba(255,255,255,.7)}
+@keyframes fxMini{from{opacity:0;transform:translateY(-8px) scale(.9)}to{opacity:1;transform:none}}
+.tdh-streak.fx-burst .fx-w{animation:fxBurst .9s ease-out 3}
+@keyframes fxBurst{0%{transform:scale(1)}40%{transform:scale(1.7) translateY(-2px)}100%{transform:scale(1)}}
 /* odznaky v Pokroku: lesk, vznášanie, žiara */
 .bx-m.bronze,.bx-m.silver,.bx-m.gold,.bx-m.diamond{overflow:hidden}
 .bx-m.bronze::after,.bx-m.silver::after,.bx-m.gold::after,.bx-m.diamond::after{content:'';position:absolute;inset:-25%;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.65) 50%,transparent 60%);transform:translateX(-130%);animation:bxShine 3.8s ease-in-out infinite}
@@ -74,6 +79,7 @@ const st = document.createElement('style'); st.textContent = CSS; document.head.
 // ---------- oheň série ----------
 const MS = [[3, 'Rozbeh', 'Tri dni v rade. Takto vzniká návyk.'], [7, 'Týždeň v kuse', 'Celý týždeň bez vynechania.'], [14, 'Dva týždne', 'Dva týždne v kuse. Už to nie je náhoda.'], [30, 'Železná séria', 'Mesiac každý deň. Si iná liga.'],
   [60, 'Neotrasiteľný', 'Dva mesiace. Toto ťa už nezastaví.'], [100, 'Stovka v rade', 'Sto dní v rade. Legenda.'], [200, 'Dvojstovka', 'Dvesto dní. Takých ľudí je pár.'], [365, 'Celý rok', 'Rok každý deň. Mýtus.']];
+const BIG = [7, 30, 100, 365];
 const tier = n => n <= 0 ? 0 : n >= 30 ? 3 : n >= 7 ? 2 : 1;
 const FL = `<svg class="fx-f" viewBox="0 0 24 28" aria-hidden="true"><path class="o" d="M12 1.2c.7 3.6-1.8 5.5-3.8 8C6.3 11.6 5.2 14 5.2 16.6c0 5 3 9.4 6.8 9.4s6.8-4.4 6.8-9.4c0-2.7-1.1-4.7-2.3-6.4-.3 1.7-1.1 2.8-2.3 3.4.6-4.4-.4-9.7-2.2-12.4z"/><path class="i" d="M12 26c-2.4 0-4.2-2.1-4.2-4.8 0-2.3 1.4-3.6 2.5-5.2.5 1.4 1.3 2 2 2.2.1-1.6.7-2.7 1.4-3.6 1.1 1.5 2.5 3.4 2.5 6.6 0 2.7-1.8 4.8-4.2 4.8z"/></svg>`;
 const flame = n => `<span class="fx-w fx-t${tier(n)}">${FL}<i class="em e1"></i><i class="em e2"></i><i class="em e3"></i></span>`;
@@ -87,7 +93,7 @@ function enhanceStreak() {
   a.classList.add('fx'); a.dataset.n = n;
   a.innerHTML = `${flame(n)}<b>${n}</b>`;
   const m = MS.filter(x => x[0] <= n).pop();
-  if (m && ls.get('fw_ms') < m[0]) { ls.set('fw_ms', m[0]); setTimeout(() => celebrate(n, m), 700); }
+  if (m && ls.get('fw_ms') < m[0]) { ls.set('fw_ms', m[0]); if (BIG.includes(m[0])) setTimeout(() => celebrate(n, m), 700); else setTimeout(() => mini(a, n, m), 600); }
 }
 document.addEventListener('click', e => {
   const a = e.target.closest?.('.tdh-streak.fx'); if (!a) return;
@@ -95,12 +101,21 @@ document.addEventListener('click', e => {
   const n = Number(a.dataset.n) || 0, nx = MS.find(x => x[0] > n), prev = MS.filter(x => x[0] <= n).pop();
   const from = prev ? prev[0] : 0, pct = nx ? Math.round((n - from) / (nx[0] - from) * 100) : 100;
   const bg = ctx.sheet(`<div class="fx-sh">${flame(n)}<h2>${n ? pl(n, 'deň', 'dni', 'dní') + ' v rade' : 'Začni sériu'}</h2>
-    <p>${n ? (prev ? prev[1] + '. ' : '') + 'Každý deň so zápisom ju predlžuje.' : 'Zapíš dnes aspoň jedno jedlo a ocheň sa rozsvieti.'}</p>
-    ${nx ? `<div class="fx-bar"><i style="width:${Math.max(6, pct)}%"></i></div><p class="small">Ďalší cieľ: <b>${nx[1]}</b>, ešte ${pl(nx[0] - n, 'deň', 'dni', 'dní')}</p>` : '<p class="small mt"><b>Máš všetky mílňiky.</b></p>'}
+    <p>${n ? (prev ? prev[1] + '. ' : '') + 'Každý deň so zápisom ju predlžuje.' : 'Zapíš dnes aspoň jedno jedlo a oheň sa rozsvieti.'}</p>
+    ${nx ? `<div class="fx-bar"><i style="width:${Math.max(6, pct)}%"></i></div><p class="small">Ďalší cieľ: <b>${nx[1]}</b>, ešte ${pl(nx[0] - n, 'deň', 'dni', 'dní')}</p>` : '<p class="small mt"><b>Máš všetky míľniky.</b></p>'}
     <button class="btn primary mt" data-bx>Moje odznaky</button></div>`);
   bg.querySelector('[data-bx]').onclick = () => { bg.remove(); location.hash = '#/pokrok'; };
 }, true);
 
+function mini(chip, n, m) {
+  if (!chip.isConnected) return;
+  chip.classList.add('fx-burst');
+  const el = document.createElement('div'); el.className = 'fx-mini';
+  el.innerHTML = `<b>${pl(n, 'deň', 'dni', 'dní')} v rade</b><span>${m[1]}</span>`;
+  document.body.appendChild(el);
+  try { navigator.vibrate?.(25); } catch (_) { }
+  setTimeout(() => { el.style.opacity = 0; chip.classList.remove('fx-burst'); setTimeout(() => el.remove(), 350); }, 3200);
+}
 function celebrate(n, m) {
   const cols = ['#FFB547', '#FF6FA8', '#7CFFB2', '#8C8CFF', '#5CD6C0', '#FFD36E'];
   const cf = Array.from({ length: 44 }, () => `<i class="fx-cf" style="left:${Math.random() * 100}%;background:${cols[(Math.random() * cols.length) | 0]};--d:${(Math.random() * 1.2).toFixed(2)}s;--t:${(2.4 + Math.random() * 1.8).toFixed(2)}s;--x:${(Math.random() * 80 - 40) | 0}px;--r:${(Math.random() * 900 - 300) | 0}deg"></i>`).join('');
@@ -109,7 +124,7 @@ function celebrate(n, m) {
   document.body.appendChild(el);
   try { navigator.vibrate?.([20, 40, 20, 40, 60]); } catch (_) { }
   const done = () => { el.style.transition = 'opacity .25s'; el.style.opacity = 0; setTimeout(() => el.remove(), 260); };
-  el.querySelector('button').onclick = done;
+  el.onclick = done;
   setTimeout(() => { if (el.isConnected) done(); }, 9000);
 }
 

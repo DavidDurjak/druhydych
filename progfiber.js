@@ -5,6 +5,7 @@ import { ctx } from './app.js';
 import './badges.js';
 import './speed.js';
 import './boost.js';
+import './workoutcard.js';
 
 const root = document.getElementById('app');
 let busy = false;
