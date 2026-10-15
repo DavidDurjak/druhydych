@@ -67,6 +67,22 @@ body.qa-open .bd-fab{display:none}
 .qa-t small{display:block;font-size:11.5px;color:var(--muted);font-weight:500;margin-top:1px}
 @media (prefers-reduced-motion:reduce){.qa-ov *,.qa-ov{animation-duration:.01s!important;animation-iteration-count:1!important}}
 
+/* ponuka jedla */
+.mq-hd{position:relative;overflow:hidden;border-radius:24px;padding:16px;color:#fff;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;background:linear-gradient(145deg,var(--g1),var(--g2));border:1px solid rgba(255,255,255,.16)}
+.mq-hd::before{content:'';position:absolute;width:150px;height:150px;border-radius:50%;right:-40px;top:-60px;background:var(--g3);filter:blur(30px);opacity:.5;animation:qaBlob 7s ease-in-out infinite}
+.mq-hd>*{position:relative}
+.mq-e{font-size:46px;line-height:1;display:inline-block;animation:qaFloat 3.2s ease-in-out infinite;filter:drop-shadow(0 6px 10px rgba(0,0,0,.3))}
+.mq-hd h3{font-size:22px;letter-spacing:-.02em}.mq-hd p{font-size:14px;opacity:.9;margin-top:2px}
+.mq-bar{grid-column:1/-1;height:8px;border-radius:99px;background:rgba(0,0,0,.28);overflow:hidden;margin-top:8px}
+.mq-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#fff,#d7ffe8);transition:width .6s cubic-bezier(.3,1.2,.5,1)}
+.mq-mac{grid-column:1/-1;display:flex;gap:8px;margin-top:6px}.mq-mac span{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(0,0,0,.25)}
+.mq-lb{font-size:13px;color:var(--muted);font-weight:700;margin:16px 2px 8px}
+.mq-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mq-3 button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 4px;border-radius:18px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.mq-3 b{font-size:22px;line-height:1}.mq-3 button:active{transform:scale(.95)}
+.mq .mm{margin-top:0}
+.mq-mv[hidden]{display:none}
+
 /* kalendár vo Fuelwind štýle */
 .cal-bg{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(5,8,12,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);animation:qaBg .2s ease both}
 .cal-bg.out{animation:qaBgOut .18s ease both}
@@ -140,9 +156,25 @@ async function open() {
       ${pop(5, `<div class="qa-w"><span class="dr">💧</span><div><b>Voda</b><small>${fmtL(ml)} z ${fmtL(goal)} l dnes</small></div><div class="plus"><button data-qa="w:250">+250</button><button data-qa="w:500">+500</button></div></div>`)}
       ${pop(6, `<div class="qa-g">
         <button class="qa-t" data-qa="weight"><i>⚖️</i><span>Hmotnosť<small>Zapísať váhu</small></span></button>
-        <button class="qa-t" data-qa="machine"><i>📷</i><span>Skenuj stroj<small>V posilke</small></span></button>
+        <button class="qa-t" data-qa="photo"><i>🤳</i><span>Fotky<small>Pred a po</small></span></button>
         <button class="qa-t" data-qa="checkin"><i>✅</i><span>Check-in<small>Spánok, nálada</small></span></button>
-        <button class="qa-t" data-qa="diary"><i>📖</i><span>Denník<small>Celé jedlá dňa</small></span></button></div>`)}
+        <button class="qa-t" data-qa="diary"><i>📖</i><span>Denník<small>Jedlá dňa</small></span></button></div>`)}
+      ${pop(7, '<div class="qa-lb">Tréning</div>')}
+      ${pop(8, `<div class="qa-g">
+        <button class="qa-t" data-qa="train"><i>🏋️</i><span>Tréning<small>Tvoj plán</small></span></button>
+        <button class="qa-t" data-qa="machine"><i>📷</i><span>Skenuj stroj<small>Cvik a váhy</small></span></button></div>`)}
+      ${pop(9, '<div class="qa-lb">Zdravie a návyky</div>')}
+      ${pop(10, `<div class="qa-g">
+        <button class="qa-t" data-qa="habits"><i>🔥</i><span>Návyky<small>Séria dní</small></span></button>
+        <button class="qa-t" data-qa="sugar"><i>🩸</i><span>Cukor v krvi<small>Glukóza</small></span></button>
+        <button class="qa-t" data-qa="watch"><i>⌚</i><span>Hodinky<small>Apple Zdravie</small></span></button>
+        <button class="qa-t" data-qa="week"><i>📅</i><span>Týždeň<small>Check-in a report</small></span></button></div>`)}
+      ${pop(11, '<div class="qa-lb">Nastavenia</div>')}
+      ${pop(12, `<div class="qa-g">
+        <button class="qa-t" data-qa="goals"><i>🎯</i><span>Moje ciele<small>Kalórie a makrá</small></span></button>
+        <button class="qa-t" data-qa="diet"><i>🥗</i><span>Režim<small>Štýl stravovania</small></span></button>
+        <button class="qa-t" data-qa="remind"><i>🔔</i><span>Pripomienky<small>Notifikácie</small></span></button>
+        <button class="qa-t" data-qa="idea"><i>💡</i><span>Napíš nám<small>Nápad alebo chyba</small></span></button></div>`)}
     </div>`;
   };
   draw();
@@ -164,6 +196,8 @@ async function open() {
     if (a === 'weight') return go('#/vaha');
     if (a === 'checkin') return go('#/checkin');
     if (a === 'diary') return go('#/jedlo');
+    const R = { photo: '#/fotky', train: '#/trening', habits: '#/navyky', sugar: '#/cukor', watch: '#/hodinky', week: '#/tyzden', goals: '#/ciele', diet: '#/rezim', remind: '#/pripomienky', idea: '#/napis' };
+    if (R[a]) return go(R[a]);
     if (a === 'machine') return go('#/trening', () => { const el = document.getElementById('fw-machine'); if (el) el.click(); return !!el; });
     if (a === 'w' && uid) {
       ml += Number(v);
@@ -250,4 +284,82 @@ document.querySelectorAll('input[type=date]').forEach(tame);
 document.addEventListener('click', e => {
   const i = e.target.closest?.('input[data-cal]'); if (!i) return;
   e.preventDefault(); i.blur(); openCalendar(i);
+}, true);
+
+// ---------- ponuka ⋯ pri jedle ----------
+const SHORT = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'];
+const SMON = ['jan', 'feb', 'mar', 'apr', 'máj', 'jún', 'júl', 'aug', 'sep', 'okt', 'nov', 'dec'];
+const plural = n => n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek';
+const MPAL = { snack: 'brunch' };
+
+function copyDays(uid, from, meal, label) {
+  const sel = new Set(), days = Array.from({ length: 30 }, (_, i) => calc.addDays(from, i + 1));
+  const bg = ctx.sheet(`<h3>${label} na ďalšie dni</h3><p class="muted small mt">Skopíruje sa na vybrané dni. Ak tam už niečo je, pridá sa to k tomu.</p>
+    <div class="cp-q">${[[1, 'Nasl. deň'], [3, '3 dni'], [7, '7 dní'], [14, '14 dní'], [30, '30 dní']].map(([n, l]) => `<button data-n="${n}">${l}</button>`).join('')}</div>
+    <div class="cp-g">${days.map(d => { const dt = new Date(d + 'T00:00:00'); return `<button data-x="${d}"><small>${SHORT[dt.getDay()]}</small><b>${dt.getDate()}</b>${dt.getDate() === 1 || d === days[0] ? `<em>${SMON[dt.getMonth()]}</em>` : ''}</button>`; }).join('')}</div>
+    <button class="btn primary mt" id="cpGo" disabled>Vyber dni</button>`);
+  const upd = () => {
+    bg.querySelectorAll('[data-x]').forEach(b => b.classList.toggle('on', sel.has(b.dataset.x)));
+    const go = bg.querySelector('#cpGo'); go.disabled = !sel.size; go.textContent = sel.size ? `Skopírovať na ${sel.size} ${sel.size === 1 ? 'deň' : sel.size < 5 ? 'dni' : 'dní'}` : 'Vyber dni';
+  };
+  bg.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { sel.has(b.dataset.x) ? sel.delete(b.dataset.x) : sel.add(b.dataset.x); upd(); });
+  bg.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { sel.clear(); days.slice(0, Number(b.dataset.n)).forEach(d => sel.add(d)); upd(); });
+  bg.querySelector('#cpGo').onclick = async () => {
+    try { const n = await db.copyDay(uid, from, [...sel].sort(), meal); bg.remove(); ctx.toast(`Naplánované: ${n} ${plural(n)}`); refresh(); }
+    catch (e) { ctx.toast(e.message, true); }
+  };
+}
+const refresh = () => window.dispatchEvent(new HashChangeEvent('hashchange'));
+
+async function mealSheet(meal) {
+  const { MEAL_META } = await import('./today.js');
+  const m = MEAL_META[meal]; if (!m) return;
+  const st = S(), uid = st.profile?.id, date = st.date || calc.today(), p = st.profile || {};
+  let rows = [];
+  try { rows = (await db.listFood(uid, date)).filter(f => f.meal === meal); } catch (_) { }
+  const sum = calc.sumMacros(rows), has = rows.length > 0;
+  const rec = m.share && p.target_kcal ? Math.round(p.target_kcal * m.share / 10) * 10 : 0;
+  const g = MEAL_G[MPAL[meal] || meal] || MEAL_G.brunch;
+  const pct = rec ? Math.min(100, Math.round(sum.kcal / rec * 100)) : 0;
+  const others = Object.entries(MEAL_META).filter(([k]) => k !== meal);
+  const bg = ctx.sheet(`<div class="mq">
+    <div class="mq-hd" style="--g1:${g[0]};--g2:${g[1]};--g3:${g[2]}">
+      <span class="mq-e">${m.icon}</span>
+      <div><h3>${m.label}</h3><p>${has ? `${Math.round(sum.kcal)} kcal${rec ? ` z ~${rec}` : ''}` : rec ? `Odporúčané ~${rec} kcal` : 'Podľa potreby'}</p></div>
+      ${rec ? `<div class="mq-bar"><i style="width:${pct}%"></i></div>` : ''}
+      ${has ? `<div class="mq-mac"><span>B ${Math.round(sum.protein)} g</span><span>S ${Math.round(sum.carbs)} g</span><span>T ${Math.round(sum.fat)} g</span></div>` : ''}
+    </div>
+    <div class="mq-lb">Pridať</div>
+    <div class="mq-3">
+      <button data-a="q"><b>🔎</b>Hľadať</button><button data-a="scan"><b>▥</b>Kód</button><button data-a="ai"><b>✦</b>AI zápis</button></div>
+    <div class="mq-lb">Rýchlo</div>
+    <div class="mm">
+      <button class="mm-b" data-a="prev"><span>↻</span>Rovnako ako včera</button>
+      ${has ? '<button class="mm-b" data-a="copy"><span>📅</span>Kopírovať na iné dni</button>' : ''}
+      ${has ? '<button class="mm-b" data-a="move"><span>↔️</span>Presunúť do inej doby</button>' : ''}
+      ${has ? '<button class="mm-b dng" data-a="clear"><span>🗑</span>Vymazať všetko</button>' : ''}</div>
+    <div class="mq-mv" hidden><div class="mq-lb">Presunúť do</div><div class="cp-q">${others.map(([k, v]) => `<button data-mv="${k}">${v.icon} ${v.label}</button>`).join('')}</div></div>
+  </div>`);
+  const nav2 = a => { bg.remove(); location.hash = `#/jedlo?meal=${meal}&${a}=1`; };
+  bg.addEventListener('click', async e => {
+    const b = e.target.closest('[data-a],[data-mv]'); if (!b) return;
+    const a = b.dataset.a;
+    if (a === 'q' || a === 'scan' || a === 'ai') return nav2(a);
+    if (a === 'prev') {
+      try { const n = await db.copyMeal(uid, calc.addDays(date, -1), date, meal); bg.remove(); if (!n) ctx.toast('Včera tu nebolo nič zapísané', true); else { ctx.toast(`Skopírované: ${n} ${plural(n)}`); refresh(); } }
+      catch (err) { ctx.toast(err.message, true); }
+    } else if (a === 'copy') { bg.remove(); copyDays(uid, date, meal, m.label); }
+    else if (a === 'move') { const el = bg.querySelector('.mq-mv'); el.hidden = !el.hidden; if (!el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    else if (b.dataset.mv) {
+      try { for (const r of rows) await db.updateFood(r.id, { meal: b.dataset.mv }); bg.remove(); ctx.toast(`Presunuté do: ${MEAL_META[b.dataset.mv].label.toLowerCase()}`); refresh(); }
+      catch (err) { ctx.toast(err.message, true); }
+    } else if (a === 'clear') {
+      if (!b.dataset.sure) { b.dataset.sure = 1; b.innerHTML = '<span>⚠️</span>Klikni znova a vymaže sa to'; return; }
+      try { await db.clearMeal(uid, date, meal); bg.remove(); refresh(); } catch (err) { ctx.toast(err.message, true); }
+    }
+  });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-mm]'); if (!b) return;
+  e.preventDefault(); e.stopImmediatePropagation(); mealSheet(b.dataset.mm);
 }, true);
