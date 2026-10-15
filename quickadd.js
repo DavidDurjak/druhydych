@@ -2,6 +2,7 @@
 import { ctx } from './app.js';
 import * as db from './data.js';
 import * as calc from './calc.js';
+import { openAiLog } from './ailog.js';
 
 const CSS = `
 :root{--qa-x:max(12px,calc((100vw - 560px)/2))}
@@ -28,7 +29,7 @@ body.qa-open .bd-fab{display:none}
 .qa-h{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
 .qa-sub{color:var(--muted);font-size:14px;margin:6px 0 18px}
 
-.qa-hero{position:relative;overflow:hidden;border-radius:28px;padding:20px 18px 18px;color:#fff;border:1px solid rgba(255,255,255,.16);
+.qa-hero{position:relative;overflow:hidden;border-radius:28px;padding:20px 18px 18px;color:var(--ink,#fff);border:1px solid rgba(255,255,255,.16);
   background:linear-gradient(145deg,var(--g1),var(--g2));box-shadow:0 18px 40px rgba(0,0,0,.4)}
 .qa-hero::before,.qa-hero::after{content:'';position:absolute;border-radius:50%;filter:blur(30px);opacity:.55;animation:qaBlob 7s ease-in-out infinite}
 .qa-hero::before{width:170px;height:170px;right:-40px;top:-50px;background:var(--g3)}
@@ -40,8 +41,8 @@ body.qa-open .bd-fab{display:none}
 .qa-hero h2{font-size:25px;letter-spacing:-.02em;margin-top:8px}
 .qa-hero p{font-size:13.5px;opacity:.85;margin-top:2px}
 .qa-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
-.qa-acts button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 4px;border-radius:16px;border:1px solid rgba(255,255,255,.22);background:rgba(0,0,0,.24);
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.qa-acts button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 2px;border-radius:16px;border:1px solid rgba(255,255,255,.28);background:var(--btn,rgba(0,0,0,.24));
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--ink,#fff);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
 .qa-acts button b{font-size:21px;line-height:1}.qa-acts button:active{transform:scale(.95)}
 
 .qa-lb{font-size:13px;color:var(--muted);font-weight:700;margin:24px 2px 10px}
@@ -50,6 +51,7 @@ body.qa-open .bd-fab{display:none}
 .qa-m{flex:0 0 112px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 6px 14px;border-radius:24px;border:1px solid rgba(255,255,255,.1);
   background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 .qa-m i{font-style:normal;font-size:38px;line-height:1;display:block;animation:qaFloat 3.6s ease-in-out infinite;animation-delay:calc(var(--i,0)*-.5s)}
+.qa-m{box-shadow:inset 0 -4px 0 var(--c,transparent)}
 .qa-m.on{border-color:rgba(124,255,178,.6);background:linear-gradient(180deg,rgba(124,255,178,.22),rgba(124,255,178,.05))}
 .qa-m small{font-size:11px;color:var(--muted);font-weight:600}.qa-m:active{transform:scale(.95)}
 
@@ -68,16 +70,22 @@ body.qa-open .bd-fab{display:none}
 @media (prefers-reduced-motion:reduce){.qa-ov *,.qa-ov{animation-duration:.01s!important;animation-iteration-count:1!important}}
 
 /* ponuka jedla */
-.mq-hd{position:relative;overflow:hidden;border-radius:24px;padding:16px;color:#fff;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;background:linear-gradient(145deg,var(--g1),var(--g2));border:1px solid rgba(255,255,255,.16)}
+.mq-hd{position:relative;overflow:hidden;border-radius:24px;padding:16px;color:var(--ink,#fff);display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;background:linear-gradient(145deg,var(--g1),var(--g2));border:1px solid rgba(255,255,255,.16)}
 .mq-hd::before{content:'';position:absolute;width:150px;height:150px;border-radius:50%;right:-40px;top:-60px;background:var(--g3);filter:blur(30px);opacity:.5;animation:qaBlob 7s ease-in-out infinite}
 .mq-hd>*{position:relative}
 .mq-e{font-size:46px;line-height:1;display:inline-block;animation:qaFloat 3.2s ease-in-out infinite;filter:drop-shadow(0 6px 10px rgba(0,0,0,.3))}
 .mq-hd h3{font-size:22px;letter-spacing:-.02em}.mq-hd p{font-size:14px;opacity:.9;margin-top:2px}
-.mq-bar{grid-column:1/-1;height:8px;border-radius:99px;background:rgba(0,0,0,.28);overflow:hidden;margin-top:8px}
-.mq-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#fff,#d7ffe8);transition:width .6s cubic-bezier(.3,1.2,.5,1)}
-.mq-mac{grid-column:1/-1;display:flex;gap:8px;margin-top:6px}.mq-mac span{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(0,0,0,.25)}
+.mq-bar{grid-column:1/-1;height:8px;border-radius:99px;background:var(--btn);overflow:hidden;margin-top:8px}
+.mq-bar i{display:block;height:100%;border-radius:inherit;background:var(--ink,#fff);transition:width .6s cubic-bezier(.3,1.2,.5,1)}
+.mq-mac{grid-column:1/-1;display:flex;gap:8px;margin-top:6px}.mq-mac span{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--btn)}
 .mq-lb{font-size:13px;color:var(--muted);font-weight:700;margin:16px 2px 8px}
 .mq-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.vq{text-align:center;padding:8px 0 4px}.vq-mic{position:relative;width:96px;height:96px;margin:6px auto 14px;display:flex;align-items:center;justify-content:center;font-size:42px}
+.vq-mic i{position:absolute;inset:0;border-radius:50%;background:rgba(124,255,178,.28);animation:vqRing 1.8s ease-out infinite}.vq-mic i+i{animation-delay:.9s}
+@keyframes vqRing{from{transform:scale(.6);opacity:.9}to{transform:scale(1.5);opacity:0}}
+.vq-mic span{position:relative;width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#9dffc4,#5fe69a);box-shadow:0 10px 24px rgba(95,230,154,.4)}
+.vq h3{font-size:20px}.vq-t{min-height:48px;margin:8px 4px 14px;font-size:16px;line-height:1.4}.vq-t.on{color:var(--text)}.vq-b{display:flex;gap:8px}.vq-b .btn{flex:1}
+.nq textarea{width:100%;min-height:140px;margin-top:12px;resize:vertical}
 .mq-3 button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 4px;border-radius:18px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
 .mq-3 b{font-size:22px;line-height:1}.mq-3 button:active{transform:scale(.95)}
 .mq .mm{margin-top:0}
@@ -108,11 +116,17 @@ body.qa-open .bd-fab{display:none}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
-const MEAL_ICO = { breakfast: '🥣', brunch: '🍎', lunch: '🍽', afternoon: '🥪', dinner: '🌙', late: '🌜' };
-const MEAL_G = {
-  breakfast: ['#ff9a3c', '#e8505b', '#ffd36b'], brunch: ['#e8505b', '#a63d7a', '#ff9a8b'], lunch: ['#2fa26a', '#1d6e8c', '#7cffb2'],
-  afternoon: ['#d98324', '#8a5a2b', '#ffd36b'], dinner: ['#5b4bd6', '#2b3a8f', '#b69cff'], late: ['#2b3a8f', '#161a3d', '#6f7cff'],
-};
+// farby a ikony rovnaké ako pri jedlách na obrazovke Dnes (today.css, MEAL_META)
+const MEAL_ICO = { breakfast: '🍳', brunch: '🥪', lunch: '🍲', afternoon: '🥨', dinner: '🍽️', late: '🌙' };
+const ACC = { breakfast: 'raňajky', brunch: 'desiatu', lunch: 'obed', afternoon: 'olovrant', dinner: 'večeru', late: 'druhú večeru' };
+const MEAL_COL = { breakfast: '#FFB547', brunch: '#FFD36E', lunch: '#FF7A59', afternoon: '#5CD6C0', dinner: '#8C8CFF', late: '#B58CFF', snack: '#FF6FA8' };
+const rgb = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+const hx = a => '#' + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+const mix = (c, t, f) => hx(rgb(c).map((v, i) => v + (t[i] - v) * f));
+function pal(meal) {
+  const c = MEAL_COL[meal] || MEAL_COL.snack, [r, g, b] = rgb(c), light = 0.299 * r + 0.587 * g + 0.114 * b > 150;
+  return `--g1:${c};--g2:${mix(c, [0, 0, 0], light ? .22 : .5)};--g3:${mix(c, [255, 255, 255], .45)};--ink:${light ? '#1b1304' : '#fff'};--btn:${light ? 'rgba(255,255,255,.42)' : 'rgba(0,0,0,.26)'}`;
+}
 const MEAL_HINT = { breakfast: 'Dobré ráno', brunch: 'Čas na desiatu', lunch: 'Čas na obed', afternoon: 'Olovrant', dinner: 'Čo bude na večeru', late: 'Večerný hlad' };
 function nowMeal() {
   const k = new Date().getHours();
@@ -135,11 +149,17 @@ function go(href, after) {
   location.hash = href;
   if (after) { let n = 0; const t = setInterval(() => { if (after() || ++n > 40) clearInterval(t); }, 150); }
 }
+// šesť spôsobov, ako zapísať jedlo: rovnaká sada v plusku aj v ponuke pri jedle
+const ACTS = (meal, p) => {
+  const L = p === 'qa' ? k => `data-qa="${k}:${meal}"` : k => `data-a="${k}"`;
+  return [['aphoto', '📸', 'Foto AI'], ['voice', '🎙️', 'Hlas'], ['text', '✦', 'Napísať AI'], ['q', '🔎', 'Hľadať'], ['scan', '▥', 'Kód'], ['note', '📝', 'Poznámka']]
+    .map(([k, i, t]) => `<button ${L(k)}><b>${i}</b>${t}</button>`).join('');
+};
 const pop = (i, html) => `<div class="qa-pop" style="--i:${i}">${html}</div>`;
 
 async function open() {
   if (ov) return close();
-  const M = ctx.MEALS || {}, cur = nowMeal(), g = MEAL_G[cur], name = M[cur] || 'jedlo';
+  const M = ctx.MEALS || {}, cur = nowMeal(), name = M[cur] || 'jedlo';
   const p = S().profile || {}, uid = p.id;
   let ml = 0;
   ov = document.createElement('div'); ov.className = 'qa-ov';
@@ -147,16 +167,16 @@ async function open() {
   const draw = () => {
     ov.innerHTML = `<div class="qa-in">
       ${pop(0, `<h1 class="qa-h">Čo zapíšeme?</h1><p class="qa-sub">${MEAL_HINT[cur]}. Všetko za pár ťuknutí.</p>`)}
-      ${pop(1, `<div class="qa-hero" style="--g1:${g[0]};--g2:${g[1]};--g3:${g[2]}">
-        <span class="qa-he">${MEAL_ICO[cur]}</span><h2>Zapísať ${name.toLowerCase()}</h2><p>Napíš to slovami, odfoť alebo naskenuj kód.</p>
-        <div class="qa-acts"><button data-qa="ai:${cur}"><b>✦</b>AI zápis</button><button data-qa="q:${cur}"><b>🔎</b>Hľadať</button><button data-qa="scan:${cur}"><b>▥</b>Kód</button></div></div>`)}
+      ${pop(1, `<div class="qa-hero" style="${pal(cur)}">
+        <span class="qa-he">${MEAL_ICO[cur]}</span><h2>Zapísať ${ACC[cur] || name.toLowerCase()}</h2><p>Napíš to slovami, odfoť alebo naskenuj kód.</p>
+        <div class="qa-acts">${ACTS(cur, 'qa')}</div></div>`)}
       ${pop(2, '<div class="qa-lb">Iná doba jedla</div>')}
-      ${pop(3, `<div class="qa-row">${Object.keys(MEAL_ICO).filter(k => M[k]).map((k, i) => `<button class="qa-m${k === cur ? ' on' : ''}" style="--i:${i}" data-qa="meal:${k}"><i>${MEAL_ICO[k]}</i>${M[k]}${k === cur ? '<small>teraz</small>' : ''}</button>`).join('')}</div>`)}
+      ${pop(3, `<div class="qa-row">${Object.keys(MEAL_ICO).filter(k => M[k]).map((k, i) => `<button class="qa-m${k === cur ? ' on' : ''}" style="--i:${i};--c:${MEAL_COL[k]}" data-qa="meal:${k}"><i>${MEAL_ICO[k]}</i>${M[k]}${k === cur ? '<small>teraz</small>' : ''}</button>`).join('')}</div>`)}
       ${pop(4, '<div class="qa-lb">Rýchlo</div>')}
       ${pop(5, `<div class="qa-w"><span class="dr">💧</span><div><b>Voda</b><small>${fmtL(ml)} z ${fmtL(goal)} l dnes</small></div><div class="plus"><button data-qa="w:250">+250</button><button data-qa="w:500">+500</button></div></div>`)}
       ${pop(6, `<div class="qa-g">
         <button class="qa-t" data-qa="weight"><i>⚖️</i><span>Hmotnosť<small>Zapísať váhu</small></span></button>
-        <button class="qa-t" data-qa="photo"><i>🤳</i><span>Fotky<small>Pred a po</small></span></button>
+        <button class="qa-t" data-qa="pphoto"><i>🤳</i><span>Fotky<small>Pred a po</small></span></button>
         <button class="qa-t" data-qa="checkin"><i>✅</i><span>Check-in<small>Spánok, nálada</small></span></button>
         <button class="qa-t" data-qa="diary"><i>📖</i><span>Denník<small>Jedlá dňa</small></span></button></div>`)}
       ${pop(7, '<div class="qa-lb">Tréning</div>')}
@@ -189,14 +209,17 @@ async function open() {
     const b = e.target.closest('[data-qa]');
     if (!b) { if (!e.target.closest('.qa-in') || e.target.classList.contains('qa-in')) close(); return; }
     const [a, v] = b.dataset.qa.split(':');
+    if (a === 'aphoto') { close(); return aiPhoto(v); }
+    if (a === 'voice') { close(); return aiVoice(v); }
+    if (a === 'note') { close(); return noteSheet(); }
+    if (a === 'text') return go('#/jedlo?meal=' + v + '&ai=1');
     if (a === 'meal') return go('#/jedlo?meal=' + v);
     if (a === 'q') return go('#/jedlo?meal=' + v + '&q=1');
     if (a === 'scan') return go('#/jedlo?meal=' + v + '&scan=1');
-    if (a === 'ai') return go('#/jedlo?meal=' + v + '&ai=1');
     if (a === 'weight') return go('#/vaha');
     if (a === 'checkin') return go('#/checkin');
     if (a === 'diary') return go('#/jedlo');
-    const R = { photo: '#/fotky', train: '#/trening', habits: '#/navyky', sugar: '#/cukor', watch: '#/hodinky', week: '#/tyzden', goals: '#/ciele', diet: '#/rezim', remind: '#/pripomienky', idea: '#/napis' };
+    const R = { pphoto: '#/fotky', train: '#/trening', habits: '#/navyky', sugar: '#/cukor', watch: '#/hodinky', week: '#/tyzden', goals: '#/ciele', diet: '#/rezim', remind: '#/pripomienky', idea: '#/napis' };
     if (R[a]) return go(R[a]);
     if (a === 'machine') return go('#/trening', () => { const el = document.getElementById('fw-machine'); if (el) el.click(); return !!el; });
     if (a === 'w' && uid) {
@@ -290,7 +313,6 @@ document.addEventListener('click', e => {
 const SHORT = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'];
 const SMON = ['jan', 'feb', 'mar', 'apr', 'máj', 'jún', 'júl', 'aug', 'sep', 'okt', 'nov', 'dec'];
 const plural = n => n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek';
-const MPAL = { snack: 'brunch' };
 
 function copyDays(uid, from, meal, label) {
   const sel = new Set(), days = Array.from({ length: 30 }, (_, i) => calc.addDays(from, i + 1));
@@ -319,19 +341,17 @@ async function mealSheet(meal) {
   try { rows = (await db.listFood(uid, date)).filter(f => f.meal === meal); } catch (_) { }
   const sum = calc.sumMacros(rows), has = rows.length > 0;
   const rec = m.share && p.target_kcal ? Math.round(p.target_kcal * m.share / 10) * 10 : 0;
-  const g = MEAL_G[MPAL[meal] || meal] || MEAL_G.brunch;
   const pct = rec ? Math.min(100, Math.round(sum.kcal / rec * 100)) : 0;
   const others = Object.entries(MEAL_META).filter(([k]) => k !== meal);
   const bg = ctx.sheet(`<div class="mq">
-    <div class="mq-hd" style="--g1:${g[0]};--g2:${g[1]};--g3:${g[2]}">
+    <div class="mq-hd" style="${pal(meal)}">
       <span class="mq-e">${m.icon}</span>
       <div><h3>${m.label}</h3><p>${has ? `${Math.round(sum.kcal)} kcal${rec ? ` z ~${rec}` : ''}` : rec ? `Odporúčané ~${rec} kcal` : 'Podľa potreby'}</p></div>
       ${rec ? `<div class="mq-bar"><i style="width:${pct}%"></i></div>` : ''}
       ${has ? `<div class="mq-mac"><span>B ${Math.round(sum.protein)} g</span><span>S ${Math.round(sum.carbs)} g</span><span>T ${Math.round(sum.fat)} g</span></div>` : ''}
     </div>
     <div class="mq-lb">Pridať</div>
-    <div class="mq-3">
-      <button data-a="q"><b>🔎</b>Hľadať</button><button data-a="scan"><b>▥</b>Kód</button><button data-a="ai"><b>✦</b>AI zápis</button></div>
+    <div class="mq-3">${ACTS(meal, 'mq')}</div>
     <div class="mq-lb">Rýchlo</div>
     <div class="mm">
       <button class="mm-b" data-a="prev"><span>↻</span>Rovnako ako včera</button>
@@ -344,7 +364,11 @@ async function mealSheet(meal) {
   bg.addEventListener('click', async e => {
     const b = e.target.closest('[data-a],[data-mv]'); if (!b) return;
     const a = b.dataset.a;
-    if (a === 'q' || a === 'scan' || a === 'ai') return nav2(a);
+    if (a === 'aphoto') { bg.remove(); return aiPhoto(meal); }
+    if (a === 'voice') { bg.remove(); return aiVoice(meal); }
+    if (a === 'note') { bg.remove(); return noteSheet(); }
+    if (a === 'q' || a === 'scan') return nav2(a);
+    if (a === 'text') return nav2('ai');
     if (a === 'prev') {
       try { const n = await db.copyMeal(uid, calc.addDays(date, -1), date, meal); bg.remove(); if (!n) ctx.toast('Včera tu nebolo nič zapísané', true); else { ctx.toast(`Skopírované: ${n} ${plural(n)}`); refresh(); } }
       catch (err) { ctx.toast(err.message, true); }
@@ -363,3 +387,79 @@ document.addEventListener('click', e => {
   const b = e.target.closest?.('[data-mm]'); if (!b) return;
   e.preventDefault(); e.stopImmediatePropagation(); mealSheet(b.dataset.mm);
 }, true);
+
+// ---------- AI zápis: foto a hlas hneď, bez medzikrokov ----------
+const afterAi = () => { const h = (location.hash || '#/').split('?')[0]; if (h === '#/' || h === '') refresh(); else location.hash = '#/'; };
+function shrink(file, max = 768, q = 0.7) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const d = c.toDataURL('image/jpeg', q); URL.revokeObjectURL(url);
+      res({ b64: d.slice(d.indexOf(',') + 1), url: d });
+    };
+    img.onerror = rej; img.src = url;
+  });
+}
+function aiPhoto(meal) {
+  const i = document.createElement('input');
+  i.type = 'file'; i.accept = 'image/*'; i.setAttribute('capture', 'environment'); i.hidden = true;
+  document.body.appendChild(i);
+  i.onchange = async () => {
+    const f = i.files?.[0]; i.remove(); if (!f) return;
+    try { const img = await shrink(f); openAiLog({ image: img.b64, preview: img.url, text: '' }, meal, afterAi, () => { }); }
+    catch (_) { ctx.toast('Fotku sa nepodarilo načítať', true); }
+  };
+  i.click();
+}
+function aiVoice(meal) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { ctx.toast('Diktovanie tu nejde. Napíš to alebo odfoť.', true); location.hash = `#/jedlo?meal=${meal}&ai=1`; return; }
+  const bg = ctx.sheet(`<div class="vq"><div class="vq-mic"><i></i><i></i><span>🎙️</span></div><h3>Hovor, počúvam</h3>
+    <p class="vq-t muted">Napríklad „dve vajcia a rožok“</p>
+    <div class="vq-b"><button class="btn" data-x>Zrušiť</button><button class="btn primary" data-ok>Hotovo</button></div></div>`);
+  const out = bg.querySelector('.vq-t');
+  let base = '', seen = '', want = true, rec = null, t0 = Date.now(), gotAny = false, lastAt = 0, cancelled = false;
+  const finish = () => {
+    want = false; rec = null;
+    if (!bg.isConnected) return;
+    const text = ((base + ' ' + seen).trim());
+    bg.remove();
+    if (cancelled) return;
+    if (!text) { ctx.toast('Nepočul som nič, skús to znova.', true); return; }
+    openAiLog({ text }, meal, afterAi, () => { });
+  };
+  const begin = () => {
+    const r = new SR(); rec = r; r.lang = 'sk-SK'; r.interimResults = true; r.continuous = true; seen = '';
+    r.onresult = e => { seen = Array.from(e.results).map(x => x[0].transcript).join(' ').trim(); if (seen) { gotAny = true; lastAt = Date.now(); } out.textContent = ((base + ' ' + seen).trim()) || out.textContent; out.classList.add('on'); };
+    r.onerror = e => {
+      if (['not-allowed', 'service-not-allowed'].includes(e.error)) { want = false; cancelled = true; ctx.toast('Povoľ mikrofón v nastaveniach prehliadača.', true); }
+      else if (e.error === 'network') { want = false; ctx.toast('Rozpoznávanie reči potrebuje internet.', true); }
+    };
+    r.onend = () => {
+      if (seen) base = (base + ' ' + seen).trim();
+      const now = Date.now(), fresh = gotAny ? now - lastAt < 6000 : now - t0 < 8000;
+      if (want && now - t0 < 90000 && fresh) { try { begin(); return; } catch (_) { } }
+      finish();
+    };
+    r.start();
+  };
+  try { begin(); } catch (_) { finish(); return; }
+  bg.querySelector('[data-ok]').onclick = () => { want = false; try { rec?.stop(); } catch (_) { finish(); } };
+  bg.querySelector('[data-x]').onclick = () => { want = false; cancelled = true; try { rec?.abort(); } catch (_) { } finish(); };
+}
+async function noteSheet() {
+  const st = S(), uid = st.profile?.id, date = st.date || calc.today();
+  let cur = '';
+  try { cur = (await db.getCheckin(uid, date))?.note || ''; } catch (_) { }
+  const bg = ctx.sheet(`<div class="nq"><h3>📝 Poznámka k dňu</h3><p class="muted small mt">Ako sa cítiš, čo bolo ťažké, čo sa podarilo. Vidí ju aj tvoj kouč.</p>
+    <textarea class="input" id="nqT" maxlength="1000" placeholder="Napíš čokoľvek...">${ctx.h(cur)}</textarea>
+    <button class="btn primary mt" id="nqGo">Uložiť poznámku</button></div>`);
+  setTimeout(() => bg.querySelector('#nqT')?.focus(), 80);
+  bg.querySelector('#nqGo').onclick = async () => {
+    try { await db.upsertCheckin({ user_id: uid, date, note: bg.querySelector('#nqT').value.trim() || null }); bg.remove(); ctx.toast('Poznámka uložená'); }
+    catch (e) { ctx.toast(e.message, true); }
+  };
+}

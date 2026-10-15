@@ -126,7 +126,7 @@ export async function renderGoals() {
 
       <section class="pg-card">
         <div class="gl-m"><div class="lb"><i style="background:#5AC8FA"></i>Voda</div><div class="meta"><em>${String(water * 0.25).replace('.', ',')} l</em> denne · ${water} pohárov</div>
-          <div class="ctl"><button data-w="-1" aria-label="Menej vody">−</button><input value="${String(water * 0.25).replace('.', ',')}" readonly aria-label="Voda v litroch"><span>l</span><button data-w="1" aria-label="Viac vody">+</button></div></div>
+          <div class="ctl"><button data-w="-1" aria-label="Menej vody">−</button><input id="glW" value="${String(water * 0.25).replace('.', ',')}" inputmode="decimal" autocomplete="off" aria-label="Voda v litroch"><span>l</span><button data-w="1" aria-label="Viac vody">+</button></div></div>
       </section>
 
       <button class="btn primary gl-save mt" id="glSave">${mode === 'auto' ? 'Použiť automatické ciele' : 'Uložiť moje ciele'}</button>
@@ -150,6 +150,14 @@ export async function renderGoals() {
     R.querySelectorAll('[data-mi]').forEach(inp => inp.onchange = () => setMacro(inp.dataset.mi, inp.value));
     R.querySelectorAll('[data-pr]').forEach(b => b.onclick = () => { const pr = PRESETS.find(x => x.id === b.dataset.pr); applyPreset(pr); preset = pr.id; lastEdited = null; draw(); });
     R.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { water = Math.max(4, Math.min(20, water + Number(b.dataset.w))); draw(); });
+    // litre sa dajú aj napísať: zaokrúhli sa na pohár (0,25 l) a drží sa v rozsahu 1 až 5 l
+    const gw = R.querySelector('#glW');
+    if (gw) {
+      gw.addEventListener('focus', () => gw.select());
+      const apply = () => { const v = parseFloat(String(gw.value).replace(',', '.')); if (isFinite(v) && v > 0) water = Math.max(4, Math.min(20, Math.round(v / 0.25))); draw(); };
+      gw.addEventListener('change', apply);
+      gw.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); gw.blur(); } });
+    }
     R.querySelector('#glSave').onclick = save;
   };
 
