@@ -36,6 +36,10 @@ const CSS = `
 .ft i{font-style:normal;font-size:26px;line-height:1}
 .ft.ph{background:#fff;border-color:transparent}
 .ft.ph i{display:none}
+.ft.ld i{visibility:hidden}
+.ft.ld{background:linear-gradient(90deg,var(--bg-2),var(--card-2),var(--bg-2));background-size:200% 100%;animation:ftS 1.2s linear infinite}
+@keyframes ftS{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.ft.ld{animation:none}}
 .ft img{width:100%;height:100%;object-fit:contain;padding:3px;box-sizing:border-box;display:block}
 .res.hasft{gap:12px;justify-content:flex-start}
 .res.hasft .n{flex:1;min-width:0}
@@ -47,8 +51,10 @@ if (!document.getElementById('ft-css')) { const el = document.createElement('sty
 
 // jedna dlaždica s fotkou alebo ikonkou; ak sa fotka nenačíta, ostane ikonka
 export function thumb(f, cls = '') {
-  const img = f?.img || null;
-  return `<span class="ft ${img ? 'ph' : ''} ${cls}" data-fid="${f?.id || ''}" data-name="${esc(f?.name)}">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('ph');this.remove()">` : ''}<i>${foodEmoji(f?.name)}</i></span>`;
+  const img = f?.img || hits().get(f?.name) || null;
+  // kým sa fotka hľadá, ukáže sa prázdna dlaždica; ikonka až keď je isté, že fotka neexistuje
+  const wait = !img && f?.name && !miss.has(f.name);
+  return `<span class="ft ${img ? 'ph' : wait ? 'ld' : ''} ${cls}" data-fid="${f?.id || ''}" data-name="${esc(f?.name)}">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('ph','ld');this.remove()">` : ''}<i>${foodEmoji(f?.name)}</i></span>`;
 }
 
 // obrázok mimo stránky sa nesmie načítavať s loading=lazy, inak sa nikdy nenatiahne
@@ -56,7 +62,8 @@ function attach(el, u) {
   if (!u || el.classList.contains('ph')) return;
   const im = new Image();
   im.alt = ''; im.decoding = 'async'; im.referrerPolicy = 'no-referrer'; im.src = u;
-  im.onload = () => { if (!el.classList.contains('ph')) { el.classList.add('ph'); el.prepend(im); } };
+  im.onload = () => { el.classList.remove('ld'); if (!el.classList.contains('ph')) { el.classList.add('ph'); el.prepend(im); } };
+  im.onerror = () => el.classList.remove('ld');
 }
 
 // doplní fotky do už vykreslených riadkov (záznamy z denníka nemajú vždy food_id)
@@ -81,7 +88,11 @@ const hits = () => {
   return memo;
 };
 const saveHits = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.fromEntries([...hits()].filter(([, v]) => v).slice(-1500)))); } catch (_) { } };
+const MK = 'fw_imgm1';
 const miss = new Set();
+try { JSON.parse(localStorage.getItem(MK) || '[]').forEach(n => miss.add(n)); } catch (_) { }
+const failed = new Set();
+const saveMiss = () => { try { localStorage.setItem(MK, JSON.stringify([...miss].filter(n => !failed.has(n)).slice(-1500))); } catch (_) { } };
 export async function imgByNames(names) {
   const m = hits();
   const todo = [...new Set(names.filter(n => n && !m.has(n) && !miss.has(n)))];
@@ -92,9 +103,9 @@ export async function imgByNames(names) {
       try {
         const { data } = await db.sb.rpc('img_for_names', { names: chunk });
         (data || []).forEach(r => { if (r.img) m.set(r.n, r.img); else miss.add(r.n); });
-      } catch (_) { chunk.forEach(n => miss.add(n)); }
+      } catch (_) { chunk.forEach(n => { miss.add(n); failed.add(n); }); }
     }
-    saveHits();
+    saveHits(); saveMiss();
   }
   return m;
 }
@@ -105,8 +116,9 @@ export async function hydrate(root = document) {
   els.forEach(e => { e.dataset.h = '1'; });
   fis.forEach(e => { e.dataset.h = '1'; e.dataset.name = e.parentNode.querySelector('.fn b').textContent; });
   const m = await imgByNames([...els, ...fis].map(e => e.dataset.name));
-  els.forEach(el => attach(el, m.get(el.dataset.name)));
+  els.forEach(el => { const u = m.get(el.dataset.name); if (u) attach(el, u); else el.classList.remove('ld'); });
   fis.forEach(el => attachFi(el, m.get(el.dataset.name)));
 }
+setInterval(() => document.querySelectorAll('.ft.ld').forEach(e => { if (!e.dataset.t) e.dataset.t = String(Date.now()); else if (Date.now() - Number(e.dataset.t) > 3000) e.classList.remove('ld'); }), 1000);
 let tm = null;
 new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => hydrate(document).catch(() => { }), 120); }).observe(document.documentElement, { childList: true, subtree: true });
