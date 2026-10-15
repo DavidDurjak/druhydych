@@ -11,6 +11,7 @@ const FONT = (w, s) => `${w} ${s}px Sora, "SF Pro Display", system-ui, -apple-sy
 const FLAME = 'M13.4 2.6c.3 2.6 2.1 3.9 3.5 5.9 1.5 2.1 2.1 4.2 1.6 6.4-.7 3.1-3.4 5.2-6.5 5.2-3.3 0-5.9-2.4-5.9-5.6 0-2 .9-3.5 2.2-4.8.2 1.1.8 1.9 1.7 2.3-.4-2.9.5-5.9 3.4-11.4z';
 const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
 const nf = n => Math.round(n).toLocaleString('sk-SK').replace(/ /g, ' ');
+const durFmt = m => m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`;
 const kgs = n => String(Math.round(n * 10) / 10).replace('.', ',');
 const exName = id => EXERCISES?.[id]?.name || id;
 const e1rm = (kg, reps) => kg * (1 + Math.min(reps, 20) / 30);
@@ -143,7 +144,7 @@ export function draw(d, mode = 'dark', photo = null) {
   c.font = FONT(600, 36);
   const stats = [
     [big ? 'Objem' : 'Série', big ? `${nf(d.s.volume)} kg` : String(d.s.sets)],
-    [big ? 'Série' : 'Cviky', big ? String(d.s.sets) : String(d.s.exCount)],
+    d.dur ? ['Čas', durFmt(d.dur)] : [big ? 'Série' : 'Cviky', big ? String(d.s.sets) : String(d.s.exCount)],
   ];
   if (t0) stats.push([fit(c, exName(t0.id), 760), t0.best ? `${kgs(t0.best.kg)} kg × ${t0.best.reps}` : `${t0.bw} op.`]);
   let y = 330;
@@ -188,7 +189,7 @@ async function build() {
   const st = ctx.state, uid = st.profile.id, date = st.date || calc.today();
   const from = calc.addDays(calc.today(), -400);
   const [logs, dates, plan] = await Promise.all([
-    db.sb.from('workout_logs').select('date,day_name,sets,done,plan_day').eq('user_id', uid).eq('done', true).gte('date', from).order('date', { ascending: false }).then(r => { if (r.error) throw r.error; return r.data || []; }),
+    db.sb.from('workout_logs').select('date,day_name,sets,done,plan_day,duration_min').eq('user_id', uid).eq('done', true).gte('date', from).order('date', { ascending: false }).then(r => { if (r.error) throw r.error; return r.data || []; }),
     db.activityDates(uid, from).catch(() => []),
     db.getPlan(uid).catch(() => null),
   ]);
@@ -200,7 +201,7 @@ async function build() {
   const goal = st.profile.training_days || plan?.days?.length || 0;
   const dt = new Date(date + 'T00:00:00');
   return {
-    s, load: muscleLoad(s.all), dayName: log.day_name || 'Tréning', name: (st.profile.name || '').split(' ')[0],
+    s, dur: Number(log.duration_min) || 0, load: muscleLoad(s.all), dayName: log.day_name || 'Tréning', name: (st.profile.name || '').split(' ')[0],
     dateLabel: dt.toLocaleDateString('sk-SK', { day: 'numeric', month: 'long' }),
     week: goal ? `${weekN}/${goal}` : String(weekN),
     streak: calc.streak ? calc.streak(dates) : 0,
