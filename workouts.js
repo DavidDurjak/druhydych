@@ -456,25 +456,25 @@ export function peakProtocol(daysLeft, kg) {
     it.push(d === 7 ? 'Tréning: bežný, ešte s plným objemom. Dnes je posledný deň, kedy to môžeš odskúšať s trénerom.' : 'Tréning: bežný, posledný ťažký tréning nôh urob 4 dni pred súťažou.');
   } else if (d >= 3) {
     it.push(`Sacharidy: ${per(6, 8)} denne, rozdelené do 5 až 6 jedál. Ryža, zemiaky, ovsené vločky, ryžové koláče, med.`);
-    it.push('Tuky zníž na asi 0,5 až 0,8 g na kg a vlákninu obmedz, aby si nemal nafúknúte brucho.');
+    it.push('Tuky zníž na asi 0,5 až 0,8 g na kg a vlákninu obmedz, aby sa ti brucho nenadývalo.');
     it.push(`Voda: stále ${lit(60, 80)} denne. Sodík bez zmeny.`);
     it.push(d === 4 ? 'Tréning: posledný ťažký tréning nôh. Potom už len ľahko.' : d === 3 ? 'Tréning: posledná horná časť tela, ľahšie váhy a bez zlyhania.' : 'Tréning: len ľahká aktivácia, žiadny objem.');
   } else if (d === 2) {
     it.push(`Sacharidy: ${per(8, 10)} denne, ak si túto dávku odskúšal pri skúšobnom nabití. Ak nie, zostaň na ${per(6, 8)}.`);
     it.push(`Voda: zníž na ${lit(40, 50)} denne, teda približne bežný príjem. Sodík bez zmeny.`);
     it.push('Žiadny nový typ jedla. Ak sa brucho zdvíha alebo cítiš plynatosť, uber vlákninu a veľké objemy jedla.');
-    it.push('Žiadny tréning, len pózovanie a prochádzka.');
+    it.push('Žiadny tréning, len pózovanie a chôdza.');
   } else if (d === 1) {
     it.push(`Sacharidy: ${per(6, 8)} vo viacerých menších jedlách, ľahko stráviteľné. Posledné veľké jedlo 3 až 4 hodiny pred spaním.`);
     it.push(`Voda: ${lit(30, 40)} cez deň, pi po dúškoch. Neklesaj pod ${floor(20)} a vodu nikdy úplne nevynechaj.`);
     it.push('Sodík: neškrtaj. Nízky sodík s nízkou vodou naraz je presne kombinácia, ktorá končí kŕčmi.');
-    it.push('Žiadne diuretiká, laxatíva ani saunu. Tieto kroky appka neponuka, pretože ide o priamy dôvod záchranných výjazdov z podí.');
+    it.push('Žiadne diuretiká, laxatíva ani saunu. V appke ich nenájdeš, lebo sú priamou príčinou záchranných zásahov.');
     it.push('Spánok 7 až 9 hodín. Pripraviť jedlo, vodu a elektrolyty na ráno.');
   } else {
     it.push('Ráno: malé ľahko stráviteľné jedlo so sacharidmi (ryža, banán, ryžový koláč s medom). Nič nové.');
     it.push(`Voda: pi po dúškoch. Nechoď pod ${floor(20)} za deň. Pri silnom smäde pi, nikdy sa netráp.`);
-    it.push('Pred vstupom na pódium malé sacharidy (napríklad ryžový koláč s medom alebo hrozienka) a krátky ľahký pump s gumami. Cieľ je plné svaly, nie nafúknúte brucho.');
-    it.push('Po vystúpení pi, jedz a doplň elektrolyty. Nenechaj sa pozvať na veľkú večera hneď. Prvé hodiny jedz po menších častiach.');
+    it.push('Pred vstupom na pódium malé sacharidy (napríklad ryžový koláč s medom alebo hrozienka) a krátky ľahký pump s gumami. Cieľ sú plné svaly, nie nadývanie.');
+    it.push('Po vystúpení pi, jedz a doplň elektrolyty. Nehádž sa hneď na veľkú hostinu. Prvé hodiny jedz po menších časťiach.');
   }
   it.push('Zastav a vyhľadaj lekára pri: silných kŕčoch, závrate, búšení srdca, bolesti hlavy s nevoľnosťou, zmätenosti alebo omdlievaní. Pri bolesti hlavy a nevoľnosti po veľa vode podozrievaj nízky sodík.');
   return out;
