@@ -52,10 +52,10 @@ function sheet(html) {
   document.body.appendChild(bg);
   return bg;
 }
-// spodná lišta: max 5 položiek pre účastníka (6 pre kouča); Váha + Fotky = Pokrok
-const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/', '#/admin': '#/profil', '#/napis': '#/profil', '#/ciele': '#/profil', '#/rezim': '#/profil', '#/karta': '#/profil', '#/cukor': '#/', '#/cukor-sprava': '#/', '#/navyky': '#/' };
+// spodná lišta: Dnes, Tréning, Pokrok, Profil (+ Kouč pre kouča); jedlo sa zapisuje cez plusko vedľa lišty; Váha + Fotky = Pokrok
+const NAV_GROUP = { '#/jedlo': '#/', '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#/', '#/spravy': '#/profil', '#/pripomienky': '#/profil', '#/report': '#/pokrok', '#/hodinky': '#/profil', '#/tyzden': '#/', '#/admin': '#/profil', '#/napis': '#/profil', '#/ciele': '#/profil', '#/rezim': '#/profil', '#/karta': '#/profil', '#/cukor': '#/', '#/cukor-sprava': '#/', '#/navyky': '#/' };
 function nav(active) {
-  const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
+  const items = [['#/', 'home', 'Dnes'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
   items.push(['#/profil', 'user', 'Profil']);
   const cur = groupOf(active);
