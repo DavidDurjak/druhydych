@@ -420,7 +420,7 @@ export function contestPhase(daysLeft) {
     'Pri závrate, búšení srdca alebo silných kŕčoch prestaň a vyhľadaj lekára.'] };
   if (daysLeft <= 14) return { id: 'final', title: 'Dva týždne pred súťažou', items: [
     'Nič nové. Jedlá, doplnky aj pózovanie len také, ktoré si už vyskúšal.',
-    'Tréning drž ako doteraz, objem môžeš v druhom týždni mierne znížiť, aby si prišiel oddychúný.',
+    'Tréning drž ako doteraz, objem môžeš v druhom týždni mierne znížiť, aby si prišiel v plnej sile.',
     'Ak máš trénera, teraz je čas doladiť s ním posledný týždeň. Fotku postavy urob na kontrolu a nájdi, čo ešte treba doladiť.'] };
   if (w <= 16) return { id: 'prep', title: 'Príprava na súťaž', items: [
     'Chudni pomaly, o približne 0,5 až 1 % telesnej hmotnosti týždenne. Rýchlejšie tempo znamená väčšiu stratu svalov.',
