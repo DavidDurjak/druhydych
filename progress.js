@@ -42,7 +42,7 @@ function paceVerdict(goal, weekly, weight) {
     return { cls: 'warn', text: 'Váha ide hore. Uber 150 až 200 kcal alebo pridaj kroky.' };
   }
   if (goal === 'gain') {
-    if (pct >= 0.75) return { cls: 'warn', text: 'Pribéraš rýchlo, časť bude tuk. Uber 100 až 150 kcal.'.replace('Pribéraš', 'Prideráš'.replace('d', 'b')) };
+    if (pct >= 0.75) return { cls: 'warn', text: 'Priberáš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
     if (pct >= 0.15) return { cls: 'ok', text: 'Ideálne tempo naberania svalov.' };
     return { cls: 'mid', text: 'Váha sa nehýbe. Pridaj 150 až 200 kcal, najlepšie zo sacharidov.' };
   }
