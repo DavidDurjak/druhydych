@@ -162,7 +162,7 @@ const SLOTS = {
 // Denné šablóny: zoznam slotov. "+1" posunie výber cviku na ďalší v poradí (aby sa nezopakoval ten istý).
 const FB_A = ['q_main', 'c_main', 'b_row', 's_press', 'h_iso', 'bi', 'abs'];
 const FB_B = ['h_main', 'c_inc', 'b_vert', 'q_sec', 's_lat', 'tri', 'calf'];
-const FB_C = ['q_sec+1', 'c_main+1', 'b_row2', 's_rear', 'g_main', 'bi2', 'abs+1'];
+const FB_C = ['q_sec+2', 'c_inc+1', 'b_row2', 's_rear', 'g_main', 'bi2', 'abs+1'];
 const UP_1 = ['c_main', 'b_vert', 's_press', 'b_row', 'c_iso', 'bi', 'tri'];
 const UP_2 = ['b_vert+1', 'c_inc', 'b_row2', 's_lat', 's_rear', 'bi2', 'tri_long'];
 const LOW_1 = ['q_main', 'h_main', 'q_sec', 'h_iso', 'calf', 'abs'];
@@ -170,12 +170,12 @@ const LOW_2 = ['g_main', 'q_sec+1', 'h_iso+1', 'q_iso', 'calf+1', 'abs+1'];
 const SPLITS = {
   2: { name: 'Celé telo 2×', days: [{ n: 'Celé telo A', s: ['q_main', 'c_main', 'b_row', 's_lat', 'h_iso', 'abs'] }, { n: 'Celé telo B', s: ['h_main', 'c_inc', 'b_vert', 'q_sec', 'bi', 'tri'] }] },
   3: { name: 'Celé telo 3×', days: [{ n: 'Celé telo A', s: FB_A }, { n: 'Celé telo B', s: FB_B }, { n: 'Celé telo C', s: FB_C }] },
-  '3u': { name: 'Horná, dolná, celé telo', days: [{ n: 'Horná časť', s: UP_1 }, { n: 'Dolná časť', s: ['q_main', 'h_main', 'q_sec', 'h_iso', 'calf', 'abs'] }, { n: 'Celé telo', s: ['c_inc', 'b_row2', 'g_main', 's_lat', 's_rear', 'tri_long', 'bi2'] }] },
+  '3u': { name: 'Horná, dolná, celé telo', days: [{ n: 'Horná časť', s: UP_1 }, { n: 'Dolná časť', s: ['q_main', 'h_main', 'q_sec', 'h_iso', 'calf', 'abs'] }, { n: 'Celé telo', s: ['c_inc', 'b_row2', 'q_sec+1', 'g_main', 's_lat', 's_rear', 'bi2'] }] },
   4: { name: 'Horná a dolná 2×', days: [{ n: 'Horná A (tlaky)', s: UP_1 }, { n: 'Dolná A (drep)', s: LOW_1 }, { n: 'Horná B (ťahy)', s: UP_2 }, { n: 'Dolná B (zadok)', s: LOW_2 }] },
   5: { name: 'Horná, dolná, tlaky, ťahy, nohy', days: [
     { n: 'Horná časť', s: UP_1 },
-    { n: 'Dolná časť', s: ['q_main', 'h_main', 'q_iso', 'h_iso', 'calf'] },
-    { n: 'Tlaky (hrudník, ramená, triceps)', s: ['c_inc', 's_press', 'c_iso', 's_lat', 'tri_long', 'tri'] },
+    { n: 'Dolná časť', s: ['q_main', 'h_main', 'q_iso', 'h_iso', 'calf', 'abs'] },
+    { n: 'Tlaky (hrudník, ramená, triceps)', s: ['c_inc', 's_press', 'c_iso', 's_lat', 's_rear', 'tri_long', 'tri'] },
     { n: 'Ťahy (chrbát, biceps)', s: ['b_row2', 'b_vert+1', 's_rear', 'b_iso', 'bi2', 'bi'] },
     { n: 'Nohy a zadok', s: ['g_main', 'q_sec+1', 'q_iso', 'h_iso+1', 'calf+1', 'abs'] }] },
   6: { name: 'Tlaky, ťahy, nohy 2×', days: [
@@ -218,6 +218,12 @@ export function generatePlan(p = {}) {
   const bmi = heightCm && weightKg ? weightKg / ((heightCm / 100) ** 2) : 0;
   const tall = (sex === 'm' && heightCm >= 190) || (sex === 'f' && heightCm >= 180);
   const older = years != null && years >= 45;
+  const old55 = years != null && years >= 55;
+  const lowBmi = bmi > 0 && bmi < 18.5;
+  // referenčná hmotnosť pre štartovacie váhy: pri vyššom BMI sa nezapočíta všetok tuk
+  const hM2 = (heightCm / 100) ** 2;
+  const refKg = weightKg > 0 ? (bmi > 25 ? 25 * hM2 + 0.35 * (weightKg - 25 * hM2) : weightKg) : 0;
+  const ageF = years != null && years >= 60 ? 0.8 : years != null && years >= 50 ? 0.9 : 1;
   const block = Math.max(0, Number(p.block) || 0);
   const mesoWeeks = LEVELS[level].blockWeeks;
   const week = clamp(Math.round(Number(p.week) || 1), 1, mesoWeeks);
@@ -285,18 +291,19 @@ export function generatePlan(p = {}) {
       const rampNow = slot.role === 'main' ? Math.min(Math.ceil(ramp / 2), 1) : Math.min(ramp, rampCap);
       if (deload) sets = sets <= 2 ? 1 : Math.ceil(sets / 2);
       else sets += (goal === 'gain' || ramp === 0) ? rampNow : Math.min(rampNow, 1);
+      if (slot.role === 'main') sets = Math.min(sets, 4);
       sets = clamp(sets, 1, 5);
       // opakovania, rezerva, pauza
       const rr = ex.rr;
-      const reps = ex.time ? null : REPS[rr][isBeg ? 'b' : 'x'];
+      const reps = ex.time ? null : REPS[old55 && rr === 'H' ? 'M' : rr][isBeg ? 'b' : 'x'];
       let rir = RIR[level][week - 1];
       if (!deload && ex.type === 'isolation') rir = Math.max(0, rir - 1);
       if (older && !deload) rir = Math.min(4, rir + 1);
       const rest = REST[rr] || 60;
       const o = { id, orig, name: ex.name, muscle: ex.muscle, sets, reps, seconds: ex.id === 'cardio' ? 1200 : (ex.time ? 45 : null), rir: ex.time ? null : rir, rest: ex.time ? null : (isBeg && rr === 'H' ? 150 : rest), cue: ex.cue, role: slot.role };
-      if (ex.sk && weightKg > 0 && !ex.time) {
+      if (ex.sk && refKg > 0 && !ex.time) {
         const bodyF = ex.u === 'lower' ? (sex === 'f' ? 0.75 : 1) : (sex === 'f' ? 0.55 : 1);
-        o.startKg = r25(weightKg * ex.sk * bodyF * (isBeg ? 0.75 : 1));
+        o.startKg = r25(refKg * ex.sk * bodyF * ageF * (isBeg ? 0.75 : 1));
       }
       exercises.push(o);
     });
@@ -305,7 +312,7 @@ export function generatePlan(p = {}) {
 
   // kardio podľa cieľa: pri chudnutí 2 až 3 ľahké relácie, nikdy tesne pred ťažkým dňom nôh
   let cardioSessions = 0;
-  if (goal === 'lose') cardioSessions = level === 'elite' ? 2 : (bmi >= 27 ? 3 : 2);
+  if (goal === 'lose') cardioSessions = lowBmi ? 0 : (level === 'elite' ? 2 : (bmi >= 27 ? 3 : 2));
   else if (goal === 'maintain') cardioSessions = 1;
   if (cardioSessions) {
     const hasHeavyLegs = d => d.exercises.some(e => e.id === 'squat' || e.id === 'hack' || e.id === 'goblet' || e.id === 'rdl' || e.id === 'db_rdl');
@@ -318,10 +325,10 @@ export function generatePlan(p = {}) {
     v: 2, params: { goal, days, level, equipment, emphasis, sex, birthYear: p.birthYear || null, heightCm: heightCm || null, weightKg: weightKg || null, priority, swaps, contestDate: /^\d{4}-\d{2}-\d{2}$/.test(p.contestDate || '') ? p.contestDate : null, peakAck: /^\d{4}-\d{2}-\d{2}$/.test(p.peakAck || '') ? p.peakAck : null },
     spec: specOn,
     block, week, mesoWeeks, deload, rir: RIR[level][week - 1], split: split.name, volume: vol,
-    why: explain({ goal, level, equipment, emphasis, days, sex, bmi, tall, older, split: split.name, mesoWeeks, cardioSessions, specOn, priority }),
+    why: explain({ goal, level, equipment, emphasis, days, sex, bmi, tall, older, old55, lowBmi, split: split.name, mesoWeeks, cardioSessions, specOn, priority }),
     progression: 'Dvojitá progresia: keď zvládneš všetky série na hornej hranici rozsahu opakovaní a stále ti ostane predpísaná rezerva, pridaj nabudúce váhu (horná časť tela približne 2,5 kg, nohy približne 5 kg, jednoručky 1 až 2 kg). Ak spadneš pod spodnú hranicu, váhu zníž.',
     warmup: 'Pred tréningom 5 minút ľahkého pohybu a pri prvom cviku 2 prípravné série: približne 50 % a 75 % pracovnej váhy (pár opakovaní).',
-    stepsGoal: goal === 'lose' ? 9000 : 7000,
+    stepsGoal: goal === 'lose' && !lowBmi ? 9000 : 7000,
   };
   return { name: `${days}× týždenne · ${LEVELS[level].label.toLowerCase()} · ${goal === 'lose' ? 'chudnutie' : goal === 'gain' ? 'naberanie' : 'udržiavanie'}`, days: plan, meta };
 }
@@ -361,6 +368,13 @@ function explain(c) {
   if (c.bmi >= 32) out.push('Pri vyššej hmotnosti sme pri tlakoch aj ťahoch zvolili stabilnejšie stroje a kardio je nízkonárazové (chôdza do kopca, bicykel).');
   if (c.older) out.push('Vzhľadom na vek nechávaš o jedno opakovanie viac v rezerve a dôraz je na kontrolovanú techniku.');
   if (c.equipment === 'home') out.push('Plán je na cvičenie doma s jednoručkami. Ak máš hrazdu, zhyby sú skvelý doplnok na chrbát.');
+  if (c.sex === 'f') out.push('Svaly žien reagujú na tréning rovnako ako svaly mužov, preto základ plánu (objem, rezerva, progresia) nie je iný. Rozdiel je v dôraze, ktorý je štandardne na zadok a nohy, a v nižších štartovacích váhach podľa tvojej hmotnosti.');
+  else out.push('Základ plánu je vyvážený na celé telo. Štartovacie váhy vychádzajú z tvojej hmotnosti, výšky a veku.');
+  out.push('Štartovacie váhy sú len odhad. V prvom týždni ich uprav podľa pocitu: posledné opakovanie v sérii má byť ťažké, ale technika čistá a ešte ti ostane predpísaná rezerva.');
+  if (c.days === 2 && c.level !== 'beginner') out.push('Dva dni týždenne sú minimum, ktoré na udržanie a pomalý rast stačí. Ak chceš viac objemu na jednotlivé svaly, pridaj tretí deň.');
+  if (c.old55) out.push('Od 55 rokov sú ťažké základné cviky v rozsahu 8 až 12 opakovaní namiesto 6 až 8. Kĺby a šľachy to znášajú lepšie a rast svalov je rovnaký.');
+  if (c.lowBmi) out.push('Tvoje BMI je pod 18,5, preto nechudni. Plán nemá pridané kardio a kroky sú na bežnej úrovni. Zváž cieľ udržiavanie alebo naberanie.');
+  if (c.goal === 'gain' && c.bmi >= 30) out.push('Pri BMI nad 30 býva lepšie najprv udržiavať kalórie a budovať silu (prestavba postavy), než nabierať v nadbytku. Plán ostáva rovnaký, ale jedz skôr na úrovni udržiavania.');
   out.push(`Blok trvá ${c.mesoWeeks} týždňov. Posledný týždeň je odporúčaný deload (polovica sérií, rovnaké váhy, viac rezervy). Plánovaný deload rast svalov sám nezvýši (štúdia ukázala rovnaký rast ako bez pauzy), pomáha hlavne regenerácii. Preto ho môžeš pri dobrom pocite preskočiť alebo si ho dať skôr, ak si vyčerpaný. Pomocné cviky sa po bloku obmenia, základné ostanú, aby sa dal ďalej pridávať váha.`);
   return out;
 }
