@@ -12,6 +12,7 @@ import './navblend.js';
 import './hdr.js';
 import './cal.js';
 import './shopcart.js';
+import './profil.js';
 
 const root = document.getElementById('app');
 let busy = false;
