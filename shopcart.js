@@ -1,5 +1,9 @@
 // Nákupný zoznam na Dnes: vždy hneď pod posledným jedlom (ostatné karty sa vkladajú asynchrónne, poradie bolo náhodné)
-// a živý košík: pri zobrazení sa vkotúľa, každé pár sekúnd doň spadnú tri suroviny a košík sa trochu zahojdá.
+// a živý košík: pri zobrazení sa vkotúľa, každých pár sekúnd doň spadnú tri suroviny a košík sa trochu zahojdá.
+// Bez plánu na ďalších 7 dní ukáže kartu s pozvánkou na Hotový jedálniček, aby nový človek košík vôbec objavil.
+import { sb } from './data.js';
+import { ctx } from './app.js';
+import * as calc from './calc.js';
 const CSS = `
 #fw-shop.shop-card{position:relative;overflow:hidden;border-color:rgba(255,190,90,.3);background:linear-gradient(160deg,rgba(255,190,90,.14),var(--card) 62%)}
 #fw-shop.shop-card::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 42%,rgba(255,214,150,.16) 50%,transparent 58%);transform:translateX(-130%);animation:scxSheen 8s ease-in-out 1.2s infinite}
@@ -40,4 +44,20 @@ const run = () => {
   const tile = b.firstElementChild;
   if (tile && !tile.dataset.sc) { tile.dataset.sc = '1'; tile.className = 'sc-t'; tile.innerHTML = CART; }
 };
-if (root) { new MutationObserver(run).observe(root, { childList: true, subtree: true }); run(); }
+const empty = async () => {
+  const meals = root.querySelector('.screen.td .meals');
+  if (!meals || meals.dataset.sc0 || root.querySelector('#fw-shop') || !ctx.state?.profile) return;
+  meals.dataset.sc0 = '1';
+  try {
+    const from = calc.addDays(calc.today(), 1), to = calc.addDays(from, 6);
+    const { count, error } = await sb.from('food_logs').select('id', { count: 'exact', head: true }).eq('user_id', ctx.state.profile.id).gte('date', from).lte('date', to);
+    if (error || count || !meals.isConnected) return;
+    await new Promise(r => setTimeout(r, 500));
+    if (!meals.isConnected || root.querySelector('#fw-shop')) return;
+    const b = document.createElement('button'); b.id = 'fw-shop'; b.className = 'shop-card';
+    b.innerHTML = '<span></span><div><b>Nákupný zoznam</b><small>Naplánuj si jedlá a suroviny sa zložia samy</small></div><i>›</i>';
+    b.onclick = () => { location.hash = '#/karta'; };
+    meals.after(b);
+  } catch (_) { /* bez karty */ }
+};
+if (root) { new MutationObserver(() => { run(); empty(); }).observe(root, { childList: true, subtree: true }); run(); }
