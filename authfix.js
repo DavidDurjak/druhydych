@@ -29,10 +29,22 @@ body:has(.sheet-bg) .qa-fab,body:has(.sheet-bg) .bd-fab{display:none!important}
 .af-ok button{margin-top:8px;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
 .af-ok button:disabled{color:var(--muted);cursor:default}
 @media (prefers-reduced-motion:reduce){.af-ok{animation:none}}
-.af-cons{display:flex;gap:11px;align-items:flex-start;margin:14px 0 4px;color:var(--muted);font-size:13.5px;line-height:1.45;cursor:pointer}
-.af-cons input{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--accent)}
+.af-cons{display:flex;gap:12px;align-items:flex-start;margin:16px 0 16px;color:var(--muted);font-size:13.5px;line-height:1.45;cursor:pointer}
+.af-cons input{-webkit-appearance:none;appearance:none;flex:none;width:24px;height:24px;margin:0;border-radius:8px;border:1.5px solid #4A5568;background:var(--bg-2);transition:background .15s,border-color .15s}
+.af-cons input:checked{border-color:var(--accent);background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230B0E12' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/16px no-repeat}
 .af-cons a{color:var(--accent);font-weight:600;text-decoration:none}
 .af-hint{margin:6px 2px 0;color:var(--muted);font-size:12.5px}
+.af-note{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.45}
+.af-err{margin:7px 2px 0;color:var(--danger);font-size:13px;font-weight:600;line-height:1.35;animation:afIn .25s ease-out both}
+label:has(.af-err)+.af-hint{display:none}
+.input.af-bad{border-color:var(--danger)!important}
+.af-cons input.af-bad{border-color:var(--danger)}
+.af-cons+.af-err{margin:-8px 2px 16px}
+.af-cons:has(.af-bad){animation:afShake .35s ease-in-out}
+@keyframes afShake{20%{transform:translateX(-5px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.af-cons:has(.af-bad){animation:none}}
+.fl-bg .fl-in{margin:clamp(12px,9vh,72px) auto 0}
+body:has(.fl-bg) .qa-fab,body:has(.fl-bg) .bd-fab{display:none!important}
 .hero+.screen.no-nav{padding-top:0}
 .af-pw{position:relative;display:block}
 .af-pw input{padding-right:52px!important}
@@ -122,6 +134,80 @@ function eyeify(inp) {
   w.appendChild(b);
 }
 
+// ---------- vlastné hlásenia namiesto okienok prehliadača (okienko prehliadača by zobrazilo orezaný text) ----------
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function check(form) {
+  const register = form.id === 'authf' && !!form.querySelector('[name=name]');
+  for (const el of form.elements) {
+    if (!el.name || el.disabled) continue;
+    const v = el.value || '';
+    let m = '';
+    if (el.type === 'checkbox') { if (el.required && !el.checked) m = 'Potvrď súhlas, aby si mohol pokračovať.'; }
+    else if (el.required && !v.trim()) m = el.name === 'password' ? 'Zadaj heslo.' : el.name === 'email' ? 'Zadaj e-mail.' : el.name === 'name' ? 'Napíš svoje meno.' : 'Vyplň toto pole.';
+    else if (el.type === 'email' && !EMAIL_RE.test(v.trim())) m = 'Zadaj platný e-mail.';
+    else if (el.name === 'name' && v.trim().length < 2) m = 'Meno musí mať aspoň 2 znaky.';
+    else if (el.name === 'password' && register && v.length < 8) m = 'Heslo musí mať aspoň 8 znakov.';
+    else if (el.type === 'number' && v !== '') {
+      const n = Number(v);
+      if (el.max !== '' && n > Number(el.max)) m = el.name === 'birth_year' ? 'Fuelwind je pre ľudí od 18 rokov.' : 'Najvyššia hodnota je ' + el.max + '.';
+      else if (el.min !== '' && n < Number(el.min)) m = 'Najnižšia hodnota je ' + el.min + '.';
+    }
+    if (m) return { el, m };
+  }
+  return null;
+}
+function clearErr(el) {
+  const l = el?.closest?.('label');
+  el?.classList?.remove('af-bad');
+  l?.querySelector(':scope > .af-err')?.remove();
+  if (l?.classList.contains('af-cons')) { const n = l.nextElementSibling; if (n?.classList.contains('af-err')) n.remove(); }
+}
+function showErr(form, el, m) {
+  form.querySelectorAll('.af-err').forEach(n => n.remove());
+  form.querySelectorAll('.af-bad').forEach(n => n.classList.remove('af-bad'));
+  const p = document.createElement('p');
+  p.className = 'af-err'; p.setAttribute('role', 'alert'); p.textContent = m;
+  const l = el.closest('label');
+  el.classList.add('af-bad');
+  if (l && l.classList.contains('af-cons')) l.after(p); else if (l) l.append(p); else el.after(p);
+  try { el.focus({ preventScroll: true }); } catch (_) {}
+  setTimeout(() => (l || el).scrollIntoView({ block: 'center', behavior: 'smooth' }), 60);
+}
+document.addEventListener('submit', e => {
+  const f = e.target;
+  if (!f || (f.id !== 'authf' && f.id !== 'onb')) return;
+  const r = check(f);
+  if (!r) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  showErr(f, r.el, r.m);
+}, true);
+for (const ev of ['input', 'change']) root?.addEventListener(ev, e => clearErr(e.target));
+
+// ---------- onboarding: jedna otázka o tréningoch, súhlas už je pri registrácii ----------
+const actFor = d => d <= 0 ? 'low' : d <= 2 ? 'light' : d <= 4 ? 'moderate' : 'high';
+function tuneOnboarding(ob) {
+  if (!ob || ob.dataset.af) return;
+  ob.dataset.af = '1'; ob.noValidate = true;
+  const days = ob.querySelector('[name=training_days]'), sel = ob.querySelector('[name=activity]');
+  if (days && sel) {
+    sel.closest('label').style.display = 'none';
+    const sync = () => { sel.value = actFor(Number(days.value) || 0); };
+    days.addEventListener('input', sync);
+    sync(); ob.dispatchEvent(new Event('input', { bubbles: true }));
+    const hint = document.createElement('p');
+    hint.className = 'af-hint'; hint.textContent = 'Podľa toho nastavíme tvoj denný výdaj energie.';
+    days.closest('label').after(hint);
+  }
+  const ad = ob.querySelector('input[name=adult]');
+  if (ad) {
+    const nm = ob.querySelector('input[name=name]');
+    if (nm && nm.value.trim().length >= 2) nm.closest('label').style.display = 'none';
+    const n = document.createElement('p');
+    n.className = 'af-note'; n.textContent = 'Fuelwind nenahrádza lekára ani výživového poradcu. Odhady sú orientačné.';
+    ad.closest('label').replaceWith(n);
+  }
+}
+
 function run() {
   const lead = root?.querySelector('.hero .lead');
   if (lead && lead.textContent !== LEAD) lead.textContent = LEAD;
@@ -129,13 +215,15 @@ function run() {
   if (h1 && h1.textContent !== HEAD.join('')) { h1.textContent = HEAD[0]; h1.append(document.createElement('br'), HEAD[1]); }
   eyeify(root?.querySelector('#authf input[name=password]'));
   const f = root?.querySelector('#authf');
+  if (f) f.noValidate = true;
+  tuneOnboarding(root?.querySelector('#onb'));
   if (f && f.querySelector('[name=name]')) {
     const pw = f.querySelector('input[name=password]');
     if (pw && pw.minLength !== 8) pw.minLength = 8;
     if (pw && !f.querySelector('.af-hint')) { const t = document.createElement('p'); t.className = 'af-hint'; t.textContent = 'Aspoň 8 znakov.'; (pw.closest('.af-pw') || pw).closest('label')?.after(t); }
     if (!f.querySelector('.af-cons')) {
       const l = document.createElement('label'); l.className = 'af-cons';
-      l.innerHTML = '<input type="checkbox" required><span>Súhlasím so <a href="podmienky.html" target="_blank" rel="noopener">Podmienkami používania</a> a beriem na vedomie <a href="zasady.html" target="_blank" rel="noopener">Zásady ochrany osobných údajov</a>. Mám aspoň 16 rokov.</span>';
+      l.innerHTML = '<input type="checkbox" name="consent" required><span>Súhlasím so <a href="podmienky.html" target="_blank" rel="noopener">Podmienkami používania</a> a beriem na vedomie <a href="zasady.html" target="_blank" rel="noopener">Zásady ochrany osobných údajov</a>. Mám aspoň 18 rokov.</span>';
       f.querySelector('button[type=submit], .btn.primary')?.before(l);
     }
   }
