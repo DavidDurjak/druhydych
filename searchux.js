@@ -1,6 +1,7 @@
 // Hľadanie jedla bez blikania (ako v top appkách): počas písania ostávajú staré výsledky na mieste, jemne sa stlmia
 // a vymenia sa za nové, až keď prídu. Koliesko sa ukáže len pri prvom hľadaní. Rovnaké hľadanie sa zopakuje hneď z pamäte.
 import * as db from './data.js';
+import './trainfx.js';
 
 const SP = '<div class="spinner"></div>';
 const st = document.createElement('style');
