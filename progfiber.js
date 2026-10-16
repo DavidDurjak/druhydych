@@ -1,4 +1,4 @@
-// Pokrok: štvrtá položka v priemeroch makier, vláknina (počíta sa len z dní, ktoré majú údaj o vláknine)
+// Pokrok: štvrtá položka v priemeroch makier, vláknina (počíta sa len z dní, ktoré majú údaj o vlákninie)
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
@@ -13,6 +13,7 @@ import './hdr.js';
 import './cal.js';
 import './shopcart.js';
 import './profil.js';
+import './backbtn.js';
 
 const root = document.getElementById('app');
 let busy = false;
