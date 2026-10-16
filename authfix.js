@@ -103,7 +103,7 @@ function eyeify(inp) {
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'af-eye'; b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', 'Zobraziť heslo');
   b.innerHTML = EYE;
-  b.onmousedown = b.ontouchstart = e => e.preventDefault();
+  b.onmousedown = e => e.preventDefault();
   b.onclick = () => {
     const show = inp.type === 'password';
     const a = inp.selectionStart, z = inp.selectionEnd;
