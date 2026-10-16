@@ -1,5 +1,5 @@
 // Prihlásenie pre cudzích ľudí: zabudnuté heslo (odkaz na e-mail a nastavenie nového), slovenské chybové hlášky
-// a úvodný text bez "12 týždňov" a "kouč vidí každý krok". Beží ako doplnok nad app.js (tá sa nemení).
+// a úvodný text bez "12 týždňov" a "kouč vidí každý krok". Beží ako doplňok nad app.js (tá sa nemení).
 import * as db from './data.js';
 import { ctx } from './app.js';
 
@@ -29,6 +29,10 @@ body:has(.sheet-bg) .qa-fab,body:has(.sheet-bg) .bd-fab{display:none!important}
 .af-ok button{margin-top:8px;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
 .af-ok button:disabled{color:var(--muted);cursor:default}
 @media (prefers-reduced-motion:reduce){.af-ok{animation:none}}
+.af-cons{display:flex;gap:11px;align-items:flex-start;margin:14px 0 4px;color:var(--muted);font-size:13.5px;line-height:1.45;cursor:pointer}
+.af-cons input{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--accent)}
+.af-cons a{color:var(--accent);font-weight:600;text-decoration:none}
+.af-hint{margin:6px 2px 0;color:var(--muted);font-size:12.5px}
 .hero+.screen.no-nav{padding-top:0}
 .af-pw{position:relative;display:block}
 .af-pw input{padding-right:52px!important}
@@ -44,7 +48,7 @@ const ERR = [
   [/invalid login credentials/i, 'Nesprávny e-mail alebo heslo.'],
   [/already registered|already been registered/i, 'Tento e-mail už má účet. Skús sa prihlásiť.'],
   [/email not confirmed/i, 'E-mail ešte nie je potvrdený. Klikni na odkaz v správe od nás.'],
-  [/at least \d+ characters/i, 'Heslo musí mať aspoň 6 znakov.'],
+  [/at least \d+ characters/i, 'Heslo musí mať aspoň 8 znakov.'],
   [/rate limit|too many requests|security purposes/i, 'Príliš veľa pokusov. Skús to o chvíľu.'],
   [/unable to validate email|invalid format|valid email/i, 'Zadaj platný e-mail.'],
   [/failed to fetch|network|load failed/i, 'Nepodarilo sa pripojiť. Skontroluj internet a skús znova.'],
@@ -125,6 +129,16 @@ function run() {
   if (h1 && h1.textContent !== HEAD.join('')) { h1.textContent = HEAD[0]; h1.append(document.createElement('br'), HEAD[1]); }
   eyeify(root?.querySelector('#authf input[name=password]'));
   const f = root?.querySelector('#authf');
+  if (f && f.querySelector('[name=name]')) {
+    const pw = f.querySelector('input[name=password]');
+    if (pw && pw.minLength !== 8) pw.minLength = 8;
+    if (pw && !f.querySelector('.af-hint')) { const t = document.createElement('p'); t.className = 'af-hint'; t.textContent = 'Aspoň 8 znakov.'; (pw.closest('.af-pw') || pw).closest('label')?.after(t); }
+    if (!f.querySelector('.af-cons')) {
+      const l = document.createElement('label'); l.className = 'af-cons';
+      l.innerHTML = '<input type="checkbox" required><span>Súhlasím so <a href="podmienky.html" target="_blank" rel="noopener">Podmienkami používania</a> a beriem na vedomie <a href="zasady.html" target="_blank" rel="noopener">Zásady ochrany osobných údajov</a>. Mám aspoň 16 rokov.</span>';
+      f.querySelector('button[type=submit], .btn.primary')?.before(l);
+    }
+  }
   if (f && !f.querySelector('[name=name]') && !f.parentNode.querySelector('.af-fp')) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'af-fp'; b.textContent = 'Zabudol si heslo?';
@@ -138,12 +152,12 @@ if (root) { new MutationObserver(run).observe(root, { childList: true, subtree: 
 let shown = false;
 function newPasswordSheet() {
   if (shown) return; shown = true;
-  const bg = ctx.sheet(`<div class="af-sh"><h3>Nové heslo</h3><p>Zvoľ si nové heslo, aspoň 6 znakov.</p><input class="af-in" type="password" minlength="6" autocomplete="new-password" aria-label="Nové heslo"><button class="btn primary" data-ok>Uložiť heslo</button></div>`);
+  const bg = ctx.sheet(`<div class="af-sh"><h3>Nové heslo</h3><p>Zvoľ si nové heslo, aspoň 8 znakov.</p><input class="af-in" type="password" minlength="8" autocomplete="new-password" aria-label="Nové heslo"><button class="btn primary" data-ok>Uložiť heslo</button></div>`);
   const inp = bg.querySelector('input'), ok = bg.querySelector('[data-ok]');
   eyeify(inp);
   setTimeout(() => inp.focus(), 150);
   const save = async () => {
-    if (inp.value.length < 6) { ctx.toast('Heslo musí mať aspoň 6 znakov.', true); return; }
+    if (inp.value.length < 8) { ctx.toast('Heslo musí mať aspoň 8 znakov.', true); return; }
     ok.disabled = true;
     try {
       const { error } = await db.sb.auth.updateUser({ password: inp.value });
