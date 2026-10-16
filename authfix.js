@@ -29,6 +29,11 @@ body:has(.sheet-bg) .qa-fab,body:has(.sheet-bg) .bd-fab{display:none!important}
 .af-ok button{margin-top:8px;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
 .af-ok button:disabled{color:var(--muted);cursor:default}
 @media (prefers-reduced-motion:reduce){.af-ok{animation:none}}
+.af-pw{position:relative;display:block}
+.af-pw input{padding-right:52px!important}
+.af-eye{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:46px;height:46px;border:0;background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent}
+.af-eye[aria-pressed=true]{color:var(--accent)}
+.af-eye svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 `;
 document.head.appendChild(st);
 
@@ -87,9 +92,33 @@ async function forgot(form, b) {
   b.disabled = false; b.textContent = 'Zabudol si heslo?';
 }
 
+const EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
+function eyeify(inp) {
+  if (!inp || inp.parentNode.classList.contains('af-pw')) return;
+  const w = document.createElement('div');
+  w.className = 'af-pw';
+  inp.parentNode.insertBefore(w, inp);
+  w.appendChild(inp);
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'af-eye'; b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', 'Zobraziť heslo');
+  b.innerHTML = EYE;
+  b.onmousedown = b.ontouchstart = e => e.preventDefault();
+  b.onclick = () => {
+    const show = inp.type === 'password';
+    const a = inp.selectionStart, z = inp.selectionEnd;
+    inp.type = show ? 'text' : 'password';
+    b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', show ? 'Skryť heslo' : 'Zobraziť heslo');
+    b.innerHTML = show ? EYE_OFF : EYE;
+    try { inp.focus(); inp.setSelectionRange(a, z); } catch (_) {}
+  };
+  w.appendChild(b);
+}
+
 function run() {
   const lead = root?.querySelector('.hero .lead');
   if (lead && lead.textContent !== LEAD) lead.textContent = LEAD;
+  eyeify(root?.querySelector('#authf input[name=password]'));
   const f = root?.querySelector('#authf');
   if (f && !f.querySelector('[name=name]') && !f.parentNode.querySelector('.af-fp')) {
     const b = document.createElement('button');
@@ -106,6 +135,7 @@ function newPasswordSheet() {
   if (shown) return; shown = true;
   const bg = ctx.sheet(`<div class="af-sh"><h3>Nové heslo</h3><p>Zvoľ si nové heslo, aspoň 6 znakov.</p><input class="af-in" type="password" minlength="6" autocomplete="new-password" aria-label="Nové heslo"><button class="btn primary" data-ok>Uložiť heslo</button></div>`);
   const inp = bg.querySelector('input'), ok = bg.querySelector('[data-ok]');
+  eyeify(inp);
   setTimeout(() => inp.focus(), 150);
   const save = async () => {
     if (inp.value.length < 6) { ctx.toast('Heslo musí mať aspoň 6 znakov.', true); return; }
