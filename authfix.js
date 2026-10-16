@@ -102,14 +102,14 @@ function eyeify(inp) {
   w.appendChild(inp);
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'af-eye'; b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', 'Zobraziť heslo');
-  b.innerHTML = EYE;
+  b.innerHTML = EYE_OFF;
   b.onmousedown = e => e.preventDefault();
   b.onclick = () => {
     const show = inp.type === 'password';
     const a = inp.selectionStart, z = inp.selectionEnd;
     inp.type = show ? 'text' : 'password';
     b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', show ? 'Skryť heslo' : 'Zobraziť heslo');
-    b.innerHTML = show ? EYE_OFF : EYE;
+    b.innerHTML = show ? EYE : EYE_OFF;
     try { inp.focus(); inp.setSelectionRange(a, z); } catch (_) {}
   };
   w.appendChild(b);
