@@ -6,7 +6,10 @@ const $app = () => ctx.$app;
 const state = () => ctx.state;
 const h = (...a) => ctx.h(...a), toast = (...a) => ctx.toast(...a), nav = (...a) => ctx.nav(...a);
 
-const DEFAULTS = { tz: 'Europe/Bratislava', enabled: true, breakfast: '08:00', breakfast_on: true, brunch: '10:30', brunch_on: false, lunch: '12:30', lunch_on: true, afternoon: '15:30', afternoon_on: true, dinner: '19:00', dinner_on: true, late: '21:00', late_on: false, weigh: '07:00', weigh_on: true, checkin: '21:00', checkin_on: true, training: '17:00', training_on: true, water_on: true, photo_on: true, streak_on: true, summary_on: true };
+const DEFAULTS = { tz: 'Europe/Bratislava', enabled: true, breakfast: '08:00', breakfast_on: true, brunch: '10:30', brunch_on: false, lunch: '12:30', lunch_on: true, afternoon: '15:30', afternoon_on: true, dinner: '19:00', dinner_on: true, late: '21:00', late_on: false, weigh: '07:00', weigh_on: true, checkin: '21:00', checkin_on: true, training: '17:00', training_on: true, water_on: true, photo_on: true, streak_on: true, summary_on: true, supp: '09:00', supp_on: false, supp_items: ['kreatin'] };
+// suplementy: jedna pripomienka denne, v texte sú názvy toho, čo človek berie (viac pripomienok za sebou by bol spam)
+const SUPPS = [['kreatin', 'Kreatín'], ['protein', 'Proteín'], ['vitd', 'Vitamín D'], ['omega3', 'Omega-3'], ['mg', 'Horčík'], ['multi', 'Multivitamín']];
+if (typeof document !== 'undefined') { const st = document.createElement('style'); st.textContent = '.supp-items{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 12px}.schip span{display:inline-block;padding:7px 12px;border-radius:99px;border:1px solid var(--line);background:var(--card-2);font-size:13.5px;cursor:pointer}.schip input:checked+span{border-color:var(--accent);background:rgba(124,255,178,.14);color:var(--text);font-weight:600}.supp-note{margin:0 0 4px;font-size:12.5px;color:var(--muted);line-height:1.4}'; document.head.appendChild(st); }
 
 export function pushSupport() {
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -96,6 +99,8 @@ export async function renderReminders() {
     <form id="rf" class="card">
       <div class="row between mb"><h3>Všetky pripomienky</h3><label class="sw"><input type="checkbox" name="enabled" ${s.enabled ? 'checked' : ''}><i></i></label></div>
       ${rows.map(([k, lbl, ic]) => `<div class="rrow"><label class="sw"><input type="checkbox" name="${k}_on" ${s[k + '_on'] ? 'checked' : ''}><i></i></label><span class="rl">${ic} ${lbl}</span><input class="input tm" type="time" name="${k}" value="${t5(s[k])}"></div>`).join('')}
+      <div class="rrow"><label class="sw"><input type="checkbox" name="supp_on" id="suppOn" ${s.supp_on ? 'checked' : ''}><i></i></label><span class="rl">💊 Suplementy</span><input class="input tm" type="time" name="supp" value="${t5(s.supp)}"></div>
+      <div id="suppBox" ${s.supp_on ? '' : 'hidden'}><p class="supp-note">Čo berieš? Pripomienka ich vymenuje. Kreatín funguje len pri každodennom užívaní, preto sa oplatí.</p><div class="supp-items">${SUPPS.map(([k, l]) => `<label class="schip"><input type="checkbox" name="supp_item" value="${k}" hidden ${(s.supp_items || []).includes(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
       ${toggles.map(([k, lbl, ic]) => `<div class="rrow"><label class="sw"><input type="checkbox" name="${k}" ${s[k] ? 'checked' : ''}><i></i></label><span class="rl">${ic} ${lbl}</span></div>`).join('')}
       <button class="btn primary mt" type="submit">Uložiť</button>
     </form>
@@ -103,10 +108,13 @@ export async function renderReminders() {
   </div>${nav('#/profil')}`;
   $app().querySelector('#on')?.addEventListener('click', async e => { e.target.disabled = true; try { await enablePush(); toast('Zapnuté'); renderReminders(); } catch (err) { toast(err.message, true); e.target.disabled = false; } });
   $app().querySelector('#off')?.addEventListener('click', async () => { await disablePush(); toast('Vypnuté'); renderReminders(); });
+  $app().querySelector('#suppOn').onchange = e => { $app().querySelector('#suppBox').hidden = !e.target.checked; };
   $app().querySelector('#rf').onsubmit = async e => {
     e.preventDefault(); const f = new FormData(e.target); const out = { user_id: uid, tz: s.tz };
     ['enabled', 'breakfast_on', 'brunch_on', 'lunch_on', 'afternoon_on', 'dinner_on', 'late_on', 'weigh_on', 'checkin_on', 'training_on', 'water_on', 'photo_on', 'streak_on', 'summary_on'].forEach(k => out[k] = f.get(k) === 'on');
     ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner', 'late', 'weigh', 'checkin', 'training'].forEach(k => out[k] = f.get(k) || DEFAULTS[k]);
+    out.supp_on = f.get('supp_on') === 'on'; out.supp = f.get('supp') || DEFAULTS.supp;
+    out.supp_items = f.getAll('supp_item'); if (out.supp_on && !out.supp_items.length) out.supp_items = ['kreatin'];
     try { await db.saveReminderSettings(out); toast('Uložené'); } catch (err) { toast(err.message, true); }
   };
   $app().querySelector('#test')?.addEventListener('click', async e => { e.target.disabled = true; try { await db.queueTestPush(uid); toast('Test odoslaný, príde do minúty'); } catch (err) { toast(err.message, true); } setTimeout(() => e.target.disabled = false, 5000); });
