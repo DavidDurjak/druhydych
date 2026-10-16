@@ -167,7 +167,7 @@ export async function renderTraining() {
 function contestDays(date) { if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null; return Math.round((new Date(date + 'T00:00:00') - new Date(calc.today() + 'T00:00:00')) / 86400000); }
 function contestCard(plan) {
   const date = plan.meta.params?.contestDate || '', left = contestDays(date);
-  if (left == null || left < -14) return `<div class="px-card"><b>🏆 Súťažný režim</b><p class="muted small">Zadaj dátum súťaže a appka ti bude ukazovať, čo robiť v ktorej fáze prípravy, vrátane posledného týždha.</p><input class="input" type="date" id="contestDate" min="${calc.today()}" aria-label="Dátum súťaže"></div>`;
+  if (left == null || left < -14) return `<div class="px-card"><b>🏆 Súťažný režim</b><p class="muted small">Zadaj dátum súťaže a appka ti bude ukazovať, čo robiť v ktorej fáze prípravy, vrátane posledného týždňa.</p><input class="input" type="date" id="contestDate" min="${calc.today()}" aria-label="Dátum súťaže"></div>`;
   const ph = contestPhase(left);
   return `<div class="px-card"><div class="row between"><b>🏆 ${h(ph.title)}</b><span class="chip" style="background:#12332A;color:var(--accent)">${left > 0 ? 'o ' + left + ' ' + (left === 1 ? 'deň' : left >= 2 && left <= 4 ? 'dni' : 'dní') : left === 0 ? 'dnes' : 'po súťaži'}</span></div>
     <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${ph.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>
@@ -178,7 +178,7 @@ function contestCard(plan) {
 function peakBlock(plan, left) {
   const ack = plan.meta.params?.peakAck;
   if (!ack) return `<div class="px-caut" style="margin-top:10px"><b>Profi peak week (na vlastné riziko)</b>
-    <p class="small" style="margin:6px 0 8px">Denný plán pre súťažiacich: sacharidové nabitie, voda a sodik. Pred odomknutím potvrdď všetko nižšie.</p>
+    <p class="small" style="margin:6px 0 8px">Denný plán pre súťažiacich: sacharidové nabitie, voda a sodík. Pred odomknutím potvrď všetko nižšie.</p>
     ${PEAK_RISK.map((t, i) => `<label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;font-size:13px;line-height:1.4"><input type="checkbox" data-peakchk="${i}" style="margin-top:3px"><span>${h(t)}</span></label>`).join('')}
     <button class="btn sm primary" id="peakUnlock" disabled>Odomknúť profi peak week</button></div>`;
   const kg = plan.meta.params?.weightKg || state.profile.start_weight;
@@ -315,7 +315,7 @@ if (typeof document !== 'undefined') {
   st2.textContent = `.ex .exh{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.ex .exn{min-width:0}.ex .exn h3{font-size:16px;line-height:1.25;margin:0}.ex .exm{margin:3px 0 0;color:var(--muted);font-size:13px;line-height:1.4}.ex .exm b{color:var(--accent);font-weight:700}.ex .swapbtn{flex:none;width:38px;height:38px;margin:0;padding:0;display:grid;place-items:center;border-radius:12px;font-size:17px;line-height:1}.ex .excue{margin:8px 0 0}.ex .excue summary{cursor:pointer;color:var(--muted);font-size:13px}.ex .excue p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.ex .setsh,.ex .set{display:grid;grid-template-columns:30px 1fr 1fr 48px;gap:8px;align-items:center}.ex .setsh{margin-top:12px;color:var(--muted);font-size:11.5px;text-align:center}.ex .sets{margin-top:6px;gap:8px}.ex .input.sm{height:46px;padding:0 8px;font-size:17px;text-align:center}.ex .chk{width:48px;height:46px;border-radius:12px;font-size:16px}.pv h3{margin:0 0 8px}.pvr{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.35}.pvr:first-of-type{border-top:0}.pvr span{min-width:0}.pvr b{flex:none;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}`;
   document.head.appendChild(st2);
 }
-const EMPH_HINT = { balanced: 'Rovnomerne celé telo.', upper: 'Viac sérií na hrudník, chrbát, ramená a ruky.', lower: 'Viac sérií na stehá, zadok a lýtka.' };
+const EMPH_HINT = { balanced: 'Rovnomerne celé telo.', upper: 'Viac sérií na hrudník, chrbát, ramená a ruky.', lower: 'Viac sérií na stehná, zadok a lýtka.' };
 async function renderPlanSetup(opts = {}) {
   const p = state.profile;
   const old = await db.getPlan(p.id).catch(() => null);
