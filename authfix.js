@@ -38,7 +38,8 @@ body:has(.sheet-bg) .qa-fab,body:has(.sheet-bg) .bd-fab{display:none!important}
 `;
 document.head.appendChild(st);
 
-const LEAD = 'Zapíš jedlo jednou vetou. Appka dopočíta kalórie a bielkoviny a povie ti, čo zjesť ďalej.';
+const HEAD = ['Napíš, čo si jedol.', 'Zvyšok spočítame.'];
+const LEAD = 'Odfoť jedlo alebo ho napíš vlastnými slovami. Appka dopočíta kalórie a bielkoviny a každý deň ti povie, čo zjesť ďalej.';
 const ERR = [
   [/invalid login credentials/i, 'Nesprávny e-mail alebo heslo.'],
   [/already registered|already been registered/i, 'Tento e-mail už má účet. Skús sa prihlásiť.'],
@@ -120,6 +121,8 @@ function eyeify(inp) {
 function run() {
   const lead = root?.querySelector('.hero .lead');
   if (lead && lead.textContent !== LEAD) lead.textContent = LEAD;
+  const h1 = root?.querySelector('.hero h1');
+  if (h1 && h1.textContent !== HEAD.join('')) { h1.textContent = HEAD[0]; h1.append(document.createElement('br'), HEAD[1]); }
   eyeify(root?.querySelector('#authf input[name=password]'));
   const f = root?.querySelector('#authf');
   if (f && !f.querySelector('[name=name]') && !f.parentNode.querySelector('.af-fp')) {
