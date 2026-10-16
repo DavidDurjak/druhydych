@@ -305,7 +305,7 @@ async function invite(p) {
   } catch (e) { if (e?.name !== 'AbortError') ctx.toast('Nepodarilo sa zdieľať', true); }
 }
 function logoutSheet(screen) {
-  const bg = ctx.sheet('<div class="pfx-sh"><h3>Odhlásiť sa?</h3><p>Tvoje dáta ostanú uložené. Po prihlásení ich náješ tak, ako si ich nechal.</p><div class="pfx-sb"><button class="btn danger" data-ok>Odhlásiť sa</button><button class="btn ghost" data-x>Zostať</button></div></div>');
+  const bg = ctx.sheet('<div class="pfx-sh"><h3>Odhlásiť sa?</h3><p>Tvoje dáta ostanú uložené. Po prihlásení ich nájdeš tak, ako si ich nechal.</p><div class="pfx-sb"><button class="btn danger" data-ok>Odhlásiť sa</button><button class="btn ghost" data-x>Zostať</button></div></div>');
   bg.querySelector('[data-x]').onclick = () => bg.remove();
   bg.querySelector('[data-ok]').onclick = () => { bg.remove(); screen.querySelector('#out')?.click(); };
 }
