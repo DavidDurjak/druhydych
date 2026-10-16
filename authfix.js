@@ -1,5 +1,5 @@
 // Prihlásenie pre cudzích ľudí: zabudnuté heslo (odkaz na e-mail a nastavenie nového), slovenské chybové hlášky
-// a úvodný text bez "12 týždňov" a "kouč vidí každý krok". Beží ako doplňok nad app.js (tá sa nemení).
+// a úvodný text bez "12 týždňov" a "kouč vidí každý krok". Beží ako doplnok nad app.js (tá sa nemení).
 import * as db from './data.js';
 import { ctx } from './app.js';
 
