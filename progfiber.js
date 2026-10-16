@@ -14,6 +14,7 @@ import './cal.js';
 import './shopcart.js';
 import './profil.js';
 import './backbtn.js';
+import './authfix.js';
 
 const root = document.getElementById('app');
 let busy = false;
