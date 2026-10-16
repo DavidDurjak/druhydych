@@ -2,7 +2,7 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 // Supabase knižnica je pribalená priamo v appke (vendor/supabase.mjs vyrába build.js pri nasadení): jeden súbor
-// z našej domény, ktorý si appka drží offline. Predtým sa ťahala z cudzieho CDN ako 6 súborov za sebou pri každnom štarte.
+// z našej domény, ktorý si appka drží offline. Predtým sa ťahala z cudzieho CDN ako 6 súborov za sebou pri každenom štarte.
 // Záloha pre istotu: keby pribalený súbor chýbal, načíta sa rovnaká verzia z CDN.
 // Načítava sa asynchrónne (bez top-level await, aby sa nezmenilo poradie spúšťania modulov); app.js pri štarte čaká na `ready`.
 const SUPA_VER = '2.117.3';
@@ -106,10 +106,13 @@ export async function upsertCheckin(row) {
 // ---------- Kouč ----------
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 export async function coachOverview(fromDate) {
-  const profiles = must(await sb.from('profiles').select('*').order('name'));
-  const weights = must(await sb.from('weight_logs').select('user_id,date,weight_kg').order('date'));
-  const foods = must(await sb.from('food_logs').select('user_id,date,kcal').gte('date', fromDate).lte('date', todayISO()));
-  const checkins = must(await sb.from('checkins').select('user_id,date,sleep_h,steps,mood').gte('date', fromDate));
+  // všetky dotazy naraz, nie jeden po druhom (Kouč sa inak načítaval niekoľko sekúnd)
+  const [profiles, weights, foods, checkins] = await Promise.all([
+    sb.from('profiles').select('*').order('name').then(must),
+    sb.from('weight_logs').select('user_id,date,weight_kg').order('date').then(must),
+    sb.from('food_logs').select('user_id,date,kcal').gte('date', fromDate).lte('date', todayISO()).then(must),
+    sb.from('checkins').select('user_id,date,sleep_h,steps,mood').gte('date', fromDate).then(must),
+  ]);
   return { profiles, weights, foods, checkins };
 }
 
@@ -219,9 +222,11 @@ export async function participantDetail(userId, fromDate) {
   return { profile, weights, foods, checkins, photos, wlogs, targets };
 }
 export async function coachOverview2(fromDate) {
-  const base = await coachOverview(fromDate);
-  const wlogs = must(await sb.from('workout_logs').select('user_id,date,done').gte('date', fromDate));
-  const photos = must(await sb.from('progress_photos').select('user_id,date'));
+  const [base, wlogs, photos] = await Promise.all([
+    coachOverview(fromDate),
+    sb.from('workout_logs').select('user_id,date,done').gte('date', fromDate).then(must),
+    sb.from('progress_photos').select('user_id,date').then(must),
+  ]);
   return { ...base, wlogs, photos };
 }
 export async function exportCsv() {
@@ -354,11 +359,12 @@ export async function recentLogs(userId, limit = 25) {
 // ---------- v0.6: Pokrok ----------
 // denné súčty kalórií a makier + počet zapísaných položiek
 export async function dailyTotals(userId, fromDate, toDate) {
-  const rows = must(await sb.from('food_logs').select('date,kcal,protein,carbs,fat').eq('user_id', userId).gte('date', fromDate).lte('date', toDate));
+  const rows = must(await sb.from('food_logs').select('date,kcal,protein,carbs,fat,fiber').eq('user_id', userId).gte('date', fromDate).lte('date', toDate));
   const out = {};
   rows.forEach(r => {
-    const d = out[r.date] = out[r.date] || { kcal: 0, protein: 0, carbs: 0, fat: 0, n: 0 };
+    const d = out[r.date] = out[r.date] || { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, fiberN: 0, n: 0 };
     d.kcal += Number(r.kcal) || 0; d.protein += Number(r.protein) || 0; d.carbs += Number(r.carbs) || 0; d.fat += Number(r.fat) || 0; d.n++;
+    if (r.fiber != null) { d.fiber += Number(r.fiber) || 0; d.fiberN++; }
   });
   return out;
 }
