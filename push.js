@@ -90,7 +90,7 @@ export async function renderReminders() {
   const toggles = [['water_on', 'Voda (11:00, 14:00, 17:00, len ak chýba)', '💧'], ['photo_on', 'Týždenná fotka (nedeľa 10:00)', '📸'], ['streak_on', 'Streak v ohrození (21:30)', '🔥'], ['summary_on', 'Večerné zhrnutie dňa (20:30)', '📊']];
   const t5 = v => (v || '').slice(0, 5);
   $app().innerHTML = `<div class="screen">
-    <div class="topbar"><h1>Pripomienky</h1><a class="btn sm ghost" href="#/profil">←</a></div>
+    <div class="topbar"><h1>Pripomienky</h1></div>
     <div class="card ${sub ? 'accent' : ''}">
       <div class="row between"><div><h3>${sub ? 'Notifikácie sú zapnuté' : 'Notifikácie sú vypnuté'}</h3><p class="muted small">${sub ? 'Toto zariadenie dostáva pripomienky.' : sup.needsHomeScreen ? 'Na iPhone najprv pridaj appku na plochu a otvor ju odtiaľ.' : 'Povoľ ich jedným klikom.'}</p></div>
       ${sub ? '<button class="btn sm ghost" id="off">Vypnúť</button>' : (sup.needsHomeScreen ? '' : '<button class="btn sm primary" id="on">Zapnúť</button>')}</div>
@@ -104,7 +104,7 @@ export async function renderReminders() {
       ${toggles.map(([k, lbl, ic]) => `<div class="rrow"><label class="sw"><input type="checkbox" name="${k}" ${s[k] ? 'checked' : ''}><i></i></label><span class="rl">${ic} ${lbl}</span></div>`).join('')}
       <button class="btn primary mt" type="submit">Uložiť</button>
     </form>
-    <div class="card"><h3 class="mb">Test</h3><p class="muted small mb">Pošle ti skúšobnú notifikáciu do minúty.</p><button class="btn sm" id="test" ${sub ? '' : 'disabled'}>Poslať test</button></div>
+    ${sub ? '<div class="card"><h3 class="mb">Chodia ti notifikácie?</h3><p class="muted small mb">Pošleme ti jednu skúšobnú do minúty. Ak nepríde, skontroluj v nastaveniach iPhonu, či má Fuelwind povolené upozornenia.</p><button class="btn sm" id="test">Poslať skúšobnú notifikáciu</button></div>' : ''}
   </div>${nav('#/profil')}`;
   $app().querySelector('#on')?.addEventListener('click', async e => { e.target.disabled = true; try { await enablePush(); toast('Zapnuté'); renderReminders(); } catch (err) { toast(err.message, true); e.target.disabled = false; } });
   $app().querySelector('#off')?.addEventListener('click', async () => { await disablePush(); toast('Vypnuté'); renderReminders(); });

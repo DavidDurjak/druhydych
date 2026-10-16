@@ -78,7 +78,7 @@ export async function activityCard(userId, date) {
 // ---------- obrazovka Hodinky ----------
 export async function renderWatch() {
   const uid = state().profile.id;
-  $app().innerHTML = `<div class="screen"><div class="topbar"><h1>Hodinky</h1><a class="btn sm ghost" href="#/profil">←</a></div><div class="spinner"></div></div>${nav('#/hodinky')}`;
+  $app().innerHTML = `<div class="screen"><div class="topbar"><h1>Hodinky</h1></div><div class="spinner"></div></div>${nav('#/hodinky')}`;
   const [token, status, recent] = await Promise.all([healthToken(), healthStatus(uid), healthRange(uid, calc.addDays(calc.today(), -6), calc.today())]);
   const days = recent.filter(hasValues).reverse();
   const ios = isIOS();
@@ -87,7 +87,7 @@ export async function renderWatch() {
   const step = (n, title, body) => `<li class="hw-step"><span class="hw-n">${n}</span><div><h4>${title}</h4>${body}</div></li>`;
 
   $app().innerHTML = `<div class="screen hw">
-    <div class="topbar"><h1>Hodinky</h1><a class="btn sm ghost" href="#/profil">←</a></div>
+    <div class="topbar"><h1>Hodinky</h1></div>
 
     <section class="hw-hero ${connected ? 'on' : ''}">
       <div class="hw-watch"><span>⌚</span></div>
