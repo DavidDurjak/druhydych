@@ -84,7 +84,84 @@ const CSS = `
 .fx-setup .pv h3 .fx-ic{width:38px;height:38px;border-radius:12px;font-size:19px}
 .fx-setup .pv h3 small{margin-left:auto;font-size:11px;font-weight:700;color:var(--mc);background:color-mix(in srgb,var(--mc) 14%,transparent);padding:3px 8px;border-radius:99px;white-space:nowrap}
 .fx-setup .pvr b{color:var(--mc)}
-@media (prefers-reduced-motion:reduce){.fx-aur,.fx-fire,.fx-dots em{animation:none}.exdone .fx-ic span,.fx-on .set.done .chk{animation:none}.fx-ring .fg,.fx-bar i{transition:none}}
+.fx-setup,.fx-on{position:relative;isolation:isolate}
+.fx-setup::before,.fx-on::before{content:"";position:absolute;left:-16px;right:-16px;top:0;height:460px;z-index:-1;pointer-events:none;
+  background:radial-gradient(55% 45% at 10% 0%,rgba(124,255,178,.17),transparent 72%),radial-gradient(50% 40% at 95% 8%,rgba(91,184,255,.15),transparent 72%)}
+.fx-setup h1{font-size:34px;font-weight:800;letter-spacing:-.035em;margin-bottom:6px!important}
+.fx-setup .field>span{display:block;font-size:15.5px;font-weight:700;color:var(--text);margin:26px 2px 12px;letter-spacing:-.01em}
+.fx-setup #lvl{display:grid;gap:10px;margin:0}
+.fx-setup #lvl button{display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:12px;padding:13px 14px;border-radius:20px;background:var(--card);border:1px solid var(--line);transition:transform .18s,box-shadow .25s,background .25s}
+.fx-setup #lvl button:active,.fx-setup #dseg button:active,.fx-setup #eseg button:active,.fx-setup #mseg button:active{transform:scale(.97)}
+.lv-ic{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:23px;background:rgba(255,255,255,.06);transition:background .25s}
+.lv-t{min-width:0}.lv-t b{display:block;font-size:15.5px}
+.fx-setup #lvl .lv-t small{display:block;max-height:0;opacity:0;overflow:hidden;margin:0;transition:max-height .35s ease,opacity .25s,margin .25s}
+.fx-setup #lvl button.on .lv-t small{max-height:90px;opacity:1;margin-top:4px}
+.lv-bars{display:flex;gap:3px;align-items:flex-end;height:20px}
+.lv-bars i{width:5px;border-radius:3px;background:rgba(255,255,255,.14)}
+.lv-bars i:nth-child(1){height:7px}.lv-bars i:nth-child(2){height:11px}.lv-bars i:nth-child(3){height:15px}.lv-bars i:nth-child(4){height:20px}
+.lv-bars i.on{background:linear-gradient(180deg,#7CFFB2,#5BB8FF)}
+.fx-setup #lvl button.on,.fx-setup #eseg button.on,.fx-setup #mseg button.on{border:1.5px solid transparent;
+  background:linear-gradient(135deg,#17262A,#161D29) padding-box,linear-gradient(135deg,#7CFFB2,#5BB8FF) border-box;box-shadow:0 12px 30px rgba(124,255,178,.14)}
+.fx-setup #lvl button.on .lv-ic{background:linear-gradient(135deg,rgba(124,255,178,.32),rgba(91,184,255,.26))}
+.fx-setup #dseg,.fx-setup #eseg,.fx-setup #mseg{background:none;border:0;padding:0;gap:10px}
+.fx-setup #dseg button{flex:1;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:20px;background:var(--card);border:1px solid var(--line);color:var(--muted);transition:transform .18s,background .25s,box-shadow .25s,color .2s}
+.fx-setup #dseg button b{font-size:24px;line-height:1;letter-spacing:-.03em;color:var(--text)}
+.fx-setup #dseg button small{font-size:11.5px;font-weight:600}
+.fx-setup #dseg button.on{background:linear-gradient(145deg,#8DFFC0,#4FD8E0);border-color:transparent;color:#06301A;box-shadow:0 12px 26px rgba(124,255,178,.32);transform:translateY(-2px)}
+.fx-setup #dseg button.on b{color:#04261A}
+.fx-setup #eseg{display:grid;grid-template-columns:1fr 1fr}
+.fx-setup #eseg button,.fx-setup #mseg button{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:16px 8px 14px;border-radius:20px;background:var(--card);border:1px solid var(--line);color:var(--text);text-align:center;transition:transform .18s,box-shadow .25s}
+.fx-setup #eseg .eq-ic{font-size:30px;line-height:1;margin-bottom:4px;transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.fx-setup #eseg button.on .eq-ic{transform:scale(1.15) rotate(-6deg)}
+.fx-setup #eseg b,.fx-setup #mseg b{font-size:14.5px;line-height:1.2}
+.fx-setup #eseg small,.fx-setup #mseg small{font-size:11.5px;color:var(--muted);line-height:1.3}
+.fx-setup #mseg{display:grid;grid-template-columns:repeat(3,1fr)}
+.fx-setup #mseg button{padding:14px 6px 12px}
+.fx-body{width:46px;height:78px;margin-bottom:6px;opacity:.6;transition:opacity .25s,transform .3s}
+.fx-body *{fill:rgba(255,255,255,.13);transition:fill .3s}
+.fx-body .hd{fill:rgba(255,255,255,.22)}
+#mseg [data-k=balanced] .fx-body .u,#mseg [data-k=balanced] .fx-body .l{fill:#7CFFB2}
+#mseg [data-k=upper] .fx-body .u{fill:#5BB8FF}
+#mseg [data-k=lower] .fx-body .l{fill:#7CFFB2}
+#mseg button.on .fx-body{opacity:1;transform:scale(1.06);filter:drop-shadow(0 0 10px rgba(124,255,178,.55));animation:fxBreath 2.4s ease-in-out infinite}
+#mseg [data-k=upper].on .fx-body{filter:drop-shadow(0 0 10px rgba(91,184,255,.6))}
+@keyframes fxBreath{50%{transform:scale(1.1)}}
+.fx-setup #prio button{padding:9px 14px;border-radius:99px;background:var(--card);font-weight:600}
+.fx-setup #prio button.on{background:linear-gradient(135deg,#8DFFC0,#4FD8E0);color:#06301A;border-color:transparent}
+.fx-hide{display:none!important}
+.fx-sum{position:relative;overflow:hidden;border-radius:26px;padding:18px 16px 16px;margin:22px 0 14px;border:1px solid rgba(124,255,178,.22);
+  background:linear-gradient(145deg,#142A26 0%,#12202E 55%,#1B1830 100%);box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)}
+.fx-sum>*:not(.fx-aur){position:relative}
+.fx-sum h2{margin:10px 0 14px;font-size:21px;line-height:1.2;letter-spacing:-.02em}
+.fx-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.fx-week .wd i{display:grid;place-items:center;width:38px;height:38px;margin:0 auto 5px;border-radius:50%;font-style:normal;font-size:17px;border:1.5px dashed rgba(255,255,255,.16)}
+.fx-week .wd span{font-size:11px;font-weight:700;color:rgba(242,244,247,.55)}
+.fx-week .wd.low i{background:rgba(124,255,178,.18);border:1.5px solid rgba(124,255,178,.7);box-shadow:0 0 14px rgba(124,255,178,.3)}
+.fx-week .wd.up i{background:rgba(91,184,255,.18);border:1.5px solid rgba(91,184,255,.75);box-shadow:0 0 14px rgba(91,184,255,.3)}
+.fx-week .wd.full i{background:rgba(255,138,76,.18);border:1.5px solid rgba(255,138,76,.75);box-shadow:0 0 14px rgba(255,138,76,.3)}
+.fx-week .wd.low span,.fx-week .wd.up span,.fx-week .wd.full span{color:#fff}
+.fx-week .wd i{animation:fxIn .45s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes fxIn{from{transform:scale(.4);opacity:0}}
+.fx-sumst{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.fx-sumst div{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:9px 10px}
+.fx-sumst b{display:block;font-size:18px;letter-spacing:-.02em}
+.fx-sumst span{display:block;font-size:11px;color:rgba(242,244,247,.6);margin-top:2px;line-height:1.3}
+.fx-sumnote{margin:12px 2px 0;font-size:12.5px;line-height:1.45;color:rgba(242,244,247,.72)}
+.fx-setup #planPrev .plan-info{border-radius:20px}
+.fx-setup .vrow i,.fx-on .vrow i{height:8px;border-radius:99px}
+.fx-setup .vrow i b,.fx-on .vrow i b{border-radius:99px;background:linear-gradient(90deg,#7CFFB2,#5BB8FF)}
+.fx-setup #save{position:sticky;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);z-index:5;padding:17px;border-radius:20px;font-size:16px;font-weight:800;border:0;
+  background:linear-gradient(135deg,#8DFFC0,#4FD8E0);color:#04261A;box-shadow:0 14px 34px rgba(124,255,178,.35),0 0 0 6px rgba(11,14,18,.55)}
+.fx-blk{display:flex;gap:4px;margin:12px 0 2px}
+.fx-blk i{flex:1;height:7px;border-radius:99px;background:rgba(255,255,255,.08)}
+.fx-blk i.d{background:#7CFFB2}
+.fx-blk i.c{background:linear-gradient(90deg,#7CFFB2,#5BB8FF);box-shadow:0 0 10px rgba(124,255,178,.6);animation:fxPulse 1.6s ease-in-out infinite}
+@keyframes fxPulse{50%{opacity:.55}}
+.fx-on .excue summary{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);list-style:none;font-weight:600}
+.fx-on .excue summary::-webkit-details-marker{display:none}
+.fx-on .excue summary::before{content:"💡"}
+.fx-on .excue[open] summary{background:color-mix(in srgb,var(--mc) 16%,transparent);color:var(--text)}
+@media (prefers-reduced-motion:reduce){.fx-aur,.fx-fire,.fx-dots em{animation:none}.exdone .fx-ic span,.fx-on .set.done .chk{animation:none}.fx-ring .fg,.fx-bar i{transition:none}#mseg button.on .fx-body,.fx-blk i.c,.fx-week .wd i{animation:none}}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
@@ -142,7 +219,10 @@ function build(scr) {
     const exn = $('.exn', card);
     if (exn && ex) exn.insertAdjacentHTML('afterbegin', `<span class="fx-tag"></span>`), exn.querySelector('.fx-tag').textContent = ex.muscle;
     exh?.insertAdjacentHTML('afterend', '<div class="fx-bar"><i></i></div>');
+    const exm = $('.exm', card); if (exm) exm.innerHTML = exm.innerHTML.replace(/(\d)\.(\d)/g, '$1,$2');
   });
+  const pi = $('.plan-info', scr), bm = pi?.querySelector('.row b')?.textContent.match(/týždeň (\d+) z (\d+)/);
+  if (bm) pi.querySelector('.row').insertAdjacentHTML('afterend', `<div class="fx-blk">${Array.from({ length: Number(bm[2]) }, (_, i) => `<i class="${i < bm[1] - 1 ? 'd' : i === bm[1] - 1 ? 'c' : ''}"></i>`).join('')}</div>`);
   scr.classList.add('fx-on');
   return hero;
 }
@@ -233,29 +313,58 @@ function confetti(count = 140) {
   requestAnimationFrame(frame);
 }
 
-// ---- nastavenie plánu: jasné popisy a farebný náhľad dní ----
-const dayWord = n => `${n} ${n >= 5 ? 'dní' : 'dni'}`;
+// ---- nastavenie plánu: dlaždice, postava podľa dôrazu, živý súhrn týždňa ----
 const setText = (el, t) => { if (el && el.textContent !== t) el.textContent = t; };
 const dayType = t => /^(Nohy|Dolná)/.test(t) ? 'low' : /^(Horná|Ramená|Tlaky|Ťahy)/.test(t) ? 'up' : 'full';
+const TYPE_EMO = { low: '🦵', up: '💪', full: '🔥' };
+const LV = { beginner: ['🌱', 1], intermediate: ['⚡', 2], advanced: ['🔥', 3], elite: ['👑', 4] };
+const EQ = { gym: ['🏋️', 'Posilňovňa', 'Stroje, činky, kladky'], home: ['🏠', 'Doma', 'Jednoručky a lavica'] };
+const EM = { balanced: ['Vyvážene', 'Celé telo'], upper: ['Horná časť', 'Hrudník, chrbát, ruky'], lower: ['Zadok a nohy', 'Spodok tela'] };
+const BODY = '<svg class="fx-body" viewBox="0 0 60 100" aria-hidden="true"><circle class="hd" cx="30" cy="10" r="7"/><rect class="u" x="19" y="19" width="22" height="29" rx="8"/><rect class="u" x="9" y="21" width="8" height="27" rx="4"/><rect class="u" x="43" y="21" width="8" height="27" rx="4"/><rect class="l" x="19" y="45" width="22" height="14" rx="6"/><rect class="l" x="20" y="56" width="9" height="38" rx="4.5"/><rect class="l" x="31" y="56" width="9" height="38" rx="4.5"/></svg>';
+const WEEK = ['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne'];
+const PATTERN = { 2: [0, 3], 3: [0, 2, 4], 4: [0, 1, 3, 4], 5: [0, 1, 2, 4, 5], 6: [0, 1, 2, 3, 4, 5] };
+const plural = (n, a, b) => `${n} ${n >= 5 ? b : a}`;
+const once = (b, html) => { if (b.dataset.fx) return; b.dataset.fx = '1'; b.innerHTML = html; };
 function setupFx() {
   const scr = $('#app .screen');
   if (!scr || !$('#mseg', scr) || !$('#planPrev', scr)) return;
   scr.classList.add('fx-setup');
   setText($('#dwrap', scr)?.previousElementSibling, 'Koľko dní v týždni chceš cvičiť?');
-  $$('#dseg [data-k]', scr).forEach(b => setText(b, dayWord(Number(b.dataset.k))));
+  setText($('#eseg', scr)?.previousElementSibling, 'Kde cvičíš?');
   setText($('#mseg', scr).previousElementSibling, 'Na čo dať dôraz?');
-  const cards = $$('#planPrev .card.pv', scr);
-  cards.forEach(c => {
+  $$('#lvl [data-k]', scr).forEach(b => { const [ic, n] = LV[b.dataset.k] || ['', 0]; once(b, `<span class="lv-ic">${ic}</span><span class="lv-t">${b.innerHTML}</span><span class="lv-bars">${[1, 2, 3, 4].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`); });
+  $$('#dseg [data-k]', scr).forEach(b => { const n = Number(b.dataset.k); once(b, `<b>${n}</b><small>${n >= 5 ? 'dní' : 'dni'}</small>`); });
+  $$('#eseg [data-k]', scr).forEach(b => { const e = EQ[b.dataset.k]; if (e) once(b, `<span class="eq-ic">${e[0]}</span><b>${e[1]}</b><small>${e[2]}</small>`); });
+  $$('#mseg [data-k]', scr).forEach(b => { const e = EM[b.dataset.k]; if (e) once(b, `${BODY}<b>${e[0]}</b><small>${e[1]}</small>`); });
+  const pp = $('#planPrev', scr);
+  const cards = $$('.card.pv', pp);
+  const names = cards.map(c => c.dataset.n || $('h3', c)?.textContent || ''), N = names.length;
+  const pat = PATTERN[N] || PATTERN[3];
+  cards.forEach((c, i) => {
     if (c.dataset.fx) return;
     const h3 = $('h3', c); if (!h3) return;
-    const name = h3.textContent; c.dataset.fx = '1'; c.dataset.n = name;
-    const ty = dayType(name);
+    c.dataset.fx = '1'; c.dataset.n = h3.textContent;
+    const ty = dayType(h3.textContent);
     c.style.setProperty('--mc', ty === 'low' ? '#7CFFB2' : ty === 'up' ? '#5BB8FF' : '#FF8A4C');
     const n = $$('.pvr b', c).filter(b => !/min/.test(b.textContent)).length;
-    h3.insertAdjacentHTML('afterbegin', `<span class="fx-ic"><span>${ty === 'low' ? '🦵' : ty === 'up' ? '💪' : '🔥'}</span></span>`);
-    h3.insertAdjacentHTML('beforeend', `<small>${n} ${n >= 5 ? 'cvikov' : 'cviky'}</small>`);
+    h3.insertAdjacentHTML('afterbegin', `<span class="fx-ic"><span>${TYPE_EMO[ty]}</span></span>`);
+    h3.insertAdjacentHTML('beforeend', `<small>${WEEK[pat[i]] || ''} · ${plural(n, 'cviky', 'cvikov')}</small>`);
   });
-  const names = cards.map(c => c.dataset.n || ''), N = names.length;
+  const head = $('.plan-info', pp);
+  if (head && !head.classList.contains('fx-hide') && !$('.fx-sum', pp)) {
+    head.classList.add('fx-hide');
+    const split = $('b', head)?.textContent || 'Tvoj plán';
+    const weeks = (head.textContent.match(/(\d+) týžd/) || [])[1] || '';
+    const spec = /špecializa/.test(head.textContent) ? ' Každý druhý blok je špecializačný na tvoje prioritné partie.' : '';
+    let sets = 0; $$('.pvr b', pp).forEach(b => { const m = b.textContent.match(/^(\d+) ×/); if (m) sets += Number(m[1]); });
+    const mins = Math.round(sets * 2.7 / Math.max(1, N) / 5) * 5;
+    const byDay = {}; pat.forEach((d, i) => { byDay[d] = dayType(names[i] || ''); });
+    const week = WEEK.map((d, i) => `<div class="wd ${byDay[i] || 'off'}"><i style="animation-delay:${i * 45}ms">${byDay[i] ? TYPE_EMO[byDay[i]] : ''}</i><span>${d}</span></div>`).join('');
+    head.insertAdjacentHTML('beforebegin', `<div class="fx-sum"><div class="fx-aur"></div><span class="fx-kick">✨ Tvoj týždeň</span><h2></h2><div class="fx-week">${week}</div>
+      <div class="fx-sumst"><div><b>${N}</b><span>${N >= 5 ? 'tréningov' : 'tréningy'} týždenne</span></div><div><b>~${mins}</b><span>minút na tréning</span></div><div><b>${weeks}</b><span>týždňov trvá blok</span></div></div>
+      <p class="fx-sumnote">Dni sú len príklad, posuň si ich podľa seba. Dôležité je mať medzi tréningami rovnakých partií aspoň deň pauzu.${spec}</p></div>`);
+    $('.fx-sum h2', pp).textContent = split;
+  }
   const low = names.filter(t => dayType(t) === 'low').length, up = names.filter(t => dayType(t) === 'up').length;
   const emph = $('#mseg .on', scr)?.dataset.k || 'balanced';
   const full = !names.some(t => dayType(t) !== 'full');
