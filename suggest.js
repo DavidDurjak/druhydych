@@ -1,5 +1,6 @@
-// "Dojedz zvyšok dňa": návrhy jedál z toho, čo človek naozaj jedáva, ktoré sedia do zostávajúcich kalórií a bielkovín.
-// Samo sa vloží pod lištu rýchleho zápisu na obrazovke Dnes (bez zásahu do today.js).
+// "Čo zjesť ďalej": návrhy jedál z toho, čo človek naozaj jedáva, ktoré sedia do zostávajúcich kalórií a bielkovín.
+// Samo sa vloží pod lištu rýchleho zápisu na obrazovke Dnes (bez zásahu do today.js). Ukáže, čo ti chýba, dá návrhy s makrami,
+// tlačidlo na iné návrhy a stav „deň splnený“.
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
@@ -34,7 +35,7 @@ function score(t, goalK, goalP) {
   return s;
 }
 
-export function pickSuggestions(pool, goalK, goalP) {
+export function pickSuggestions(pool, goalK, goalP, n = 3) {
   const usable = pool.filter(i => !JUNK.test(i.name) && num(i.kcal) >= 40 && num(i.grams) > 0 && num(i.kcal) <= goalK * 1.6);
   const opts = [];
   usable.forEach(i => SCALES.forEach(k => { const s = scaled(i, k); if (s.grams >= 20 && s.grams <= 600) opts.push([s]); }));
@@ -51,9 +52,9 @@ export function pickSuggestions(pool, goalK, goalP) {
     const key = c.items.map(i => i.name).sort().join('|');
     if (used.has(key)) continue;
     // každý návrh musí mať iné jedlá ako predošlé
-    if (c.items.some(i => out.some(o => o.items.some(j => j.name === i.name)))) continue;
+    if (out.length < 3 && c.items.some(i => out.some(o => o.items.some(j => j.name === i.name)))) continue;
     used.add(key); out.push(c);
-    if (out.length === 3) break;
+    if (out.length === n) break;
   }
   return out;
 }
@@ -76,6 +77,31 @@ async function loadPool(uid) {
   return pool;
 }
 
+const MEAL_LBL = { breakfast: 'Na raňajky', brunch: 'Na desiatu', lunch: 'Na obed', afternoon: 'Na olovrant', dinner: 'Na večeru', late: 'Na neskorú večeru' };
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const IC = {
+  re: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15M20 20v-5h-5"/></svg>',
+  ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+};
+
+function gapRows(p, sum) {
+  const row = (name, cls, val, goal, txt) => {
+    const f = goal > 0 ? Math.max(0, Math.min(1, val / goal)) : 0;
+    return `<div class="nx-g ${cls}"><div class="nx-gl"><b>${name}</b><span>${txt}</span></div><div class="nx-bar"><i style="width:${(f * 100).toFixed(1)}%"></i></div></div>`;
+  };
+  const remK = p.target_kcal - sum.kcal, remP = p.target_protein - sum.protein;
+  return row('Kalórie', 'k', sum.kcal, p.target_kcal, remK >= 0 ? `zostáva ${r0(remK)} kcal` : `o ${r0(-remK)} kcal nad`)
+    + (p.target_protein > 0 ? row('Bielkoviny', 'p', sum.protein, p.target_protein, remP > 0.5 ? `chýba ${r0(remP)} g` : 'splnené') : '');
+}
+
+function card(c, i) {
+  const its = c.items.map(it => `<li>${esc(label(it))}</li>`).join('');
+  return `<div class="nx-c" data-i="${i}"><div class="nx-bd"><ul class="nx-it">${its}</ul>
+    <div class="nx-m"><span class="k"><b>${r0(c.t.kcal)}</b> kcal</span><span class="p">B <b>${r0(c.t.protein)} g</b></span><span>S <b>${r0(c.t.carbs)} g</b></span><span>T <b>${r0(c.t.fat)} g</b></span></div></div>
+    <button class="nx-add" type="button" data-i="${i}" aria-label="Pridať do denníka">${IC.plus}</button></div>`;
+}
+
 const seen = new WeakSet();
 async function inject() {
   if (busy || !root || !ctx.state?.profile) return;
@@ -90,32 +116,52 @@ async function inject() {
     const foods = await db.listFood(p.id, date);
     const sum = calc.sumMacros(foods);
     const remK = p.target_kcal - sum.kcal, remP = Math.max(0, p.target_protein - sum.protein);
-    if (remK < 150) return;
     const meal = mealNow();
-    const goalK = remK > 700 ? p.target_kcal * SHARE[meal] : remK;
-    const goalP = remK > 700 ? p.target_protein * SHARE[meal] : remP;
-    const pool = await loadPool(p.id);
-    const list = pickSuggestions(pool, goalK, goalP);
+    let list = [], page = 0;
+    const done = remK < 150;
+    if (!done) {
+      const goalK = remK > 700 ? p.target_kcal * SHARE[meal] : remK;
+      const goalP = remK > 700 ? p.target_protein * SHARE[meal] : remP;
+      const pool = await loadPool(p.id);
+      list = pickSuggestions(pool, goalK, goalP, 9);
+      if (!list.length) return;
+    } else if (!foods.length) return;
     const b = root.querySelector('.screen.td .qk');
-    if (!list.length || !b || root.querySelector('#sugg') || ctx.state.date !== date) return;
+    if (!b || root.querySelector('#sugg') || ctx.state.date !== date) return;
     const el = document.createElement('section');
-    el.id = 'sugg'; el.className = 'sugg';
-    el.innerHTML = `<div class="sg-h"><h3>Čo zjesť ďalej</h3><span>zostáva ${r0(remK)} kcal${remP > 5 ? ` a ${r0(remP)} g bielkovín` : ''}</span></div>` +
-      list.map((c, i) => `<button class="sg" data-i="${i}"><span class="sg-t">${c.items.map(label).join(' + ')}</span><span class="sg-m">${r0(c.t.kcal)} kcal · ${r0(c.t.protein)} g bielkovín</span><span class="sg-a">Pridať</span></button>`).join('');
+    el.id = 'sugg'; el.className = 'sugg nx' + (done ? ' nx-done' : '');
+    const draw = () => {
+      if (done) {
+        const over = -remK > 150, gapP = remP > 12;
+        const title = over ? `Dnes si o ${r0(-remK)} kcal nad plánom` : gapP ? 'Skoro hotovo' : 'Deň splnený';
+        const text = over ? 'Nič nenaháňaj. Zajtra pokračuj podľa plánu a týždeň to vyrovná.'
+          : gapP ? `Kalórie máš, bielkovín ti ešte chýba ${r0(remP)} g. Ak máš chuť, doplň ich niečím ľahkým, napríklad skyrom.`
+          : 'Kalórie aj bielkoviny sedia. Takto sa buduje výsledok.';
+        el.innerHTML = `<div class="nx-dn"><span class="nx-ck">${over ? '' : IC.ok}</span><div><h3>${title}</h3><p>${text}</p></div></div><div class="nx-gs">${gapRows(p, sum)}</div>`;
+        return;
+      }
+      const pages = Math.ceil(list.length / 3), cur = list.slice(page * 3, page * 3 + 3);
+      const note = remP > p.target_protein * 0.3 ? 'Bielkoviny ťa dnes ťahajú dole, tieto návrhy ich dobiehajú.' : '';
+      el.innerHTML = `<div class="nx-hd"><div class="nx-tt"><h3>Čo zjesť ďalej</h3><span class="nx-wh">${MEAL_LBL[meal]}</span></div>${pages > 1 ? `<button class="nx-re" type="button" aria-label="Iné návrhy">${IC.re}</button>` : ''}</div>`
+        + `<div class="nx-gs">${gapRows(p, sum)}</div>${note ? `<p class="nx-note">${note}</p>` : ''}`
+        + `<div class="nx-cs">${cur.map((c, k) => card(c, page * 3 + k)).join('')}</div>`;
+      el.querySelector('.nx-re')?.addEventListener('click', () => { page = (page + 1) % pages; el.classList.add('nx-sw'); draw(); setTimeout(() => el.classList.remove('nx-sw'), 260); });
+      el.querySelectorAll('.nx-add').forEach(btn => btn.onclick = async () => {
+        const c = list[Number(btn.dataset.i)];
+        btn.disabled = true;
+        try {
+          for (const it of c.items) {
+            await db.addFood({ user_id: p.id, date, meal, name: it.name, brand: it.brand || null, grams: Math.round(it.grams * 10) / 10, kcal: Math.round(it.kcal * 10) / 10, protein: Math.round(it.protein * 10) / 10, carbs: Math.round(it.carbs * 10) / 10, fat: Math.round(it.fat * 10) / 10,
+              source: it.source || 'db', barcode: it.barcode || null, food_id: it.food_id || null, portion: it.portion || null, qty: it.qty ?? null });
+            if (it.food_id) db.foodUsed(it.food_id);
+          }
+          btn.classList.add('ok'); btn.innerHTML = IC.ok; btn.setAttribute('aria-label', 'Pridané');
+          setTimeout(() => renderToday(), 550);
+        } catch (e) { ctx.toast(e.message, true); btn.disabled = false; }
+      });
+    };
+    draw();
     b.after(el);
-    el.querySelectorAll('.sg').forEach(btn => btn.onclick = async () => {
-      const c = list[Number(btn.dataset.i)];
-      btn.disabled = true;
-      try {
-        for (const it of c.items) {
-          await db.addFood({ user_id: p.id, date, meal, name: it.name, brand: it.brand || null, grams: Math.round(it.grams * 10) / 10, kcal: Math.round(it.kcal * 10) / 10, protein: Math.round(it.protein * 10) / 10, carbs: Math.round(it.carbs * 10) / 10, fat: Math.round(it.fat * 10) / 10,
-            source: it.source || 'db', barcode: it.barcode || null, food_id: it.food_id || null, portion: it.portion || null, qty: it.qty ?? null });
-          if (it.food_id) db.foodUsed(it.food_id);
-        }
-        ctx.toast('Pridané');
-        renderToday();
-      } catch (e) { ctx.toast(e.message, true); btn.disabled = false; }
-    });
   } catch (_) { /* návrhy sú bonus, nesmú rozbiť obrazovku */ } finally { busy = false; }
 }
 if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); inject(); }
