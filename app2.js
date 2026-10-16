@@ -116,13 +116,13 @@ export async function renderTraining() {
       <p class="muted small">${day.exercises.map(e => e.muscle).filter((v, i, a) => a.indexOf(v) === i).join(' · ')}</p>
     </div>
     ${day.exercises.map(e => `<div class="card ex">
-      <div class="row between"><h3>${h(e.name)}</h3><span class="muted small">${e.sets}× ${e.reps ? e.reps + ' op.' : Math.round(e.seconds / 60) + ' min'}</span></div>
-      ${exMeta(e, lastKg[e.id])}
-      ${plan.meta?.v === 2 && e.id !== 'cardio' && e.reps ? `<button class="swapbtn" data-swap="${e.id}">Vymeniť cvik</button>` : ''}
+      <div class="exh"><div class="exn"><h3>${h(e.name)}</h3>${exMeta(e, lastKg[e.id])}</div>${plan.meta?.v === 2 && e.id !== 'cardio' && e.reps ? `<button class="swapbtn" data-swap="${e.id}" aria-label="Vymeniť cvik" title="Vymeniť cvik">⇄</button>` : ''}</div>
+      ${exCue(e)}
+      ${e.reps ? '<div class="setsh"><span></span><span>kg</span><span>opakovania</span><span></span></div>' : ''}
       <div class="sets">${sets.filter(s => s.ex === e.id).map(s => `<div class="set ${s.done ? 'done' : ''}" data-ex="${e.id}" data-set="${s.set}">
         <span class="setno">${s.set}</span>
-        ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="kg" value="${s.kg ?? ''}" data-f="kg"><input class="input sm" inputmode="numeric" placeholder="op." value="${s.reps ?? ''}" data-f="reps">` : `<span class="muted small" style="flex:1">${Math.round(e.seconds / 60)} min</span>`}
-        <button class="chk" data-chk>✓</button></div>`).join('')}</div>
+        ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="${e.startKg && !lastKg[e.id] ? e.startKg : 'kg'}" value="${s.kg ?? ''}" data-f="kg" aria-label="Váha v kg, séria ${s.set}"><input class="input sm" inputmode="numeric" placeholder="${h(e.reps)}" value="${s.reps ?? ''}" data-f="reps" aria-label="Opakovania, séria ${s.set}">` : `<span class="muted small" style="grid-column:2/4">${Math.round(e.seconds / 60)} min</span>`}
+        <button class="chk" data-chk aria-label="Hotovo">✓</button></div>`).join('')}</div>
     </div>`).join('')}
     <div class="row" style="gap:8px"><button class="btn primary" id="finish">${todayLog?.done ? 'Uložiť zmeny' : 'Ukončiť tréning'}</button><button class="btn sm ghost" id="replan">Nový plán</button></div>
   </div>${nav('#/trening')}`;
@@ -167,7 +167,7 @@ export async function renderTraining() {
 function contestDays(date) { if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null; return Math.round((new Date(date + 'T00:00:00') - new Date(calc.today() + 'T00:00:00')) / 86400000); }
 function contestCard(plan) {
   const date = plan.meta.params?.contestDate || '', left = contestDays(date);
-  if (left == null || left < -14) return `<div class="px-card"><b>🏆 Súťažný režim</b><p class="muted small">Zadaj dátum súťaže a appka ti bude ukazovať, čo robiť v ktorej fáze prípravy, vrátane posledného týždňa.</p><input class="input" type="date" id="contestDate" min="${calc.today()}" aria-label="Dátum súťaže"></div>`;
+  if (left == null || left < -14) return `<div class="px-card"><b>🏆 Súťažný režim</b><p class="muted small">Zadaj dátum súťaže a appka ti bude ukazovať, čo robiť v ktorej fáze prípravy, vrátane posledného týždha.</p><input class="input" type="date" id="contestDate" min="${calc.today()}" aria-label="Dátum súťaže"></div>`;
   const ph = contestPhase(left);
   return `<div class="px-card"><div class="row between"><b>🏆 ${h(ph.title)}</b><span class="chip" style="background:#12332A;color:var(--accent)">${left > 0 ? 'o ' + left + ' ' + (left === 1 ? 'deň' : left >= 2 && left <= 4 ? 'dni' : 'dní') : left === 0 ? 'dnes' : 'po súťaži'}</span></div>
     <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${ph.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>
@@ -178,14 +178,14 @@ function contestCard(plan) {
 function peakBlock(plan, left) {
   const ack = plan.meta.params?.peakAck;
   if (!ack) return `<div class="px-caut" style="margin-top:10px"><b>Profi peak week (na vlastné riziko)</b>
-    <p class="small" style="margin:6px 0 8px">Denný plán pre súťažiacich: sacharidové nabitie, voda a sodík. Pred odomknutím potvrď všetko nižšie.</p>
+    <p class="small" style="margin:6px 0 8px">Denný plán pre súťažiacich: sacharidové nabitie, voda a sódik. Pred odomknutím potvrdď všetko nižšie.</p>
     ${PEAK_RISK.map((t, i) => `<label style="display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;font-size:13px;line-height:1.4"><input type="checkbox" data-peakchk="${i}" style="margin-top:3px"><span>${h(t)}</span></label>`).join('')}
     <button class="btn sm primary" id="peakUnlock" disabled>Odomknúť profi peak week</button></div>`;
   const kg = plan.meta.params?.weightKg || state.profile.start_weight;
   const today = peakProtocol(left, kg), next = left > 0 ? peakProtocol(left - 1, kg) : null;
   const box = x => `<p class="small" style="margin:10px 0 4px"><b>${h(x.title)}</b></p><ul class="small" style="margin:0 0 0 18px;padding:0;line-height:1.5">${x.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>`;
   return `<div class="px-caut" style="margin-top:10px"><b>Profi peak week</b><p class="small" style="margin:4px 0 0">Dnes a zajtra podľa dátumu súťaže. Telesná hmotnosť pre výpočet: ${kg ? h(String(kg)) + ' kg' : 'nezadaná (uvedené v g a ml na kg)'}.</p>${box(today)}${next ? box(next) : ''}
-    <p class="small" style="margin:10px 0 0;opacity:.85">Plán je nad rámec bežných odporúčaní a robíš ho na vlastné riziko. Diuretiká, laxatíva, lieky ani saunové vysúšanie v appke nenájdeš.</p>
+    <p class="small" style="margin:10px 0 0;opacity:.85">Plán je nad rámec bežnných odporúčaní a robíš ho na vlastné riziko. Diuretiká, laxatívá, lieky ani saunové vysúšanie v appke nenájdeš.</p>
     <button class="btn sm ghost" id="peakLock" style="margin-top:8px">Skryť profi plán</button></div>`;
 }
 async function savePeakAck(plan, on) {
@@ -282,11 +282,12 @@ function planInfo(plan) {
   const rows = Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 30 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
   return `<div class="card plan-info">
     <div class="row between"><b>Blok ${(m.block || 0) + 1} · týždeň ${m.week} z ${m.mesoWeeks}</b><span class="chip" style="${m.deload ? 'background:#3A2F12;color:#FFD27A' : 'background:#12332A;color:var(--accent)'}">${m.deload ? 'Deload' : LEVELS[m.params.level]?.label}</span></div>
-    ${m.spec ? `<p class="small" style="margin:6px 0 0;color:var(--accent)">Špecializačný blok: ${(m.params.priority || []).map(k => PRIORITY[k]?.[0]).filter(Boolean).join(' a ')}</p>` : ''}
-    <p class="small" style="margin:6px 0 0">${m.deload ? 'Odporúčaný deload: polovica sérií, rovnaké váhy a viac rezervy. Ak sa cítiš sviežo, môžeš ho preskočiť.' : `Tento týždeň ťahaj série na ${RIR_TXT(m.rir)}.`}</p>
-    <div class="row" style="gap:8px;margin-top:8px">${m.deload ? '<button class="btn sm ghost" id="skipDeload">Preskočiť deload</button>' : '<button class="btn sm ghost" id="deloadNow">Som vyčerpaný, deload teraz</button>'}</div>
-    <details style="margin-top:8px"><summary class="small" style="cursor:pointer">Prečo je plán takto zostavený</summary>
-      <ul class="small" style="margin:8px 0 0 18px;padding:0;line-height:1.5">${(m.why || []).map(t => `<li>${h(t)}</li>`).join('')}</ul>
+    <p class="small" style="margin:6px 0 0">${m.deload ? 'Deload týždeň: polovica sérií, rovnaké váhy.' : `Tento týždeň ťahaj série na ${RIR_TXT(m.rir)}.`}</p>
+    <details style="margin-top:8px"><summary class="small" style="cursor:pointer">Viac o pláne</summary>
+      ${m.spec ? `<p class="small" style="margin:8px 0 0;color:var(--accent)">Špecializačný blok: ${(m.params.priority || []).map(k => PRIORITY[k]?.[0]).filter(Boolean).join(' a ')}</p>` : ''}
+      <div class="row" style="gap:8px;margin-top:8px">${m.deload ? '<button class="btn sm ghost" id="skipDeload">Preskočiť deload</button>' : '<button class="btn sm ghost" id="deloadNow">Som vyčerpaný, deload teraz</button>'}</div>
+      <p class="small" style="margin:10px 0 4px"><b>Prečo je plán takto zostavený</b></p>
+      <ul class="small" style="margin:0 0 0 18px;padding:0;line-height:1.5">${(m.why || []).map(t => `<li>${h(t)}</li>`).join('')}</ul>
       <p class="small" style="margin:8px 0 4px"><b>Progresia</b><br>${h(m.progression || '')}</p>
       <p class="small" style="margin:8px 0 4px"><b>Rozcvička</b><br>${h(m.warmup || '')}</p>
       <p class="small" style="margin:8px 0 4px"><b>Pracovné série na sval za týždeň</b></p>${rows}
@@ -296,16 +297,25 @@ function planInfo(plan) {
   </div>`;
 }
 function exMeta(e, last) {
-  if (e.id === 'cardio' || !e.rest) return e.cue ? `<p class="muted small" style="margin:2px 0 6px">${h(e.cue)}</p>` : '';
-  const bits = [e.rir != null ? `rezerva ${e.rir}` : '', `pauza ${e.rest >= 120 ? Math.round(e.rest / 60 * 2) / 2 + ' min' : e.rest + ' s'}`];
-  if (!last && e.startKg) bits.push(`začni okolo ${e.startKg} kg`);
-  return `<p class="muted small" style="margin:2px 0 4px">${bits.join(' · ')}</p>${e.cue ? `<p class="muted small" style="margin:0 0 6px;opacity:.8">${h(e.cue)}</p>` : ''}`;
+  const vol = e.reps ? `${e.sets} × ${e.reps}` : `${e.sets} × ${Math.round(e.seconds / 60)} min`;
+  const bits = [`<b>${vol}</b>`];
+  if (e.id !== 'cardio' && e.rest) {
+    if (e.rir != null) bits.push(`rezerva ${e.rir}`);
+    bits.push(`pauza ${e.rest >= 120 ? Math.round(e.rest / 60 * 2) / 2 + ' min' : e.rest + ' s'}`);
+    if (!last && e.startKg) bits.push(`začni okolo ${e.startKg} kg`);
+  }
+  return `<p class="exm">${bits.join(' · ')}</p>`;
 }
+const exCue = e => e.cue ? `<details class="excue"><summary>Ako na to</summary><p>${h(e.cue)}</p></details>` : '';
 if (typeof document !== 'undefined') {
   const st = document.createElement('style');
   st.textContent = `.plan-info{margin-bottom:12px}.vrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0}.vrow span{flex:0 0 96px;color:var(--muted)}.vrow i{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.vrow i b{display:block;height:100%;background:var(--accent)}.vrow em{flex:0 0 28px;text-align:right;font-style:normal}.swapbtn{margin:0 0 8px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer}.alt{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.alt b{display:block;font-size:14.5px}.alt small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}.chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;font-size:13.5px;cursor:pointer}.chips button.on{border-color:var(--accent);background:rgba(124,255,178,.12)}.lvl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.lvl button{text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.lvl button.on{border-color:var(--accent);background:rgba(124,255,178,.10)}.lvl button b{display:block;font-size:15px}.lvl button small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}`;
   document.head.appendChild(st);
+  const st2 = document.createElement('style');
+  st2.textContent = `.ex .exh{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.ex .exn{min-width:0}.ex .exn h3{font-size:16px;line-height:1.25;margin:0}.ex .exm{margin:3px 0 0;color:var(--muted);font-size:13px;line-height:1.4}.ex .exm b{color:var(--accent);font-weight:700}.ex .swapbtn{flex:none;width:38px;height:38px;margin:0;padding:0;display:grid;place-items:center;border-radius:12px;font-size:17px;line-height:1}.ex .excue{margin:8px 0 0}.ex .excue summary{cursor:pointer;color:var(--muted);font-size:13px}.ex .excue p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.ex .setsh,.ex .set{display:grid;grid-template-columns:30px 1fr 1fr 48px;gap:8px;align-items:center}.ex .setsh{margin-top:12px;color:var(--muted);font-size:11.5px;text-align:center}.ex .sets{margin-top:6px;gap:8px}.ex .input.sm{height:46px;padding:0 8px;font-size:17px;text-align:center}.ex .chk{width:48px;height:46px;border-radius:12px;font-size:16px}.pv h3{margin:0 0 8px}.pvr{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.35}.pvr:first-of-type{border-top:0}.pvr span{min-width:0}.pvr b{flex:none;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}`;
+  document.head.appendChild(st2);
 }
+const EMPH_HINT = { balanced: 'Rovnomerne celé telo.', upper: 'Viac sérií na hrudník, chrbát, ramená a ruky.', lower: 'Viac sérií na stehá, zadok a lýtka.' };
 async function renderPlanSetup(opts = {}) {
   const p = state.profile;
   const old = await db.getPlan(p.id).catch(() => null);
@@ -321,7 +331,7 @@ async function renderPlanSetup(opts = {}) {
   const draw = () => {
     const pl = preview(), m = pl.meta;
     $app().querySelector('#planPrev').innerHTML = `<div class="card plan-info"><b>${h(m.split)}</b><p class="small" style="margin:6px 0 0">Blok trvá ${m.mesoWeeks} týždňov, potom sa pomocné cviky obmenia.${level === 'elite' ? ' Každý druhý blok je špecializačný na tvoje prioritné partie.' : ''}</p></div>` +
-      pl.days.map(d => `<div class="card"><h3>${h(d.name)}</h3><p class="muted small">${d.exercises.map(e => `${h(e.name)} ${e.sets}×${e.reps || Math.round(e.seconds / 60) + 'min'}`).join(' · ')}</p></div>`).join('') +
+      pl.days.map(d => `<div class="card pv"><h3>${h(d.name)}</h3>${d.exercises.map(e => `<div class="pvr"><span>${h(e.name)}</span><b>${e.reps ? e.sets + ' × ' + e.reps : Math.round(e.seconds / 60) + ' min'}</b></div>`).join('')}</div>`).join('') +
       `<div class="card plan-info"><p class="small" style="margin:0 0 6px"><b>Pracovné série na sval za týždeň</b></p>${volRows(m.volume)}</div>`;
   };
   const seg = (id, items, cur) => `<div class="seg" id="${id}">${items.map(([k, t]) => `<button data-k="${k}" class="${String(k) === String(cur) ? 'on' : ''}">${t}</button>`).join('')}</div>`;
@@ -330,12 +340,12 @@ async function renderPlanSetup(opts = {}) {
   const prioHtml = () => `<span>Prioritné partie pre špecializačný blok (až 2)</span><div class="chips" id="prio">${Object.entries(PRIORITY).map(([k, v]) => `<button type="button" data-k="${k}" class="${priority.includes(k) ? 'on' : ''}">${v[0]}</button>`).join('')}</div>`;
   $app().innerHTML = `<div class="screen">
     <h1 class="mb">Tvoj plán</h1>
-    <p class="muted mb">Plán sa skladá z tvojho cieľa (${calc.GOAL[p.goal]?.label || ''}), váhy, výšky, úrovne a počtu dní. Každých pár týždňov sa sám vyvíja a po bloku obmení cviky.</p>
+    <p class="muted mb">Skladá sa z tvojho cieľa (${calc.GOAL[p.goal]?.label || ''}), úrovne a počtu dní. Sám sa vyvíja a po bloku obmení cviky.</p>
     ${fromPhys ? `<div class="card plan-info"><p class="small" style="margin:0">Plán je nastavený podľa tvojej analýzy postavy: ${level === 'elite' && priority.length ? 'prioritné partie ' + priority.map(k => PRIORITY[k]?.[0].toLowerCase()).join(' a ') + ', plán začne špecializačným blokom' : 'dôraz ' + (EMPHASIS[emphasis] || '').toLowerCase()}. Môžeš to ešte upraviť.</p></div>` : ''}
-    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${lvlHtml()}</div><p class="muted small" style="margin:0 0 4px">Nevieš ktorú? Ak ti váhy rastú takmer každý týždeň, si začiatočník. Ak prírastky trvajú týždne až mesiace, si stredne pokročilý. Ak sa posunú len raz za pár mesiacov, si pokročilý. Elite je pre tých, čo idú na súťaž alebo cvičia viac ako 4 roky s presným režimom.</p></div>
+    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${lvlHtml()}</div></div>
     <div class="field"><span>Dní tréningu v týždni</span><div id="dwrap">${seg('dseg', dayItems(), days)}</div></div>
     <div class="field"><span>Kde cvičíš</span>${seg('eseg', [['gym', 'Posilňovňa'], ['home', 'Doma s jednoručkami']], equipment)}</div>
-    <div class="field"><span>Na čo sa zamerať</span>${seg('mseg', Object.entries(EMPHASIS), emphasis)}</div>
+    <div class="field"><span>Na čo sa zamerať</span>${seg('mseg', Object.entries(EMPHASIS), emphasis)}<p class="muted small" id="mhint" style="margin:6px 2px 0">${EMPH_HINT[emphasis] || ''}</p></div>
     <div class="field" id="prioWrap" style="${level === 'elite' ? '' : 'display:none'}">${prioHtml()}</div>
     <div id="planPrev"></div>
     <button class="btn primary" id="save">Použiť tento plán</button>
@@ -352,7 +362,7 @@ async function renderPlanSetup(opts = {}) {
   });
   bindLvl(); bindDays();
   root().querySelectorAll('#eseg [data-k]').forEach(b => b.onclick = () => { equipment = b.dataset.k; root().querySelectorAll('#eseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
-  root().querySelectorAll('#mseg [data-k]').forEach(b => b.onclick = () => { emphasis = b.dataset.k; root().querySelectorAll('#mseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  root().querySelectorAll('#mseg [data-k]').forEach(b => b.onclick = () => { emphasis = b.dataset.k; root().querySelector('#mhint').textContent = EMPH_HINT[emphasis] || ''; root().querySelectorAll('#mseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
   root().querySelectorAll('#prio [data-k]').forEach(b => b.onclick = () => {
     const k = b.dataset.k;
     if (priority.includes(k)) priority = priority.filter(x => x !== k); else priority = [...priority, k].slice(-2);
