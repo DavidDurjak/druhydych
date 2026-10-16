@@ -1,4 +1,6 @@
 // Tlačidlo Späť na každej vnorenej obrazovke (Ciele, Správy, Hodinky, Návyky, ...), nie len na hlavných kartách dole.
+import { ctx } from './app.js';
+
 const root = document.getElementById('app');
 const TABS = new Set(['#/', '#/trening', '#/pokrok', '#/kouc', '#/profil', '#/onboarding', '#/checkin']);
 const PARENT = { '#/jedlo': '#/', '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/report': '#/pokrok', '#/tyzden': '#/profil', '#/cukor-sprava': '#/cukor', '#/cukor': '#/profil', '#/navyky': '#/profil' };
@@ -7,8 +9,8 @@ addEventListener('hashchange', () => { moves++; });
 
 const st = document.createElement('style');
 st.textContent = `
-.screen.bk{position:relative}
-.bk-b{position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 2px);left:12px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;padding:0;border:1px solid rgba(255,255,255,.1);background:rgba(28,34,43,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:var(--text);box-shadow:0 6px 16px -8px rgba(0,0,0,.7);-webkit-appearance:none;appearance:none;cursor:pointer;transition:transform .12s}
+.screen.bk{position:relative;padding-top:calc(env(safe-area-inset-top) + 94px)}
+.bk-b{position:absolute;z-index:5;top:calc(env(safe-area-inset-top) + 46px);left:12px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;padding:0;border:1px solid rgba(255,255,255,.1);background:rgba(28,34,43,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:var(--text);box-shadow:0 6px 16px -8px rgba(0,0,0,.7);-webkit-appearance:none;appearance:none;cursor:pointer;transition:transform .12s}
 .bk-b:active{transform:scale(.92)}
 .bk-b svg{width:20px;height:20px}
 body:has(.sheet-bg) .bk-b{visibility:hidden}
@@ -26,7 +28,7 @@ function run() {
   const p = (location.hash || '#/').split('?')[0];
   const s = root?.querySelector('.screen');
   if (!s) return;
-  const show = !TABS.has(p) && !s.classList.contains('wc') && !s.querySelector('#wcBack');
+  const show = (!TABS.has(p) || (p === '#/onboarding' && ctx.state?.profile?.onboarded)) && !s.classList.contains('wc') && !s.querySelector('#wcBack');
   const b = s.querySelector(':scope > .bk-b');
   if (!show) { if (b) { b.remove(); s.classList.remove('bk'); } return; }
   if (b) return;
