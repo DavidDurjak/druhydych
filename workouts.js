@@ -187,6 +187,26 @@ const SPLITS = {
     { n: 'Nohy B', s: ['g_main', 'q_sec', 'h_iso+1', 'q_iso', 'calf+1', 'abs+2'] }] },
 };
 
+// Splity s dôrazom: pri dôraze na zadok a nohy je väčšina dní na spodok tela, pri dôraze na hornú časť naopak.
+// Druhá časť tela ostáva v menšom objeme (zdravie chrbta, držanie tela, sila), nie je úplne vynechaná.
+const UPF = ['c_main', 'b_vert', 's_press', 'b_row', 's_lat', 'bi', 'tri'];
+const LOWF = ['q_main', 'h_main', 'g_main', 'q_sec', 'h_iso', 'calf'];
+const LOW_3 = ['h_main+1', 'g_sec+1', 'q_sec+2', 'h_iso', 'g_main+1', 'abs'];
+const LOW_4 = ['q_main+1', 'g_main', 'calf+1', 's_lat', 's_rear', 'abs+1'];
+const UP_3 = ['s_press+1', 's_lat', 's_rear', 'c_iso', 'bi', 'tri_long'];
+const DOM = {
+  lower: {
+    3: { name: 'Nohy 2×, horná časť 1×', days: [{ n: 'Nohy A (drep)', s: LOW_1 }, { n: 'Horná časť', s: UPF }, { n: 'Nohy B (zadok)', s: LOW_2 }] },
+    4: { name: 'Nohy 3×, horná časť 1×', days: [{ n: 'Nohy A (drep)', s: LOW_1 }, { n: 'Horná časť', s: UPF }, { n: 'Nohy B (zadok)', s: LOW_2 }, { n: 'Nohy C (zadok a zadné stehná)', s: LOW_3 }] },
+    5: { name: 'Nohy 3×, horná časť 2×', days: [{ n: 'Nohy A (drep)', s: LOW_1 }, { n: 'Horná časť A', s: UP_1 }, { n: 'Nohy B (zadok)', s: LOW_2 }, { n: 'Horná časť B', s: UP_2 }, { n: 'Nohy C (zadok a zadné stehná)', s: LOW_3 }] },
+    6: { name: 'Nohy 4×, horná časť 2×', days: [{ n: 'Nohy A (drep)', s: LOW_1 }, { n: 'Horná časť A', s: UP_1 }, { n: 'Nohy B (zadok)', s: LOW_2 }, { n: 'Nohy C (zadok a zadné stehná)', s: LOW_3 }, { n: 'Horná časť B', s: UP_2 }, { n: 'Nohy D a ramená', s: LOW_4 }] },
+  },
+  upper: {
+    3: { name: 'Horná časť 2×, nohy 1×', days: [{ n: 'Horná časť A', s: UP_1 }, { n: 'Nohy', s: LOWF }, { n: 'Horná časť B', s: UP_2 }] },
+    4: { name: 'Horná časť 3×, nohy 1×', days: [{ n: 'Horná časť A', s: UP_1 }, { n: 'Nohy', s: LOWF }, { n: 'Horná časť B', s: UP_2 }, { n: 'Ramená, ruky a hrudník', s: UP_3 }] },
+  },
+};
+
 const REPS = { H: { b: '8-10', x: '6-8' }, M: { b: '10-12', x: '8-12' }, L: { b: '10-15', x: '10-15' }, X: { b: '12-20', x: '12-20' } };
 const REST = { H: 180, M: 120, L: 90, X: 60 };
 const BASE_SETS = { beginner: { main: 3, sec: 2, iso: 2 }, intermediate: { main: 3, sec: 3, iso: 3 }, advanced: { main: 4, sec: 3, iso: 3 }, elite: { main: 4, sec: 4, iso: 3 } };
@@ -235,7 +255,8 @@ export function generatePlan(p = {}) {
   const prioM = new Set(priority.flatMap(k => PRIORITY[k][1]));
 
   const splitKey = days === 3 && level !== 'beginner' ? '3u' : days;
-  const split = SPLITS[splitKey];
+  const domSplit = level !== 'beginner' || days >= 4 ? DOM[emphasis]?.[days] : null;
+  const split = domSplit || SPLITS[splitKey];
 
   const isBeg = level === 'beginner';
   const ramp = RAMP[level][week - 1] || 0;
@@ -284,8 +305,8 @@ export function generatePlan(p = {}) {
       if (goal === 'lose' && slot.role === 'iso' && level !== 'elite') sets = Math.max(2, sets - (level === 'beginner' ? 0 : 1));
       if (specOn && prioM.has(slot.m) && prioM.size <= 2 && slot.m !== 'back') sets += 1;
       if (specOn && !prioM.has(slot.m) && slot.role === 'iso') sets = Math.max(2, sets - 1);
-      if (emphasis === 'upper' && upperM.has(slot.m)) sets += 1;
-      if (emphasis === 'lower' && lowerM.has(slot.m)) sets += 1;
+      if (!domSplit && emphasis === 'upper' && upperM.has(slot.m)) sets += 1;
+      if (!domSplit && emphasis === 'lower' && lowerM.has(slot.m)) sets += 1;
       if (emphasis === 'upper' && (slot.m === 'quads' || slot.m === 'hams') && slot.role !== 'main') sets = Math.max(2, sets - 0);
       if (ex.rr === 'T') sets = 3;
       const rampNow = slot.role === 'main' ? Math.min(Math.ceil(ramp / 2), 1) : Math.min(ramp, rampCap);
@@ -325,7 +346,7 @@ export function generatePlan(p = {}) {
     v: 2, params: { goal, days, level, equipment, emphasis, sex, birthYear: p.birthYear || null, heightCm: heightCm || null, weightKg: weightKg || null, priority, swaps, contestDate: /^\d{4}-\d{2}-\d{2}$/.test(p.contestDate || '') ? p.contestDate : null, peakAck: /^\d{4}-\d{2}-\d{2}$/.test(p.peakAck || '') ? p.peakAck : null },
     spec: specOn,
     block, week, mesoWeeks, deload, rir: RIR[level][week - 1], split: split.name, volume: vol,
-    why: explain({ goal, level, equipment, emphasis, days, sex, bmi, tall, older, old55, lowBmi, split: split.name, mesoWeeks, cardioSessions, specOn, priority }),
+    why: explain({ dom: !!domSplit, goal, level, equipment, emphasis, days, sex, bmi, tall, older, old55, lowBmi, split: split.name, mesoWeeks, cardioSessions, specOn, priority }),
     progression: 'Dvojitá progresia: keď zvládneš všetky série na hornej hranici rozsahu opakovaní a stále ti ostane predpísaná rezerva, pridaj nabudúce váhu (horná časť tela približne 2,5 kg, nohy približne 5 kg, jednoručky 1 až 2 kg). Ak spadneš pod spodnú hranicu, váhu zníž.',
     warmup: 'Pred tréningom 5 minút ľahkého pohybu a pri prvom cviku 2 prípravné série: približne 50 % a 75 % pracovnej váhy (pár opakovaní).',
     stepsGoal: goal === 'lose' && !lowBmi ? 9000 : 7000,
@@ -362,8 +383,8 @@ function explain(c) {
     : `Pri chudnutí držíme ťažké váhy na základných cvikoch a objem pomocných cvikov je o niečo nižší, lebo pri deficite sa horšie regeneruje. Pridali sme ${c.cardioSessions}× ľahké kardio.`);
   if (c.goal === 'gain') out.push('Pri naberaní máš plný objem a postupný nárast sérií v bloku. Pridávaj váhu, keď zvládneš hornú hranicu opakovaní, a jedz v miernom prebytku.');
   if (c.goal === 'maintain') out.push('Pri udržiavaní je objem stredný. Cieľom je pomaly pridávať váhu a udržať svaly.');
-  if (c.emphasis === 'lower') out.push('Dôraz máš na zadok a nohy: tieto svaly dostávajú viac sérií a cviky, ktoré ich zaťažujú v natiahnutej polohe (rumunský ťah, hip thrust, bulharský drep).');
-  if (c.emphasis === 'upper') out.push('Dôraz máš na hornú časť tela: hrudník, chrbát, ramená a ruky majú o niečo viac sérií.');
+  if (c.emphasis === 'lower') out.push(c.dom ? 'Dôraz máš na zadok a nohy: väčšina tréningových dní je na spodok tela, s cvikmi, ktoré zaťažujú zadok v natiahnutej polohe (rumunský ťah, hip thrust, bulharský drep). Horná časť ostáva v menšom objeme, lebo silný chrbát a ramená držia postavu a chránia chrbticu.' : 'Dôraz máš na zadok a nohy: každý tréning je na celé telo, ale tieto svaly v ňom dostávajú viac sérií. Pri tomto počte dní a úrovni je to najrýchlejšia cesta k výsledku.');
+  if (c.emphasis === 'upper') out.push(c.dom ? 'Dôraz máš na hornú časť tela: väčšina tréningových dní je na hrudník, chrbát, ramená a ruky. Nohy ostávajú v menšom objeme, aby si nestratil silu a proporcie.' : 'Dôraz máš na hornú časť tela: hrudník, chrbát, ramená a ruky majú v každom tréningu viac sérií.');
   if (c.tall) out.push('Pri vysokej postave býva klasický drep s činkou technicky náročnejší, preto je základ hack drep alebo leg press. Je to praktická voľba, nie pravidlo: ak ti drep s činkou ide, môžeš cvik vymeniť späť.');
   if (c.bmi >= 32) out.push('Pri vyššej hmotnosti sme pri tlakoch aj ťahoch zvolili stabilnejšie stroje a kardio je nízkonárazové (chôdza do kopca, bicykel).');
   if (c.older) out.push('Vzhľadom na vek nechávaš o jedno opakovanie viac v rezerve a dôraz je na kontrolovanú techniku.');
