@@ -77,6 +77,13 @@ const CSS = `
 .fx-rest.end{border-color:rgba(124,255,178,.7);animation:fxGlow .9s ease-in-out 3}
 @keyframes fxGlow{50%{box-shadow:0 0 0 6px rgba(124,255,178,.25),0 18px 40px rgba(0,0,0,.5)}}
 .fx-cf{position:fixed;inset:0;z-index:90;pointer-events:none}
+.fx-setup #mhint{color:var(--text);background:rgba(124,255,178,.08);border:1px solid rgba(124,255,178,.22);border-radius:12px;padding:9px 11px;line-height:1.45}
+.fx-setup .card.pv{--mc:#7CFFB2;position:relative;overflow:hidden;border-radius:20px;padding-left:18px;background:linear-gradient(135deg,color-mix(in srgb,var(--mc) 10%,var(--card)),var(--card) 60%);border-color:color-mix(in srgb,var(--mc) 24%,var(--line))}
+.fx-setup .card.pv::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--mc);box-shadow:0 0 14px var(--mc)}
+.fx-setup .pv h3{display:flex;align-items:center;gap:10px}
+.fx-setup .pv h3 .fx-ic{width:38px;height:38px;border-radius:12px;font-size:19px}
+.fx-setup .pv h3 small{margin-left:auto;font-size:11px;font-weight:700;color:var(--mc);background:color-mix(in srgb,var(--mc) 14%,transparent);padding:3px 8px;border-radius:99px;white-space:nowrap}
+.fx-setup .pvr b{color:var(--mc)}
 @media (prefers-reduced-motion:reduce){.fx-aur,.fx-fire,.fx-dots em{animation:none}.exdone .fx-ic span,.fx-on .set.done .chk{animation:none}.fx-ring .fg,.fx-bar i{transition:none}}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
@@ -226,8 +233,43 @@ function confetti(count = 140) {
   requestAnimationFrame(frame);
 }
 
+// ---- nastavenie plánu: jasné popisy a farebný náhľad dní ----
+const dayWord = n => `${n} ${n >= 5 ? 'dní' : 'dni'}`;
+const setText = (el, t) => { if (el && el.textContent !== t) el.textContent = t; };
+const dayType = t => /^(Nohy|Dolná)/.test(t) ? 'low' : /^(Horná|Ramená|Tlaky|Ťahy)/.test(t) ? 'up' : 'full';
+function setupFx() {
+  const scr = $('#app .screen');
+  if (!scr || !$('#mseg', scr) || !$('#planPrev', scr)) return;
+  scr.classList.add('fx-setup');
+  setText($('#dwrap', scr)?.previousElementSibling, 'Koľko dní v týždni chceš cvičiť?');
+  $$('#dseg [data-k]', scr).forEach(b => setText(b, dayWord(Number(b.dataset.k))));
+  setText($('#mseg', scr).previousElementSibling, 'Na čo dať dôraz?');
+  const cards = $$('#planPrev .card.pv', scr);
+  cards.forEach(c => {
+    if (c.dataset.fx) return;
+    const h3 = $('h3', c); if (!h3) return;
+    const name = h3.textContent; c.dataset.fx = '1'; c.dataset.n = name;
+    const ty = dayType(name);
+    c.style.setProperty('--mc', ty === 'low' ? '#7CFFB2' : ty === 'up' ? '#5BB8FF' : '#FF8A4C');
+    const n = $$('.pvr b', c).filter(b => !/min/.test(b.textContent)).length;
+    h3.insertAdjacentHTML('afterbegin', `<span class="fx-ic"><span>${ty === 'low' ? '🦵' : ty === 'up' ? '💪' : '🔥'}</span></span>`);
+    h3.insertAdjacentHTML('beforeend', `<small>${n} ${n >= 5 ? 'cvikov' : 'cviky'}</small>`);
+  });
+  const names = cards.map(c => c.dataset.n || ''), N = names.length;
+  const low = names.filter(t => dayType(t) === 'low').length, up = names.filter(t => dayType(t) === 'up').length;
+  const emph = $('#mseg .on', scr)?.dataset.k || 'balanced';
+  const full = !names.some(t => dayType(t) !== 'full');
+  const hint = emph === 'lower'
+    ? (full || low * 2 <= N ? 'Každý tréning je na celé telo, ale zadok a nohy majú najviac sérií. Pri tomto počte dní je celé telo najrýchlejšia cesta k výsledku.' : `${low} z ${N} tréningov týždenne je na zadok a nohy. Horná časť ostáva v menšom, aby chrbát a držanie tela ostali silné.`)
+    : emph === 'upper'
+      ? (full || up * 2 <= N ? 'Každý tréning je na celé telo, ale horná časť má najviac sérií. Pri tomto počte dní je celé telo najrýchlejšia cesta k výsledku.' : `${up} z ${N} tréningov týždenne je na hornú časť tela. Nohy ostávajú v menšom, aby nestratili silu.`)
+      : 'Celé telo rovnomerne.';
+  setText($('#mhint', scr), hint);
+}
+
 // ---- napojenie ----
 function scan() {
+  setupFx();
   const scr = $('#app .screen');
   if (!scr || !$('#finish', scr) || !$('.card.ex', scr)) { if (rest && !$('#finish')) stopRest(); return; }
   if (scr.dataset.fx) return;
