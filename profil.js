@@ -1,5 +1,5 @@
 // Profil: hráčska karta (úroveň, séria, odznaky), plán, rýchle dlaždice a nastavenia zoskupené do prehľadných sekcií.
-// Pôvodná obrazovka z app.js zostane v DOM skrytá (jej odhlásenie, odkazy z iných modulov aj dáta fungujú ďalej), nové UI sa vloží nad òu.
+// Pôvodná obrazovka z app.js zostane v DOM skrytá (jej odhlásenie, odkazy z iných modulov aj dáta fungujú ďalej), nové UI sa vloží nad ňu.
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
@@ -200,7 +200,7 @@ function html(p, admin) {
     ]],
     ['Prehľady', [
       { href: '#/tyzden', i: 'cal', c: 'sky', t: 'Týždenné vyhodnotenie', s: 'Ako sa ti darilo a čo zmeniť', k: 'check-in tyzden' },
-      { href: '#/karta', i: 'menu', c: 'amber', t: 'Hotový jedálček', s: kc ? `Týždeň jedla na ${nf(kc)} kcal` : 'Týždeň jedla jedným ťuknutím', k: 'jedalnicek plan' },
+      { href: '#/karta', i: 'menu', c: 'amber', t: 'Hotový jedálniček', s: kc ? `Týždeň jedla na ${nf(kc)} kcal` : 'Týždeň jedla jedným ťuknutím', k: 'jedalnicek plan' },
     ]],
     ['Podpora a dáta', [
       { href: '#/napis', i: 'bulb', c: 'amber', t: 'Napíš nám', s: 'Problém alebo nápad', k: 'feedback chyba napad' },
@@ -239,7 +239,7 @@ function html(p, admin) {
   ${tile({ href: '#/spravy', i: 'chat', c: 'sky', t: 'Správy', s: 'Od kouča a tímu', badge: '0' })}
   ${tile({ a: 'invite', i: 'invite', c: 'mint', t: 'Pozvi kamaráta', s: code ? `Tvoj kód ${code}` : 'Porovnajte sa spolu' })}
   ${tile({ a: 'shop', i: 'cart', c: 'amber', t: 'Nákupný zoznam', s: 'Z tvojho plánu na 7 dní' })}
-  ${tile({ href: '#/report', i: 'chart', c: 'violet', t: 'Týždenný report', s: 'Skóre a rozbor týždha' })}
+  ${tile({ href: '#/report', i: 'chart', c: 'violet', t: 'Týždenný report', s: 'Skóre a rozbor týždňa' })}
 </div>
 <label class="pfx-s">${ic('search')}<input type="search" placeholder="Hľadať v nastaveniach" enterkeyhint="search" autocomplete="off" autocapitalize="off" aria-label="Hľadať v nastaveniach"></label>
 ${groups.map(([t, rows]) => `<h2 class="pfx-gt">${h(t)}</h2><div class="pfx-g">${rows.map(row).join('')}</div>`).join('')}
