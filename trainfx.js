@@ -150,7 +150,8 @@ const CSS = `
 .fx-setup #planPrev .plan-info{border-radius:20px}
 .fx-setup .vrow i,.fx-on .vrow i{height:8px;border-radius:99px}
 .fx-setup .vrow i b,.fx-on .vrow i b{border-radius:99px;background:linear-gradient(90deg,#7CFFB2,#5BB8FF)}
-.fx-setup #save{position:sticky;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);z-index:5;padding:17px;border-radius:20px;font-size:16px;font-weight:800;border:0;
+.fx-setup{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 112px)!important}
+.fx-setup #save{position:fixed;left:16px;right:16px;width:auto;max-width:528px;margin:0 auto;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);z-index:40;transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden;padding:17px;border-radius:20px;font-size:16px;font-weight:800;border:0;
   background:linear-gradient(135deg,#8DFFC0,#4FD8E0);color:#04261A;box-shadow:0 14px 34px rgba(124,255,178,.35),0 0 0 6px rgba(11,14,18,.55)}
 .fx-blk{display:flex;gap:4px;margin:12px 0 2px}
 .fx-blk i{flex:1;height:7px;border-radius:99px;background:rgba(255,255,255,.08)}
