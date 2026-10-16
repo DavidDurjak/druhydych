@@ -84,8 +84,8 @@ const CSS = `
 .fx-setup .pv h3 .fx-ic{width:38px;height:38px;border-radius:12px;font-size:19px}
 .fx-setup .pv h3 small{margin-left:auto;font-size:11px;font-weight:700;color:var(--mc);background:color-mix(in srgb,var(--mc) 14%,transparent);padding:3px 8px;border-radius:99px;white-space:nowrap}
 .fx-setup .pvr b{color:var(--mc)}
-.fx-setup,.fx-on{position:relative;isolation:isolate}
-.fx-setup::before,.fx-on::before{content:"";position:absolute;left:-16px;right:-16px;top:0;height:460px;z-index:-1;pointer-events:none;
+.fx-setup,.fx-on{position:relative;isolation:isolate;overflow-x:clip}
+.fx-setup::before,.fx-on::before{content:"";position:absolute;left:0;right:0;top:0;height:460px;z-index:-1;pointer-events:none;
   background:radial-gradient(55% 45% at 10% 0%,rgba(124,255,178,.17),transparent 72%),radial-gradient(50% 40% at 95% 8%,rgba(91,184,255,.15),transparent 72%)}
 .fx-setup h1{font-size:34px;font-weight:800;letter-spacing:-.035em;margin-bottom:6px!important}
 .fx-setup .field>span{display:block;font-size:15.5px;font-weight:700;color:var(--text);margin:26px 2px 12px;letter-spacing:-.01em}
