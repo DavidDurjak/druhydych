@@ -16,7 +16,7 @@ st.textContent = `
 .af-in:focus{border-color:var(--accent)}
 .af-sh .btn{width:100%;margin-top:12px}
 .sheet-bg:has(.af-sh){z-index:500}
-body:has(.af-sh) .bd-fab{display:none!important}
+body:has(.sheet-bg) .qa-fab,body:has(.sheet-bg) .bd-fab{display:none!important}
 .toast{z-index:600}
 `;
 document.head.appendChild(st);
