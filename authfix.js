@@ -25,10 +25,11 @@ body:has(.sheet-bg) .qa-fab,body:has(.sheet-bg) .bd-fab{display:none!important}
 .af-ok.err i{background:var(--danger);color:#fff}
 .af-ok b{display:block;font-size:15px;margin-bottom:2px}
 .af-ok span{display:block;color:var(--muted);font-size:13.5px;line-height:1.4}
-.af-ok em{color:var(--text);font-style:normal;font-weight:600;word-break:break-all}
+.af-ok em{color:var(--text);font-style:normal;font-weight:600;overflow-wrap:anywhere}
 .af-ok button{margin-top:8px;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
 .af-ok button:disabled{color:var(--muted);cursor:default}
 @media (prefers-reduced-motion:reduce){.af-ok{animation:none}}
+.hero+.screen.no-nav{padding-top:0}
 .af-pw{position:relative;display:block}
 .af-pw input{padding-right:52px!important}
 .af-eye{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:46px;height:46px;border:0;background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent}
@@ -71,6 +72,7 @@ function panel(b, kind, title, text, email) {
   if (email) { sp.append(text + ' '); const em = document.createElement('em'); em.textContent = email; sp.append(em, '. Ak ho nevidíš, pozri aj spam.'); }
   else sp.textContent = text;
   b.after(d);
+  setTimeout(() => d.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
   return d;
 }
 async function forgot(form, b) {
