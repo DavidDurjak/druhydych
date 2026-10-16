@@ -18,6 +18,17 @@ st.textContent = `
 .sheet-bg:has(.af-sh){z-index:500}
 body:has(.sheet-bg) .qa-fab,body:has(.sheet-bg) .bd-fab{display:none!important}
 .toast{z-index:600}
+.af-ok{display:flex;gap:12px;align-items:flex-start;margin:14px 0 0;padding:14px;border-radius:16px;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,var(--card));animation:afIn .38s cubic-bezier(.2,1.2,.4,1) both}
+.af-ok.err{border-color:color-mix(in srgb,var(--danger) 55%,transparent);background:color-mix(in srgb,var(--danger) 10%,var(--card))}
+@keyframes afIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+.af-ok i{flex:0 0 28px;height:28px;border-radius:50%;background:var(--accent);color:#0B0E12;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:15px}
+.af-ok.err i{background:var(--danger);color:#fff}
+.af-ok b{display:block;font-size:15px;margin-bottom:2px}
+.af-ok span{display:block;color:var(--muted);font-size:13.5px;line-height:1.4}
+.af-ok em{color:var(--text);font-style:normal;font-weight:600;word-break:break-all}
+.af-ok button{margin-top:8px;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.af-ok button:disabled{color:var(--muted);cursor:default}
+@media (prefers-reduced-motion:reduce){.af-ok{animation:none}}
 `;
 document.head.appendChild(st);
 
@@ -42,14 +53,38 @@ function fixToast(t) {
 new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1 && n.classList.contains('toast')) fixToast(n); })))
   .observe(document.body, { childList: true });
 
-async function forgot(form) {
+let cd = null;
+function panel(b, kind, title, text, email) {
+  clearInterval(cd);
+  b.parentNode.querySelector('.af-ok')?.remove();
+  const d = document.createElement('div');
+  d.className = 'af-ok' + (kind === 'err' ? ' err' : '');
+  d.setAttribute('role', kind === 'err' ? 'alert' : 'status');
+  d.innerHTML = '<i>' + (kind === 'err' ? '!' : '✓') + '</i><div><b></b><span></span></div>';
+  d.querySelector('b').textContent = title;
+  const sp = d.querySelector('span');
+  if (email) { sp.append(text + ' '); const em = document.createElement('em'); em.textContent = email; sp.append(em, '. Ak ho nevidíš, pozri aj spam.'); }
+  else sp.textContent = text;
+  b.after(d);
+  return d;
+}
+async function forgot(form, b) {
+  if (b.disabled) return;
   const email = form.querySelector('[name=email]')?.value.trim();
-  if (!email) { ctx.toast('Najprv napíš svoj e-mail', true); form.querySelector('[name=email]')?.focus(); return; }
+  if (!email) { panel(b, 'err', 'Chýba e-mail', 'Najprv napíš e-mail, ktorým sa prihlasuješ.'); form.querySelector('[name=email]')?.focus(); return; }
+  b.disabled = true; b.textContent = 'Posielam…';
   try {
     const { error } = await db.sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
     if (error) throw new Error(error.message);
-    ctx.toast('Poslali sme ti odkaz na zmenu hesla. Pozri aj spam.');
-  } catch (e) { ctx.toast(sk(e.message || ''), true); }
+    const d = panel(b, 'ok', 'Skontroluj e-mail', 'Poslali sme odkaz na zmenu hesla na', email);
+    const re = document.createElement('button');
+    re.type = 'button'; re.disabled = true; d.lastElementChild.append(re);
+    let n = 30;
+    const tick = () => { if (n > 0) { re.textContent = 'Poslať znova o ' + n + ' s'; n--; } else { clearInterval(cd); re.disabled = false; re.textContent = 'Poslať znova'; } };
+    tick(); cd = setInterval(tick, 1000);
+    re.onclick = () => { b.disabled = false; forgot(form, b); };
+  } catch (e) { panel(b, 'err', 'Nepodarilo sa poslať', sk(e.message || '')); }
+  b.disabled = false; b.textContent = 'Zabudol si heslo?';
 }
 
 function run() {
@@ -59,7 +94,7 @@ function run() {
   if (f && !f.querySelector('[name=name]') && !f.parentNode.querySelector('.af-fp')) {
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'af-fp'; b.textContent = 'Zabudol si heslo?';
-    b.onclick = () => forgot(f);
+    b.onclick = () => forgot(f, b);
     f.after(b);
   }
 }
