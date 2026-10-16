@@ -1,5 +1,5 @@
 // Profil: hráčska karta (úroveň, séria, odznaky), plán, rýchle dlaždice a nastavenia zoskupené do prehľadných sekcií.
-// Pôvodná obrazovka z app.js zostane v DOM skrytá (jej odhlásenie, odkazy z iných modulov aj dáta fungujú ďalej), nové UI sa vloží nad ňu.
+// Pôvodná obrazovka z app.js zostane v DOM skrytá (jej odhlásenie, odkazy z iných modulov aj dáta fungujú ďalej), nové UI sa vloží nad òu.
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
@@ -27,6 +27,8 @@ const P = {
   invite: '<circle cx="10" cy="8" r="4"/><path d="M3 20c.7-3.7 3.4-5.5 7-5.5M18 9v6M15 12h6"/>',
   chart: '<path d="M5 20v-9M12 20V5M19 20v-7"/>',
   down: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
+  doc: '<path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/>',
   out: '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M19 12H9"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
   chev: '<path d="M9 5l7 7-7 7"/>',
@@ -198,13 +200,16 @@ function html(p, admin) {
     ]],
     ['Prehľady', [
       { href: '#/tyzden', i: 'cal', c: 'sky', t: 'Týždenné vyhodnotenie', s: 'Ako sa ti darilo a čo zmeniť', k: 'check-in tyzden' },
-      { href: '#/karta', i: 'menu', c: 'amber', t: 'Hotový jedálniček', s: kc ? `Týždeň jedla na ${nf(kc)} kcal` : 'Týždeň jedla jedným ťuknutím', k: 'jedalnicek plan' },
+      { href: '#/karta', i: 'menu', c: 'amber', t: 'Hotový jedálček', s: kc ? `Týždeň jedla na ${nf(kc)} kcal` : 'Týždeň jedla jedným ťuknutím', k: 'jedalnicek plan' },
     ]],
     ['Podpora a dáta', [
       { href: '#/napis', i: 'bulb', c: 'amber', t: 'Napíš nám', s: 'Problém alebo nápad', k: 'feedback chyba napad' },
       ...(admin ? [{ href: '#/admin', i: 'chart', c: 'slate', t: 'Admin prehľad', s: 'Používatelia a aktivita', k: 'admin' }] : []),
       { a: 'export', i: 'down', c: 'slate', t: 'Stiahnuť moje dáta', s: 'JSON a CSV so všetkými tvojimi údajmi', k: 'export stiahnut data' },
+      { href: 'zasady.html', i: 'doc', c: 'slate', t: 'Zásady ochrany osobných údajov', s: 'Aké údaje máme a prečo', k: 'gdpr sukromie zasady udaje' },
+      { href: 'podmienky.html', i: 'doc', c: 'slate', t: 'Podmienky používania', s: 'Pravidlá appky', k: 'podmienky pravidla' },
       { a: 'logout', i: 'out', c: 'red', t: 'Odhlásiť sa', s: p.email || '', dng: true, k: 'odhlasit' },
+      { a: 'delete', i: 'trash', c: 'red', t: 'Zmazať účet a dáta', s: 'Natrvalo, bez možnosti vrátiť', dng: true, k: 'zmazat ucet vymazat dáta gdpr' },
     ]],
   ];
   return `
@@ -234,7 +239,7 @@ function html(p, admin) {
   ${tile({ href: '#/spravy', i: 'chat', c: 'sky', t: 'Správy', s: 'Od kouča a tímu', badge: '0' })}
   ${tile({ a: 'invite', i: 'invite', c: 'mint', t: 'Pozvi kamaráta', s: code ? `Tvoj kód ${code}` : 'Porovnajte sa spolu' })}
   ${tile({ a: 'shop', i: 'cart', c: 'amber', t: 'Nákupný zoznam', s: 'Z tvojho plánu na 7 dní' })}
-  ${tile({ href: '#/report', i: 'chart', c: 'violet', t: 'Týždenný report', s: 'Skóre a rozbor týždňa' })}
+  ${tile({ href: '#/report', i: 'chart', c: 'violet', t: 'Týždenný report', s: 'Skóre a rozbor týždha' })}
 </div>
 <label class="pfx-s">${ic('search')}<input type="search" placeholder="Hľadať v nastaveniach" enterkeyhint="search" autocomplete="off" autocapitalize="off" aria-label="Hľadať v nastaveniach"></label>
 ${groups.map(([t, rows]) => `<h2 class="pfx-gt">${h(t)}</h2><div class="pfx-g">${rows.map(row).join('')}</div>`).join('')}
@@ -310,6 +315,24 @@ function logoutSheet(screen) {
   bg.querySelector('[data-ok]').onclick = () => { bg.remove(); screen.querySelector('#out')?.click(); };
 }
 
+function deleteSheet() {
+  const bg = ctx.sheet('<div class="pfx-sh"><h3>Zmazať účet?</h3><p>Natrvalo zmažeme tvoj účet, jedlá, váhu, tréningy, fotky, správy aj prepojenia. Nedá sa to vrátiť. Ak chceš dáta zachovať, najprv si ich stiahni cez Stiahnuť moje dáta.</p><p>Na potvrdenie napíš <b>ZMAZAŤ</b>.</p><input class="pfx-in" autocomplete="off" autocapitalize="characters" aria-label="Potvrdenie" placeholder="ZMAZAŤ"><div class="pfx-sb"><button class="btn danger" data-ok disabled>Zmazať natrvalo</button><button class="btn ghost" data-x>Zrušiť</button></div></div>');
+  const inp = bg.querySelector('input'), ok = bg.querySelector('[data-ok]');
+  const norm = v => v.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  inp.oninput = () => { ok.disabled = norm(inp.value) !== 'zmazat'; };
+  bg.querySelector('[data-x]').onclick = () => bg.remove();
+  ok.onclick = async () => {
+    if (norm(inp.value) !== 'zmazat') return;
+    ok.disabled = true; ok.textContent = 'Mažem…';
+    try {
+      const { data, error } = await db.sb.functions.invoke('delete-account', { body: { confirm: 'ZMAZAT' } });
+      if (error || !data?.ok) throw new Error(data?.error || error?.message || 'Účet sa nepodarilo zmazať.');
+      try { await db.sb.auth.signOut({ scope: 'local' }); } catch (_) {}
+      try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
+      location.replace(location.pathname);
+    } catch (e) { ok.disabled = false; ok.textContent = 'Zmazať natrvalo'; ctx.toast(e.message || 'Účet sa nepodarilo zmazať.', true); }
+  };
+}
 const bound = new WeakSet();
 function build(screen) {
   const p = ctx.state?.profile; if (!p) return;
@@ -322,6 +345,7 @@ function build(screen) {
     if (a === 'rename') renameSheet(box, p);
     else if (a === 'invite') invite(p);
     else if (a === 'logout') logoutSheet(screen);
+    else if (a === 'delete') deleteSheet();
     else if (a === 'shop') { try { (await import('./shopping.js')).openShopping(7); } catch (_) { ctx.toast('Zoznam sa nepodarilo otvoriť', true); } }
     else if (a === 'export') { b.style.opacity = .5; try { await exportMine(ctx.toast); } finally { b.style.opacity = ''; } }
   });
