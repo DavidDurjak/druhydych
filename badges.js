@@ -28,7 +28,7 @@ const CATS = [
   { k: 'meals', i: '🍽️', t: 'Zapísané jedlá', d: 'zapísané jedlá celkovo', u: ['jedlo', 'jedlá', 'jedál'], th: [10, 50, 100, 250, 500, 1000], n: ['Prvá desiatka', 'Päťdesiatka', 'Stovka jedál', 'Gurmán', 'Majster zápisu', 'Tisícka'] },
   { k: 'weigh', i: '⚖️', t: 'Váženie', d: 'zapísané váženia', u: ['váženie', 'váženia', 'vážení'], th: [1, 5, 15, 30, 60, 100], n: ['Prvé váženie', 'Päť vážení', 'Sledovač', 'Mesiac váženia', 'Analytik', 'Stovka vážení'] },
   { k: 'lose', i: '📉', t: 'Zmena váhy', d: 'kg dole od štartu', u: ['kg', 'kg', 'kg'], th: [1, 2, 5, 10, 15, 20], n: ['Prvé kilo', 'Dve kilá', 'Päť kíl', 'Desiatka', 'Premena', 'Nový človek'], only: 'lose', dec: true },
-  { k: 'gain', i: '📈', t: 'Zmena váhy', d: 'kg hore od štartu', u: ['kg', 'kg', 'kg'], th: [1, 2, 4, 6, 8, 10], n: ['Prvé kilo', 'Dve kilá', 'Štyri kilá', 'Šesť kíl', 'Osem kíl', 'Desať kíl'], only: 'gain', dec: true },
+  { k: 'gain', i: '📈', t: 'Zmena váhy', d: 'kg hore od štartu', u: ['kg', 'kg', 'kg'], th: [1, 2, 4, 6, 8, 10], n: ['Prvé kilo', 'Dve kilá', 'Štyri kilá', 'Šesť kíl', 'Osem kíl', 'Desáť kíl'], only: 'gain', dec: true },
 ];
 const unit = (c, n) => c.u[n === 1 ? 0 : n >= 2 && n <= 4 ? 1 : 2];
 
@@ -112,7 +112,7 @@ const CSS = `
 .bx-u{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:16px;background:var(--bg-2)}
 .bx-u div{flex:1;min-width:0}
 .bx-u b{display:block;font-size:14.5px}
-.bx-u span{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}
+.bx-u>div>span{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}
 .bx-u em{font-style:normal;font-weight:800;color:var(--accent);font-size:13px;white-space:nowrap}
 .bx-cat{padding:14px 0 4px;border-top:1px solid var(--line);margin-top:12px}
 .bx-cat:first-of-type{border-top:0;margin-top:0}
@@ -125,15 +125,17 @@ const CSS = `
 .bx-med{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 .bx-md{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;background:none;border:0;padding:0;cursor:pointer}
 .bx-m{position:relative;width:100%;max-width:46px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-size:19px;line-height:1}
+.bx-m>span{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:inherit;line-height:1;letter-spacing:0;text-indent:0;font-weight:400}
+.bx-ch>span{flex:0 0 28px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1;letter-spacing:0}
 .bx-m.bronze{background:radial-gradient(circle at 30% 25%,#F3BE8A,#B8692F 60%,#7A3F14);box-shadow:inset 0 0 0 2px rgba(255,255,255,.28),0 4px 12px rgba(184,105,47,.35)}
 .bx-m.silver{background:radial-gradient(circle at 30% 25%,#FFFFFF,#AAB6C5 60%,#6F7B8A);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 4px 12px rgba(170,182,197,.3)}
 .bx-m.gold{background:radial-gradient(circle at 30% 25%,#FFF0B0,#FFB547 60%,#B9741A);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 4px 14px rgba(255,181,71,.4)}
 .bx-m.diamond{background:radial-gradient(circle at 30% 25%,#DDFFF6,#5BE0D2 55%,#3D8BFF);box-shadow:inset 0 0 0 2px rgba(255,255,255,.45),0 4px 16px rgba(91,224,210,.45)}
 .bx-m.lock{background:var(--bg-2);box-shadow:inset 0 0 0 1.5px var(--line)}
 .bx-m.lock span{filter:grayscale(1);opacity:.28}
-.bx-m.nx{background:conic-gradient(var(--accent) calc(var(--p) * 1%),var(--track) 0)}
-.bx-m.nx::before{content:'';position:absolute;inset:3.5px;border-radius:50%;background:var(--card)}
-.bx-m.nx span{position:relative;filter:grayscale(.6);opacity:.75}
+.bx-m.bxn{background:conic-gradient(var(--accent) calc(var(--p) * 1%),var(--track) 0)}
+.bx-m.bxn::before{content:'';position:absolute;inset:3.5px;border-radius:50%;background:var(--card)}
+.bx-m.bxn span{filter:grayscale(.6);opacity:.75}
 .bx-m.new{animation:bxpop .9s cubic-bezier(.2,1.4,.4,1) 2}
 @keyframes bxpop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 .bx-t{font-size:11px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
@@ -148,7 +150,7 @@ const CSS = `
 if (!document.getElementById('bx-css')) { const s = document.createElement('style'); s.id = 'bx-css'; s.textContent = CSS; document.head.appendChild(s); }
 
 const medal = (c, t, st, p, isNew) => {
-  const cls = t.got ? t.mat : st.next === t ? 'nx lock' : 'lock';
+  const cls = t.got ? t.mat : st.next === t ? 'bxn lock' : 'lock';
   return `<button class="bx-md ${t.got ? 'got' : ''}" data-bx="${c.k}:${t.i}" aria-label="${t.name}${t.got ? ', získaný' : ', ešte nezískaný'}"><span class="bx-m ${cls}${isNew ? ' new' : ''}" style="--p:${Math.round(p)}"><span>${c.i}</span></span><span class="bx-t">${t.t}</span></button>`;
 };
 
@@ -160,7 +162,7 @@ const need = (st) => {
 function html(ev, newKeys) {
   const nexts = ev.cats.filter(s => s.next).sort((a, b) => b.frac - a.frac).slice(0, 3);
   const lvPct = ev.nextLv ? Math.round((ev.xp - ev.lvFrom) / (ev.nextLv[0] - ev.lvFrom) * 100) : 100;
-  const up = nexts.length ? `<div class="bx-sec">Ďalšie odznaky</div><div class="bx-up">${nexts.map(s => `<div class="bx-u"><span class="bx-m nx lock" style="--p:${Math.round(s.frac * 100)};width:46px;flex:0 0 auto"><span>${s.c.i}</span></span><div><b>${s.next.name}</b><span>${s.c.t}: ${s.c.dec ? fmt(s.v) : Math.floor(s.v)} z ${s.next.t}</span></div><em>${need(s)}</em></div>`).join('')}</div>` : '';
+  const up = nexts.length ? `<div class="bx-sec">Ďalšie odznaky</div><div class="bx-up">${nexts.map(s => `<div class="bx-u"><span class="bx-m bxn lock" style="--p:${Math.round(s.frac * 100)};width:46px;flex:0 0 auto"><span>${s.c.i}</span></span><div><b>${s.next.name}</b><span>${s.c.t}: ${s.c.dec ? fmt(s.v) : Math.floor(s.v)} z ${s.next.t}</span></div><em>${need(s)}</em></div>`).join('')}</div>` : '';
   const cats = ev.cats.map(s => {
     const c = s.c;
     const nextLine = s.next ? `<div class="bx-pg"><i style="width:${Math.round(s.frac * 100)}%"></i></div><p class="bx-nx">Ďalší: <b>${s.next.name}</b>, ${need(s)}</p>` : `<p class="bx-nx" style="margin-top:12px"><b>Hotovo.</b> Máš všetky odznaky v tejto kategórii.</p>`;
