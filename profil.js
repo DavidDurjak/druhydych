@@ -198,7 +198,7 @@ function html(p, admin) {
     ]],
     ['Prehľady', [
       { href: '#/tyzden', i: 'cal', c: 'sky', t: 'Týždenné vyhodnotenie', s: 'Ako sa ti darilo a čo zmeniť', k: 'check-in tyzden' },
-      { href: '#/karta', i: 'menu', c: 'amber', t: 'Hotový jedálníček', s: kc ? `Týždeň jedla na ${nf(kc)} kcal` : 'Týždeň jedla jedným ťuknutím', k: 'jedalnicek plan' },
+      { href: '#/karta', i: 'menu', c: 'amber', t: 'Hotový jedálniček', s: kc ? `Týždeň jedla na ${nf(kc)} kcal` : 'Týždeň jedla jedným ťuknutím', k: 'jedalnicek plan' },
     ]],
     ['Podpora a dáta', [
       { href: '#/napis', i: 'bulb', c: 'amber', t: 'Napíš nám', s: 'Problém alebo nápad', k: 'feedback chyba napad' },
@@ -234,7 +234,7 @@ function html(p, admin) {
   ${tile({ href: '#/spravy', i: 'chat', c: 'sky', t: 'Správy', s: 'Od kouča a tímu', badge: '0' })}
   ${tile({ a: 'invite', i: 'invite', c: 'mint', t: 'Pozvi kamaráta', s: code ? `Tvoj kód ${code}` : 'Porovnajte sa spolu' })}
   ${tile({ a: 'shop', i: 'cart', c: 'amber', t: 'Nákupný zoznam', s: 'Z tvojho plánu na 7 dní' })}
-  ${tile({ href: '#/report', i: 'chart', c: 'violet', t: 'Týždený report', s: 'Skóre a rozbor týždňa' })}
+  ${tile({ href: '#/report', i: 'chart', c: 'violet', t: 'Týždenný report', s: 'Skóre a rozbor týždňa' })}
 </div>
 <label class="pfx-s">${ic('search')}<input type="search" placeholder="Hľadať v nastaveniach" enterkeyhint="search" autocomplete="off" autocapitalize="off" aria-label="Hľadať v nastaveniach"></label>
 ${groups.map(([t, rows]) => `<h2 class="pfx-gt">${h(t)}</h2><div class="pfx-g">${rows.map(row).join('')}</div>`).join('')}
@@ -305,7 +305,7 @@ async function invite(p) {
   } catch (e) { if (e?.name !== 'AbortError') ctx.toast('Nepodarilo sa zdieľať', true); }
 }
 function logoutSheet(screen) {
-  const bg = ctx.sheet('<div class="pfx-sh"><h3>Odhlásiť sa?</h3><p>Tvoje dáta ostanú uložené. Po prihlásení ich nájdeš tak, ako si ich nechal.</p><div class="pfx-sb"><button class="btn danger" data-ok>Odhlásiť sa</button><button class="btn ghost" data-x>Zostať</button></div></div>');
+  const bg = ctx.sheet('<div class="pfx-sh"><h3>Odhlásiť sa?</h3><p>Tvoje dáta ostanú uložené. Po prihlásení ich náješ tak, ako si ich nechal.</p><div class="pfx-sb"><button class="btn danger" data-ok>Odhlásiť sa</button><button class="btn ghost" data-x>Zostať</button></div></div>');
   bg.querySelector('[data-x]').onclick = () => bg.remove();
   bg.querySelector('[data-ok]').onclick = () => { bg.remove(); screen.querySelector('#out')?.click(); };
 }
