@@ -8,6 +8,7 @@ import './labelscan.js';
 import './todaydeck.js';
 import './navfx.js';
 import './trainflow.js';
+import './authretry.js';
 
 const SP = '<div class="spinner"></div>';
 const st = document.createElement('style');
