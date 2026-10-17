@@ -53,6 +53,7 @@
     // (2) rovnaký dotaz na server, ktorý práve beží, sa nepošle dvakrát
     (function () {
       var O = window.MutationObserver;
+      window.__fwNativeMO = O; // nezdržaný sledovač pre preklad (i18n.js), aby slovenčina nepreblikla
       if (O && !O.__fw) {
         var queue = new Set(), armed = false;
         var flush = function () {
@@ -169,6 +170,7 @@
     })();
   </script>
   <script type="module" src="theme.js"></script>
+  <script type="module" src="i18n.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="mydata.js"></script>
   <script type="module" src="micro.js"></script>
