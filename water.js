@@ -1,5 +1,6 @@
 // Pitný režim: fľaša, ktorá sa plní, tempo počas dňa, rýchle pridanie, vrátenie kroku, týždeň a séria dní v cieli.
 // Ťuknutím na deň v týždni (alebo na Upraviť) sa dá množstvo ktoréhokoľvek uplynulého dňa prepísať presne.
+// Každý deň môže mať vlastný cieľ (napr. 3 l v deň tréningu): budúci deň sa ťuknutím naplánuje, ukladá sa v tabuľke water_goals.
 // Ukladá sa v ml (checkins.water_ml), pohároviky (checkins.water) sa dopisujú kvôli starším častiam appky.
 import * as db from './data.js';
 import * as calc from './calc.js';
@@ -53,7 +54,11 @@ const CSS = `
 .wx-bar{height:34px;border-radius:9px;background:var(--track);position:relative;overflow:hidden}
 .wx-bar i{position:absolute;left:0;right:0;bottom:0;height:var(--h,0%);background:linear-gradient(180deg,#8FD3FF,#4BA8F0);transition:height .7s cubic-bezier(.2,.8,.2,1)}
 .wx-d.ok .wx-bar i{background:linear-gradient(180deg,#7CFFB2,#3FD5C4)}
-.wx-d.fut{opacity:.4}
+.wx-d.fut{opacity:.55}
+.wx-bar em{position:absolute;inset:0;display:grid;place-items:center;font-style:normal;font-size:10.5px;font-weight:800;color:#8FD3FF;z-index:1}
+.wx-d.fut.wx-own{opacity:1}.wx-d.fut.wx-own .wx-bar{box-shadow:inset 0 0 0 1.5px rgba(143,211,255,.45)}
+.wx-gl{display:block;margin:0 auto 14px;-webkit-appearance:none;appearance:none;border:0;background:none;color:#8FD3FF;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;padding:6px 10px}
+.wx-gl.mute{color:var(--muted);font-weight:600}
 .wx-d span{display:block;font-size:11px;color:var(--muted);margin-top:4px}.wx-d.now span{color:var(--text);font-weight:700}
 .wx-d.now .wx-bar{box-shadow:0 0 0 1.5px rgba(143,211,255,.7)}
 .wx-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12.5px;color:var(--muted);min-height:30px}
@@ -101,7 +106,7 @@ export function waterHtml({ ml, goalMl }) {
     </div>
     <div class="wx-chips">${CHIPS.map(([n, l]) => `<button class="wx-chip${n === 250 ? ' pri' : ''}" data-wx="${n}"><b>+${n}</b><span>${l}</span></button>`).join('')}<button class="wx-chip" data-wxo><b>Iné</b><span>množstvo</span></button></div>
     <div class="wx-wk" id="wxW"></div>
-    <p class="wx-hint">Ťukni na deň a uprav, koľko si vtedy vypil</p>
+    <p class="wx-hint">Ťukni na deň: uprav vypité, na budúci deň si naplánuj cieľ</p>
     <div class="wx-ft"><span id="wxS"></span><span class="wx-btns"><button class="wx-undo" id="wxE">✎ Upraviť</button><button class="wx-undo" id="wxU" disabled>↶ Späť</button></span></div>
   </section>`;
 }
@@ -125,17 +130,20 @@ function dayLabel(d) {
   const t = calc.today();
   if (d === t) return 'Dnes';
   if (d === calc.addDays(t, -1)) return 'Včera';
+  if (d === calc.addDays(t, 1)) return 'Zajtra';
   const x = new Date(d + 'T00:00:00'), n = DNAME[x.getDay()];
   return `${n[0].toUpperCase()}${n.slice(1)} ${x.getDate()}. ${x.getMonth() + 1}.`;
 }
-function editSheet(d, cur, goalMl, onSave) {
+function editSheet(d, cur, goalMl, onSave, onGoal) {
   let v = Math.max(0, Math.round(cur / 50) * 50);
   const pre = [...new Set([0, 500, 1000, 1500, 2000, goalMl, 3000])].filter(n => n <= MAX).sort((a, b) => a - b);
   const bg = ctx.sheet(`<div class="wx-sh"><h3>💧 ${dayLabel(d)}</h3><p class="wx-sub">Nastav, koľko si v tento deň vypil spolu</p>
     <div class="wx-oth ed"><button data-s="-250" aria-label="Menej o 250 ml">−</button><b><span id="wxV"></span><small>l</small></b><button data-s="250" aria-label="Viac o 250 ml">+</button></div>
     <div class="wx-pre"><button data-s="-50">−50 ml</button><button data-s="50">+50 ml</button></div>
     <div class="wx-pre">${pre.map(n => `<button data-p="${n}">${n === goalMl ? 'cieľ ' : ''}${fmtL(n)} l</button>`).join('')}</div>
+    <button type="button" class="wx-gl" id="wxGl">🎯 Cieľ tohto dňa: ${fmtL(goalMl)} l · zmeniť</button>
     <button class="btn primary" id="wxGo">Uložiť</button></div>`);
+  bg.querySelector('#wxGl').onclick = () => { bg.remove(); onGoal(); };
   const upd = () => { bg.querySelector('#wxV').textContent = fmtL(v); bg.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', Number(b.dataset.p) === v)); };
   bg.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { v = Math.max(0, Math.min(MAX, v + Number(b.dataset.s))); upd(); });
   bg.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { v = Number(b.dataset.p); upd(); });
@@ -143,7 +151,25 @@ function editSheet(d, cur, goalMl, onSave) {
   upd();
 }
 
-export function bindWater(root, { uid, date, goalMl, ml, isToday }) {
+// vlastný cieľ na jeden deň (aj dopredu): napr. viac vody v deň tréningu alebo keď je horúco
+function goalSheet(d, cur, base, onSave) {
+  let v = cur;
+  const pre = [1500, 2000, 2500, 3000, 3500, 4000];
+  const bg = ctx.sheet(`<div class="wx-sh"><h3>🎯 Cieľ: ${dayLabel(d)}</h3><p class="wx-sub">Koľko chceš v tento deň vypiť. Hodí sa viac v deň tréningu alebo keď je horúco.</p>
+    <div class="wx-oth ed"><button data-s="-250" aria-label="Menej o 250 ml">−</button><b><span id="wxV"></span><small>l</small></b><button data-s="250" aria-label="Viac o 250 ml">+</button></div>
+    <div class="wx-pre">${pre.map(n => `<button data-p="${n}">${fmtL(n)} l</button>`).join('')}</div>
+    ${cur !== base ? `<button type="button" class="wx-gl mute" id="wxRs">Vrátiť bežný cieľ ${fmtL(base)} l</button>` : ''}
+    <button class="btn primary" id="wxGo">Uložiť cieľ</button></div>`);
+  const upd = () => { bg.querySelector('#wxV').textContent = fmtL(v); bg.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', Number(b.dataset.p) === v)); };
+  bg.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { v = Math.max(500, Math.min(MAX, v + Number(b.dataset.s))); upd(); });
+  bg.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { v = Number(b.dataset.p); upd(); });
+  bg.querySelector('#wxRs')?.addEventListener('click', () => { bg.remove(); onSave(null); });
+  bg.querySelector('#wxGo').onclick = () => { bg.remove(); onSave(v === base ? null : v); };
+  upd();
+}
+
+export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday }) {
+  let goalMl = baseGoal;
   const el = root.querySelector('#wx'); if (!el) return;
   const q = s => el.querySelector(s);
   const key = `fw_wlog_${uid}_${date}`;
@@ -151,6 +177,10 @@ export function bindWater(root, { uid, date, goalMl, ml, isToday }) {
   try { log = JSON.parse(localStorage.getItem(key) || '[]'); } catch (_) { log = []; }
   if (!Array.isArray(log) || log.reduce((a, b) => a + b, 0) > ml) log = [];
   const hist = {};
+  const gKey = `fw_wgoal_${uid}`;
+  let goals = {};
+  try { goals = JSON.parse(localStorage.getItem(gKey) || '{}') || {}; } catch (_) { goals = {}; }
+  const goalOf = d => (d === date ? goalMl : (goals[d] || baseGoal));
 
   const message = () => {
     const left = goalMl - ml;
@@ -164,16 +194,26 @@ export function bindWater(root, { uid, date, goalMl, ml, isToday }) {
     return { t: `V tempe. Do 22:00 stačí ${Math.max(50, Math.round(left / Math.max(1, 22 - hr) / 10) * 10)} ml za hodinu.`, k: 'ok' };
   };
   const valOf = d => (d === date ? ml : (hist[d] || 0));
+  // zmena cieľa zobrazeného dňa: popisy, ryhy na fľaši aj výška hladiny
+  const applyGoal = () => {
+    const gb = q('.wx-goal b'); if (gb) gb.textContent = `${fmtL(goalMl)} l`;
+    const gl = q('.wx-goal'); if (gl) gl.firstChild.textContent = goals[date] ? 'cieľ dňa ' : 'cieľ ';
+    q('.wx-of').textContent = `z ${fmtL(goalMl)} l`;
+    const tk = []; for (let m = 500; m < goalMl; m += 500) { const y = (Y0 - m / goalMl * H).toFixed(1); tk.push(`<line x1="57" x2="67" y1="${y}" y2="${y}"/>`); }
+    q('.wx-tk').innerHTML = tk.join('');
+    setFill(); paint();
+  };
   const drawWeek = () => {
     const ws = calc.weekStart(date), t = calc.today();
     q('#wxW').innerHTML = Array.from({ length: 7 }, (_, i) => {
-      const d = calc.addDays(ws, i), v = valOf(d), p = goalMl ? Math.min(1, v / goalMl) : 0;
-      return `<button type="button" class="wx-d${v >= goalMl ? ' ok' : ''}${d > t ? ' fut' : ''}${d === t ? ' now' : ''}" data-d="${d}" aria-label="${dayLabel(d)}: ${fmtL(v)} l, upraviť"><div class="wx-bar"><i style="--h:${(p * 100).toFixed(0)}%"></i></div><span>${DAYS[new Date(d + 'T00:00:00').getDay()]}</span></button>`;
+      const d = calc.addDays(ws, i), v = valOf(d), g = goalOf(d), p = g ? Math.min(1, v / g) : 0, fut = d > t;
+      const own = fut && goals[d];
+      return `<button type="button" class="wx-d${v >= g && !fut ? ' ok' : ''}${fut ? ' fut' : ''}${own ? ' wx-own' : ''}${d === t ? ' now' : ''}" data-d="${d}" aria-label="${dayLabel(d)}: ${fut ? `cieľ ${fmtL(g)} l, naplánovať` : `${fmtL(v)} l, upraviť`}"><div class="wx-bar"><i style="--h:${(p * 100).toFixed(0)}%"></i>${own ? `<em>${fmtL(g)} l</em>` : ''}</div><span>${DAYS[new Date(d + 'T00:00:00').getDay()]}</span></button>`;
     }).join('');
   };
   const drawStreak = () => {
-    const t = calc.today(); let d = valOf(t) >= goalMl ? t : calc.addDays(t, -1), n = 0;
-    while (n < 60 && valOf(d) >= goalMl) { n++; d = calc.addDays(d, -1); }
+    const t = calc.today(); let d = valOf(t) >= goalOf(t) ? t : calc.addDays(t, -1), n = 0;
+    while (n < 60 && valOf(d) >= goalOf(d)) { n++; d = calc.addDays(d, -1); }
     q('#wxS').textContent = n >= 2 ? `🔥 ${n} dní v cieli v rade` : n === 1 ? '1 deň v cieli' : 'Cieľ splň tri dni po sebe a vznikne séria';
   };
   const setFill = () => q('.wx-liq').style.setProperty('--y', `${Y0 - (goalMl ? Math.min(1, ml / goalMl) : 0) * H}px`);
@@ -222,9 +262,28 @@ export function bindWater(root, { uid, date, goalMl, ml, isToday }) {
     try { await db.upsertCheckin({ user_id: uid, date: d, water: Math.floor(v / 250), water_ml: v }); ctx.toast(`${dayLabel(d)}: ${fmtL(v)} l uložené`); }
     catch (_) { hist[d] = old; if (el.isConnected) { drawWeek(); drawStreak(); } ctx.toast('Vodu sa nepodarilo uložiť', true); }
   };
+  const saveGoal = async (d, v) => {
+    const old = goals[d];
+    if (v) goals[d] = v; else delete goals[d];
+    try { localStorage.setItem(gKey, JSON.stringify(goals)); } catch (_) { /* nič */ }
+    if (d === date) { goalMl = goals[d] || baseGoal; applyGoal(); } else { drawWeek(); drawStreak(); }
+    try {
+      const r = v ? await db.sb.from('water_goals').upsert({ user_id: uid, date: d, ml: v }, { onConflict: 'user_id,date' })
+        : await db.sb.from('water_goals').delete().eq('user_id', uid).eq('date', d);
+      if (r.error) throw r.error;
+      ctx.toast(v ? `${dayLabel(d)}: cieľ ${fmtL(v)} l` : `${dayLabel(d)}: bežný cieľ ${fmtL(baseGoal)} l`);
+    } catch (_) {
+      if (old) goals[d] = old; else delete goals[d];
+      try { localStorage.setItem(gKey, JSON.stringify(goals)); } catch (_) { /* nič */ }
+      if (d === date) { goalMl = goals[d] || baseGoal; applyGoal(); } else if (el.isConnected) { drawWeek(); drawStreak(); }
+      ctx.toast('Cieľ sa nepodarilo uložiť', true);
+    }
+  };
+  const planGoal = d => goalSheet(d, goalOf(d), baseGoal, v => saveGoal(d, v));
+  // budúci deň: naplánuje sa cieľ; uplynulý a dnešný: prepíše sa vypité množstvo (cieľ sa dá zmeniť v tom istom okne)
   const edit = d => {
-    if (d > calc.today()) { ctx.toast('Tento deň ešte len príde. Vodu zapíšeš, keď nastane.'); return; }
-    editSheet(d, valOf(d), goalMl, v => setDay(d, v));
+    if (d > calc.today()) { planGoal(d); return; }
+    editSheet(d, valOf(d), goalOf(d), v => setDay(d, v), () => planGoal(d));
   };
   q('#wxW').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) edit(b.dataset.d); });
   q('#wxE').onclick = () => edit(date);
@@ -232,8 +291,17 @@ export function bindWater(root, { uid, date, goalMl, ml, isToday }) {
   q('[data-wxo]').onclick = () => otherSheet(add);
   q('#wxU').onclick = undo;
 
-  paint();
+  if (goals[date] && goals[date] !== goalMl) { goalMl = goals[date]; applyGoal(); } else paint();
   requestAnimationFrame(() => requestAnimationFrame(setFill));
+  db.sb.from('water_goals').select('date,ml').eq('user_id', uid).gte('date', calc.addDays(calc.today(), -60)).lte('date', calc.addDays(calc.today(), 30))
+    .then(({ data, error }) => {
+      if (error) return;
+      goals = {}; (data || []).forEach(r => { goals[String(r.date).slice(0, 10)] = r.ml; });
+      try { localStorage.setItem(gKey, JSON.stringify(goals)); } catch (_) { /* nič */ }
+      if (!el.isConnected) return;
+      const g = goals[date] || baseGoal;
+      if (g !== goalMl) { goalMl = g; applyGoal(); } else { drawWeek(); drawStreak(); }
+    }).catch(() => { /* ostanú ciele z pamäte zariadenia */ });
   // história týždňa a série sa dočíta na pozadí
   const from = calc.addDays(calc.today(), -60);
   db.sb.from('checkins').select('date,water,water_ml').eq('user_id', uid).gte('date', from).lte('date', calc.addDays(calc.today(), 7))
