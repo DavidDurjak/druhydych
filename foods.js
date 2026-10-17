@@ -384,6 +384,9 @@ export function openRecipeEditor(pre, meal, done) {
     <p class="sec">Suroviny</p><div id="ilist"></div>
     <div class="input-row mt"><input class="input" id="iq" placeholder="Pridaj surovinu: ryža, kuracie..." autocomplete="off"></div>
     <div id="ires" class="results"></div>
+    <button class="btn ghost sm mt" type="button" id="itext">✨ Vložiť celý recept textom</button>
+    <div id="itbox" hidden><textarea class="input mt" id="itxt" rows="4" placeholder="Skopíruj suroviny z receptu, napr.:\n500 g kuracích pŕs, 300 g ryže, 2 vajcia, lyžica oleja, 1 cibuľa"></textarea>
+      <button class="btn sm primary mt" type="button" id="itgo">Rozpoznať suroviny</button><p class="muted small mt">AI rozloží text na suroviny a dá im hodnoty z našej databázy. Gramy si potom skontroluj.</p></div>
     <div class="stat mt" id="tot"></div>
     <label class="row mt small"><input type="checkbox" id="pub" ${pre?.is_public === false ? '' : 'checked'}> Zdieľať recept s ostatnými</label>
     <p class="err small" id="err"></p>
@@ -416,6 +419,29 @@ export function openRecipeEditor(pre, meal, done) {
       });
       $('#inew')?.addEventListener('click', e => { e.preventDefault(); toast('Najprv ulož recept bez tejto suroviny alebo ju pridaj cez Nové jedlo', true); });
     }, 250);
+  };
+
+  // celý recept textom: AI rozloží suroviny, hodnoty z databázy (rovnaká cesta ako zápis jedla textom)
+  $('#itext').onclick = () => { const b = $('#itbox'); b.hidden = !b.hidden; if (!b.hidden) $('#itxt').focus(); };
+  $('#itgo').onclick = async () => {
+    const text = $('#itxt').value.trim(); if (text.length < 3) return;
+    const btn = $('#itgo'); btn.disabled = true; btn.textContent = 'Rozpoznávam…';
+    try {
+      const { data, error } = await db.sb.functions.invoke('ai-log', { body: { text } });
+      let msg = error ? 'AI teraz neodpovedala. Skús to o chvíľu.' : data?.error;
+      if (error) { try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch (_) { /* ostáva */ } }
+      if (msg) throw new Error(msg);
+      const got = (data?.items || []).filter(it => it.grams > 0);
+      if (!got.length) throw new Error(data?.note || 'V texte som nenašiel suroviny.');
+      got.forEach(it => {
+        const m = !it.useEstimate && it.matches?.[0];
+        items.push(m ? { food_id: m.id, name: m.name, grams: Math.round(it.grams), per100: { kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat } }
+          : { food_id: null, name: it.name, grams: Math.round(it.grams), per100: { kcal: it.estimate.kcal, protein: it.estimate.protein, carbs: it.estimate.carbs, fat: it.estimate.fat } });
+      });
+      $('#itxt').value = ''; $('#itbox').hidden = true; draw();
+      toast(`Pridané: ${got.length} ${got.length === 1 ? 'surovina' : got.length < 5 ? 'suroviny' : 'surovín'}`);
+    } catch (e) { toast(e.message, true); }
+    finally { btn.disabled = false; btn.textContent = 'Rozpoznať suroviny'; }
   };
 
   $('#save').onclick = async () => {
