@@ -13,6 +13,7 @@ import './authretry.js';
 import './authhero.js';
 import './polish.js';
 import './ailang.js';
+import './vpro.js';
 
 const SP = '<div class="spinner"></div>';
 const st = document.createElement('style');
