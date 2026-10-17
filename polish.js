@@ -1,7 +1,10 @@
 // Drobné vizuálne doladenia naprieč appkou:
 // 1) obsah obrazoviek končí nad plávajúcim avatarom kouča, takže ho posledná karta ani text nikdy neprekryjú,
 // 2) čísla v týždennom reporte sa nikdy nevylejú z mriežky,
-// 3) prázdne Fotky: namiesto vety „Zatiaľ žiadne fotky.“ jasný štart premeny (tri pózy, tipy a tlačidlo na prvú fotku).
+// 3) prázdne Fotky: namiesto vety „Zatiaľ žiadne fotky.“ jasný štart premeny (tri pózy, tipy a tlačidlo na prvú fotku),
+// 4) Váha: história s nadpisom a zmenou oproti predošlému váženiu, desatinná čiarka podľa jazyka (84,7 kg, nie 84.7),
+// 5) Správy: bubliny ako v chate a prázdny stav s rýchlymi otázkami, ktoré sa jedným ťuknutím vpíšu do správy.
+import { currentLang } from './i18n.js';
 const CSS = `
 body:has(.bd-fab) #app>.screen:not(.no-nav):not(.fx-setup){padding-bottom:calc(var(--nav-h,72px) + env(safe-area-inset-bottom) + 88px)}
 .pz{text-align:center;padding:6px 2px 4px}
@@ -19,6 +22,19 @@ body:has(.bd-fab) #app>.screen:not(.no-nav):not(.fx-setup){padding-bottom:calc(v
 .pz-hide{display:none!important}
 .rp-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 .rp-s{min-width:0}.rp-s b,.rp-s em{overflow-wrap:anywhere}
+.pw-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 4px}
+.pw-h b{font-size:16px}.pw-h span{font-size:12.5px;color:var(--muted)}
+.pw-d{flex:none;font-style:normal;font-size:12px;font-weight:700;padding:3px 8px;border-radius:99px;margin-right:10px;background:var(--bg-2);color:var(--muted);font-variant-numeric:tabular-nums}
+.pw-d.z{opacity:.6}
+.pm{text-align:center;padding:22px 8px 6px}
+.pm-i{width:64px;height:64px;margin:0 auto 12px;border-radius:20px;display:grid;place-items:center;font-size:30px;background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.pm h3{margin:0 0 6px;font-size:19px;letter-spacing:-.02em}
+.pm p{margin:0 auto 14px;max-width:310px;color:var(--muted);font-size:14px;line-height:1.45}
+.pm-q{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.pm-q button{font:inherit;font-size:13.5px;padding:9px 13px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+.pm-q button:active{transform:scale(.97)}
+#app .msg{width:fit-content;max-width:86%;min-width:42%;border-radius:20px 20px 20px 6px;margin-right:auto}
+#app .msg.mine{margin-left:auto;margin-right:0;border-radius:20px 20px 6px 20px;background:color-mix(in srgb,var(--accent) 10%,var(--card));border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
@@ -44,5 +60,45 @@ function photos() {
   const h = tl.previousElementSibling; if (h && h.tagName === 'H3') h.classList.add('pz-hide');
 }
 
+// ---------- Váha ----------
+const DEC = (1.5).toLocaleString(currentLang()).charAt(1);
+const fix = t => (DEC === ',' ? t.replace(/(\d)\.(\d)/g, '$1,$2') : t);
+const num = t => Number(String(t).replace(',', '.').replace(/[^\d.]/g, ''));
+function weights() {
+  if (!document.querySelector('#app #wf')) return;
+  const del = document.querySelector('#app .card [data-del]');
+  const card = del?.closest('.card');
+  if (card && !card.querySelector('.pw-h')) {
+    const rows = [...card.querySelectorAll('.item')];
+    const v = rows.map(r => num(r.querySelector('.k')?.textContent || ''));
+    rows.forEach((r, i) => {
+      const k = r.querySelector('.k'); if (!k) return;
+      k.textContent = fix(k.textContent);
+      if (i + 1 < v.length && isFinite(v[i]) && isFinite(v[i + 1])) {
+        const d = Math.round((v[i] - v[i + 1]) * 10) / 10;
+        k.insertAdjacentHTML('beforebegin', `<em class="pw-d notranslate${d === 0 ? ' z' : ''}">${d > 0 ? '↑ ' : d < 0 ? '↓ ' : '± '}${fix(Math.abs(d).toFixed(1))}</em>`);
+      }
+    });
+    card.insertAdjacentHTML('afterbegin', `<div class="pw-h"><b>História vážení</b><span>${rows.length} ${rows.length === 1 ? 'váženie' : rows.length < 5 ? 'váženia' : 'vážení'}</span></div>`);
+  }
+  if (DEC === ',') document.querySelectorAll('#app .stat b, #app .stat span, #app .card svg text').forEach(el => {
+    if (el.children.length) return; const t = fix(el.textContent); if (t !== el.textContent) el.textContent = t;
+  });
+}
+
+// ---------- Správy ----------
+const QS = ['Môžeš mi skontrolovať jedálniček?', 'Ako si upraviť tréning?', 'Nedarí sa mi, potrebujem radu'];
+function messages() {
+  const f = document.querySelector('#app #mf'); if (!f) return;
+  const empty = f.parentElement.querySelector(':scope > p.empty'); if (!empty) return;
+  const box = document.createElement('div'); box.className = 'pm';
+  box.innerHTML = `<div class="pm-i">💬</div><h3>Tu si píšeš so svojím koučom</h3>
+    <p>Spýtaj sa na jedálniček, tréning alebo čokoľvek, s čím si nevieš rady. Odpoveď nájdeš tu.</p>
+    <div class="pm-q">${QS.map(q => `<button type="button">${q}</button>`).join('')}</div>`;
+  empty.remove(); f.before(box);
+  const ta = f.querySelector('textarea');
+  box.querySelectorAll('.pm-q button').forEach(b => b.onclick = () => { if (ta) { ta.value = b.textContent; ta.focus(); } });
+}
+
 const app = document.getElementById('app');
-if (app) new MutationObserver(photos).observe(app, { childList: true, subtree: true });
+if (app) new MutationObserver(() => { photos(); weights(); messages(); }).observe(app, { childList: true, subtree: true });
