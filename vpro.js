@@ -27,6 +27,10 @@ const CSS = `
 .screen:has(#mealseg) .res.hasft .k{font-size:19px;font-weight:800;letter-spacing:-.01em}
 .screen:has(#mealseg) .res.hasft .ft{width:56px;height:56px;border-radius:16px}
 .screen:has(#mealseg) .res.hasft .vf{font-size:10px;margin-left:4px}
+.screen:has(#mealseg) .res.hasft.fast{padding:12px 14px 12px 12px;margin:0 0 10px;gap:14px;border:1px solid var(--line);border-radius:20px;background:var(--card-2,transparent)}
+.screen:has(#mealseg) .res.hasft.fast:last-child{margin-bottom:0}
+.screen:has(#mealseg) .res.hasft.fast .qadd{width:40px;height:40px;margin-left:2px}
+.screen:has(#mealseg) .results:has(.res.fast){padding:2px}
 body:has(.screen #mealseg) .bd-fab{display:none!important}
 
 /* ---------- Dnes ---------- */
