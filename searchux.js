@@ -14,6 +14,7 @@ import './authhero.js';
 import './polish.js';
 import './ailang.js';
 import './vpro.js';
+import './offline.js';
 
 const SP = '<div class="spinner"></div>';
 const st = document.createElement('style');
@@ -61,7 +62,7 @@ db.ready.then(() => {
     if (hit && Date.now() - hit.t < 45000) return Promise.resolve(hit.r);
     return Promise.resolve(orig(name, args, ...rest)).then(r => {
       if (!r?.error) { cache.set(k, { t: Date.now(), r }); if (cache.size > 80) cache.delete(cache.keys().next().value); }
-      else failNote();
+      else if (!/failed to fetch|load failed|network/i.test(r.error.message || '')) failNote();
       return r;
     });
   };
