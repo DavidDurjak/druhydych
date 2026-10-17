@@ -184,7 +184,7 @@ export async function renderFood() {
         bind();
       } catch (err) { if (err.name !== 'AbortError') { const box = $res.querySelector('#offBox'); if (box) box.innerHTML = ''; } }
       }
-    }, 250);
+    }, 120);
   };
 
   $app().querySelector('#newFood').onclick = () => openFoodEditor({ name: $q.value.trim() }, meal, done);
@@ -195,13 +195,13 @@ export async function renderFood() {
     const d = state().date, y = calc.addDays(d, -1);
     try {
       const n = await db.copyMeal(uid, y, d, meal);
-      if (!n) return toast(`Deň predtým si nemal nič zapísané v: ${MEALS()[meal].toLowerCase()}`, true);
+      if (!n) return toast(`Deň predtým si nemal nic zapísané v: ${MEALS()[meal].toLowerCase()}`, true);
       toast(`Skopírované: ${n} ${n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'}`); location.hash = '#/';
     } catch (e) { toast(e.message, true); }
   };
 }
 
-// ---------- pridanie do denníka (porcie) ----------
+// ---------- pridanie do deníka (porcie) ----------
 export function openAdd(food, meal, done) {
   const portions = [{ label: 'g', g: 1 }, ...(food.portions || [])];
   let unit = 0, qty = 100;
@@ -302,7 +302,7 @@ export function openFoodEditor(pre = {}, meal, done) {
       <label class="field"><span>Laktóza</span><select class="input" id="flc"><option value="">Neviem</option><option value="free" ${pre.lactose === 'free' ? 'selected' : ''}>Bez laktózy</option><option value="low" ${pre.lactose === 'low' ? 'selected' : ''}>Málo laktózy</option><option value="high" ${pre.lactose === 'high' ? 'selected' : ''}>Obsahuje laktózu</option></select></label></div>
       <label class="field"><span>Alergény</span><select class="input" id="fam"><option value="">Neviem</option><option value="none" ${Array.isArray(pre.allergens) && !pre.allergens.length ? 'selected' : ''}>Žiadne alergény</option><option value="some" ${Array.isArray(pre.allergens) && pre.allergens.length ? 'selected' : ''}>Obsahuje:</option></select></label>
       <div id="falw" class="row mb" style="flex-wrap:wrap;gap:6px;${Array.isArray(pre.allergens) && pre.allergens.length ? '' : 'display:none'}">${dx.ALLERGENS.map(([k, v]) => `<label class="small"><input type="checkbox" data-fal="${k}" ${(pre.allergens || []).includes(k) ? 'checked' : ''}> ${h(v)}</label>`).join('')}</div>
-      <p class="muted small">Vypĺňaj len to, čo vieš z obalu. „Neviem“ appka ukáže ako neoverené, nič nehádže.</p></div></details>
+      <p class="muted small">Vyplňaj len to, čo vieš z obalu. „Neviem“ appka ukáže ako neoverené, nič nehádže.</p></div></details>
     <p class="small muted mb">Porcie (napr. 1 kus, 1 lyžica, 1 tanier), aby sa nemuselo vážiť:</p>
     <div id="plist"></div>
     <button class="btn sm ghost mb" id="padd">＋ Pridať porciu</button>
@@ -353,12 +353,12 @@ export function openFoodEditor(pre = {}, meal, done) {
     }
   };
   $('#del')?.addEventListener('click', async () => {
-    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v denníku ostanú.')) return;
+    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v deníku ostanú.')) return;
     try { await db.deleteFoodItem(pre.id); bg.remove(); toast('Zmazané'); renderFood(); } catch (e) { toast(e.message, true); }
   });
 }
 
-// Lepok, laktóza a alergény receptu sa odvodia zo surovín. Ak o jednej nevieme, recept to nepredstiera.
+// Lepok, laktóza a alergény receptu sa odvodia zo surôvin. Ak o jednej nevieme, recept to nepredstiera.
 async function recipeFlags(items) {
   const ids = [...new Set(items.map(i => i.food_id).filter(Boolean))];
   const m = {};
@@ -418,7 +418,7 @@ export function openRecipeEditor(pre, meal, done) {
         $('#iq').value = ''; $('#ires').innerHTML = ''; draw();
       });
       $('#inew')?.addEventListener('click', e => { e.preventDefault(); toast('Najprv ulož recept bez tejto suroviny alebo ju pridaj cez Nové jedlo', true); });
-    }, 250);
+    }, 120);
   };
 
   // celý recept textom: AI rozloží suroviny, hodnoty z databázy (rovnaká cesta ako zápis jedla textom)
