@@ -7,6 +7,7 @@ import { scanBarcode } from './scan.js';
 import { aiBoxHtml, bindAiBox } from './ailog.js';
 import * as dx from './dxcore.js';
 import { thumb, fillThumbs } from './foodimg.js';
+import { openFoodSheet } from './foodsheet.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -19,7 +20,7 @@ export function defaultMeal() {
   return m < 570 ? 'breakfast' : m < 690 ? 'brunch' : m < 870 ? 'lunch' : m < 1020 ? 'afternoon' : m < 1230 ? 'dinner' : m < 1380 ? 'late' : 'snack';
 }
 
-// Jedlo z akéhokoľvek zdroja -> jednotný tvar s hodnotami na 100 g
+// Jedlo z akéhoľvek zdroja -> jednotný tvar s hodnotami na 100 g
 function fromDb(f) {
   return { id: f.id, name: f.name, brand: f.brand || '', barcode: f.barcode || null, kcal: Number(f.kcal), protein: Number(f.protein), carbs: Number(f.carbs), fat: Number(f.fat), fiber: f.fiber ?? null, sugar: f.sugar ?? null, salt: f.salt ?? null,
     portions: Array.isArray(f.portions) ? f.portions : [], verified: !!f.verified, is_recipe: !!f.is_recipe, mine: f.mine ?? (f.created_by === state().profile.id),
@@ -75,7 +76,7 @@ export async function renderFood() {
   </div>${nav('#/jedlo')}`;
 
   const $res = $app().querySelector('#results'), $q = $app().querySelector('#q'), $tabs = $app().querySelector('#tabs');
-  const done = () => { toast('Pridané do: ' + MEALS()[meal].toLowerCase()); location.hash = '#/'; };
+  const done = m => { toast('Pridané do: ' + MEALS()[typeof m === 'string' && MEALS()[m] ? m : meal].toLowerCase()); location.hash = '#/'; };
   const pick = async k => { const f = pool.get(k); if (!f) return; openAdd(f.log ? await fromLog(f.log) : f, meal, done); };
   const bind = () => $res.querySelectorAll('[data-k]').forEach(el => el.onclick = () => pick(el.dataset.k));
 
@@ -201,51 +202,10 @@ export async function renderFood() {
   };
 }
 
-// ---------- pridanie do denníka (porcie) ----------
+// ---------- pridanie do deníka (porcie) ----------
+// karta jedla je v foodsheet.js (fotka, porcia, vplyv na deň, nutričné hodnoty)
 export function openAdd(food, meal, done) {
-  const portions = [{ label: 'g', g: 1 }, ...(food.portions || [])];
-  let unit = 0, qty = 100;
-  if (food.lastPortion) { const i = portions.findIndex(p => p.label === food.lastPortion); if (i > 0) { unit = i; qty = Number(food.lastQty) || 1; } }
-  else if (food.lastGrams) qty = Number(food.lastGrams);
-  else if (portions.length > 1) { unit = 1; qty = 1; }
-
-  const bg = sheet(`<div class="row between"><h2>${h(food.name)}${food.verified ? ' <span class="vf">✓</span>' : ''}</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
-    <p class="muted small mt">${food.brand ? h(food.brand) + ' · ' : ''}${per100Line(food)}</p>
-    <div class="units mt" id="units">${portions.map((p, i) => `<button data-u="${i}" class="${i === unit ? 'on' : ''}">${i === 0 ? 'gramy' : `${h(p.label)} <small>${r0(p.g)} g</small>`}</button>`).join('')}</div>
-    <div class="qty mt"><button class="btn icon" data-d="-1">−</button><input class="input mono" id="qty" type="number" inputmode="decimal" min="0" step="any"><button class="btn icon" data-d="1">+</button></div>
-    <div class="stat mt" id="calc"></div>
-    <button class="btn primary mt" id="save">Pridať do: ${MEALS()[meal].toLowerCase()}</button>
-    <div class="row between mt small">${food.source === 'db' ? `<a href="#" id="rep" class="muted">Nahlásiť chybu</a>` : '<span></span>'}${food.source === 'db' && (food.mine || state().profile.role === 'coach') ? `<a href="#" id="edit">Upraviť jedlo</a>` : ''}</div>`);
-
-  const $qty = bg.querySelector('#qty'), $calc = bg.querySelector('#calc');
-  const grams = () => unit === 0 ? Number($qty.value || 0) : Number($qty.value || 0) * portions[unit].g;
-  const dxDraw = dx.attachSheet(bg, food, { uid: state().profile.id, date: state().date, meal, grams: () => grams() });
-  const upd = () => { const s = calc.scale(food, grams()); $calc.innerHTML = `<b class="mono">${s.kcal} kcal</b><span>${r0(grams())} g · B ${s.protein} g · S ${s.carbs} g · T ${s.fat} g</span>`; dxDraw?.(); };
-  const setUnit = i => { unit = i; bg.querySelectorAll('[data-u]').forEach(b => b.classList.toggle('on', Number(b.dataset.u) === i)); };
-  $qty.value = qty; upd();
-  bg.querySelector('[data-x]').onclick = () => bg.remove();
-  bg.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { const i = Number(b.dataset.u); if (i === unit) return; const g = grams(); setUnit(i); $qty.value = i === 0 ? r0(g || 100) : (r1(g / portions[i].g) || 1); upd(); });
-  bg.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { const step = unit === 0 ? 10 : 0.5; $qty.value = Math.max(0, r1(Number($qty.value || 0) + step * Number(b.dataset.d))); upd(); });
-  $qty.oninput = upd;
-
-  bg.querySelector('#save').onclick = async () => {
-    const g = grams(); if (!g) return toast('Zadaj množstvo', true);
-    const btn = bg.querySelector('#save'); btn.disabled = true;
-    try {
-      let f = food;
-      // produkt z Open Food Facts uložíme do našej databázy, nech ho nabudúce nájdu všetci
-      if (f.source === 'off' && f.barcode) f = await importOff(f).catch(() => f);
-      const s = calc.scale(f, g);
-      const mic = {}; for (const k of ['fiber', 'sugar', 'salt']) if (f[k] != null) mic[k] = r1(Number(f[k]) * g / 100);
-      await db.addFood({ user_id: state().profile.id, date: state().date, meal, name: f.name, brand: f.brand || null, grams: r1(g), ...s, ...mic,
-        source: f.source === 'db' ? 'db' : (f.source || 'manual'), barcode: f.barcode || null, food_id: f.id || null,
-        portion: unit === 0 ? null : portions[unit].label, qty: unit === 0 ? null : Number($qty.value) });
-      if (f.id) db.foodUsed(f.id);
-      bg.remove(); done();
-    } catch (err) { toast(err.message, true); btn.disabled = false; }
-  };
-  bg.querySelector('#rep')?.addEventListener('click', e => { e.preventDefault(); openReport(food); });
-  bg.querySelector('#edit')?.addEventListener('click', e => { e.preventDefault(); bg.remove(); food.is_recipe ? openRecipeEditor(food.raw, meal, done) : openFoodEditor(food.raw, meal, done); });
+  return openFoodSheet(food, meal, done, { importOff, openReport, openFoodEditor, openRecipeEditor });
 }
 
 const opt = v => v != null && Number(v) >= 0 && Number(v) <= 100 ? r1(Number(v)) : null;
@@ -302,7 +262,7 @@ export function openFoodEditor(pre = {}, meal, done) {
       <label class="field"><span>Laktóza</span><select class="input" id="flc"><option value="">Neviem</option><option value="free" ${pre.lactose === 'free' ? 'selected' : ''}>Bez laktózy</option><option value="low" ${pre.lactose === 'low' ? 'selected' : ''}>Málo laktózy</option><option value="high" ${pre.lactose === 'high' ? 'selected' : ''}>Obsahuje laktózu</option></select></label></div>
       <label class="field"><span>Alergény</span><select class="input" id="fam"><option value="">Neviem</option><option value="none" ${Array.isArray(pre.allergens) && !pre.allergens.length ? 'selected' : ''}>Žiadne alergény</option><option value="some" ${Array.isArray(pre.allergens) && pre.allergens.length ? 'selected' : ''}>Obsahuje:</option></select></label>
       <div id="falw" class="row mb" style="flex-wrap:wrap;gap:6px;${Array.isArray(pre.allergens) && pre.allergens.length ? '' : 'display:none'}">${dx.ALLERGENS.map(([k, v]) => `<label class="small"><input type="checkbox" data-fal="${k}" ${(pre.allergens || []).includes(k) ? 'checked' : ''}> ${h(v)}</label>`).join('')}</div>
-      <p class="muted small">Vypĺňaj len to, čo vieš z obalu. „Neviem“ appka ukáže ako neoverené, nič nehádže.</p></div></details>
+      <p class="muted small">Vyplňaj len to, čo vieš z obalu. „Neviem“ appka ukáže ako neoverené, nič nehádže.</p></div></details>
     <p class="small muted mb">Porcie (napr. 1 kus, 1 lyžica, 1 tanier), aby sa nemuselo vážiť:</p>
     <div id="plist"></div>
     <button class="btn sm ghost mb" id="padd">＋ Pridať porciu</button>
@@ -353,12 +313,12 @@ export function openFoodEditor(pre = {}, meal, done) {
     }
   };
   $('#del')?.addEventListener('click', async () => {
-    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v denníku ostanú.')) return;
+    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v deníku ostanú.')) return;
     try { await db.deleteFoodItem(pre.id); bg.remove(); toast('Zmazané'); renderFood(); } catch (e) { toast(e.message, true); }
   });
 }
 
-// Lepok, laktóza a alergény receptu sa odvodia zo surovín. Ak o jednej nevieme, recept to nepredstiera.
+// Lepok, laktóza a alergény receptu sa odvodia zo surôvin. Ak o jednej nevieme, recept to nepredstiera.
 async function recipeFlags(items) {
   const ids = [...new Set(items.map(i => i.food_id).filter(Boolean))];
   const m = {};
