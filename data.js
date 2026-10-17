@@ -194,6 +194,9 @@ export async function applyTarget(userId, row, newTargets) {
 
 // Dáta pre dnešok (streak, týždeň)
 export async function activityDates(userId, fromDate) {
+  // rýchla cesta: databáza vráti rovno zoznam dní (bez limitu 1000 riadkov pri dlhej sérii)
+  const r = await sb.rpc('activity_days_for', { p_user: userId, p_from: fromDate });
+  if (!r.error && Array.isArray(r.data)) return r.data.map(x => (typeof x === 'string' ? x : x.activity_days_for)).filter(Boolean);
   const [f, w, c, t] = await Promise.all([
     sb.from('food_logs').select('date').eq('user_id', userId).gte('date', fromDate).lte('date', todayISO()),
     sb.from('weight_logs').select('date').eq('user_id', userId).gte('date', fromDate),
