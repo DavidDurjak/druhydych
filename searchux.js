@@ -6,6 +6,7 @@ import './foodsugg.js';
 import './net.js';
 import './labelscan.js';
 import './todaydeck.js';
+import './navfx.js';
 
 const SP = '<div class="spinner"></div>';
 const st = document.createElement('style');

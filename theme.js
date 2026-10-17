@@ -5,7 +5,7 @@
 const KEY = 'fw_theme';
 const H = document.documentElement;
 const P = 'html[data-theme=light]';
-const OWN = new Set(['--bg', '--bg-2', '--card', '--card-2', '--line', '--text', '--muted', '--accent', '--accent-ink', '--accent-2', '--protein', '--carbs', '--fat', '--danger']);
+const OWN = new Set(['--bg', '--bg-2', '--card', '--card-2', '--line', '--text', '--muted', '--accent', '--accent-ink', '--accent-2', '--protein', '--carbs', '--fat', '--danger', '--fx-o', '--fx-i', '--fx-glow']);
 
 export function getMode() { try { return localStorage.getItem(KEY) || 'auto'; } catch (_) { return 'auto'; } }
 const mq = matchMedia('(prefers-color-scheme: light)');
@@ -47,6 +47,8 @@ function fromHsl(h, s, l) {
 }
 const out = (rgb, a) => { const [r, g, b] = rgb.map(v => Math.round(clamp(v, 0, 255))); return a >= 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${Math.round(a * 1000) / 1000})`; };
 const INK = [16, 24, 40];
+const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+const contrast = ([r, g, b]) => 1.05 / (0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b) + 0.05); // voči bielej
 
 // text (a čiary SVG): svetlý text stmavne, žiarivé farby stmavnú tak, aby boli čitateľné na bielej
 function fg(c) {
@@ -54,7 +56,11 @@ function fg(c) {
   const [h, s, l, chroma] = toHsl(r, g, b);
   if (l <= 0.55) return null;
   if (chroma < 0.15) return out(fromHsl(h, Math.min(s, 0.25), clamp(0.95 - 0.85 * l, 0.08, 0.5)), a);
-  return out(fromHsl(h, Math.min(s, 0.75), 0.33), a);
+  // farebné: zachová odtieň a sýtosť, stmavne len toľko, aby mal kontrast 3,5 : 1 na bielej (inak oranžová a žltá zhnednú)
+  const S = clamp(Math.max(s, 0.72), 0, 1);
+  let lo = 0.12, hi = Math.min(l, 0.62);
+  for (let i = 0; i < 18; i++) { const m = (lo + hi) / 2; if (contrast(fromHsl(h, S, m)) >= 3.5) lo = m; else hi = m; }
+  return out(fromHsl(h, S, lo), a);
 }
 // plochy a orámovanie: tmavé zosvetlia, priesvitné biele a čierne vrstvy sa otočia na jemné tmavé
 function bg(c) {
@@ -240,5 +246,10 @@ function profileUi() {
   if (tiles) { if (card.previousElementSibling !== tiles) tiles.after(card); }
   else if (!card.isConnected) outBtn.parentNode.insertBefore(card, outBtn);
 }
+// ručné doladenie svetlého režimu (tento štýl sa už ďalej neprevádza)
+const tune = document.createElement('style'); tune.dataset.fwLight = '';
+tune.textContent = `${P} .ml:not(.empty) .ml-add{color:#fff}`; // biele plus na farebnom tlačidle jedla
+document.head.appendChild(tune);
+
 const app = document.getElementById('app');
 if (app) new MutationObserver(profileUi).observe(app, { childList: true, subtree: true });
