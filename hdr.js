@@ -60,7 +60,7 @@ function build(wk) {
   fill(wk);
 }
 
-// nadpis je vždy pozdrav podľa denného času a meno, nech je vybraný ktorýľutvek deň (dátum je pod ním)
+// nadpis je vždy pozdrav podľa denného času a meno, nech je vybraný ktorýkoľvek deň (dátum je pod ním)
 function greet() {
   const hr = new Date().getHours();
   return hr < 5 ? 'Dobrú noc' : hr < 10 ? 'Dobré ráno' : hr < 13 ? 'Dobrý deň' : hr < 18 ? 'Dobré popoludnie' : 'Dobrý večer';
