@@ -7,6 +7,7 @@ import './net.js';
 import './labelscan.js';
 import './todaydeck.js';
 import './navfx.js';
+import './trainflow.js';
 
 const SP = '<div class="spinner"></div>';
 const st = document.createElement('style');
