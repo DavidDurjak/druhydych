@@ -20,7 +20,7 @@ export function defaultMeal() {
   return m < 570 ? 'breakfast' : m < 690 ? 'brunch' : m < 870 ? 'lunch' : m < 1020 ? 'afternoon' : m < 1230 ? 'dinner' : m < 1380 ? 'late' : 'snack';
 }
 
-// Jedlo z akéhoľvek zdroja -> jednotný tvar s hodnotami na 100 g
+// Jedlo z akéhokovek zdroja -> jednotný tvar s hodnotami na 100 g
 function fromDb(f) {
   return { id: f.id, name: f.name, brand: f.brand || '', barcode: f.barcode || null, kcal: Number(f.kcal), protein: Number(f.protein), carbs: Number(f.carbs), fat: Number(f.fat), fiber: f.fiber ?? null, sugar: f.sugar ?? null, salt: f.salt ?? null,
     portions: Array.isArray(f.portions) ? f.portions : [], verified: !!f.verified, is_recipe: !!f.is_recipe, mine: f.mine ?? (f.created_by === state().profile.id),
@@ -262,7 +262,7 @@ export function openFoodEditor(pre = {}, meal, done) {
       <label class="field"><span>Laktóza</span><select class="input" id="flc"><option value="">Neviem</option><option value="free" ${pre.lactose === 'free' ? 'selected' : ''}>Bez laktózy</option><option value="low" ${pre.lactose === 'low' ? 'selected' : ''}>Málo laktózy</option><option value="high" ${pre.lactose === 'high' ? 'selected' : ''}>Obsahuje laktózu</option></select></label></div>
       <label class="field"><span>Alergény</span><select class="input" id="fam"><option value="">Neviem</option><option value="none" ${Array.isArray(pre.allergens) && !pre.allergens.length ? 'selected' : ''}>Žiadne alergény</option><option value="some" ${Array.isArray(pre.allergens) && pre.allergens.length ? 'selected' : ''}>Obsahuje:</option></select></label>
       <div id="falw" class="row mb" style="flex-wrap:wrap;gap:6px;${Array.isArray(pre.allergens) && pre.allergens.length ? '' : 'display:none'}">${dx.ALLERGENS.map(([k, v]) => `<label class="small"><input type="checkbox" data-fal="${k}" ${(pre.allergens || []).includes(k) ? 'checked' : ''}> ${h(v)}</label>`).join('')}</div>
-      <p class="muted small">Vyplňaj len to, čo vieš z obalu. „Neviem“ appka ukáže ako neoverené, nič nehádže.</p></div></details>
+      <p class="muted small">Vypĺňaj len to, čo vieš z obalu. „Neviem“ appka ukáže ako neoverené, nič nehádže.</p></div></details>
     <p class="small muted mb">Porcie (napr. 1 kus, 1 lyžica, 1 tanier), aby sa nemuselo vážiť:</p>
     <div id="plist"></div>
     <button class="btn sm ghost mb" id="padd">＋ Pridať porciu</button>
@@ -313,7 +313,7 @@ export function openFoodEditor(pre = {}, meal, done) {
     }
   };
   $('#del')?.addEventListener('click', async () => {
-    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v deníku ostanú.')) return;
+    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v denníku ostanú.')) return;
     try { await db.deleteFoodItem(pre.id); bg.remove(); toast('Zmazané'); renderFood(); } catch (e) { toast(e.message, true); }
   });
 }
