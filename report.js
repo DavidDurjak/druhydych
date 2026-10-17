@@ -102,12 +102,12 @@ export async function renderReport() {
     <section class="pg-card">
       <h3 class="mb">Čísla týždňa</h3>
       <div class="rp-grid">
-        ${stat('🍽️', `${r.days_logged}/7`, 'dní so zápisom')}
-        ${stat('🎯', `${r.in_goal}/7`, 'dní v cieli kcal')}
-        ${stat('🔥', r.days_logged ? r.kcal_avg : '–', 'priemer kcal', `cieľ ${r.target_kcal ?? '–'}`)}
-        ${stat('💪', r.days_logged ? `${r.protein_avg} g` : '–', 'bielkoviny / deň', `cieľ ${r.target_protein ?? '–'} g`)}
-        ${stat('🏋️', `${r.trainings}/${r.training_goal}`, 'tréningy')}
-        ${stat('⚖️', r.weight_avg != null ? `${String(r.weight_avg).replace('.', ',')} kg` : '–', 'priemerná váha', wDelta != null ? `<span class="${goodW ? 'g' : 'b'}">${sgn(wDelta).replace('.', ',')} kg</span> vs. minulý` : `${r.weigh_ins}× vážené`)}
+        ${stat('🍽️', `${r.days_logged ?? 0}/7`, 'dní so zápisom')}
+        ${stat('🎯', `${r.in_goal ?? 0}/7`, 'dní v cieli kcal')}
+        ${stat('🔥', r.days_logged ? (r.kcal_avg ?? '–') : '–', 'priemer kcal', `cieľ ${r.target_kcal ?? '–'}`)}
+        ${stat('💪', r.days_logged && r.protein_avg != null ? `${r.protein_avg} g` : '–', 'bielkoviny / deň', `cieľ ${r.target_protein ?? '–'} g`)}
+        ${stat('🏋️', `${r.trainings ?? 0}/${r.training_goal ?? '–'}`, 'tréningy')}
+        ${stat('⚖️', r.weight_avg != null ? `${String(r.weight_avg).replace('.', ',')} kg` : '–', 'priemerná váha', wDelta != null ? `<span class="${goodW ? 'g' : 'b'}">${sgn(wDelta).replace('.', ',')} kg</span> vs. minulý` : `${r.weigh_ins ?? 0}× vážené`)}
         ${stat('👟', r.steps_avg != null ? Number(r.steps_avg).toLocaleString('sk-SK') : '–', 'krokov / deň')}
         ${stat('😴', r.sleep_avg != null ? fmtSleep(Number(r.sleep_avg)) : '–', 'spánok / noc')}
       </div>
@@ -127,7 +127,7 @@ export async function renderReport() {
     requestAnimationFrame(step);
   }
   root.querySelector('#share')?.addEventListener('click', async () => {
-    const text = `Môj týždeň s Fuelwind: ${score}/100${delta != null ? ` (${sgn(delta)})` : ''}. Jedlo ${r.days_logged}/7 dní, tréningy ${r.trainings}/${r.training_goal}. Ďalej: ${f.t.toLowerCase()}.`;
+    const text = `Môj týždeň s Fuelwind: ${score}/100${delta != null ? ` (${sgn(delta)})` : ''}. Jedlo ${r.days_logged ?? 0}/7 dní, tréningy ${r.trainings ?? 0}/${r.training_goal ?? 0}. Ďalej: ${f.t.toLowerCase()}.`;
     try { await navigator.share({ title: 'Fuelwind', text }); } catch (_) { }
   });
 }

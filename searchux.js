@@ -9,6 +9,8 @@ import './todaydeck.js';
 import './navfx.js';
 import './trainflow.js';
 import './authretry.js';
+import './authhero.js';
+import './polish.js';
 
 const SP = '<div class="spinner"></div>';
 const st = document.createElement('style');
