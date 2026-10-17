@@ -131,13 +131,27 @@ export function adaptTarget({ goal, sex, currentTarget, avgIntake, loggedDays, t
   return { newKcal, adjust: newKcal - currentTarget, reason };
 }
 
-// Streak: koľko dní v rade (končiac dnes alebo včera) má aspoň jeden záznam
+// Streak: koľko dní v rade (končiac dnes alebo včera) má aspoň jeden záznam; s ochranou série (pozri streakSafe)
 export function streak(datesWithLogs, todayIso = today()) {
+  return streakSafe(datesWithLogs, todayIso).n;
+}
+
+// séria s ochranou: jeden vynechaný deň za 7 dní sériu nezruší (ako „zmrazenie“ v top appkách), dva za sebou áno.
+// Vracia počet dní so zápisom v sérii a koľko vynechaných dní ochrana zachránila.
+export function streakSafe(datesWithLogs, todayIso = today()) {
   const set = new Set(datesWithLogs);
   let d = set.has(todayIso) ? todayIso : addDays(todayIso, -1);
-  let n = 0;
-  while (set.has(d)) { n++; d = addDays(d, -1); }
-  return n;
+  let n = 0, saved = 0, lastSave = null, i = 0;
+  for (; i < 2000; i++) {
+    if (set.has(d)) n++;
+    else if (lastSave === null || i - lastSave >= 7) { lastSave = i; saved++; }
+    else break;
+    d = addDays(d, -1);
+  }
+  // ochrana na samom konci (najstarší deň) nič nezachraňuje
+  if (saved && lastSave === i - 1) saved--;
+  if (!n) saved = 0;
+  return { n, saved };
 }
 
 export function weekStart(iso = today()) {
