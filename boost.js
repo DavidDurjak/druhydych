@@ -21,6 +21,7 @@ const CSS = `
 .fx-t3{--fx-o:#3D9BFF;--fx-i:#D6F4FF;--fx-glow:rgba(70,160,255,.9)}
 .fx-t0 .fx-f{animation:none;filter:grayscale(1);opacity:.45}.fx-t0 .em{display:none}
 .tdh-streak.fx b{font-weight:800}
+.fx-sv{font-style:normal;font-size:12px;margin-left:2px;opacity:.9}
 .fx-sh{text-align:center;padding:4px 0 2px}
 .fx-sh .fx-w{width:84px;height:98px;margin:6px auto 4px;display:block}.fx-sh .fx-f{width:84px;height:98px}
 .fx-sh .fx-w .em{width:5px;height:5px}
@@ -91,7 +92,8 @@ function enhanceStreak() {
   a.dataset.fx = '1';
   const n = parseInt(a.textContent.replace(/\D/g, ''), 10) || 0;
   a.classList.add('fx'); a.dataset.n = n;
-  a.innerHTML = `${flame(n)}<b>${n}</b>`;
+  const sv = Number(a.dataset.saved) || 0;
+  a.innerHTML = `${flame(n)}<b>${n}</b>${sv ? '<i class="fx-sv" title="Ochrana série">🛡️</i>' : ''}`;
   const m = MS.filter(x => x[0] <= n).pop();
   if (m && ls.get('fw_ms') < m[0]) { ls.set('fw_ms', m[0]); if (BIG.includes(m[0])) setTimeout(() => celebrate(n, m), 700); else setTimeout(() => mini(a, n, m), 600); }
 }
@@ -103,6 +105,7 @@ document.addEventListener('click', e => {
   const bg = ctx.sheet(`<div class="fx-sh">${flame(n)}<h2>${n ? pl(n, 'deň', 'dni', 'dní') + ' v rade' : 'Začni sériu'}</h2>
     <p>${n ? (prev ? prev[1] + '. ' : '') + 'Každý deň so zápisom ju predlžuje.' : 'Zapíš dnes aspoň jedno jedlo a oheň sa rozsvieti.'}</p>
     ${nx ? `<div class="fx-bar"><i style="width:${Math.max(6, pct)}%"></i></div><p class="small">Ďalší cieľ: <b>${nx[1]}</b>, ešte ${pl(nx[0] - n, 'deň', 'dni', 'dní')}</p>` : '<p class="small mt"><b>Máš všetky míľniky.</b></p>'}
+    <p class="small mt" style="color:var(--muted)">🛡️ Ochrana série: jeden vynechaný deň za týždeň ti sériu nezruší.${Number(a.dataset.saved) ? ' <b>Tento týždeň ťa už raz zachránila.</b>' : ''}</p>
     <button class="btn primary mt" data-bx>Moje odznaky</button></div>`);
   bg.querySelector('[data-bx]').onclick = () => { bg.remove(); location.hash = '#/pokrok'; };
 }, true);
