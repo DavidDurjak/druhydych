@@ -56,14 +56,70 @@ export async function upsertProfile(profile) {
 }
 
 // ---------- Jedlo ----------
+// ---------- Offline: zápis bez signálu ----------
+// Bez internetu sa jedlo uloží do telefónu a odošle sa samo po pripojení. Dnešný deň, naposledy zapísané jedlá a už videné výsledky hľadania
+// sa držia v telefóne, aby appka fungovala v posilňovni, vo vlaku aj na chate.
+const OQ = 'fw_oq', OD = 'fw_od:', OR = 'fw_orec:', OS = 'fw_osr';
+const jget = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (_) { return d; } };
+const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* plné úložisko: bez cache */ } };
+export const isNetErr = e => /failed to fetch|load failed|networkerror|network request failed|connection was lost|internet connection appears to be offline|fetch failed|err_internet_disconnected/i.test(String(e?.message || e)) || e instanceof TypeError;
+const isOff = () => navigator.onLine === false || document.documentElement.classList.contains('fw-off');
+export const pendingFood = (userId, date) => jget(OQ, []).filter(r => (!userId || r.user_id === userId) && (!date || r.date === date));
+const strip = r => { const { _a, ...x } = r; return x; };
+const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
 export async function listFood(userId, date) {
-  return must(await sb.from('food_logs').select('*').eq('user_id', userId).eq('date', date).order('created_at'));
+  const key = OD + userId + ':' + date;
+  const pend = pendingFood(userId, date).map(strip);
+  if (!isOff()) {
+    try {
+      const rows = must(await sb.from('food_logs').select('*').eq('user_id', userId).eq('date', date).order('created_at'));
+      jset(key, rows);
+      // staré dni sa čistia, aby úložisko nerástlo
+      try { const ks = Object.keys(localStorage).filter(k => k.startsWith(OD)).sort(); while (ks.length > 16) localStorage.removeItem(ks.shift()); } catch (_) { }
+      return rows.concat(pend);
+    } catch (e) { if (!isNetErr(e)) throw e; }
+  }
+  const cached = jget(key, null);
+  if (!cached && !pend.length) throw new Error('Failed to fetch');
+  return (cached || []).concat(pend);
 }
 export async function addFood(row) {
-  return must(await sb.from('food_logs').insert(row).select().single());
+  if (!isOff()) {
+    try { return must(await sb.from('food_logs').insert(row).select().single()); }
+    catch (e) { if (!isNetErr(e)) throw e; }
+  }
+  const local = { ...row, id: 'L' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), created_at: row.created_at || new Date().toISOString(), _local: true };
+  const q = jget(OQ, []); q.push(local); jset(OQ, q);
+  try { dispatchEvent(new CustomEvent('fw-queued', { detail: q.length })); } catch (_) { }
+  return local;
 }
 export async function deleteFood(id) {
+  if (typeof id === 'string' && id[0] === 'L') { jset(OQ, jget(OQ, []).filter(r => r.id !== id)); return; }
   must(await sb.from('food_logs').delete().eq('id', id));
+}
+// odošle uložené zápisy (po jednom, aby poradie ostalo); pri zlyhaní siete sa zastaví a skúsi neskôr
+let flushing = false;
+export async function flushQueue() {
+  if (flushing || isOff()) return 0;
+  if (!jget(OQ, []).length) return 0;
+  flushing = true; let n = 0;
+  try {
+    for (const lr of jget(OQ, [])) {
+      const { id, _local, _a, ...row } = lr;
+      let ok = false;
+      try { must(await sb.from('food_logs').insert(row)); ok = true; }
+      catch (e) {
+        if (isNetErr(e)) break;
+        // iná chyba (napr. vypršané prihlásenie): zápis ostáva, po piatich neúspešných pokusoch sa zahodí
+        const q = jget(OQ, []).map(r => r.id === id ? { ...r, _a: (r._a || 0) + 1 } : r).filter(r => (r._a || 0) < 5);
+        jset(OQ, q); break;
+      }
+      if (ok) { jset(OQ, jget(OQ, []).filter(r => r.id !== id)); localStorage.removeItem(OD + row.user_id + ':' + row.date); n++; }
+    }
+  } finally { flushing = false; }
+  if (n) { try { dispatchEvent(new CustomEvent('fw-synced', { detail: n })); } catch (_) { } }
+  return n;
 }
 // Naposledy zalogované jedlá (na rýchle opakovanie)
 export async function recentFoods(userId, limit = 30) {
@@ -286,10 +342,26 @@ export async function queueTestPush() {
 
 // ---------- v0.4: komunitná databáza jedál ----------
 export async function searchFoods(q, lim = 30) {
-  let { data, error } = await sb.rpc('search_foods_v2', { q, lim });
-  if (error && /search_foods_v2|schema cache|does not exist/i.test(error.message)) ({ data, error } = await sb.rpc('search_foods', { q, lim }));
-  if (error) throw new Error(error.message);
-  return data || [];
+  try {
+    let { data, error } = await sb.rpc('search_foods_v2', { q, lim });
+    if (error && /search_foods_v2|schema cache|does not exist/i.test(error.message)) ({ data, error } = await sb.rpc('search_foods', { q, lim }));
+    if (error) throw new Error(error.message);
+    data = data || [];
+    if (data.length) { // výsledky si telefón pamätá, aby sa dali nájsť aj bez signálu
+      const m = jget(OS, {}); delete m[norm(q)]; m[norm(q)] = data.slice(0, 20);
+      const ks = Object.keys(m); while (ks.length > 30) delete m[ks.shift()];
+      jset(OS, m);
+    }
+    return data;
+  } catch (e) {
+    if (!isNetErr(e)) throw e;
+    const words = norm(q).split(/\s+/).filter(Boolean), seen = new Set(), out = [];
+    for (const list of Object.values(jget(OS, {}))) for (const f of list) {
+      const hay = norm(f.name + ' ' + (f.brand || ''));
+      if (!seen.has(f.id) && words.every(w => hay.includes(w))) { seen.add(f.id); out.push(f); }
+    }
+    return out.slice(0, lim);
+  }
 }
 export async function getFood(id) {
   const { data, error } = await sb.from('foods').select('*').eq('id', id).maybeSingle();
@@ -348,8 +420,18 @@ export async function clearMeal(userId, date, meal) {
   must(await sb.from('food_logs').delete().eq('user_id', userId).eq('date', date).eq('meal', meal));
 }
 export async function recentLogs(userId, limit = 25) {
-  const rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty,fiber,sugar,salt,created_at')
-    .eq('user_id', userId).neq('source', 'quick').order('created_at', { ascending: false }).limit(300));
+  const pend = pendingFood(userId).map(strip).reverse();
+  let rows;
+  if (!isOff()) {
+    try {
+      rows = must(await sb.from('food_logs').select('name,brand,grams,kcal,protein,carbs,fat,source,barcode,food_id,portion,qty,fiber,sugar,salt,created_at')
+        .eq('user_id', userId).neq('source', 'quick').order('created_at', { ascending: false }).limit(300));
+      jset(OR + userId, rows.slice(0, 120));
+    } catch (e) { if (!isNetErr(e)) throw e; }
+  }
+  if (!rows) rows = jget(OR + userId, null);
+  if (!rows) { if (!pend.length) throw new Error('Failed to fetch'); rows = []; }
+  rows = pend.filter(r => r.source !== 'quick').concat(rows);
   const seen = new Set(); const out = [];
   for (const r of rows) {
     const key = r.food_id ? 'id' + r.food_id : (r.name + '|' + (r.brand || '')).toLowerCase();
