@@ -2,7 +2,7 @@
 // 1) Jedlo: vyhľadávanie je hlavná vec appky, preto je hneď pod výberom jedla, väčšie, s lupou a zvýrazneným rámom pri písaní;
 //    zápis cez AI ide pod neho. Výber jedla je jeden posuvný riadok namiesto dvoch riadkov tlačidiel.
 // 2) Plávajúci avatar kouča už na obrazovke Jedlo neprekrýva čísla kalórií vo výsledkoch.
-// 3) Dnes: nižšia vodná karta, výrazVnejšie nadpisy sekcií, pokojnejšia karta týždenného prehodnotenia, vyrovnané dlaždice.
+// 3) Dnes: nižšia vodná karta, výraznèjšie nadpisy sekcií, pokojnejšia karta týždenného prehodnotenia, vyrovnané dlaždice.
 const CSS = `
 /* ---------- Jedlo ---------- */
 .screen:has(#mealseg) #mealseg{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;gap:6px;padding:4px;scroll-snap-type:x proximity}
@@ -48,6 +48,9 @@ body:has(.screen #mealseg) .bd-fab{display:none!important}
 #app .wx-bar{height:26px;border-radius:8px}
 #app .duo{gap:12px}
 #app .duo .tile{min-height:150px;border-radius:20px}
+
+/* ---------- Pokrok: týždne mimo programu sa v mriežke neukazujú ako prázdne riadky ---------- */
+.pg-gw:not(:has(i:not(.g-out))){display:none}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
