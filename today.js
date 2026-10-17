@@ -114,7 +114,7 @@ export async function renderToday() {
   const st = state(), p = st.profile, uid = p.id;
   const isToday = st.date === calc.today(), isFuture = st.date > calc.today();
   const wkStart = calc.weekStart(st.date), wkEnd = calc.addDays(wkStart, 6);
-  const from30 = calc.addDays(calc.today(), -30);
+  const from30 = calc.addDays(calc.today(), -30), fromAct = calc.addDays(calc.today(), -400); // aktivita 400 dní: séria sa nezasekne na 30
   // všetko naraz: hlavné dáta aj doplnkové karty (predtým išli karty po jednej, každá čakala na predošlú)
   // doplnková karta, ktorá nestihne do 2,5 s, sa tentokrát vynechá (obrazovka nikdy nečaká na pomalú maličkosť)
   const soft = (pr, d) => Promise.race([pr.catch(() => d), new Promise(r => setTimeout(() => r(d), 2500))]);
@@ -125,7 +125,7 @@ export async function renderToday() {
   const weekP = isToday ? soft(ck.weekCardHtml(uid), '') : Promise.resolve('');
   const [foods, weights, checkin, actDates, msgs, plan, wlogs, byDay] = await Promise.all([
     db.listFood(uid, st.date), weightsP, db.getCheckin(uid, st.date),
-    db.activityDates(uid, from30), db.listMessages(uid), db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.weekStart(), -28)),
+    db.activityDates(uid, fromAct), db.listMessages(uid), db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.weekStart(), -28)),
     db.foodByDay(uid, wkStart, wkEnd).catch(() => ({})),
   ]);
   const sum = calc.sumMacros(foods);
@@ -133,7 +133,7 @@ export async function renderToday() {
   const last = tr[tr.length - 1];
   const ch7 = calc.trendChange(tr, 7);
   const day = Math.max(1, Math.round((new Date(calc.today()) - new Date(p.start_date || calc.today())) / 86400000) + 1);
-  const strk = calc.streak(actDates);
+  const { n: strk, saved: strkSaved } = calc.streakSafe(actDates);
   const unread = msgs.filter(m => m.to_user === uid && !m.read_at);
   const lastMsg = msgs.find(m => m.to_user === uid);
   const waterGoal = p.water_goal || 8, goalMl = waterGoal * 250;
@@ -250,7 +250,7 @@ export async function renderToday() {
       <div class="tdh-l"><h1 class="tdh-g">${isToday ? `${greeting()}, ${h(p.name?.split(' ')[0] || '')}` : dayTitle(st.date)}</h1>
         <label class="tdh-s"><span>${longDate(st.date)}</span><i>▾</i><input type="date" class="tdh-dp" value="${st.date}" aria-label="Vybrať dátum"></label></div>
       ${isToday ? '' : '<button class="tdh-now" data-now>Dnes</button>'}
-      <a class="tdh-streak ${strk ? 'on' : ''}" href="#/vaha" title="Dni v rade">🔥 ${strk}</a>
+      <a class="tdh-streak ${strk ? 'on' : ''}" href="#/vaha" title="Dni v rade" data-saved="${strkSaved}">🔥 ${strk}</a>
     </header>
     ${weekStrip}
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
