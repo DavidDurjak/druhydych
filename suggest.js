@@ -1,4 +1,4 @@
-// "Čo zješť ďalej": návrhy jedál z toho, čo človek naozaj jedáva, ktoré sedia do zostávajúcich kalórií a bielkovín.
+// "Čo zjesť ďalej": návrhy jedál z toho, čo človek naozaj jedáva, ktoré sedia do zostávajúcich kalórií a bielkovín.
 // Samo sa vloží pod lištu rýchleho zápisu na obrazovke Dnes (bez zásahu do today.js). Ukáže, čo ti chýba, dá návrhy s makrami,
 // tlačidlo na iné návrhy a stav „deň splnený“.
 import * as db from './data.js';
@@ -144,7 +144,7 @@ async function inject() {
       }
       const pages = Math.ceil(list.length / 3), cur = list.slice(page * 3, page * 3 + 3);
       const note = remP > p.target_protein * 0.3 ? 'Bielkoviny ťa dnes ťahajú dole, tieto návrhy ich dobiehajú.' : '';
-      el.innerHTML = `<div class="nx-hd"><div class="nx-tt"><h3>Čo zješť ďalej</h3><span class="nx-wh">${MEAL_LBL[meal]}</span></div>${pages > 1 ? `<button class="nx-re" type="button" aria-label="Iné návrhy">${IC.re}</button>` : ''}</div>`
+      el.innerHTML = `<div class="nx-hd"><div class="nx-tt"><h3>Čo zjesť ďalej</h3><span class="nx-wh">${MEAL_LBL[meal]}</span></div>${pages > 1 ? `<button class="nx-re" type="button" aria-label="Iné návrhy">${IC.re}</button>` : ''}</div>`
         + `<div class="nx-gs">${gapRows(p, sum)}</div>${note ? `<p class="nx-note">${note}</p>` : ''}`
         + `<div class="nx-cs">${cur.map((c, k) => card(c, page * 3 + k)).join('')}</div>`;
       el.querySelector('.nx-re')?.addEventListener('click', () => { page = (page + 1) % pages; el.classList.add('nx-sw'); draw(); setTimeout(() => el.classList.remove('nx-sw'), 260); });
