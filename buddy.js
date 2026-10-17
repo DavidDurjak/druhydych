@@ -44,6 +44,8 @@ function bubble(role, text, extra = {}) {
   const el = document.createElement('div');
   el.className = 'bd-m ' + role;
   el.innerHTML = (role.startsWith('coach') ? `<div class="bd-mav">${curAv}</div>` : '') + `<div class="bd-t">${fmt(text)}</div>`;
+  // text od AI (už v jazyku používateľa) a vlastné správy sa neposielajú prekladaču appky
+  if (role === 'me' || extra.id || extra.ai) el.querySelector('.bd-t').classList.add('notranslate');
   if (role === 'coach' && extra.id) {
     const r = document.createElement('div'); r.className = 'bd-rate';
     r.innerHTML = '<button data-v="1" aria-label="Pomohlo">👍</button><button data-v="-1" aria-label="Nepomohlo">👎</button>';
@@ -54,7 +56,7 @@ function bubble(role, text, extra = {}) {
     el.appendChild(r);
   }
   if (extra.action) {
-    const a = document.createElement('button'); a.className = 'bd-act'; a.textContent = extra.action.label;
+    const a = document.createElement('button'); a.className = 'bd-act notranslate'; a.textContent = extra.action.label;
     a.onclick = () => { closeChat(); location.hash = extra.action.route; };
     el.appendChild(a);
   }
@@ -62,9 +64,10 @@ function bubble(role, text, extra = {}) {
   log.scrollTop = log.scrollHeight;
   return el;
 }
-function setChips(chips) {
+function setChips(chips, ai = true) {
   if (!panel) return;
   const box = panel.querySelector('.bd-chips');
+  box.classList.toggle('notranslate', ai);
   box.innerHTML = (chips || []).map(c => `<button>${esc(c)}</button>`).join('');
   box.querySelectorAll('button').forEach(b => b.onclick = () => send(b.textContent));
 }
@@ -183,7 +186,7 @@ async function openHistory() {
     body.innerHTML = `<div class="bd-hbar"><button class="bd-hback">← História</button><b>${esc(dayLabel(ms[0].created_at))}</b></div><div class="bd-log"></div><div class="bd-hfoot"><button class="bd-hcont">Pokračovať v chate</button></div>`;
     body.querySelector('.bd-hback').onclick = list;
     body.querySelector('.bd-hcont').onclick = back;
-    ms.forEach(m => bubble(m.role === 'user' ? 'me' : 'coach', m.content));
+    ms.forEach(m => bubble(m.role === 'user' ? 'me' : 'coach', m.content, { ai: true }));
     const log = body.querySelector('.bd-log'); log.scrollTop = 0;
   };
   list();
@@ -222,7 +225,7 @@ async function renderChat() {
   } catch (e) {
     typing(false);
     if (!(data || []).length) bubble('coach', `Ahoj, som ${b.name}. Pomôžem ti s appkou, jedlom aj tréningom. Napíš mi, čo potrebuješ.`);
-    setChips(['Ako zapíšem jedlo?', 'Aký tréning mi sedí?', 'Koľko bielkovín mám jesť?']);
+    setChips(['Ako zapíšem jedlo?', 'Aký tréning mi sedí?', 'Koľko bielkovín mám jesť?'], false);
   }
 }
 

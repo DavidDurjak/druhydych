@@ -11,6 +11,7 @@ import './trainflow.js';
 import './authretry.js';
 import './authhero.js';
 import './polish.js';
+import './ailang.js';
 
 const SP = '<div class="spinner"></div>';
 const st = document.createElement('style');
