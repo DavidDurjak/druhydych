@@ -1,4 +1,5 @@
 // Pitný režim: fľaša, ktorá sa plní, tempo počas dňa, rýchle pridanie, vrátenie kroku, týždeň a séria dní v cieli.
+// Ťuknutím na deň v týždni (alebo na Upraviť) sa dá množstvo ktoréhokoľvek uplynulého dňa prepísať presne.
 // Ukladá sa v ml (checkins.water_ml), pohároviky (checkins.water) sa dopisujú kvôli starším častiam appky.
 import * as db from './data.js';
 import * as calc from './calc.js';
@@ -46,7 +47,9 @@ const CSS = `
 .wx-chip b{font-size:14.5px}.wx-chip span{font-size:11.5px;color:var(--muted)}
 .wx-chip.pri{background:linear-gradient(180deg,#8FD3FF,#4BA8F0);border-color:transparent;color:#06223d}.wx-chip.pri span{color:rgba(6,34,61,.7)}
 .wx-wk{display:flex;gap:6px;margin-top:16px}
-.wx-d{flex:1;text-align:center;min-width:0}
+.wx-d{flex:1;text-align:center;min-width:0;-webkit-appearance:none;appearance:none;border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wx-d:active .wx-bar{transform:scale(.93)}
+.wx-bar{transition:transform .15s}
 .wx-bar{height:34px;border-radius:9px;background:var(--track);position:relative;overflow:hidden}
 .wx-bar i{position:absolute;left:0;right:0;bottom:0;height:var(--h,0%);background:linear-gradient(180deg,#8FD3FF,#4BA8F0);transition:height .7s cubic-bezier(.2,.8,.2,1)}
 .wx-d.ok .wx-bar i{background:linear-gradient(180deg,#7CFFB2,#3FD5C4)}
@@ -56,6 +59,10 @@ const CSS = `
 .wx-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12.5px;color:var(--muted);min-height:30px}
 .wx-undo{-webkit-appearance:none;appearance:none;border:0;background:rgba(255,255,255,.07);color:var(--text);border-radius:99px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .wx-undo:disabled{opacity:.3}
+.wx-btns{display:flex;gap:6px;flex:none}
+.wx-hint{font-size:11.5px;color:var(--muted);text-align:center;margin:6px 0 0;opacity:.8}
+.wx-sh h3{margin:0 0 2px}.wx-sh .wx-sub{color:var(--muted);font-size:13px;margin:0}
+.wx-oth.ed b{min-width:150px}
 .wx-oth{display:flex;align-items:center;justify-content:center;gap:18px;margin:16px 0 12px}
 .wx-oth button{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--card-2);color:var(--text);font-size:24px;cursor:pointer}
 .wx-oth b{font-size:34px;font-weight:800;min-width:120px;text-align:center;font-variant-numeric:tabular-nums}.wx-oth b small{font-size:16px;color:var(--muted);margin-left:4px}
@@ -94,7 +101,8 @@ export function waterHtml({ ml, goalMl }) {
     </div>
     <div class="wx-chips">${CHIPS.map(([n, l]) => `<button class="wx-chip${n === 250 ? ' pri' : ''}" data-wx="${n}"><b>+${n}</b><span>${l}</span></button>`).join('')}<button class="wx-chip" data-wxo><b>Iné</b><span>množstvo</span></button></div>
     <div class="wx-wk" id="wxW"></div>
-    <div class="wx-ft"><span id="wxS"></span><button class="wx-undo" id="wxU" disabled>↶ Späť</button></div>
+    <p class="wx-hint">Ťukni na deň a uprav, koľko si vtedy vypil</p>
+    <div class="wx-ft"><span id="wxS"></span><span class="wx-btns"><button class="wx-undo" id="wxE">✎ Upraviť</button><button class="wx-undo" id="wxU" disabled>↶ Späť</button></span></div>
   </section>`;
 }
 
@@ -108,6 +116,30 @@ function otherSheet(onAdd) {
   bg.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { v = Math.max(50, Math.min(2000, v + Number(b.dataset.s))); upd(); });
   bg.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { v = Number(b.dataset.p); upd(); });
   bg.querySelector('#wxGo').onclick = () => { bg.remove(); onAdd(v); };
+  upd();
+}
+
+// presné prepísanie množstva vody za jeden deň (aj spätne)
+const DNAME = ['nedeľa', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'];
+function dayLabel(d) {
+  const t = calc.today();
+  if (d === t) return 'Dnes';
+  if (d === calc.addDays(t, -1)) return 'Včera';
+  const x = new Date(d + 'T00:00:00'), n = DNAME[x.getDay()];
+  return `${n[0].toUpperCase()}${n.slice(1)} ${x.getDate()}. ${x.getMonth() + 1}.`;
+}
+function editSheet(d, cur, goalMl, onSave) {
+  let v = Math.max(0, Math.round(cur / 50) * 50);
+  const pre = [...new Set([0, 500, 1000, 1500, 2000, goalMl, 3000])].filter(n => n <= MAX).sort((a, b) => a - b);
+  const bg = ctx.sheet(`<div class="wx-sh"><h3>💧 ${dayLabel(d)}</h3><p class="wx-sub">Nastav, koľko si v tento deň vypil spolu</p>
+    <div class="wx-oth ed"><button data-s="-250" aria-label="Menej o 250 ml">−</button><b><span id="wxV"></span><small>l</small></b><button data-s="250" aria-label="Viac o 250 ml">+</button></div>
+    <div class="wx-pre"><button data-s="-50">−50 ml</button><button data-s="50">+50 ml</button></div>
+    <div class="wx-pre">${pre.map(n => `<button data-p="${n}">${n === goalMl ? 'cieľ ' : ''}${fmtL(n)} l</button>`).join('')}</div>
+    <button class="btn primary" id="wxGo">Uložiť</button></div>`);
+  const upd = () => { bg.querySelector('#wxV').textContent = fmtL(v); bg.querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', Number(b.dataset.p) === v)); };
+  bg.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { v = Math.max(0, Math.min(MAX, v + Number(b.dataset.s))); upd(); });
+  bg.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { v = Number(b.dataset.p); upd(); });
+  bg.querySelector('#wxGo').onclick = () => { bg.remove(); onSave(v); };
   upd();
 }
 
@@ -136,7 +168,7 @@ export function bindWater(root, { uid, date, goalMl, ml, isToday }) {
     const ws = calc.weekStart(date), t = calc.today();
     q('#wxW').innerHTML = Array.from({ length: 7 }, (_, i) => {
       const d = calc.addDays(ws, i), v = valOf(d), p = goalMl ? Math.min(1, v / goalMl) : 0;
-      return `<div class="wx-d${v >= goalMl ? ' ok' : ''}${d > t ? ' fut' : ''}${d === t ? ' now' : ''}"><div class="wx-bar"><i style="--h:${(p * 100).toFixed(0)}%"></i></div><span>${DAYS[new Date(d + 'T00:00:00').getDay()]}</span></div>`;
+      return `<button type="button" class="wx-d${v >= goalMl ? ' ok' : ''}${d > t ? ' fut' : ''}${d === t ? ' now' : ''}" data-d="${d}" aria-label="${dayLabel(d)}: ${fmtL(v)} l, upraviť"><div class="wx-bar"><i style="--h:${(p * 100).toFixed(0)}%"></i></div><span>${DAYS[new Date(d + 'T00:00:00').getDay()]}</span></button>`;
     }).join('');
   };
   const drawStreak = () => {
@@ -179,6 +211,23 @@ export function bindWater(root, { uid, date, goalMl, ml, isToday }) {
     ml = Math.max(0, ml - n); persist(); setFill(); paint(); flush();
   };
 
+  // prepísanie dňa: zobrazený deň sa prekreslí celý, iný deň sa len uloží a obnoví sa jeho stĺpec
+  const setDay = async (d, v) => {
+    if (d === date) {
+      const before = ml; ml = v; log = []; persist(); setFill(); paint();
+      if (before < goalMl && ml >= goalMl) ctx.toast('Denný cieľ vody splnený 💧');
+      flush(); return;
+    }
+    const old = hist[d]; hist[d] = v; drawWeek(); drawStreak();
+    try { await db.upsertCheckin({ user_id: uid, date: d, water: Math.floor(v / 250), water_ml: v }); ctx.toast(`${dayLabel(d)}: ${fmtL(v)} l uložené`); }
+    catch (_) { hist[d] = old; if (el.isConnected) { drawWeek(); drawStreak(); } ctx.toast('Vodu sa nepodarilo uložiť', true); }
+  };
+  const edit = d => {
+    if (d > calc.today()) { ctx.toast('Tento deň ešte len príde. Vodu zapíšeš, keď nastane.'); return; }
+    editSheet(d, valOf(d), goalMl, v => setDay(d, v));
+  };
+  q('#wxW').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) edit(b.dataset.d); });
+  q('#wxE').onclick = () => edit(date);
   el.querySelectorAll('[data-wx]').forEach(b => b.onclick = () => add(Number(b.dataset.wx)));
   q('[data-wxo]').onclick = () => otherSheet(add);
   q('#wxU').onclick = undo;
