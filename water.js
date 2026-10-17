@@ -60,7 +60,8 @@ const CSS = `
 .wx-gl{display:block;margin:0 auto 14px;-webkit-appearance:none;appearance:none;border:0;background:none;color:#8FD3FF;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;padding:6px 10px}
 .wx-gl.mute{color:var(--muted);font-weight:600}
 .wx-d span{display:block;font-size:11px;color:var(--muted);margin-top:4px}.wx-d.now span{color:var(--text);font-weight:700}
-.wx-d.now .wx-bar{box-shadow:0 0 0 1.5px rgba(143,211,255,.7)}
+.wx-d.sel .wx-bar{box-shadow:0 0 0 1.5px rgba(143,211,255,.7)}
+.wx-d.sel.fut{opacity:1}.wx-d.sel.fut .wx-bar{box-shadow:0 0 0 1.5px rgba(143,211,255,.7)}
 .wx-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12.5px;color:var(--muted);min-height:30px}
 .wx-undo{-webkit-appearance:none;appearance:none;border:0;background:rgba(255,255,255,.07);color:var(--text);border-radius:99px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .wx-undo:disabled{opacity:.3}
@@ -181,6 +182,7 @@ export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday }) {
   let goals = {};
   try { goals = JSON.parse(localStorage.getItem(gKey) || '{}') || {}; } catch (_) { goals = {}; }
   const goalOf = d => (d === date ? goalMl : (goals[d] || baseGoal));
+  let sel = date; // deň, na ktorý sa naposledy ťuklo: ten dostane modrý rámik (na začiatku zobrazený deň)
 
   const message = () => {
     const left = goalMl - ml;
@@ -208,7 +210,7 @@ export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday }) {
     q('#wxW').innerHTML = Array.from({ length: 7 }, (_, i) => {
       const d = calc.addDays(ws, i), v = valOf(d), g = goalOf(d), p = g ? Math.min(1, v / g) : 0, fut = d > t;
       const own = fut && goals[d];
-      return `<button type="button" class="wx-d${v >= g && !fut ? ' ok' : ''}${fut ? ' fut' : ''}${own ? ' wx-own' : ''}${d === t ? ' now' : ''}" data-d="${d}" aria-label="${dayLabel(d)}: ${fut ? `cieľ ${fmtL(g)} l, naplánovať` : `${fmtL(v)} l, upraviť`}"><div class="wx-bar"><i style="--h:${(p * 100).toFixed(0)}%"></i>${own ? `<em>${fmtL(g)} l</em>` : ''}</div><span>${DAYS[new Date(d + 'T00:00:00').getDay()]}</span></button>`;
+      return `<button type="button" class="wx-d${v >= g && !fut ? ' ok' : ''}${fut ? ' fut' : ''}${own ? ' wx-own' : ''}${d === t ? ' now' : ''}${d === sel ? ' sel' : ''}" data-d="${d}" aria-label="${dayLabel(d)}: ${fut ? `cieľ ${fmtL(g)} l, naplánovať` : `${fmtL(v)} l, upraviť`}"><div class="wx-bar"><i style="--h:${(p * 100).toFixed(0)}%"></i>${own ? `<em>${fmtL(g)} l</em>` : ''}</div><span>${DAYS[new Date(d + 'T00:00:00').getDay()]}</span></button>`;
     }).join('');
   };
   const drawStreak = () => {
@@ -285,8 +287,8 @@ export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday }) {
     if (d > calc.today()) { planGoal(d); return; }
     editSheet(d, valOf(d), goalOf(d), v => setDay(d, v), () => planGoal(d));
   };
-  q('#wxW').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) edit(b.dataset.d); });
-  q('#wxE').onclick = () => edit(date);
+  q('#wxW').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) { sel = b.dataset.d; drawWeek(); edit(sel); } });
+  q('#wxE').onclick = () => { sel = date; drawWeek(); edit(date); };
   el.querySelectorAll('[data-wx]').forEach(b => b.onclick = () => add(Number(b.dataset.wx)));
   q('[data-wxo]').onclick = () => otherSheet(add);
   q('#wxU').onclick = undo;
