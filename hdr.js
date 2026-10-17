@@ -1,4 +1,4 @@
-// Týždenný pás na obrazovke Dnes: pôvodné okrúhle dni, ktoré navyše ukážu, ako ti deň vyšiel.
+// Týždenný pás na obrazovke Dnes: pôvodné okrúhle dni, ktoré navýše ukážu, ako ti deň vyšiel.
 // Trafený cieľ = plný zelený „kotúč“, prekročený = oranžový, tréning = malá činka, po sebe idúce trafené dni spojí reťaz.
 import * as db from './data.js';
 import { ctx } from './app.js';
@@ -14,7 +14,7 @@ const CSS = `
 .wk-d.hit .wk-r b{color:var(--accent-ink);font-weight:800}
 .wk-d.over .wk-r b{color:#ffb35c}
 .wk-d.over .rg-fill{stroke:#ff9a4c}
-.wk-d.now:not(.hit) .wk-r{filter:drop-shadow(0 0 6px rgba(124,255,178,.35))}
+.wk-d.now:not(.hit) .wk-r::before{content:'';position:absolute;inset:3px;border-radius:50%;z-index:0;box-shadow:0 0 9px rgba(124,255,178,.4)}
 .wk-d.chain .wk-r::after{content:'';position:absolute;z-index:0;left:50%;top:calc(50% - 1.5px);width:var(--cw,48px);height:3px;border-radius:2px;background:linear-gradient(90deg,#8ff5bf,#6be8a6);opacity:.75;box-shadow:0 0 6px rgba(124,255,178,.3)}
 .wk-d .fg-t{display:none;position:absolute;z-index:3;top:-4px;right:-4px;width:15px;height:15px;border-radius:50%;place-items:center;background:var(--card-2);color:var(--accent);box-shadow:0 0 0 1.5px var(--accent)}
 .wk-d.tr .fg-t{display:grid}
@@ -40,23 +40,27 @@ function paint(wk) {
 async function fill(wk) {
   const p = ctx.state?.profile; if (!p) return;
   const ds = [...wk.querySelectorAll('.wk-d')].map(b => b.dataset.d); if (!ds.length) return;
+  // pri chybe siete sa staré hodnoty nemažú (inak by činka na chvíľu zmizla), prepíšu sa až úspešnou odpoveďou
   const [byDay, logs] = await Promise.all([
-    db.foodByDay(p.id, ds[0], ds[ds.length - 1]).catch(() => ({})),
-    db.listWorkoutLogs(p.id, ds[0]).catch(() => []),
+    db.foodByDay(p.id, ds[0], ds[ds.length - 1]).catch(() => null),
+    db.listWorkoutLogs(p.id, ds[0]).catch(() => null),
   ]);
-  const done = new Set((logs || []).filter(l => l.done).map(l => l.date));
-  ds.forEach(d => { cache[d] = { pct: p.target_kcal ? (byDay[d]?.kcal || 0) / p.target_kcal : 0, tr: done.has(d) }; });
+  const done = logs ? new Set(logs.filter(l => l.done).map(l => l.date)) : null;
+  ds.forEach(d => {
+    const old = cache[d] || { pct: 0, tr: false };
+    cache[d] = { pct: byDay ? (p.target_kcal ? (byDay[d]?.kcal || 0) / p.target_kcal : 0) : old.pct, tr: done ? done.has(d) : old.tr };
+  });
   if (wk.isConnected) paint(wk);
 }
 
 function build(wk) {
-  if (wk.dataset.fg) return; wk.dataset.fg = '1';
-  wk.querySelectorAll('.wk-d .wk-r').forEach(r => r.insertAdjacentHTML('beforeend', `<i class="fg-t">${DUMB}</i>`));
+  if (wk.dataset.fg && wk.querySelector('.fg-t')) return; wk.dataset.fg = '1';
+  wk.querySelectorAll('.wk-d .wk-r').forEach(r => { if (!r.querySelector('.fg-t')) r.insertAdjacentHTML('beforeend', `<i class="fg-t">${DUMB}</i>`); });
   requestAnimationFrame(() => paint(wk));   // hneď z pamäte, ak už máme čísla
   fill(wk);
 }
 
-// nadpis je vždy pozdrav podľa denného času a meno, nech je vybraný ktorýkoľvek deň (dátum je pod ním)
+// nadpis je vždy pozdrav podľa denného času a meno, nech je vybraný ktorýľutvek deň (dátum je pod ním)
 function greet() {
   const hr = new Date().getHours();
   return hr < 5 ? 'Dobrú noc' : hr < 10 ? 'Dobré ráno' : hr < 13 ? 'Dobrý deň' : hr < 18 ? 'Dobré popoludnie' : 'Dobrý večer';
