@@ -367,7 +367,7 @@ export function openRecipeEditor(pre, meal, done, withTabs) {
     <div class="input-row mt"><input class="input" id="iq" placeholder="Pridaj surovinu: ryža, kuracie..." autocomplete="off"></div>
     <div id="ires" class="results"></div>
     <button class="btn ghost sm mt" type="button" id="itext">✨ Vložiť celý recept textom</button>
-    <div id="itbox" hidden><textarea class="input mt" id="itxt" rows="4" placeholder="Skopíruj suroviny z receptu, napr.:\n500 g kuracích prís, 300 g ryže, 2 vajcia, lyžica oleja, 1 cibuľa"></textarea>
+    <div id="itbox" hidden><textarea class="input mt" id="itxt" rows="4" placeholder="Skopíruj suroviny z receptu, napr.:\n500 g kuracích pŕs, 300 g ryže, 2 vajcia, lyžica oleja, 1 cibuľa"></textarea>
       <button class="btn sm primary mt" type="button" id="itgo">Rozpoznať suroviny</button><p class="muted small mt">AI rozloží text na suroviny a dá im hodnoty z našej databázy. Gramy si potom skontroluj.</p></div>
     <div class="stat mt" id="tot"></div>
     <label class="row mt small"><input type="checkbox" id="pub" ${pre?.is_public === false ? '' : 'checked'}> Zdieľať recept s ostatnými</label>
