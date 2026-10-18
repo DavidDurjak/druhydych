@@ -18,7 +18,7 @@ export const R4 = [
   ['ramen', 'Ramen s bravčovým a vajcom', 'soup', 'asia', 60, 2, [['cestoviny', 160], ['bocik', 150], ['vajce', 100], ['cibulka', 30], ['sojova', 30], ['sampinony', 60]],
     ['Bôčik opeč a duš v sójovej omáčke s cukrom 40 minút.', 'Vajcia uvar na mäkko a nechaj v marináde.', 'Rezance uvar a zalej horúcim vývarom, pridaj mäso, vajce, huby a cibuľku.']],
   ['pho', 'Pho bo', 'soup', 'asia', 120, 2, [['ryzarezance', 120], ['sviecova', 150], ['klicky', 80], ['cibula', 80], ['citron', 20]],
-    ['Vývar var s opečenou cibuľou, zázvorom, badánom a škoricou aspoň 90 minút.', 'Rezance uvar a daj do misiek s tenkými plátkami surového hovädzieho.', 'Zalej vriacim vývarom a pridaj klíčky, bylinky a limetku.']],
+    ['Vývar var s opečenou cibuľou, zázvorom, badiánom a škoricou aspoň 90 minút.', 'Rezance uvar a daj do misiek s tenkými plátkami surového hovädzieho.', 'Zalej vriacim vývarom a pridaj klíčky, bylinky a limetku.']],
   ['sushi', 'Maki sushi s lososom a avokádom', 'lunch', 'asia', 60, 2, [['ryza', 160], ['losos', 120], ['avokado', 60], ['uhorka', 60], ['sojova', 20], ['cukor', 10]],
     ['Ryžu uvar a ochuť octom, cukrom a soľou.', 'Na riasu nori natri ryžu a pridaj pásiky lososa, avokáda a uhorky.', 'Zroluj pomocou podložky, nakrájaj a podávaj so sójovou omáčkou.']],
   ['teriyaki', 'Kuracie teriyaki s ryžou', 'lunch', 'asia', 25, 1, [['stehna', 170], ['sojova', 25], ['med', 15], ['ryza', 70], ['brokolica', 100], ['sezam', 5]],
