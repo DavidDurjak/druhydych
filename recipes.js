@@ -1,6 +1,6 @@
 // Recepty (v154): tlačidlo Recept otvorí okno s dvoma záložkami.
 //  Inšpiruj sa = hotové jednoduché recepty (raňajky, obed, večera, desiata) s vypočítanými kalóriami a makrami, pridajú sa jedným ťuknutím,
-//  Môj recept = vlastný recept zo surôvin (pôvodný editor).
+//  Môj recept = vlastný recept z surovín (pôvodný editor).
 import { ctx } from './app.js';
 import { RECIPES, CATS } from './recipes.data.js';
 
@@ -68,7 +68,7 @@ export function openRecipeHub(meal, done, k) {
       ${hubTabs('insp')}
       <div class="rh-cats">${CATS.map(([key, l]) => `<button data-c="${key}" class="${key === cat ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
       <div class="rh-list">${rows.map(r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ic">${r.icon}</span><span class="rh-n"><b>${h(r.name)}</b><span>${sub(r)}</span></span><span class="rh-k">${r.per.kcal}<small>kcal / porcia</small></span></button>`).join('')}</div>
-      <p class="rh-hint">Ťukni na recept, uvidíš suroviny a postup. Hodnoty sú vypočítané zo surôvin.</p>`;
+      <p class="rh-hint">Ťukni na recept, uvidíš suroviny a postup. Hodnoty sú vypočítané zo surovín.</p>`;
     root.querySelector('[data-x]').onclick = close;
     wireTabs();
     root.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cat = b.dataset.c; list(); });
