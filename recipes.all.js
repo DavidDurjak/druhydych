@@ -43,8 +43,28 @@ import { R39, I39 } from './recipes.d39.js';
 import { R40, I40 } from './recipes.d40.js';
 import { R41, I41 } from './recipes.d41.js';
 import { R42, I42 } from './recipes.d42.js';
+import { R43, I43 } from './recipes.d43.js';
+import { R44, I44 } from './recipes.d44.js';
+import { R45, I45 } from './recipes.d45.js';
+import { R46, I46 } from './recipes.d46.js';
+import { R47, I47 } from './recipes.d47.js';
+import { R48, I48 } from './recipes.d48.js';
+import { R49, I49 } from './recipes.d49.js';
+import { R50, I50 } from './recipes.d50.js';
+import { R51, I51 } from './recipes.d51.js';
+import { R52, I52 } from './recipes.d52.js';
+import { R53, I53 } from './recipes.d53.js';
+import { R54, I54 } from './recipes.d54.js';
+import { R55, I55 } from './recipes.d55.js';
+import { R56, I56 } from './recipes.d56.js';
+import { R57, I57 } from './recipes.d57.js';
+import { R58, I58 } from './recipes.d58.js';
+import { R59, I59 } from './recipes.d59.js';
+import { R60, I60 } from './recipes.d60.js';
+import { R61, I61 } from './recipes.d61.js';
+import { R62, I62 } from './recipes.d62.js';
 
-const I = { ...I0, ...I12, ...I13, ...I14, ...I15, ...I16, ...I17, ...I18, ...I19, ...I20, ...I21, ...I22, ...I23, ...I24, ...I25, ...I26, ...I27, ...I28, ...I29, ...I30, ...I31, ...I32, ...I33, ...I34, ...I35, ...I36, ...I37, ...I38, ...I39, ...I40, ...I41, ...I42 };
+const I = { ...I0, ...I12, ...I13, ...I14, ...I15, ...I16, ...I17, ...I18, ...I19, ...I20, ...I21, ...I22, ...I23, ...I24, ...I25, ...I26, ...I27, ...I28, ...I29, ...I30, ...I31, ...I32, ...I33, ...I34, ...I35, ...I36, ...I37, ...I38, ...I39, ...I40, ...I41, ...I42, ...I43, ...I44, ...I45, ...I46, ...I47, ...I48, ...I49, ...I50, ...I51, ...I52, ...I53, ...I54, ...I55, ...I56, ...I57, ...I58, ...I59, ...I60, ...I61, ...I62 };
 
 export { CATS };
 
@@ -66,5 +86,5 @@ const build = (id, name, cat, cuis, min, servings, items, steps) => {
 
 export const RECIPES = [
   ...BASE.map(r => ({ ...r, cuis: C0[r.id] || 'fit' })),
-  ...[...R1, ...R2, ...R3, ...R4, ...R5, ...R6, ...R7, ...R8, ...R9, ...R10, ...R11, ...R12, ...R13, ...R14, ...R15, ...R16, ...R17, ...R18, ...R19, ...R20, ...R21, ...R22, ...R23, ...R24, ...R25, ...R26, ...R27, ...R28, ...R29, ...R30, ...R31, ...R32, ...R33, ...R34, ...R35, ...R36, ...R37, ...R38, ...R39, ...R40, ...R41, ...R42].map(r => build(...r)),
+  ...[...R1, ...R2, ...R3, ...R4, ...R5, ...R6, ...R7, ...R8, ...R9, ...R10, ...R11, ...R12, ...R13, ...R14, ...R15, ...R16, ...R17, ...R18, ...R19, ...R20, ...R21, ...R22, ...R23, ...R24, ...R25, ...R26, ...R27, ...R28, ...R29, ...R30, ...R31, ...R32, ...R33, ...R34, ...R35, ...R36, ...R37, ...R38, ...R39, ...R40, ...R41, ...R42, ...R43, ...R44, ...R45, ...R46, ...R47, ...R48, ...R49, ...R50, ...R51, ...R52, ...R53, ...R54, ...R55, ...R56, ...R57, ...R58, ...R59, ...R60, ...R61, ...R62].map(r => build(...r)),
 ];
