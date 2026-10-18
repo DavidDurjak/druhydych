@@ -1,4 +1,4 @@
-// Celá knižnica receptov (v156): pôvodných 130 receptov z recipes.data.js + recepty zo Slovenska, Česka, Európy a sveta.
+// Celá knižnica receptov (v157): pôvodných 130 receptov z recipes.data.js + recepty zo Slovenska, Česka, Európy a sveta.
 import { RECIPES as BASE, CATS } from './recipes.data.js';
 import { I } from './recipes.ing.js';
 import { R1 } from './recipes.d1.js';
@@ -6,6 +6,12 @@ import { R2 } from './recipes.d2.js';
 import { R3 } from './recipes.d3.js';
 import { R4 } from './recipes.d4.js';
 import { R5 } from './recipes.d5.js';
+import { R6 } from './recipes.d6.js';
+import { R7 } from './recipes.d7.js';
+import { R8 } from './recipes.d8.js';
+import { R9 } from './recipes.d9.js';
+import { R10 } from './recipes.d10.js';
+import { R11 } from './recipes.d11.js';
 
 export { CATS };
 
@@ -27,5 +33,5 @@ const build = (id, name, cat, cuis, min, servings, items, steps) => {
 
 export const RECIPES = [
   ...BASE.map(r => ({ ...r, cuis: C0[r.id] || 'fit' })),
-  ...[...R1, ...R2, ...R3, ...R4, ...R5].map(r => build(...r)),
+  ...[...R1, ...R2, ...R3, ...R4, ...R5, ...R6, ...R7, ...R8, ...R9, ...R10, ...R11].map(r => build(...r)),
 ];
