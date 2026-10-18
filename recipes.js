@@ -1,11 +1,11 @@
-// Recepty (v155): tlačidlo Recept otvorí okno s dvoma záložkami.
-//  Inšpiruj sa = knižnica hotových receptov s reálnymi fotkami (raňajky, obed, večera, polievky, šaláty, desiata, dezerty, koláče),
-//   vyhľadávanie podľa názvu aj suroviny, radenie podľa bielkovín alebo kalórií. Karta receptu má porcie, makrá, vplyv na deň, suroviny a postup.
+// Recepty (v156): tlačidlo Recept otvorí okno s dvoma záložkami.
+//  Inšpiruj sa = knižnica takmer 600 receptov zo Slovenska, Česka, celej Európy aj sveta s reálnymi fotkami,
+//   filter podľa jedla a krajiny, vyhľadávanie podľa názvu, suroviny aj krajiny, radenie podľa bielkovín alebo kalórií. Karta receptu má porcie, makrá, vplyv na deň, suroviny a postup.
 //  Môj recept = vlastný recept z surovín (pôvodný editor).
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
-import { RECIPES, CATS } from './recipes.data.js';
+import { RECIPES, CATS, CUIS } from './recipes.all.js';
 import { photoOf, creditOf, allCredits } from './recipes.photos.js';
 import './foodsheet.js';
 
@@ -21,8 +21,12 @@ const CSS = `
 .rh .rh-q{width:100%;box-sizing:border-box;margin-top:12px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--bg-2);color:var(--text);padding:0 14px 0 42px;font:inherit;font-size:15px;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238a93a6' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px 50%}
 .rh .rh-q:focus{border-color:var(--accent)}
 .rh .rh-q::-webkit-search-cancel-button{-webkit-appearance:none}
-.rh .rh-cats,.rh .rh-sort{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px 2px}
-.rh .rh-cats::-webkit-scrollbar,.rh .rh-sort::-webkit-scrollbar{display:none}
+.rh .rh-cats,.rh .rh-cuis,.rh .rh-sort{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px 2px}
+.rh .rh-cats::-webkit-scrollbar,.rh .rh-cuis::-webkit-scrollbar,.rh .rh-sort::-webkit-scrollbar{display:none}
+.rh .rh-cuis{margin-top:8px}
+.rh .rh-cuis button{flex:none;border:0;background:transparent;color:var(--muted);border-radius:99px;padding:6px 11px;font-size:12.5px;font-weight:650;cursor:pointer;white-space:nowrap;box-shadow:inset 0 0 0 1px var(--line)}
+.rh .rh-cuis button.on{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}
+.rh .rh-more{height:1px}
 .rh .rh-cats button{flex:none;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:99px;padding:7px 14px;font-size:13px;font-weight:650;cursor:pointer;white-space:nowrap}
 .rh .rh-cats button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
 .rh .rh-sort{margin-top:8px;align-items:center}
@@ -84,8 +88,10 @@ const mealWord = m => (MEALS()[m] || '').toLowerCase();
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const SORTS = [['rec', 'Odporúčané'], ['prot', 'Najviac bielkovín'], ['kcal', 'Najmenej kalórií']];
 const sortRows = (rows, key) => key === 'prot' ? [...rows].sort((a, b) => b.per.protein - a.per.protein) : key === 'kcal' ? [...rows].sort((a, b) => a.per.kcal - b.per.kcal) : rows;
-const SEARCH = RECIPES.map(r => ({ r, t: norm(r.name + ' ' + r.ing.map(i => i.name).join(' ')) }));
+const cuisName = key => (CUIS.find(c => c[0] === key) || [])[1] || '';
+const SEARCH = RECIPES.map(r => ({ r, t: norm(r.name + ' ' + cuisName(r.cuis) + ' ' + r.ing.map(i => i.name).join(' ')) }));
 const catName = key => (CATS.find(c => c[0] === key) || [])[1] || '';
+const PAGE = 36;
 
 // fotka sa jemne zobrazí po načítaní; keď sa nenačíta, ostane čistá neutrálna dlaždica
 function wirePhotos(root) {
@@ -104,7 +110,7 @@ const ring = (key, label, color) => `<div class="fs-r" data-r="${key}" style="--
 
 // k = { addPreset(recipe, meal, done, servings), editPreset(recipe, meal, done), openMine(meal, done) }
 export function openRecipeHub(meal, done, k) {
-  let cat = catFor(meal), q = '', sort = 'rec';
+  let cat = catFor(meal), cuis = 'all', q = '', sort = 'rec', io = null;
   const bg = sheet('<div class="rh fs"></div>');
   const root = bg.querySelector('.rh');
   const close = () => bg.remove();
@@ -115,38 +121,60 @@ export function openRecipeHub(meal, done, k) {
   const rowsNow = () => {
     const nq = norm(q).trim();
     let rows = nq ? SEARCH.filter(s => nq.split(/\s+/).every(w => s.t.includes(w))).map(s => s.r) : RECIPES.filter(r => cat === 'all' || r.cat === cat);
+    if (!nq && cuis !== 'all') rows = rows.filter(r => r.cuis === cuis);
     return sortRows(rows, sort);
   };
+  const card = r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ph" data-ph><img src="${photoOf(r.id, 500)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="rh-kc">${r.per.kcal} kcal</span></span><span class="rh-n"><b>${h(r.name)}</b><span>B ${r.per.protein} g · S ${r.per.carbs} g · T ${r.per.fat} g</span></span></button>`;
+  // karty sa dokresľujú po dávkach pri rolovaní, aby sa okno otvorilo hneď aj pri stovkách receptov
   function paintGrid() {
     const rows = rowsNow();
-    const g = root.querySelector('#rhGrid');
-    g.innerHTML = rows.length ? rows.map(r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ph" data-ph><img src="${photoOf(r.id, 500)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="rh-kc">${r.per.kcal} kcal</span></span><span class="rh-n"><b>${h(r.name)}</b><span>B ${r.per.protein} g · S ${r.per.carbs} g · T ${r.per.fat} g</span></span></button>`).join('') : '';
-    root.querySelector('#rhEmpty').innerHTML = rows.length ? '' : `<div class="rh-empty">Nič sa nenašlo. Skús iný názov alebo surovinu.</div>`;
+    const g = root.querySelector('#rhGrid'), more = root.querySelector('#rhMore');
+    let shown = 0;
+    if (io) { io.disconnect(); io = null; }
+    g.innerHTML = '';
+    const next = () => {
+      const part = rows.slice(shown, shown + PAGE);
+      if (!part.length) return;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = part.map(card).join('');
+      wirePhotos(tmp);
+      tmp.querySelectorAll('[data-r]').forEach(b => b.onclick = () => detail(RECIPES.find(r => r.id === b.dataset.r)));
+      g.append(...tmp.children);
+      shown += part.length;
+      if (shown >= rows.length && io) { io.disconnect(); io = null; }
+    };
+    next();
+    if (shown < rows.length && 'IntersectionObserver' in window) {
+      io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) next(); }, { root: bg.querySelector('.sheet') || null, rootMargin: '600px 0px' });
+      io.observe(more);
+    } else while (shown < rows.length) next();
+    root.querySelector('#rhEmpty').innerHTML = rows.length ? '' : `<div class="rh-empty">Nič sa nenašlo. Skús iný názov, surovinu alebo krajinu.</div>`;
     root.querySelector('#rhCount').textContent = `${rows.length} ${rows.length === 1 ? 'recept' : rows.length < 5 && rows.length > 0 ? 'recepty' : 'receptov'}`;
-    wirePhotos(g);
-    g.querySelectorAll('[data-r]').forEach(b => b.onclick = () => detail(RECIPES.find(r => r.id === b.dataset.r)));
   }
 
   function list() {
     root.innerHTML = `<div class="rh-hd"><h2>Recepty</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
       ${hubTabs('insp')}
-      <input class="rh-q" id="rhQ" type="search" placeholder="Hľadaj recept alebo surovinu" autocomplete="off" enterkeyhint="search" value="${h(q)}">
+      <input class="rh-q" id="rhQ" type="search" placeholder="Hľadaj recept, surovinu alebo krajinu" autocomplete="off" enterkeyhint="search" value="${h(q)}">
       <div class="rh-cats">${[['all', 'Všetko'], ...CATS].map(([key, l]) => `<button data-c="${key}" class="${!q && key === cat ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
+      <div class="rh-cuis">${[['all', 'Celý svet'], ...CUIS].map(([key, l]) => `<button data-u="${key}" class="${!q && key === cuis ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
       <div class="rh-sort"><span id="rhCount"></span>${SORTS.map(([key, l]) => `<button data-s="${key}" class="${key === sort ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
-      <div class="rh-grid" id="rhGrid"></div><div id="rhEmpty"></div>
+      <div class="rh-grid" id="rhGrid"></div><div class="rh-more" id="rhMore"></div><div id="rhEmpty"></div>
       <p class="rh-hint">Hodnoty sú vypočítané zo surovín. <a href="#" id="rhCred">Zdroje fotiek</a></p>`;
-    root.querySelector('[data-x]').onclick = close;
+    root.querySelector('[data-x]').onclick = () => { if (io) io.disconnect(); close(); };
     wireTabs();
     const cats = root.querySelector('.rh-cats');
-    cats.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cat = b.dataset.c; q = ''; root.querySelector('#rhQ').value = ''; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x === b)); paintGrid(); });
+    cats.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cat = b.dataset.c; q = ''; root.querySelector('#rhQ').value = ''; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x === b)); root.querySelectorAll('[data-u]').forEach(x => x.classList.toggle('on', x.dataset.u === cuis)); paintGrid(); });
+    root.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { cuis = b.dataset.u; if (q) { q = ''; root.querySelector('#rhQ').value = ''; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x.dataset.c === cat)); } root.querySelectorAll('[data-u]').forEach(x => x.classList.toggle('on', x === b)); paintGrid(); });
     root.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sort = b.dataset.s; root.querySelectorAll('[data-s]').forEach(x => x.classList.toggle('on', x === b)); paintGrid(); });
-    root.querySelector('#rhQ').oninput = e => { q = e.target.value; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', !q && x.dataset.c === cat)); paintGrid(); };
+    root.querySelector('#rhQ').oninput = e => { q = e.target.value; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', !q && x.dataset.c === cat)); root.querySelectorAll('[data-u]').forEach(x => x.classList.toggle('on', !q && x.dataset.u === cuis)); paintGrid(); };
     root.querySelector('#rhCred').onclick = e => { e.preventDefault(); credits(); };
     paintGrid();
     scrollTop();
   }
 
   function credits() {
+    if (io) { io.disconnect(); io = null; }
     const names = Object.fromEntries(RECIPES.map(r => [r.id, r.name]));
     root.innerHTML = `<div class="rh-hd"><button class="rh-back" id="back">‹ Recepty</button><button class="del" data-x aria-label="Zavrieť">×</button></div>
       <h2 class="rh-t">Zdroje fotiek</h2><p class="rh-hint" style="text-align:left">Fotky jedál pochádzajú z Wikimedia Commons a sú pod voľnými licenciami. Ďakujeme autorom.</p>
@@ -157,6 +185,7 @@ export function openRecipeHub(meal, done, k) {
   }
 
   function detail(r) {
+    if (io) { io.disconnect(); io = null; }
     const p = ctx.state.profile || {};
     const T = { kcal: Number(p.target_kcal) || 0, protein: Number(p.target_protein) || 0, carbs: Number(p.target_carbs) || 0, fat: Number(p.target_fat) || 0 };
     let eaten = null, m = 1;
@@ -166,7 +195,7 @@ export function openRecipeHub(meal, done, k) {
       <div class="rh-hero" data-ph><img src="${photoOf(r.id, 960)}" alt="${h(r.name)}" decoding="async" referrerpolicy="no-referrer"></div>
       ${cr ? `<p class="rh-cr">Foto: ${h(cr.author)}, ${h(cr.license)} · <a href="${h(cr.page)}" target="_blank" rel="noopener">Wikimedia Commons</a></p>` : ''}
       <h2 class="rh-t">${h(r.name)}</h2>
-      <div class="rh-chips"><span>${r.min} min</span><span>${h(catName(r.cat))}</span><span>${r.servings === 1 ? '1 porcia' : r.servings + ' porcií v recepte'}</span></div>
+      <div class="rh-chips"><span>${r.min} min</span><span>${h(catName(r.cat))}</span>${r.cuis && r.cuis !== 'fit' ? `<span>${h(cuisName(r.cuis))}</span>` : ''}<span>${r.servings === 1 ? '1 porcia' : r.servings + ' porcií v recepte'}</span></div>
       <div class="fs-box"><div class="rh-por"><div><b>Počet porcií</b><small id="rhPg"></small></div><div class="st"><button data-d="-1" aria-label="Menej">−</button><em id="rhM"></em><button data-d="1" aria-label="Viac">+</button></div></div>
         <div id="rhCalc" style="margin-top:14px"></div></div>
       <div class="fs-box fs-imp"><h3>Vplyv na tvoj deň <span id="rhDay"></span></h3>
