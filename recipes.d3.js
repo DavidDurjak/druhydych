@@ -40,7 +40,7 @@ export const R3 = [
   ['marillenknodel', 'Marhuľové knedle', 'dessert', 'de', 50, 2, [['tvarohtucny', 250], ['muka', 100], ['vajce', 50], ['maslo', 30], ['marhule', 250], ['struhanka', 40], ['cukor', 20]],
     ['Z tvarohu, múky, vajca a masla urob cesto.', 'Zabaľ doň marhule a var 12 minút.', 'Obaľ v opraženej strúhanke s cukrom.']],
   ['spargel', 'Špargľa s holandskou omáčkou', 'dinner', 'de', 30, 1, [['sparga', 300], ['zemiaky', 200], ['sunka', 60], ['maslo', 40], ['vajce', 40]],
-    ['Biela špargľu ošúp a var 12 minút.', 'Žĺtky šľahaj nad parou a postupne vmiešaj roztopené maslo a citrón.', 'Podávaj so zemiakmi, šunkou a omáčkou.']],
+    ['Bielu špargľu ošúp a var 12 minút.', 'Žĺtky šľahaj nad parou a postupne vmiešaj roztopené maslo a citrón.', 'Podávaj so zemiakmi, šunkou a omáčkou.']],
   ['weisswurst', 'Weisswurst s praclíkom', 'breakfast', 'de', 15, 1, [['bielaklobasa', 150], ['praclik', 80], ['horcica', 20]],
     ['Klobásy zohrej v horúcej vode, nevar ich.', 'Podávaj so sladkou horčicou a praclíkom.']],
 
