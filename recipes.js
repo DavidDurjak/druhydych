@@ -16,6 +16,7 @@ const r1 = v => Math.round(Number(v || 0) * 10) / 10;
 const fmt = v => String(r1(v)).replace('.', ',');
 
 const CSS = `
+.rh{min-height:calc(88vh - 40px)}
 .rh .rh-seg{margin:14px 0 0}
 .rh .rh-hd{display:flex;align-items:center;justify-content:space-between}
 .rh .rh-q{width:100%;box-sizing:border-box;margin-top:12px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--bg-2);color:var(--text);padding:0 14px 0 42px;font:inherit;font-size:15px;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238a93a6' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px 50%}
@@ -96,9 +97,17 @@ const PAGE = 36;
 // fotka sa jemne zobrazí po načítaní; keď sa nenačíta, ostane čistá neutrálna dlaždica
 function wirePhotos(root) {
   root.querySelectorAll('[data-ph] img').forEach(img => {
-    const box = img.parentElement;
-    const ok = () => img.classList.add('ok'), no = () => box.classList.add('no');
+    const box = img.parentElement, src0 = img.getAttribute('src');
+    let tries = 0;
+    const ok = () => img.classList.add('ok');
+    // pri chybe (limit Wikimedie, slabý signál) skúsi fotku znova s odstupom; až potom ostane neutrálna dlaždica
+    const no = () => {
+      if (tries >= 3) { box.classList.add('no'); return; }
+      tries++;
+      setTimeout(() => { if (img.isConnected) img.src = src0 + (src0.includes('?') ? '&' : '?') + 'r=' + tries; }, 1200 * tries + Math.random() * 800);
+    };
     if (img.complete) { img.naturalWidth ? ok() : no(); } else { img.onload = ok; img.onerror = no; }
+    img.onload = ok; img.onerror = no;
   });
 }
 
@@ -165,7 +174,7 @@ export function openRecipeHub(meal, done, k) {
     wireTabs();
     const cats = root.querySelector('.rh-cats');
     cats.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cat = b.dataset.c; q = ''; root.querySelector('#rhQ').value = ''; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x === b)); root.querySelectorAll('[data-u]').forEach(x => x.classList.toggle('on', x.dataset.u === cuis)); paintGrid(); });
-    root.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { cuis = b.dataset.u; if (q) { q = ''; root.querySelector('#rhQ').value = ''; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x.dataset.c === cat)); } root.querySelectorAll('[data-u]').forEach(x => x.classList.toggle('on', x === b)); paintGrid(); });
+    root.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { cuis = b.dataset.u; if (cuis !== 'all' && cat !== 'all') { cat = 'all'; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x.dataset.c === 'all')); } if (q) { q = ''; root.querySelector('#rhQ').value = ''; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x.dataset.c === cat)); } root.querySelectorAll('[data-u]').forEach(x => x.classList.toggle('on', x === b)); paintGrid(); });
     root.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sort = b.dataset.s; root.querySelectorAll('[data-s]').forEach(x => x.classList.toggle('on', x === b)); paintGrid(); });
     root.querySelector('#rhQ').oninput = e => { q = e.target.value; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', !q && x.dataset.c === cat)); root.querySelectorAll('[data-u]').forEach(x => x.classList.toggle('on', !q && x.dataset.u === cuis)); paintGrid(); };
     root.querySelector('#rhCred').onclick = e => { e.preventDefault(); credits(); };
