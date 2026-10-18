@@ -193,10 +193,14 @@ export async function renderToday() {
   </div>`;
 
   // makrá: bielkoviny, sacharidy a tuky jednou farbou, vláknina inou; prekročený cieľ = červená
-  const macro = (lbl, val, target, color, noOver = false) => {
-    const pct = target ? Math.min(100, val / target * 100) : 0, over = !noOver && target && r0(val) > r0(target);
-    return `<div class="mc ${over ? 'over' : ''}"><div class="mc-h"><span><u style="background:${color}"></u>${lbl}</span><b>${r0(val)}<small> / ${r0(target)} g</small></b></div><div class="mc-b"><i style="width:${pct}%;background:${over ? 'var(--danger)' : color}"></i></div>${over ? `<em class="mc-o">+${r0(val - target)} g nad cieľ</em>` : ''}</div>`;
+  const macro = (lbl, val, target, color, noOver = false, dec = false) => {
+    const f = v => dec ? String(Math.round(v * 10) / 10).replace('.', ',') : r0(v);
+    const pct = target ? Math.min(100, val / target * 100) : 0, over = !noOver && target && f(val) !== f(target) && val > target;
+    return `<div class="mc ${over ? 'over' : ''}"><div class="mc-h"><span><u style="background:${color}"></u>${lbl}</span><b>${f(val)}<small> / ${f(target)} g</small></b></div><div class="mc-b"><i style="width:${pct}%;background:${over ? 'var(--danger)' : color}"></i></div>${over ? `<em class="mc-o">+${f(val - target)} g nad cieľ</em>` : ''}</div>`;
   };
+  // cukry a soľ (odporúčania WHO: cukry do 50 g, soľ do 5 g) priamo v hlavnej karte
+  const sugar = foods.reduce((a, f) => a + Number(f.sugar || 0), 0);
+  const salt = foods.reduce((a, f) => a + Number(f.salt || 0), 0);
   // vláknina z jedál, ktoré ju majú v databáze (cieľ: 14 g na 1000 kcal, aspoň 25 g)
   const fiber = foods.reduce((a, f) => a + Number(f.fiber || 0), 0);
   const fiberGoal = Math.max(25, Math.round((p.target_kcal || 2000) / 1000 * 14));
@@ -272,8 +276,10 @@ export async function renderToday() {
         ${macro('Sacharidy', sum.carbs, p.target_carbs, 'var(--mac)')}
         ${macro('Tuky', sum.fat, p.target_fat, 'var(--mac)')}
         ${macro('Vláknina', fiber, fiberGoal, 'var(--fib)', true)}
+        ${macro('Cukry', sugar, 50, 'var(--fib)', false, true)}
+        ${macro('Soľ', salt, 5, 'var(--fib)', false, true)}
       </div>
-      ${fiberGap ? '<p class="hk-note">Vláknina sa počíta len z jedál, ktoré ju majú v databáze.</p>' : ''}
+      ${fiberGap ? '<p class="hk-note">Vláknina, cukry a soľ sa počítajú len z jedál, ktoré tieto údaje majú. Odporúčania WHO: cukry do 50 g, soľ do 5 g.</p>' : ''}
     </section>
     <div class="qk">
       <a class="qk-b" href="#/jedlo?q=1"><b>🔎</b><span>Hľadať</span></a>

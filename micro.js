@@ -42,4 +42,5 @@ async function inject() {
     (root.querySelector('.screen.td #fast') || root.querySelector('.screen.td .wt') || m).before(el);
   } catch (_) { /* nepodstatné */ } finally { busy = false; }
 }
-if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); inject(); }
+// karta Cukry a soľ je teraz priamo v hlavnej karte (today.js), samostatná sa už nevkladá
+void inject;
