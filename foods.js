@@ -8,6 +8,7 @@ import { aiBoxHtml, bindAiBox } from './ailog.js';
 import * as dx from './dxcore.js';
 import { thumb, fillThumbs } from './foodimg.js';
 import { openFoodSheet } from './foodsheet.js';
+import { openRecipeHub, hubTabs } from './recipes.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -20,7 +21,7 @@ export function defaultMeal() {
   return m < 570 ? 'breakfast' : m < 690 ? 'brunch' : m < 870 ? 'lunch' : m < 1020 ? 'afternoon' : m < 1230 ? 'dinner' : m < 1380 ? 'late' : 'snack';
 }
 
-// Jedlo z akéhokovek zdroja -> jednotný tvar s hodnotami na 100 g
+// Jedlo z akéhokoľvek zdroja -> jednotný tvar s hodnotami na 100 g
 function fromDb(f) {
   return { id: f.id, name: f.name, brand: f.brand || '', barcode: f.barcode || null, kcal: Number(f.kcal), protein: Number(f.protein), carbs: Number(f.carbs), fat: Number(f.fat), fiber: f.fiber ?? null, sugar: f.sugar ?? null, salt: f.salt ?? null,
     portions: Array.isArray(f.portions) ? f.portions : [], verified: !!f.verified, is_recipe: !!f.is_recipe, mine: f.mine ?? (f.created_by === state().profile.id),
@@ -189,7 +190,7 @@ export async function renderFood() {
   };
 
   $app().querySelector('#newFood').onclick = () => openFoodEditor({ name: $q.value.trim() }, meal, done);
-  $app().querySelector('#newRecipe').onclick = () => openRecipeEditor(null, meal, done);
+  $app().querySelector('#newRecipe').onclick = () => openRecipeHub(meal, done, recipeHubK);
   $app().querySelector('#quick').onclick = () => openQuick(meal);
   $app().querySelector('#scan').onclick = () => openScan(meal, done);
   $app().querySelector('#copyY').onclick = async () => {
@@ -333,11 +334,32 @@ async function recipeFlags(items) {
   return { gluten, lactose, allergens: known ? un : null, traces: known ? (tr.length ? tr : null) : [...new Set([...un, ...tr])] };
 }
 
+// ---------- hotové recepty (Inšpiruj sa) ----------
+function presetItems(r) { return r.ing.map(i => ({ food_id: null, name: i.name, grams: i.grams, per100: { ...i.per100 } })); }
+async function addPreset(r, meal, done) {
+  const uid = state().profile.id;
+  const exist = (await db.myFoods(uid).catch(() => [])).find(f => f.is_recipe && f.name === r.name);
+  let saved = exist;
+  if (!saved) {
+    const k = 100 / r.grams, t = r.ing.reduce((a, i) => { const f = i.grams / 100; a.kcal += i.per100.kcal * f; a.protein += i.per100.protein * f; a.carbs += i.per100.carbs * f; a.fat += i.per100.fat * f; return a; }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+    const row = { name: r.name, is_recipe: true, servings: r.servings, total_grams: r0(r.grams), is_public: false,
+      kcal: r0(t.kcal * k), protein: r1(t.protein * k), carbs: r1(t.carbs * k), fat: r1(t.fat * k),
+      portions: [{ label: '1 porcia', g: r0(r.grams / r.servings) }], recipe: presetItems(r) };
+    const err = validate(row); if (err) throw new Error(err);
+    Object.assign(row, await recipeFlags(row.recipe));
+    saved = await db.createFood(row);
+  }
+  openAdd(fromDb(saved), meal, done);
+}
+function editPreset(r, meal, done) { openRecipeEditor({ name: r.name, servings: r.servings, recipe: presetItems(r), is_public: false }, meal, done); }
+const recipeHubK = { addPreset, editPreset, openMine: (meal, done) => openRecipeEditor(null, meal, done, true) };
+
 // ---------- recepty ----------
-export function openRecipeEditor(pre, meal, done) {
+export function openRecipeEditor(pre, meal, done, withTabs) {
   const edit = !!pre?.id;
   let items = (pre?.recipe || []).map(i => ({ ...i }));
-  const bg = sheet(`<div class="row between"><h2>${edit ? 'Upraviť recept' : 'Nový recept'}</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
+  const bg = sheet(`<div class="row between"><h2>${edit ? 'Upraviť recept' : withTabs ? 'Recepty' : 'Nový recept'}</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
+    ${withTabs ? hubTabs('mine') : ''}
     <p class="muted small mt mb">Zadaj suroviny tak, ako ich dávaš do hrnca. Appka spočíta hodnoty na porciu.</p>
     <label class="field"><span>Názov</span><input class="input" id="name" maxlength="120" placeholder="Napr. Mamina sviečková" value="${h(pre?.name || '')}"></label>
     <label class="field"><span>Počet porcií</span><input class="input" id="serv" type="number" inputmode="numeric" min="1" value="${pre?.servings || 4}"></label>
@@ -345,7 +367,7 @@ export function openRecipeEditor(pre, meal, done) {
     <div class="input-row mt"><input class="input" id="iq" placeholder="Pridaj surovinu: ryža, kuracie..." autocomplete="off"></div>
     <div id="ires" class="results"></div>
     <button class="btn ghost sm mt" type="button" id="itext">✨ Vložiť celý recept textom</button>
-    <div id="itbox" hidden><textarea class="input mt" id="itxt" rows="4" placeholder="Skopíruj suroviny z receptu, napr.:\n500 g kuracích pŕs, 300 g ryže, 2 vajcia, lyžica oleja, 1 cibuľa"></textarea>
+    <div id="itbox" hidden><textarea class="input mt" id="itxt" rows="4" placeholder="Skopíruj suroviny z receptu, napr.:\n500 g kuracích prís, 300 g ryže, 2 vajcia, lyžica oleja, 1 cibuľa"></textarea>
       <button class="btn sm primary mt" type="button" id="itgo">Rozpoznať suroviny</button><p class="muted small mt">AI rozloží text na suroviny a dá im hodnoty z našej databázy. Gramy si potom skontroluj.</p></div>
     <div class="stat mt" id="tot"></div>
     <label class="row mt small"><input type="checkbox" id="pub" ${pre?.is_public === false ? '' : 'checked'}> Zdieľať recept s ostatnými</label>
@@ -362,6 +384,7 @@ export function openRecipeEditor(pre, meal, done) {
   const tot = () => { const t = totals(), sv = Math.max(1, Number($('#serv').value) || 1); $('#tot').innerHTML = `<b class="mono">${r0(t.kcal / sv)} kcal / porcia</b><span>Spolu ${r0(t.g)} g · ${r0(t.kcal)} kcal · porcia ${r0(t.g / sv)} g · B ${r1(t.protein / sv)} · S ${r1(t.carbs / sv)} · T ${r1(t.fat / sv)}</span>`; };
   $('#serv').oninput = tot; draw();
   $('[data-x]').onclick = () => bg.remove();
+  $('[data-rh="insp"]')?.addEventListener('click', () => { bg.remove(); openRecipeHub(meal, done, recipeHubK); });
 
   let timer, seq = 0; const found = new Map();
   $('#iq').oninput = () => {
