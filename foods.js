@@ -9,6 +9,7 @@ import * as dx from './dxcore.js';
 import { thumb, fillThumbs } from './foodimg.js';
 import { openFoodSheet } from './foodsheet.js';
 import { openRecipeHub, hubTabs } from './recipes.js';
+import { photoOf } from './recipes.photos.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -336,20 +337,21 @@ async function recipeFlags(items) {
 
 // ---------- hotové recepty (Inšpiruj sa) ----------
 function presetItems(r) { return r.ing.map(i => ({ food_id: null, name: i.name, grams: i.grams, per100: { ...i.per100 } })); }
-async function addPreset(r, meal, done) {
+async function addPreset(r, meal, done, qty = 1) {
   const uid = state().profile.id;
   const exist = (await db.myFoods(uid).catch(() => [])).find(f => f.is_recipe && f.name === r.name);
   let saved = exist;
   if (!saved) {
     const k = 100 / r.grams, t = r.ing.reduce((a, i) => { const f = i.grams / 100; a.kcal += i.per100.kcal * f; a.protein += i.per100.protein * f; a.carbs += i.per100.carbs * f; a.fat += i.per100.fat * f; return a; }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
-    const row = { name: r.name, is_recipe: true, servings: r.servings, total_grams: r0(r.grams), is_public: false,
+    const row = { name: r.name, is_recipe: true, servings: r.servings, total_grams: r0(r.grams), is_public: false, img: photoOf(r.id, 500),
       kcal: r0(t.kcal * k), protein: r1(t.protein * k), carbs: r1(t.carbs * k), fat: r1(t.fat * k),
       portions: [{ label: '1 porcia', g: r0(r.grams / r.servings) }], recipe: presetItems(r) };
     const err = validate(row); if (err) throw new Error(err);
     Object.assign(row, await recipeFlags(row.recipe));
     saved = await db.createFood(row);
   }
-  openAdd(fromDb(saved), meal, done);
+  const food = fromDb(saved); food.lastPortion = '1 porcia'; food.lastQty = qty;
+  openAdd(food, meal, done);
 }
 function editPreset(r, meal, done) { openRecipeEditor({ name: r.name, servings: r.servings, recipe: presetItems(r), is_public: false }, meal, done); }
 const recipeHubK = { addPreset, editPreset, openMine: (meal, done) => openRecipeEditor(null, meal, done, true) };
