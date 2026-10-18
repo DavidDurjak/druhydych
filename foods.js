@@ -69,7 +69,7 @@ export async function renderFood() {
     </div>
     <div class="qa mb">
       <button class="qa-b" id="newFood"><b>＋</b><span>Nové jedlo</span></button>
-      <button class="qa-b" id="newRecipe"><b>🍲</b><span>Recept</span></button>
+      <button class="qa-b" id="newRecipe"><b><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg></b><span>Recept</span></button>
       <button class="qa-b" id="copyY"><b>↻</b><span>Z včera</span></button>
       <button class="qa-b" id="quick"><b>⚡</b><span>Len kcal</span></button>
     </div>
