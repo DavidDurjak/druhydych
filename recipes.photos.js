@@ -1213,6 +1213,9 @@ const P = {
 };
 
 const BASE = 'https://commons.wikimedia.org/wiki/Special:FilePath/';
-export const photoOf = (id, w = 640) => { const p = P[id]; return p ? BASE + encodeURIComponent(p[0]) + '?width=' + w : null; };
+// fotky sú uložené vo vlastnom úložisku (rýchle, spoľahlivé); Wikimedia Commons slúži ako záloha
+const STORE = 'https://uxzwqyjbzkcveoxsdqdv.supabase.co/storage/v1/object/public/recipes/';
+export const photoOf = (id, w = 640) => { const p = P[id]; return p ? STORE + encodeURIComponent(id) + (w > 600 ? '-l.jpg' : '-s.jpg') : null; };
+export const photoBackup = (id, w = 640) => { const p = P[id]; return p ? BASE + encodeURIComponent(p[0]) + '?width=' + w : null; };
 export const creditOf = id => { const p = P[id]; return p ? { author: p[1], license: p[2], page: 'https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(p[0].replace(/ /g, '_')) } : null; };
 export const allCredits = () => Object.entries(P).map(([id, p]) => ({ id, author: p[1], license: p[2], page: 'https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(p[0].replace(/ /g, '_')) }));

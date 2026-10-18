@@ -6,7 +6,7 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { RECIPES, CATS, CUIS } from './recipes.all.js';
-import { photoOf, creditOf, allCredits } from './recipes.photos.js';
+import { photoOf, photoBackup, creditOf, allCredits } from './recipes.photos.js';
 import './foodsheet.js';
 
 const h = (...a) => ctx.h(...a), sheet = (...a) => ctx.sheet(...a);
@@ -98,16 +98,19 @@ const PAGE = 36;
 function wirePhotos(root) {
   root.querySelectorAll('[data-ph] img').forEach(img => {
     const box = img.parentElement, src0 = img.getAttribute('src');
-    let tries = 0;
+    let tries = 0, alt = null;
+    const m = /recipes\/(.+?)-([sl])\.jpg/.exec(src0 || '');
+    if (m) alt = photoBackup(decodeURIComponent(m[1]), m[2] === 'l' ? 960 : 500);
     const ok = () => img.classList.add('ok');
-    // pri chybe (limit Wikimedie, slabý signál) skúsi fotku znova s odstupom; až potom ostane neutrálna dlaždica
+    // pri chybe skúsi zálohu z Wikimedie a opakuje s odstupom; až potom ostane neutrálna dlaždica
     const no = () => {
       if (tries >= 3) { box.classList.add('no'); return; }
       tries++;
-      setTimeout(() => { if (img.isConnected) img.src = src0 + (src0.includes('?') ? '&' : '?') + 'r=' + tries; }, 1200 * tries + Math.random() * 800);
+      const base = tries === 1 && alt ? alt : (tries % 2 && alt ? alt : src0);
+      setTimeout(() => { if (img.isConnected) img.src = base + (base.includes('?') ? '&' : '?') + 'r=' + tries; }, tries === 1 ? 50 : 1200 * tries + Math.random() * 800);
     };
-    if (img.complete) { img.naturalWidth ? ok() : no(); } else { img.onload = ok; img.onerror = no; }
     img.onload = ok; img.onerror = no;
+    if (img.complete) { img.naturalWidth ? ok() : no(); }
   });
 }
 
