@@ -1,97 +1,230 @@
-// Recepty (v154): tlačidlo Recept otvorí okno s dvoma záložkami.
-//  Inšpiruj sa = hotové jednoduché recepty (raňajky, obed, večera, desiata) s vypočítanými kalóriami a makrami, pridajú sa jedným ťuknutím,
+// Recepty (v155): tlačidlo Recept otvorí okno s dvoma záložkami.
+//  Inšpiruj sa = knižnica hotových receptov s reálnymi fotkami (raňajky, obed, večera, polievky, šaláty, desiata, dezerty, koláče),
+//   vyhľadávanie podľa názvu aj suroviny, radenie podľa bielkovín alebo kalórií. Karta receptu má porcie, makrá, vplyv na deň, suroviny a postup.
 //  Môj recept = vlastný recept z surovín (pôvodný editor).
+import * as db from './data.js';
+import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { RECIPES, CATS } from './recipes.data.js';
+import { photoOf, creditOf, allCredits } from './recipes.photos.js';
+import './foodsheet.js';
 
 const h = (...a) => ctx.h(...a), sheet = (...a) => ctx.sheet(...a);
 const MEALS = () => ctx.MEALS;
+const r0 = v => Math.round(Number(v || 0));
+const r1 = v => Math.round(Number(v || 0) * 10) / 10;
+const fmt = v => String(r1(v)).replace('.', ',');
 
 const CSS = `
-.rh-seg{margin:14px 0 0}
-.rh .rh-cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:14px -16px 0;padding:0 16px 2px}
-.rh .rh-cats::-webkit-scrollbar{display:none}
+.rh .rh-seg{margin:14px 0 0}
+.rh .rh-hd{display:flex;align-items:center;justify-content:space-between}
+.rh .rh-q{width:100%;box-sizing:border-box;margin-top:12px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--bg-2);color:var(--text);padding:0 14px 0 42px;font:inherit;font-size:15px;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238a93a6' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px 50%}
+.rh .rh-q:focus{border-color:var(--accent)}
+.rh .rh-q::-webkit-search-cancel-button{-webkit-appearance:none}
+.rh .rh-cats,.rh .rh-sort{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:12px -16px 0;padding:0 16px 2px}
+.rh .rh-cats::-webkit-scrollbar,.rh .rh-sort::-webkit-scrollbar{display:none}
 .rh .rh-cats button{flex:none;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:99px;padding:7px 14px;font-size:13px;font-weight:650;cursor:pointer;white-space:nowrap}
 .rh .rh-cats button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
-.rh .rh-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
-.rh .rh-c{-webkit-appearance:none;appearance:none;display:flex;align-items:center;gap:14px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--card-2,var(--bg-2));border:1px solid var(--line);border-radius:20px;padding:12px 14px 12px 12px;cursor:pointer}
-.rh .rh-c:active{transform:scale(.985)}
-.rh .rh-ic{flex:none;width:56px;height:56px;border-radius:16px;background:var(--bg-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:29px;line-height:1}
-.rh .rh-n{flex:1;min-width:0}
-.rh .rh-n b{display:block;font-size:15.5px;font-weight:650;line-height:1.25}
-.rh .rh-n span{display:block;margin-top:3px;font-size:12.5px;color:var(--muted)}
-.rh .rh-k{flex:none;text-align:right;font-weight:800;font-size:19px;color:var(--accent);letter-spacing:-.01em}
-.rh .rh-k small{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-top:1px}
-.rh .rh-hint{margin:14px 0 0;font-size:12.5px;color:var(--muted)}
+.rh .rh-sort{margin-top:8px;align-items:center}
+.rh .rh-sort span{flex:none;font-size:12px;color:var(--muted);font-weight:600}
+.rh .rh-sort button{flex:none;border:0;background:var(--bg-2);color:var(--muted);border-radius:10px;padding:6px 11px;font-size:12.5px;font-weight:650;cursor:pointer;white-space:nowrap}
+.rh .rh-sort button.on{background:color-mix(in srgb,var(--accent) 18%,var(--bg-2));color:var(--accent)}
+.rh .rh-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.rh .rh-c{-webkit-appearance:none;appearance:none;display:block;width:100%;text-align:left;font:inherit;color:inherit;background:var(--bg-2);border:1px solid var(--line);border-radius:20px;padding:0;overflow:hidden;cursor:pointer;touch-action:manipulation}
+.rh .rh-c:active{transform:scale(.98)}
+.rh .rh-ph{position:relative;display:block;aspect-ratio:4/3;background:var(--line);overflow:hidden}
+.rh .rh-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .25s}
+.rh .rh-ph img.ok{opacity:1}
+.rh .rh-ph.no:after{content:"";position:absolute;inset:0;background:var(--bg-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24' fill='none' stroke='%238a93a6' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Ccircle cx='12' cy='12' r='4.5'/%3E%3C/svg%3E") center/44px no-repeat}
+.rh .rh-kc{position:absolute;left:8px;bottom:8px;z-index:1;padding:4px 9px;border-radius:99px;background:rgba(10,12,18,.62);color:#fff;font-size:12.5px;font-weight:750;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.rh .rh-n{display:block;padding:10px 12px 12px}
+.rh .rh-n b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px;font-weight:650;line-height:1.25;min-height:2.5em}
+.rh .rh-n span{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
+.rh .rh-empty{margin:36px 0;text-align:center;color:var(--muted);font-size:14px}
+.rh .rh-hint{margin:16px 0 0;font-size:12.5px;color:var(--muted);text-align:center}
+.rh .rh-hint a{color:var(--muted);text-decoration:underline}
 .rh .rh-back{-webkit-appearance:none;appearance:none;border:0;background:none;color:var(--accent);font:inherit;font-weight:700;font-size:14px;padding:4px 0;cursor:pointer}
-.rh .rh-hero{display:flex;align-items:center;gap:14px;margin-top:10px}
-.rh .rh-hero .rh-ic{width:72px;height:72px;border-radius:20px;font-size:38px}
-.rh .rh-hero h2{font-size:21px;line-height:1.2;margin:0}
-.rh .rh-hero p{margin:4px 0 0;font-size:13px;color:var(--muted)}
-.rh .rh-big{display:flex;align-items:baseline;gap:6px;margin-top:18px}
-.rh .rh-big b{font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1}
-.rh .rh-big span{color:var(--muted);font-size:14px;font-weight:600}
-.rh .rh-mac{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.rh .rh-mac div{background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
-.rh .rh-mac b{display:block;font-size:18px;font-weight:750}
-.rh .rh-mac span{font-size:12px;color:var(--muted)}
-.rh .rh-sec{margin:22px 0 8px;font-size:15px;font-weight:750}
-.rh .rh-ing{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
+.rh .rh-hero{position:relative;margin-top:10px;aspect-ratio:16/10;border-radius:22px;overflow:hidden;background:var(--line);border:1px solid var(--line)}
+.rh .rh-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
+.rh .rh-hero img.ok{opacity:1}
+.rh .rh-hero.no:after{content:"";position:absolute;inset:0;background:var(--bg-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%238a93a6' stroke-width='1.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Ccircle cx='12' cy='12' r='4.5'/%3E%3C/svg%3E") center/64px no-repeat}
+.rh .rh-cr{margin:6px 2px 0;font-size:11px;color:var(--muted);line-height:1.3}
+.rh .rh-cr a{color:var(--muted);text-decoration:underline}
+.rh h2.rh-t{margin:14px 0 0;font-size:23px;line-height:1.2;letter-spacing:-.02em}
+.rh .rh-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.rh .rh-chips span{padding:5px 10px;border-radius:99px;font-size:12.5px;font-weight:650;background:var(--bg-2);border:1px solid var(--line);color:var(--muted)}
+.rh .rh-sec{margin:22px 0 4px;font-size:16px;font-weight:750}
+.rh .rh-ing{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line);font-size:14.5px}
 .rh .rh-ing:first-of-type{border-top:0}
-.rh .rh-ing span:last-child{color:var(--muted);font-weight:600;white-space:nowrap}
-.rh .rh-step{display:flex;gap:12px;padding:8px 0;font-size:14.5px;line-height:1.45}
-.rh .rh-step i{flex:none;width:24px;height:24px;border-radius:50%;background:var(--bg-2);border:1px solid var(--line);font-style:normal;font-size:12.5px;font-weight:750;display:flex;align-items:center;justify-content:center;margin-top:1px}
-.rh .rh-foot{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom));margin:18px -16px calc(-18px - env(safe-area-inset-bottom));padding:12px 16px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,color-mix(in srgb,var(--card) 0%,transparent),var(--card) 18px);z-index:2}
+.rh .rh-ing span:last-child{color:var(--muted);font-weight:650;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rh .rh-step{display:flex;gap:12px;padding:9px 0;font-size:14.5px;line-height:1.5}
+.rh .rh-step i{flex:none;width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--accent) 16%,var(--bg-2));color:var(--accent);font-style:normal;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.rh .rh-por{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rh .rh-por b{font-size:15px}
+.rh .rh-por small{display:block;margin-top:2px;font-size:12.5px;color:var(--muted);font-weight:500}
+.rh .rh-por div.st{display:flex;align-items:center;gap:6px}
+.rh .rh-por button{flex:none;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:22px;font-weight:600;cursor:pointer;display:grid;place-items:center;padding:0;touch-action:manipulation}
+.rh .rh-por button:active{transform:scale(.94)}
+.rh .rh-por em{min-width:44px;text-align:center;font-style:normal;font-size:22px;font-weight:800;letter-spacing:-.02em}
 .rh .rh-foot .btn.ghost{margin-top:8px}
+.rh #rhAdd{width:100%;margin:0;height:56px;font-size:16.5px;font-weight:750;border-radius:18px;display:flex;align-items:center;justify-content:center;gap:8px}
+.rh #rhAdd em{font-style:normal;opacity:.75;font-weight:650}
+.rh .rh-cl{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+.rh .rh-cl:first-of-type{border-top:0}
+.rh .rh-cl a{color:var(--text)}
+.rh .rh-cl span{color:var(--muted);text-align:right}
 `;
 if (!document.getElementById('rh-css')) { const st = document.createElement('style'); st.id = 'rh-css'; st.textContent = CSS; document.head.appendChild(st); }
 
 // záložky Inšpiruj sa / Môj recept (používa ich aj editor vlastného receptu)
 export const hubTabs = active => `<div class="seg rh-seg" data-rh-seg><button data-rh="insp" class="${active === 'insp' ? 'on' : ''}">Inšpiruj sa</button><button data-rh="mine" class="${active === 'mine' ? 'on' : ''}">Môj recept</button></div>`;
 
-const catFor = meal => ({ breakfast: 'breakfast', brunch: 'breakfast', lunch: 'lunch', afternoon: 'snack', dinner: 'dinner', late: 'dinner', snack: 'snack' }[meal] || 'breakfast');
+const catFor = meal => ({ breakfast: 'breakfast', brunch: 'breakfast', lunch: 'lunch', afternoon: 'snack', dinner: 'dinner', late: 'dinner', snack: 'snack' }[meal] || 'all');
 const mealWord = m => (MEALS()[m] || '').toLowerCase();
-const sub = r => `${r.min} min · B ${r.per.protein} · S ${r.per.carbs} · T ${r.per.fat}`;
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const SORTS = [['rec', 'Odporúčané'], ['prot', 'Najviac bielkovín'], ['kcal', 'Najmenej kalórií']];
+const sortRows = (rows, key) => key === 'prot' ? [...rows].sort((a, b) => b.per.protein - a.per.protein) : key === 'kcal' ? [...rows].sort((a, b) => a.per.kcal - b.per.kcal) : rows;
+const SEARCH = RECIPES.map(r => ({ r, t: norm(r.name + ' ' + r.ing.map(i => i.name).join(' ')) }));
+const catName = key => (CATS.find(c => c[0] === key) || [])[1] || '';
 
-// k = { addPreset(recipe, meal, done), editPreset(recipe, meal, done), openMine(meal, done) }
+// fotka sa jemne zobrazí po načítaní; keď sa nenačíta, ostane čistá neutrálna dlaždica
+function wirePhotos(root) {
+  root.querySelectorAll('[data-ph] img').forEach(img => {
+    const box = img.parentElement;
+    const ok = () => img.classList.add('ok'), no = () => box.classList.add('no');
+    if (img.complete) { img.naturalWidth ? ok() : no(); } else { img.onload = ok; img.onerror = no; }
+  });
+}
+
+// koliesko: dráha, už zjedené (tlmená farba) a tento recept (plná farba)
+const RR = 30, RC = 2 * Math.PI * RR;
+const ring = (key, label, color) => `<div class="fs-r" data-r="${key}" style="--c:${color}"><svg viewBox="0 0 76 76" aria-hidden="true">
+    <circle class="tr" cx="38" cy="38" r="${RR}"/><circle class="ea" cx="38" cy="38" r="${RR}" transform="rotate(-90 38 38)" stroke-dasharray="0 ${RC}"/>
+    <circle class="ad" cx="38" cy="38" r="${RR}" transform="rotate(-90 38 38)" stroke-dasharray="0 ${RC}"/><text x="38" y="43" text-anchor="middle">0%</text></svg><b>${label}</b><small></small></div>`;
+
+// k = { addPreset(recipe, meal, done, servings), editPreset(recipe, meal, done), openMine(meal, done) }
 export function openRecipeHub(meal, done, k) {
-  let cat = catFor(meal);
-  const bg = sheet('<div class="rh"></div>');
+  let cat = catFor(meal), q = '', sort = 'rec';
+  const bg = sheet('<div class="rh fs"></div>');
   const root = bg.querySelector('.rh');
   const close = () => bg.remove();
+  const scrollTop = () => { const s = bg.querySelector('.sheet'); if (s) s.scrollTop = 0; };
 
   const wireTabs = () => root.querySelector('[data-rh="mine"]')?.addEventListener('click', () => { close(); k.openMine(meal, done); });
 
+  const rowsNow = () => {
+    const nq = norm(q).trim();
+    let rows = nq ? SEARCH.filter(s => nq.split(/\s+/).every(w => s.t.includes(w))).map(s => s.r) : RECIPES.filter(r => cat === 'all' || r.cat === cat);
+    return sortRows(rows, sort);
+  };
+  function paintGrid() {
+    const rows = rowsNow();
+    const g = root.querySelector('#rhGrid');
+    g.innerHTML = rows.length ? rows.map(r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ph" data-ph><img src="${photoOf(r.id, 500)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="rh-kc">${r.per.kcal} kcal</span></span><span class="rh-n"><b>${h(r.name)}</b><span>B ${r.per.protein} g · S ${r.per.carbs} g · T ${r.per.fat} g</span></span></button>`).join('') : '';
+    root.querySelector('#rhEmpty').innerHTML = rows.length ? '' : `<div class="rh-empty">Nič sa nenašlo. Skús iný názov alebo surovinu.</div>`;
+    root.querySelector('#rhCount').textContent = `${rows.length} ${rows.length === 1 ? 'recept' : rows.length < 5 && rows.length > 0 ? 'recepty' : 'receptov'}`;
+    wirePhotos(g);
+    g.querySelectorAll('[data-r]').forEach(b => b.onclick = () => detail(RECIPES.find(r => r.id === b.dataset.r)));
+  }
+
   function list() {
-    const rows = RECIPES.filter(r => r.cat === cat);
-    root.innerHTML = `<div class="row between"><h2>Recepty</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
+    root.innerHTML = `<div class="rh-hd"><h2>Recepty</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
       ${hubTabs('insp')}
-      <div class="rh-cats">${CATS.map(([key, l]) => `<button data-c="${key}" class="${key === cat ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
-      <div class="rh-list">${rows.map(r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ic">${r.icon}</span><span class="rh-n"><b>${h(r.name)}</b><span>${sub(r)}</span></span><span class="rh-k">${r.per.kcal}<small>kcal / porcia</small></span></button>`).join('')}</div>
-      <p class="rh-hint">Ťukni na recept, uvidíš suroviny a postup. Hodnoty sú vypočítané zo surovín.</p>`;
+      <input class="rh-q" id="rhQ" type="search" placeholder="Hľadaj recept alebo surovinu" autocomplete="off" enterkeyhint="search" value="${h(q)}">
+      <div class="rh-cats">${[['all', 'Všetko'], ...CATS].map(([key, l]) => `<button data-c="${key}" class="${!q && key === cat ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
+      <div class="rh-sort"><span id="rhCount"></span>${SORTS.map(([key, l]) => `<button data-s="${key}" class="${key === sort ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
+      <div class="rh-grid" id="rhGrid"></div><div id="rhEmpty"></div>
+      <p class="rh-hint">Hodnoty sú vypočítané zo surovín. <a href="#" id="rhCred">Zdroje fotiek</a></p>`;
     root.querySelector('[data-x]').onclick = close;
     wireTabs();
-    root.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cat = b.dataset.c; list(); });
-    root.querySelectorAll('[data-r]').forEach(b => b.onclick = () => detail(RECIPES.find(r => r.id === b.dataset.r)));
-    bg.querySelector('.sheet').scrollTop = 0;
+    const cats = root.querySelector('.rh-cats');
+    cats.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cat = b.dataset.c; q = ''; root.querySelector('#rhQ').value = ''; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', x === b)); paintGrid(); });
+    root.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sort = b.dataset.s; root.querySelectorAll('[data-s]').forEach(x => x.classList.toggle('on', x === b)); paintGrid(); });
+    root.querySelector('#rhQ').oninput = e => { q = e.target.value; cats.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('on', !q && x.dataset.c === cat)); paintGrid(); };
+    root.querySelector('#rhCred').onclick = e => { e.preventDefault(); credits(); };
+    paintGrid();
+    scrollTop();
+  }
+
+  function credits() {
+    const names = Object.fromEntries(RECIPES.map(r => [r.id, r.name]));
+    root.innerHTML = `<div class="rh-hd"><button class="rh-back" id="back">‹ Recepty</button><button class="del" data-x aria-label="Zavrieť">×</button></div>
+      <h2 class="rh-t">Zdroje fotiek</h2><p class="rh-hint" style="text-align:left">Fotky jedál pochádzajú z Wikimedia Commons a sú pod voľnými licenciami. Ďakujeme autorom.</p>
+      <div style="margin-top:10px">${allCredits().map(c => `<div class="rh-cl"><a href="${h(c.page)}" target="_blank" rel="noopener">${h(names[c.id] || c.id)}</a><span>${h(c.author)} · ${h(c.license)}</span></div>`).join('')}</div>`;
+    root.querySelector('[data-x]').onclick = close;
+    root.querySelector('#back').onclick = list;
+    scrollTop();
   }
 
   function detail(r) {
-    root.innerHTML = `<div class="row between"><button class="rh-back" id="back">‹ Recepty</button><button class="del" data-x aria-label="Zavrieť">×</button></div>
-      <div class="rh-hero"><span class="rh-ic">${r.icon}</span><div><h2>${h(r.name)}</h2><p>${r.min} min · ${r.servings === 1 ? '1 porcia' : r.servings + ' porcie'} · ${Math.round(r.grams / r.servings)} g</p></div></div>
-      <div class="rh-big"><b>${r.per.kcal}</b><span>kcal na porciu</span></div>
-      <div class="rh-mac"><div><b>${r.per.protein} g</b><span>Bielkoviny</span></div><div><b>${r.per.carbs} g</b><span>Sacharidy</span></div><div><b>${r.per.fat} g</b><span>Tuky</span></div></div>
-      <p class="rh-sec">Suroviny</p>
-      ${r.ing.map(i => `<div class="rh-ing"><span>${h(i.name)}</span><span>${i.grams} g</span></div>`).join('')}
+    const p = ctx.state.profile || {};
+    const T = { kcal: Number(p.target_kcal) || 0, protein: Number(p.target_protein) || 0, carbs: Number(p.target_carbs) || 0, fat: Number(p.target_fat) || 0 };
+    let eaten = null, m = 1;
+    const cr = creditOf(r.id);
+    const per = r.grams / r.servings;
+    root.innerHTML = `<div class="rh-hd"><button class="rh-back" id="back">‹ Recepty</button><button class="del" data-x aria-label="Zavrieť">×</button></div>
+      <div class="rh-hero" data-ph><img src="${photoOf(r.id, 960)}" alt="${h(r.name)}" decoding="async" referrerpolicy="no-referrer"></div>
+      ${cr ? `<p class="rh-cr">Foto: ${h(cr.author)}, ${h(cr.license)} · <a href="${h(cr.page)}" target="_blank" rel="noopener">Wikimedia Commons</a></p>` : ''}
+      <h2 class="rh-t">${h(r.name)}</h2>
+      <div class="rh-chips"><span>${r.min} min</span><span>${h(catName(r.cat))}</span><span>${r.servings === 1 ? '1 porcia' : r.servings + ' porcií v recepte'}</span></div>
+      <div class="fs-box"><div class="rh-por"><div><b>Počet porcií</b><small id="rhPg"></small></div><div class="st"><button data-d="-1" aria-label="Menej">−</button><em id="rhM"></em><button data-d="1" aria-label="Viac">+</button></div></div>
+        <div id="rhCalc" style="margin-top:14px"></div></div>
+      <div class="fs-box fs-imp"><h3>Vplyv na tvoj deň <span id="rhDay"></span></h3>
+        <div class="fs-rings">${ring('kcal', 'Kalórie', 'var(--accent-2)')}${ring('protein', 'Bielkoviny', 'var(--protein)')}${ring('carbs', 'Sacharidy', 'var(--carbs)')}${ring('fat', 'Tuky', 'var(--fat)')}</div>
+        <p class="fs-left" id="rhLeft">Načítavam tvoj deň…</p></div>
+      <p class="rh-sec">Suroviny</p><div id="rhIng"></div>
       <p class="rh-sec">Postup</p>
       ${r.steps.map((s, n) => `<div class="rh-step"><i>${n + 1}</i><span>${h(s)}</span></div>`).join('')}
-      <div class="rh-foot"><button class="btn primary" id="rhAdd">Pridať do: ${h(mealWord(meal))} · ${r.per.kcal} kcal</button><button class="btn ghost" id="rhEdit">Upraviť suroviny a uložiť</button></div>`;
-    root.querySelector('[data-x]').onclick = close;
-    root.querySelector('#back').onclick = list;
-    const run = fn => async e => { const b = e.currentTarget; b.disabled = true; try { await fn(r, meal, done); close(); } catch (err) { b.disabled = false; ctx.toast(err.message || 'Nepodarilo sa uložiť recept', true); } };
-    root.querySelector('#rhAdd').onclick = run(k.addPreset);
-    root.querySelector('#rhEdit').onclick = () => { close(); k.editPreset(r, meal, done); };
-    bg.querySelector('.sheet').scrollTop = 0;
+      <div class="rh-foot fs-foot"><button class="btn primary" id="rhAdd"></button><button class="btn ghost" id="rhEdit">Upraviť suroviny a uložiť</button></div>`;
+    const $ = s => root.querySelector(s);
+    wirePhotos(root);
+
+    const amt = g => { const v = g / r.servings * m; return (v < 10 ? fmt(v) : r0(v)) + ' g'; };
+    const paint = () => {
+      const s = { kcal: r.per.kcal * m, protein: r.per.protein * m, carbs: r.per.carbs * m, fat: r.per.fat * m };
+      const pk = s.protein * 4, ck = s.carbs * 4, fk = s.fat * 9, tot = pk + ck + fk || 1;
+      $('#rhM').textContent = String(m).replace('.', ',') + '×';
+      $('#rhPg').textContent = `${r0(per * m)} g spolu`;
+      $('#rhCalc').innerHTML = `<div class="fs-k"><b>${r0(s.kcal)}<small>kcal</small></b><span>${m === 1 ? '1 porcia' : String(m).replace('.', ',') + ' porcie'}</span></div>
+        <div class="fs-bar"><i style="flex-grow:${pk / tot};background:var(--protein)"></i><i style="flex-grow:${ck / tot};background:var(--carbs)"></i><i style="flex-grow:${fk / tot};background:var(--fat)"></i></div>
+        <div class="fs-mac"><div style="--c:var(--protein)"><b>${fmt(s.protein)} g</b>Bielkoviny ${r0(pk / tot * 100)} %</div><div style="--c:var(--carbs)"><b>${fmt(s.carbs)} g</b>Sacharidy ${r0(ck / tot * 100)} %</div><div style="--c:var(--fat)"><b>${fmt(s.fat)} g</b>Tuky ${r0(fk / tot * 100)} %</div></div>`;
+      $('#rhIng').innerHTML = r.ing.map(i => `<div class="rh-ing"><span>${h(i.name)}</span><span>${amt(i.grams)}</span></div>`).join('');
+      $('#rhAdd').innerHTML = `Pridať do: ${h(mealWord(meal))} <em>· ${r0(s.kcal)} kcal</em>`;
+      drawRings(s);
+    };
+    const drawRings = s => {
+      if (!eaten) return;
+      for (const key of ['kcal', 'protein', 'carbs', 'fat']) {
+        const el = root.querySelector(`[data-r="${key}"]`), t = T[key];
+        const e = eaten[key], a = s[key], after = e + a;
+        const fe = t ? Math.min(e / t, 1) : 0, fa = t ? Math.min(after / t, 1) : 0;
+        const ea = el.querySelector('.ea'), ad = el.querySelector('.ad');
+        ea.setAttribute('stroke-dasharray', `${fe * RC} ${RC}`); ea.style.opacity = fe > 0.004 ? '' : '0';
+        ad.setAttribute('stroke-dasharray', `${Math.max(0, fa - fe) * RC} ${RC}`); ad.style.opacity = fa - fe > 0.004 ? '' : '0';
+        ad.setAttribute('stroke-dashoffset', `${-fe * RC}`);
+        el.classList.toggle('over', !!t && after > t * 1.02);
+        el.querySelector('text').textContent = t ? `${r0(after / t * 100)}%` : '–';
+        const u = key === 'kcal' ? '' : ' g';
+        el.querySelector('small').innerHTML = `<em>+${key === 'kcal' ? r0(a) : fmt(a)}${u}</em><br>${r0(after)} / ${r0(t)}${u}`;
+      }
+      const left = T.kcal - eaten.kcal - s.kcal, L = $('#rhLeft');
+      L.classList.toggle('over', left < 0);
+      L.innerHTML = !T.kcal ? 'Nastav si cieľ kalórií v Profile.' : left >= 0 ? `Po pridaní ti dnes zostane <b>${r0(left)} kcal</b>` : `Po pridaní budeš <b>${r0(-left)} kcal nad cieľom</b>`;
+    };
+    paint();
+
+    const d = ctx.state.date;
+    $('#rhDay').textContent = d === calc.today() ? 'dnes' : calc.fmtDate(d);
+    if (p.id) db.listFood(p.id, d).then(rows => { eaten = calc.sumMacros(rows); paint(); })
+      .catch(() => { $('#rhLeft').textContent = 'Tvoj deň sa teraz nepodarilo načítať.'; });
+    else $('#rhLeft').textContent = '';
+
+    $('[data-x]').onclick = close;
+    $('#back').onclick = list;
+    root.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { m = Math.min(6, Math.max(0.5, m + Number(b.dataset.d) * 0.5)); if (navigator.vibrate) navigator.vibrate(6); paint(); });
+    $('#rhAdd').onclick = async e => { const b = e.currentTarget; b.disabled = true; try { await k.addPreset(r, meal, done, m); close(); } catch (err) { b.disabled = false; ctx.toast(err.message || 'Nepodarilo sa uložiť recept', true); } };
+    $('#rhEdit').onclick = () => { close(); k.editPreset(r, meal, done); };
+    scrollTop();
   }
 
   list();
