@@ -1,4 +1,4 @@
-// Celá knižnica receptov (v161): pôvodných 130 receptov z recipes.data.js + recepty zo Slovenska, Česka, Európy a sveta.
+// Celá knižnica receptov (v162): pôvodných 130 receptov z recipes.data.js + recepty zo Slovenska, Česka, Európy a sveta.
 import { RECIPES as BASE, CATS } from './recipes.data.js';
 import { I as I0 } from './recipes.ing.js';
 import { R1 } from './recipes.d1.js';
@@ -35,8 +35,11 @@ import { R31, I31 } from './recipes.d31.js';
 import { R32, I32 } from './recipes.d32.js';
 import { R33, I33 } from './recipes.d33.js';
 import { R34, I34 } from './recipes.d34.js';
+import { R35, I35 } from './recipes.d35.js';
+import { R36, I36 } from './recipes.d36.js';
+import { R37, I37 } from './recipes.d37.js';
 
-const I = { ...I0, ...I12, ...I13, ...I14, ...I15, ...I16, ...I17, ...I18, ...I19, ...I20, ...I21, ...I22, ...I23, ...I24, ...I25, ...I26, ...I27, ...I28, ...I29, ...I30, ...I31, ...I32, ...I33, ...I34 };
+const I = { ...I0, ...I12, ...I13, ...I14, ...I15, ...I16, ...I17, ...I18, ...I19, ...I20, ...I21, ...I22, ...I23, ...I24, ...I25, ...I26, ...I27, ...I28, ...I29, ...I30, ...I31, ...I32, ...I33, ...I34, ...I35, ...I36, ...I37 };
 
 export { CATS };
 
@@ -58,5 +61,5 @@ const build = (id, name, cat, cuis, min, servings, items, steps) => {
 
 export const RECIPES = [
   ...BASE.map(r => ({ ...r, cuis: C0[r.id] || 'fit' })),
-  ...[...R1, ...R2, ...R3, ...R4, ...R5, ...R6, ...R7, ...R8, ...R9, ...R10, ...R11, ...R12, ...R13, ...R14, ...R15, ...R16, ...R17, ...R18, ...R19, ...R20, ...R21, ...R22, ...R23, ...R24, ...R25, ...R26, ...R27, ...R28, ...R29, ...R30, ...R31, ...R32, ...R33, ...R34].map(r => build(...r)),
+  ...[...R1, ...R2, ...R3, ...R4, ...R5, ...R6, ...R7, ...R8, ...R9, ...R10, ...R11, ...R12, ...R13, ...R14, ...R15, ...R16, ...R17, ...R18, ...R19, ...R20, ...R21, ...R22, ...R23, ...R24, ...R25, ...R26, ...R27, ...R28, ...R29, ...R30, ...R31, ...R32, ...R33, ...R34, ...R35, ...R36, ...R37].map(r => build(...r)),
 ];
