@@ -1,38 +1,41 @@
 // Stravovacie režimy: nastavenia, hodnotenie jedál (lepok, laktóza, alergény, cukrovka, soľ),
-// prevod údajov z Open Food Facts, výpočty glykémie a spoločné štýly. Bez závislosti na app.js.
+// prevod údajov z Open Food Facts, výpočty glýkémie a spoločné štýly. Bez závislosti na app.js.
 import * as db from './data.js';
+import { DIETS, tagsOfFood, judge } from './dietcore.js';
+export { DIETS };
 
 export const MODES = {
-  diabetes: { icon: '🩸', title: 'Cukrovka', sub: 'Sacharidy a sacharidové jednotky, glykémia, nízky cukor, správa pre lekára' },
+  diabetes: { icon: '🩸', title: 'Cukrovka', sub: 'Sacharidy a sacharidové jednotky, glýkémia, nízky cukor, správa pre lekára' },
   celiac: { icon: '🌾', title: 'Celiakia', sub: 'Bezlepková diéta: každé jedlo s lepkom je označené' },
   lactose: { icon: '🥛', title: 'Intolerancia laktózy', sub: 'Jedlá s laktózou, s malým obsahom a bez nej' },
   allergy: { icon: '🥜', title: 'Alergia na potraviny', sub: 'Vyberieš si svoje alergény a appka ich stráži' },
   salt: { icon: '🧂', title: 'Vysoký tlak', sub: 'Stráženie soli a upozornenie na veľmi slané jedlá' },
 };
 export const ALLERGENS = [['gluten', 'Lepok'], ['milk', 'Mlieko'], ['egg', 'Vajcia'], ['peanut', 'Arašidy'], ['nuts', 'Orechy'], ['soy', 'Soja'], ['fish', 'Ryby'],
-  ['crustaceans', 'Kôrovce'], ['molluscs', 'Mäkkýše'], ['sesame', 'Sezam'], ['celery', 'Zeler'], ['mustard', 'Horčica'], ['lupin', 'Lupina'], ['sulphites', 'Siričitany']];
+  ['crustaceans', 'Kôrovce'], ['molluscs', 'Mäkčáe'], ['sesame', 'Sezam'], ['celery', 'Zeler'], ['mustard', 'Horčica'], ['lupin', 'Lupina'], ['sulphites', 'Siričitany']];
 const AL_NAME = Object.fromEntries(ALLERGENS.map(([k, v]) => [k, v.toLowerCase()]));
 export const alName = k => AL_NAME[k] || k;
 
-// cieľové rozsahy glykémie (mmol/l): lo = hranica nízkeho cukru, hi = horná hranica dobrého rozsahu, fast = horná hranica nalačno
+// cieľové rozsahy glýkémie (mmol/l): lo = hranica nízkeho cukru, hi = horná hranica dobrého rozsahu, fast = horná hranica nalačno
 export const DTYPES = {
   t1: { label: '1. typ', lo: 3.9, hi: 10, fast: 7, insulin: true },
   t2: { label: '2. typ', lo: 3.9, hi: 10, fast: 7, insulin: false },
   pre: { label: 'Prediabetes, in' + 'zulínová rezistencia', lo: 3.9, hi: 7.8, fast: 5.6, insulin: false },
   gdm: { label: 'Tehotenská cukrovka', lo: 3.9, hi: 7.8, fast: 5.3, insulin: false },
 };
-export const DEF = { modes: [], dtype: 't2', unit: 'mmol', lo: 3.9, hi: 10, fast: 7, sj: 10, mealCarb: null, insulin: false, allergens: [], hide: false, consent: null };
+export const DEF = { modes: [], diets: [], dtype: 't2', unit: 'mmol', lo: 3.9, hi: 10, fast: 7, sj: 10, mealCarb: null, insulin: false, allergens: [], hide: false, consent: null };
 
 // ---------- nastavenia (databáza + lokálna kópia, aby sa jedlá dali označiť hneď) ----------
 const LS = uid => 'dd_dx_' + uid;
 let cache = null, cacheUid = null, loaded = null;
 const lsGet = uid => { try { return JSON.parse(localStorage.getItem(LS(uid))); } catch (_) { return null; } };
 const lsSet = (uid, v) => { try { localStorage.setItem(LS(uid), JSON.stringify(v)); } catch (_) { /* súkromný režim */ } };
-const merge = c => ({ ...DEF, ...(c || {}), modes: Array.isArray(c?.modes) ? c.modes : [], allergens: Array.isArray(c?.allergens) ? c.allergens : [] });
+const merge = c => ({ ...DEF, ...(c || {}), modes: Array.isArray(c?.modes) ? c.modes : [], diets: Array.isArray(c?.diets) ? c.diets.filter(k => DIETS[k]) : [], allergens: Array.isArray(c?.allergens) ? c.allergens : [] });
 
 export function cfg() { return cache ? cache : merge(null); }
 export const active = (m, c = cfg()) => c.modes.includes(m);
-export const anyMode = (c = cfg()) => c.modes.length > 0;
+export const anyMode = (c = cfg()) => c.modes.length > 0 || (c.diets || []).length > 0;
+export const hasDiet = (k, c = cfg()) => (c.diets || []).includes(k);
 
 export async function ensure(uid) {
   if (!uid) return cfg();
@@ -65,9 +68,19 @@ const list = a => a.map(alName).join(', ');
 // vráti zoznam {mode, level: ok|warn|bad|unk, short, text, more}
 export function assess(f, c = cfg()) {
   const out = [], A = f.allergens, T = f.traces, known = Array.isArray(A);
+  if ((c.diets || []).length) {
+    const tags = tagsOfFood(f);
+    for (const j of judge(tags, c.diets)) {
+      const t = DIETS[j.diet].title, cap = j.why.charAt(0).toUpperCase() + j.why.slice(1);
+      if (j.level === 'bad') out.push({ mode: 'diet', diet: j.diet, level: 'bad', short: cap, text: t + ': nevhodné, ' + j.why, more: 'Podľa názvu a zloženia jedlo obsahuje ' + j.why + ', čo nesedí k tvojmu stravovaniu (' + t.toLowerCase() + '). Pri balených potravinách si over zloženie na obale.' });
+      else out.push({ mode: 'diet', diet: j.diet, level: 'warn', short: 'Over zloženie', text: t + ': ' + j.why, more: 'Odhad z názvu jedla, nie z presného zloženia. Skontroluj obal alebo sa spýtaj v prevádzke.' });
+    }
+    if (f.vg === 'vegan' && c.diets.includes('vegan')) out.push({ mode: 'diet', diet: 'vegan', level: 'ok', short: 'Vegánske', text: 'Vegánske podľa výrobcu', more: 'Výrobca alebo Open Food Facts uvádza, že produkt je vegánsky.' });
+    else if ((f.vg === 'vegan' || f.vg === 'vegetarian') && c.diets.includes('vegetarian')) out.push({ mode: 'diet', diet: 'vegetarian', level: 'ok', short: 'Vegetariánske', text: 'Vegetariánske podľa výrobcu', more: 'Výrobca alebo Open Food Facts uvádza, že produkt je vegetariánsky.' });
+  }
   if (active('celiac', c)) {
     let r;
-    if (f.gluten === 'contains' || has(A, 'gluten')) r = ['bad', 'Lepok', 'Obsahuje lepok', 'Tomuto jedlu sa vyhni. Lepok je v pšenici, raži, jačmeni, ovse a špalde.'];
+    if (f.gluten === 'contains' || has(A, 'gluten')) r = ['bad', 'Lepok', 'Obsahuje lepok', 'Tomuto jedlu sa vyhni. Lepok je v pšenici, raži, jačmeni, ovse a špaldť.'.replace('špaldť', 'špalde')];
     else if (f.gluten === 'traces' || has(T, 'gluten')) r = ['warn', 'Stopy lepku', 'Môže obsahovať stopy lepku', 'Výrobca uvádza možnú krížovú kontamináciu. Pri celiakii sa to berie vážne.'];
     else if (f.gluten === 'free') r = ['ok', 'Bez lepku', 'Bez lepku', 'Prirodzene bez lepku alebo označené výrobcom. Pri balených produktoch si aj tak pozri obal.'];
     else if (known) r = ['warn', 'Over obal', 'Lepok nie je v zložení uvedený', 'Lepok sme v zložení nenašli, ale nie je to označené ako bezlepkové. Over obal (prečiarknutý klas alebo text „bez lepku“).'];
@@ -97,9 +110,9 @@ export function assess(f, c = cfg()) {
   if (active('diabetes', c)) {
     const carbs = Number(f.carbs) || 0, sug = f.sugar == null ? null : Number(f.sugar), gi = f.gi == null ? null : Number(f.gi);
     let r = null;
-    if (sug != null && sug >= 22.5) r = ['warn', 'Veľa cukru', 'Veľa cukru: ' + n1(sug) + ' g na 100 g', 'Rýchle cukry zdvihnú glykémiu najrýchlejšie. Zváž menšiu porciu alebo kombináciu s bielkovinami a vlákninou.'];
-    else if (gi != null) r = [gi >= 70 ? 'warn' : 'ok', 'GI ' + gi, (gi >= 70 ? 'Vysoký' : gi >= 56 ? 'Stredný' : 'Nízky') + ' glykemický index (' + gi + ')', 'Glykemický index ukazuje, ako rýchlo sacharidy zdvihnú glykémiu. Orientačná hodnota, u každého je to trochu iné.'];
-    else if (carbs < 5) r = ['ok', 'Málo sacharidov', 'Málo sacharidov: ' + n1(carbs) + ' g na 100 g', 'Takmer nezdvíha glykémiu.'];
+    if (sug != null && sug >= 22.5) r = ['warn', 'Veľa cukru', 'Veľa cukru: ' + n1(sug) + ' g na 100 g', 'Rýchle cukry zdvihnú glýkémiu najrýchlejšie. Zváž menšiu porciu alebo kombináciu s bielkovinami a vlákninou.'];
+    else if (gi != null) r = [gi >= 70 ? 'warn' : 'ok', 'GI ' + gi, (gi >= 70 ? 'Vysoký' : gi >= 56 ? 'Stredný' : 'Nízky') + ' glykemický index (' + gi + ')', 'Glykemický index ukazuje, ako rýchlo sacharidy zdvihnú glýkémiu. Orientačná hodnota, u každého je to trochu iné.'];
+    else if (carbs < 5) r = ['ok', 'Málo sacharidov', 'Málo sacharidov: ' + n1(carbs) + ' g na 100 g', 'Takmer nezdvíha glýkémiu.'.replace('nezdvíha', 'nezdvíha')];
     if (r) out.push({ mode: 'diabetes', level: r[0], short: r[1], text: r[2], more: r[3] });
   }
   if (active('salt', c) && f.salt != null) {
@@ -137,10 +150,15 @@ export function offTags(p) {
   let lactose = null;
   if (labels.includes('en:lactose-free') || labels.includes('en:no-lactose') || /bez ?laktóz|bezlaktóz|bez ?laktoz/.test(nm)) lactose = 'free';
   else if (allergens && allergens.includes('milk')) lactose = 'high';
-  return { gluten, lactose, allergens, traces };
+  const an = Array.isArray(p.ingredients_analysis_tags) ? p.ingredients_analysis_tags : [];
+  let vg = null;
+  if (an.includes('en:vegan') || labels.includes('en:vegan')) vg = 'vegan';
+  else if (an.includes('en:vegetarian') || labels.includes('en:vegetarian')) vg = 'vegetarian';
+  else if (an.includes('en:non-vegetarian')) vg = 'no';
+  return { gluten, lactose, allergens, traces, vg };
 }
 
-// ---------- sacharidy a glykémia ----------
+// ---------- sacharidy a glýkémia ----------
 export const carbsOf = (f, g) => (Number(f.carbs) || 0) * g / 100;
 export const sjOf = (carbs, c = cfg()) => carbs / (Number(c.sj) || 10);
 export const gl = (gi, carbs) => gi == null ? null : gi * carbs / 100;
@@ -219,7 +237,7 @@ export function attachSheet(bg, food, o) {
   return draw;
 }
 
-// ---------- „Overil som obal“: ľudia doplňajú chýbajúce údaje, po zhode dvoch sa uloží pre všetkých ----------
+// ---------- „Overil som obal“: ľudia dopĺňajú chýbajúce údaje, po zhode dvoch sa uloží pre všetkých ----------
 const eh = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 function verifyUI(box, food, c, redraw) {
   if (!food || !((food.source === 'db' && food.id) || (food.source === 'off' && food.barcode))) return;
@@ -272,7 +290,7 @@ function verifyUI(box, food, c, redraw) {
     };
   };
   render();
-  // moje predchádzajúce overenie sa použije hneď aj pre mňa
+  // moje predchádzajúce overenie sa použije hneď aj pre maň
   (async () => {
     try {
       if (!food.id) return;
