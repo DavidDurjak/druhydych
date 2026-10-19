@@ -12,7 +12,7 @@ export const MODES = {
   salt: { icon: '🧂', title: 'Vysoký tlak', sub: 'Stráženie soli a upozornenie na veľmi slané jedlá' },
 };
 export const ALLERGENS = [['gluten', 'Lepok'], ['milk', 'Mlieko'], ['egg', 'Vajcia'], ['peanut', 'Arašidy'], ['nuts', 'Orechy'], ['soy', 'Soja'], ['fish', 'Ryby'],
-  ['crustaceans', 'Kôrovce'], ['molluscs', 'Mäkčáe'], ['sesame', 'Sezam'], ['celery', 'Zeler'], ['mustard', 'Horčica'], ['lupin', 'Lupina'], ['sulphites', 'Siričitany']];
+  ['crustaceans', 'Kôrovce'], ['molluscs', 'Mäkýše'], ['sesame', 'Sezam'], ['celery', 'Zeler'], ['mustard', 'Horčica'], ['lupin', 'Lupina'], ['sulphites', 'Siričitany']];
 const AL_NAME = Object.fromEntries(ALLERGENS.map(([k, v]) => [k, v.toLowerCase()]));
 export const alName = k => AL_NAME[k] || k;
 
@@ -80,7 +80,7 @@ export function assess(f, c = cfg()) {
   }
   if (active('celiac', c)) {
     let r;
-    if (f.gluten === 'contains' || has(A, 'gluten')) r = ['bad', 'Lepok', 'Obsahuje lepok', 'Tomuto jedlu sa vyhni. Lepok je v pšenici, raži, jačmeni, ovse a špaldť.'.replace('špaldť', 'špalde')];
+    if (f.gluten === 'contains' || has(A, 'gluten')) r = ['bad', 'Lepok', 'Obsahuje lepok', 'Tomuto jedlu sa vyhni. Lepok je v pšenici, raži, jačmeni, ovse a špalde.'];
     else if (f.gluten === 'traces' || has(T, 'gluten')) r = ['warn', 'Stopy lepku', 'Môže obsahovať stopy lepku', 'Výrobca uvádza možnú krížovú kontamináciu. Pri celiakii sa to berie vážne.'];
     else if (f.gluten === 'free') r = ['ok', 'Bez lepku', 'Bez lepku', 'Prirodzene bez lepku alebo označené výrobcom. Pri balených produktoch si aj tak pozri obal.'];
     else if (known) r = ['warn', 'Over obal', 'Lepok nie je v zložení uvedený', 'Lepok sme v zložení nenašli, ale nie je to označené ako bezlepkové. Over obal (prečiarknutý klas alebo text „bez lepku“).'];
@@ -112,7 +112,7 @@ export function assess(f, c = cfg()) {
     let r = null;
     if (sug != null && sug >= 22.5) r = ['warn', 'Veľa cukru', 'Veľa cukru: ' + n1(sug) + ' g na 100 g', 'Rýchle cukry zdvihnú glýkémiu najrýchlejšie. Zváž menšiu porciu alebo kombináciu s bielkovinami a vlákninou.'];
     else if (gi != null) r = [gi >= 70 ? 'warn' : 'ok', 'GI ' + gi, (gi >= 70 ? 'Vysoký' : gi >= 56 ? 'Stredný' : 'Nízky') + ' glykemický index (' + gi + ')', 'Glykemický index ukazuje, ako rýchlo sacharidy zdvihnú glýkémiu. Orientačná hodnota, u každého je to trochu iné.'];
-    else if (carbs < 5) r = ['ok', 'Málo sacharidov', 'Málo sacharidov: ' + n1(carbs) + ' g na 100 g', 'Takmer nezdvíha glýkémiu.'.replace('nezdvíha', 'nezdvíha')];
+    else if (carbs < 5) r = ['ok', 'Málo sacharidov', 'Málo sacharidov: ' + n1(carbs) + ' g na 100 g', 'Takmer nezdvíha glýkémiu.'];
     if (r) out.push({ mode: 'diabetes', level: r[0], short: r[1], text: r[2], more: r[3] });
   }
   if (active('salt', c) && f.salt != null) {
@@ -290,7 +290,7 @@ function verifyUI(box, food, c, redraw) {
     };
   };
   render();
-  // moje predchádzajúce overenie sa použije hneď aj pre maň
+  // moje predchádzajúce overenie sa použije hneď aj pre mňa
   (async () => {
     try {
       if (!food.id) return;
