@@ -7,27 +7,27 @@ const h = (...a) => ctx.h(...a), toast = (...a) => ctx.toast(...a), nav = (...a)
 const $app = () => ctx.$app;
 
 const INFO = {
-  celiac: ['Bezlepková diéta: čo vedieť', `<p><b>Na obale hľadáj</b> prečiarknutý klas alebo text „bez lepku“. Takéto potraviny majú najviac 20 mg lepku na kg. Alergény sú v zložení vyznačené tučným písmom (pšenica, raž, jačmeň, ovos).</p>
-    <p><b>Skryté zdroje lepku:</b> sójová omáčka, slad, zaprážka a zahúťovadlá v omáčkach a polievkach, údeniny a párky, instantné polievky a korenie, oblátky, pivo.</p>
+  celiac: ['Bezlepková diéta: čo vedieť', `<p><b>Na obale hľadaj</b> prečiarknutý klas alebo text „bez lepku“. Takéto potraviny majú najviac 20 mg lepku na kg. Alergény sú v zložení vyznačené tučným písmom (pšenica, raž, jačmeň, ovos).</p>
+    <p><b>Skryté zdroje lepku:</b> sójová omáčka, slad, zápražka a zahusťovadlá v omáčkach a polievkach, údeniny a párky, instantné polievky a korenie, oblátky, pivo.</p>
     <p><b>Ovos</b> je bez lepku len vtedy, ak je certifikovaný. Bežný býva kontaminovaný pšenicou.</p>
     <p><b>V reštaurácii</b> sa pýtaj na spoločný olej na vyprážanie, spoločné dosky a obaly. Na cestách ti pomôže karta v cudzom jazyku.</p>`],
   diabetes: ['Cukrovka: ako to appka počíta', `<p><b>SJ (sacharidová jednotka)</b> je množstvo sacharidov, ktoré si nastavíš na 10 alebo 12 g. Rožok s 28 g sacharidov je pri 10 g približne 2,8 SJ.</p>
-    <p><b>GI</b> (glykemický index) ukazuje, ako rýchlo sacharidy zdvihnú cukor. <b>GZ</b> (glykemická záťaž) je GI krát množstvo sacharidov, takže zohľadňuje aj porciu. Obe hodnoty sú orientačné a u každého človeka sú trochu iné.</p>
+    <p><b>GI</b> (glykemický index) ukazuje, ako rýchlo sacharidy zdvihnú cukor. <b>GZ</b> (glykemická záťaž) je GI krát množstvo sacharidov, takže zohľaňuje aj porčiu. Obe hodnoty sú orientačné a u každého človeka sú trochu iné.</p>
     <p><b>Pravidlo 15</b> pri nízkom cukre: 15 g rýchlych sacharidov, 15 minút čakať, znova zmerať. Tlačidlo „Mám nízky cukor“ ťa tým prevedie.</p>
     <p><b>Čo appka nerobí:</b> nepočíta dávky inzulínu ani liekov a nenahrádza lekára. Cieľový rozsah si nastav podľa svojho diabetológa.</p>`],
   lactose: ['Intolerancia laktózy: čo vedieť', `<p><b>Veľa laktózy</b> majú mlieko, jogurty, tvaroh, smotana a čerstvé syry. <b>Málo</b> majú dlho zrejúce syry (eidam, gouda, parmezán), maslo a niektoré fermentované výrobky. Znášanlivosť je individuálna.</p>
     <p><b>Bez laktózy</b> sú rastlinné nápoje a mliečne výrobky označené „bez laktózy“. Laktáza v tabletkách pomáha pri občasnom jedle s laktózou.</p>
-    <p>Intolerancia laktózy nie je alergia na mliečnú bielkovinu. Ak máš alergiu na mlieko, zapni si režim Alergia.</p>`],
+    <p>Intolerancia laktózy nie je alergia na mliečnu bielkovinu. Ak máš alergiu na mlieko, zapni si režim Alergia.</p>`],
   allergy: ['Alergia: dôležité upozornenie', `<p>Zoznam alergénov čerpáme z údajov výrobcov a databázy Open Food Facts. Údaje môžu byť neúplné alebo zastarané, preto pri alergii <b>vždy skontroluj aktuálny obal</b>.</p>
-    <p>Jedlá, pri ktorých zloženie nepoznáme, sú označené sivým otáznikom. Nepovažuj ich za bezpečné.</p>
-    <p>Pri ťažkej reakcii (opuch hrdla, dýchavičnosť, slabosť) volaj <b>112</b> a použi adrenalínový autoinjektor, ak ho máš predpísaný.</p>`.replace('sivým', 'sivým')],
-  vegan: ['Vegánska strava: na čo si dať pozor', `<p><b>Vitámin B12</b> sa v rastlinách prakticky nenachádza. Vegáni ho zvyčajne užívajú ako doplníšok alebo z obohatených potravín.</p>
+    <p>Jedlá, pri ktorých zloženie nepoznáme, sú označené sivum otáznikom. Nepovažuj ich za bezpečné.</p>
+    <p>Pri ťažkej reakcii (opuch hrdla, dúchavičnosť, slabosť) volaj <b>112</b> a použi adrenalínový autoinjektor, ak ho máš predpísaný.</p>`],
+  vegan: ['Vegánska strava: na čo si dať pozor', `<p><b>Vitámin B12</b> sa v rastlinách prakticky nenachádza. Vegáni ho zvyčajne užívajú ako doplnok alebo z obohatených potravín.</p>
     <p><b>Zvyčajne treba sledovať aj</b> železo, jód, vápnik, vitámin D a omega-3. Kvalitné bielkoviny dáva tofu, tempeh, strukoviny, seitan a sójové výrobky.</p>
     <p>Appka ti vie označiť jedlá s mäsom, rybami, mliekom, vajcami a medom podľa názvu a zloženia. Nenahrádza dietológa, najmä pri tehotenstve, v detstve a pri chorobe sa poraď s lekárom.</p>`],
   halal: ['Halal a kosher: čo appka vie', `<p>Appka označí bravčové mäso, alkohol a morské plody (kosher) podľa názvu jedla a zloženia.</p>
-    <p><b>Nevie overiť</b>, či je mäso poradené podľa pravidiel ani či má prevádzka certifikát. Ten si over u predajcu alebo na obale.</p>`.replace('poradené', 'porazené')],
-  salt: ['Vysoký tlak: soľ', `<p>Odporúčaný denný strop je približne <b>5 g soli</b>, čo je jedna čajová lyžica. Soľ vypočítaš zo sódika: sódik × 2,5.</p>
-    <p>Najviac soli skrýva pečivo, údeniny, syry, polievky z balíčka, koreniace zmesi a hotové jedlá, nie len soľnička.</p>
+    <p><b>Nevie overiť</b>, či je mäso porazené podľa pravidiel ani či má prevádzka certifikát. Ten si over u predajcu alebo na obale.</p>`],
+  salt: ['Vysoký tlak: soľ', `<p>Odporúčaný denný strop je približne <b>5 g soli</b>, čo je jedna čajová lyžica. Soľ vypočítaš zo sodíka: sodík × 2,5.</p>
+    <p>Najviac soli skrýva pečivo, údeniny, syry, polievky z balíčka, koreniace zmesi a hotové jedlá, nie len soľička.</p>
     <p>Jedlá s viac ako 1,5 g soli na 100 g označujeme ako veľmi slané.</p>`],
 };
 
@@ -63,9 +63,9 @@ export async function renderDiet() {
         ${on('diabetes') ? `<a class="btn mt" href="#/cukor">🩸 Otvoriť denník cukru</a>` : ''}
       </div>` : ''}
       ${on('allergy') ? `<div class="card mt"><h3 class="mb">Tvoje alergény</h3><div class="dxal">${dx.ALLERGENS.map(([k, l]) => `<button type="button" data-a="${k}" class="${s.allergens.includes(k) ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
-      ${(s.diets.length || s.modes.some(m => ['celiac', 'lactose', 'allergy'].includes(m))) ? `<label class="card row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="hide" ${s.hide ? 'checked' : ''} style="margin-top:3px"><span><b>Skryť nevhodné jedlá vo vyhľadávaní</b><br><span class="muted">Jedlá a recepty, ktoré nesedia k tvojmu stravovaniu, lepku, laktóze alebo alergénom, sa nebudú zobrazovať. Vždy ich môžeš zobraziť jedným ťuknutím.</span></span></label>` : ''}
+      ${(s.diets.length || s.modes.some(m => ['celiac', 'lactose', 'allergy'].includes(m))) ? `<label class="card row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="hide" ${s.hide ? 'checked' : ''} style="margin-top:3px"><span><b>Skryť nevhodné jedlá vo vyhľadávaní</b><br><span class="muted">Jedlá a recepty, ktoré nesedía k tvojmu stravovaniu, lepku, laktóze alebo alergénom, sa nebudú zobrazovať. Vždy ich môžeš zobraziť jedným ťuknutím.</span></span></label>` : ''}
       ${s.modes.length ? `<a class="btn mb" href="#/karta">🌍 Karty do zahraničia (lepok, alergie, cukrovka)</a>` : ''}
-      ${(s.modes.length || s.diets.length) ? `<div class="card"><label class="row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="cons" ${s.consent ? 'checked' : ''} style="margin-top:3px"><span>Súhlasím, aby Fuelwind ukladal údaje o mojom zdraví a stravovaní (zapnuté režimy, diéty, glýkémiu) na účely týchto funkcií. Diéty môžu prezrádzať aj náboženské alebo etické presvedčenie, preto tento súhlas potrebujem. Údaje vidím len ja, nevidí ich ani kouč. Súhlas môžem kedykoľvek odvolať vypnutím režimov a diét a zmazaním meraní.</span></label></div>`.replace('nevidí', 'nevidí') : ''}
+      ${(s.modes.length || s.diets.length) ? `<div class="card"><label class="row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="cons" ${s.consent ? 'checked' : ''} style="margin-top:3px"><span>Súhlasím, aby Fuelwind ukladal údaje o mojom zdraví a stravovaní (zapnuté režimy, diéty, glykémiu) na účely týchto funkcií. Diéty môžu prezrádzať aj náboženské alebo etické presviedčenie, preto tento súhlas potrebujem. Údaje vidím len ja, nevidí ich ani kouč. Súhlas môžem kedykoľvek odvolať vypnutím režimov a diét a zmazaním meraní.</span></label></div>` : ''}
       <button class="btn primary mb" id="save">Uložiť</button>
       ${[...s.diets.map(d => d === 'vegan' ? 'vegan' : (d === 'halal' || d === 'kosher') ? 'halal' : null), ...s.modes].filter((m, i, a) => m && INFO[m] && a.indexOf(m) === i).map(m => `<details class="dxi"><summary>${INFO[m][0]}</summary>${INFO[m][1]}</details>`).join('')}
       <p class="muted small center mt">Fuelwind nie je zdravotnícka pomôcka a nenahrádza lekára ani dietológa. Údaje o lepku, laktóze a alergénoch pochádzajú od výrobcov a z databázy Open Food Facts a môžu byť neúplné. Pri celiakii a alergii vždy over aktuálny obal.</p>
@@ -106,7 +106,7 @@ export async function renderDiet() {
   };
   const save = async () => {
     readInputs();
-    if ((s.modes.length || s.diets.length) && !s.consent) { toast('Bez súhlasu so spracúvaním údajov o zdraví a stravovaní to uložiť nemôžem', true); return; }
+    if ((s.modes.length || s.diets.length) && !s.consent) { toast('Bez súhlasu so spracovaním údajov o zdraví a stravovaní to uložiť nemôžem', true); return; }
     if (s.modes.includes('diabetes') && !(s.lo > 0 && s.hi > s.lo)) { toast('Skontroluj cieľový rozsah: horná hranica musí byť vyššia ako dolná', true); return; }
     if (s.modes.includes('allergy') && !s.allergens.length) { toast('Vyber aspoň jeden alergén', true); return; }
     const btn = $app().querySelector('#save'); btn.disabled = true;
