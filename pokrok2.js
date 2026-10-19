@@ -50,6 +50,7 @@ const CSS = `
 .pe-cap{margin:12px 0 0;text-align:center;font-size:12.5px;color:var(--muted)}
 .pe-cap .btn{margin-top:10px}
 .pe-cta{display:inline-flex;margin-top:12px}
+.pgx-ins{scroll-padding-inline:16px}
 .pe-tz{position:relative}
 .pe-tz article{opacity:.9}
 .pe-tz article em{display:inline-block;margin-top:10px;padding:4px 9px;border-radius:99px;font-style:normal;font-size:11px;font-weight:700;color:var(--muted);background:color-mix(in srgb,var(--bg) 50%,transparent)}
