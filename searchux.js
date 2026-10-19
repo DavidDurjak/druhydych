@@ -11,6 +11,7 @@ import './navfx.js';
 import './trainflow.js';
 import './authretry.js';
 import './authhero.js';
+import './onboard.js';
 import './polish.js';
 import './ailang.js';
 import './vpro.js';
