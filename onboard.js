@@ -1,6 +1,6 @@
 // Úvodné nastavenie (onboarding): nad pôvodným formulárom ostáva rovnaká logika, mení sa len vzhľad a ovládanie.
 // Hore je živá karta s denným cieľom: prstenec rozdelený podľa makier sa prepočítava pri každom údaji.
-// Pohlavie, cieľ a počet tréningov sú dlaždice namiesto výberových zoznamov. Pôvodné polia ostanú v formulári (skryté),
+// Pohlavie, cieľ a počet tréningov sú dlaždice namiesto výberových zoznamov. Pôvodné polia ostávajú v formulári (skryté),
 // takže ukladanie, výpočet cieľov a odvodenie aktivity z počtu tréningov fungujú ako predtým.
 import * as calc from './calc.js';
 import { tr } from './i18n.js';
@@ -204,11 +204,11 @@ function effects(sel, goal) {
   const li = [];
   if (sel.diets.length) li.push(`<li><b>${T('Označí')}</b> ${T('jedlá a recepty, ktoré nesedia k tvojmu stravovaniu, a nenavrhne ti ich.')}</li>`);
   if (sel.modes.includes('diabetes')) li.push(`<li><b>${T('Cukrovka')}:</b> ${T('sacharidy, sacharidové jednotky, glykemický index a denník cukru s rozsahom podľa typu.')}</li>`);
-  if (sel.modes.includes('celiac')) li.push(`<li><b>${T('Celiakia')}:</b> ${T('každé jedlo s lepkom dostane výstražnu značku.')}</li>`);
+  if (sel.modes.includes('celiac')) li.push(`<li><b>${T('Celiakia')}:</b> ${T('každé jedlo s lepkom dostane výstražnú značku.')}</li>`);
   if (sel.modes.includes('lactose')) li.push(`<li><b>${T('Laktóza')}:</b> ${T('jedlá s laktózou sa označia a nájdeš aj tie bez nej.')}</li>`);
   if (sel.modes.includes('allergy') && sel.allergens.length) li.push(`<li><b>${T('Alergie')}:</b> ${T('appka stráži tvoje alergény v každom jedle.')}</li>`);
   if (sel.modes.includes('salt')) li.push(`<li><b>${T('Tlak')}:</b> ${T('sleduje soľ voči dennému stropu 5 g.')}</li>`);
-  if (sel.diets.includes('vegan')) li.push(`<li>${T('Pri vegánskej strave sleduj vitámin B12, železo a jód.')}</li>`);
+  if (sel.diets.includes('vegan')) li.push(`<li>${T('Pri vegánskej strave sleduj vitamín B12, železo a jód.')}</li>`);
   return li.length ? `<div class="ob-fx"><b>${T('Čo appka urobí pre teba')}</b><ul>${li.join('')}</ul></div>` : '';
 }
 
@@ -248,7 +248,7 @@ function dxSection(form) {
   form.addEventListener('input', e => { if (e.target?.name === 'goal') draw(); });
   form.addEventListener('change', e => { if (e.target?.name === 'goal') draw(); });
 
-  // pri úpravte údajov v Profile sa načíta to, čo už má človek nastavené
+  // pri úprave údajov v Profile sa načíta to, čo už má človek nastavené
   const uid = ctx?.state?.profile?.id;
   if (uid && ctx.state.profile.onboarded) {
     dx.ensure(uid).then(() => {
@@ -263,7 +263,7 @@ function dxSection(form) {
     if (anyHealth() && !sel.consent) {
       e.preventDefault(); e.stopImmediatePropagation();
       box.querySelector('#obCons')?.classList.add('bad'); box.querySelector('#obCons')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      ctx.toast?.(T('Bez súhlasu so spracúvaním údajov o zdraví a stravovaní to uložiť nemôžem.'), true);
+      ctx.toast?.(T('Bez súhlasu so spracovaním údajov o zdraví a stravovaní to uložiť nemôžem.'), true);
       return;
     }
     if (sel.modes.includes('allergy') && !sel.allergens.length) {
@@ -287,7 +287,7 @@ function dxSection(form) {
           if (d && (!prev.modes.includes('diabetes') || prev.dtype !== snap.dtype)) Object.assign(patch, { dtype: snap.dtype, lo: d.lo, hi: d.hi, fast: d.fast, insulin: d.insulin });
         }
         if (any || had) await dx.saveCfg(id, patch);
-      } catch (_) { /* nastavenia sa dajú doplňať v Profile, Zdravie a diéta */ }
+      } catch (_) { /* nastavenia sa dajú doplniť v Profile, Zdravie a diéta */ }
     }, 250);
   }, true);
 }
