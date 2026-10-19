@@ -26,7 +26,7 @@ export function defaultMeal() {
   return m < 570 ? 'breakfast' : m < 690 ? 'brunch' : m < 870 ? 'lunch' : m < 1020 ? 'afternoon' : m < 1230 ? 'dinner' : m < 1380 ? 'late' : 'snack';
 }
 
-// Jedlo z akéhokoľvek zdroja -> jednotný tvar s hodnotami na 100 g
+// Jedlo z akéhoľvek zdroja -> jednotný tvar s hodnotami na 100 g
 function fromDb(f) {
   return { id: f.id, name: f.name, brand: f.brand || '', barcode: f.barcode || null, kcal: Number(f.kcal), protein: Number(f.protein), carbs: Number(f.carbs), fat: Number(f.fat), fiber: f.fiber ?? null, sugar: f.sugar ?? null, salt: f.salt ?? null,
     portions: Array.isArray(f.portions) ? f.portions : [], verified: !!f.verified, is_recipe: !!f.is_recipe, mine: f.mine ?? (f.created_by === state().profile.id),
@@ -133,7 +133,7 @@ export async function renderFood() {
         $res.innerHTML = logs.length ? `<div class="fast-h"><span>${multi ? 'Vyber položky a pridaj naraz' : 'Ťukni na + a je to zapísané'}</span><button id="multi">${multi ? 'Zrušiť' : 'Vybrať viac'}</button></div>` + logs.map(l => {
           const k = put({ log: l });
           return `<div class="res fast hasft ${multi ? 'multi' : ''}" data-k="${k}">${multi ? `<span class="fchk" data-chk="${k}"></span>` : ''}${thumb({ id: l.food_id, name: l.name })}<div class="n"><b>${h(l.name)}</b><span>${[l.brand, l.portion ? `${r1(l.qty)}× ${l.portion}` : `${r0(l.grams)} g`].filter(Boolean).map(h).join(' · ')}</span><div class="mx"><i style="--c:#7CFFB2">B ${r0(l.protein)}</i><i style="--c:#5BB8FF">S ${r0(l.carbs)}</i><i style="--c:#FFC857">T ${r0(l.fat)}</i></div></div><span class="k mono">${r0(l.kcal)}</span>${multi ? '' : `<button class="qadd" data-qa="${k}" aria-label="Pridať">+</button>`}</div>`;
-        }).join('') : '<p class="empty">Zatiaľ nič. Napíš hore, čo si jedol, vyhľadaj jedlo alebo naskenuj čiarový kód.</p>';
+        }).join('') : '<p class="empty">Zatiaľ nič. Napíš hore, čo si jedol, vyhľadáj jedlo alebo naskenuj čiarový kód.</p>';
       } else {
         const mine = (await db.myFoods(uid)).map(fromDb);
         $res.innerHTML = mine.length ? mine.map(f => row(f, put(f))).join('') : '<p class="empty">Tu sa zobrazia jedlá a recepty, ktoré pridáš ty. Pomôžeš tým aj ostatným.</p>';
@@ -159,7 +159,7 @@ export async function renderFood() {
     if (!q) { $tabs.style.display = ''; showTab(); return; }
     if (multi) { multi = false; chosen.clear(); drawBar(); }
     $tabs.style.display = 'none';
-    // okamžité výsledky z našej databázy v telefóne, server ich o chvíľu doplní
+    // okamžité výsledky z našej databázy v telefóne, server ich o chvíu doplní
     const fast = (dx.cfg().hide && !showHidden ? ff.search(q, 20).filter(f => !dx.isBad(f)) : ff.search(q, 20)).slice(0, 12);
     if (fast.length) {
       $res.classList.remove('stale');
@@ -325,11 +325,11 @@ export function openFoodEditor(pre = {}, meal, done) {
       openAdd(fromDb(saved), meal, done);
     } catch (e) {
       $('#save').disabled = false;
-      $('#err').textContent = /barcode|duplicate|unique/i.test(e.message) ? 'Produkt s týmto čiarovým kódom už v databáze je. Vyhľadaj ho alebo naskenuj.' : e.message;
+      $('#err').textContent = /barcode|duplicate|unique/i.test(e.message) ? 'Produkt s týmto čiarovým kódom už v databáze je. Vyhľadáj ho alebo naskenuj.' : e.message;
     }
   };
   $('#del')?.addEventListener('click', async () => {
-    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v denníku ostanú.')) return;
+    if (!confirm('Naozaj zmazať toto jedlo z databázy? Zápisy v deníku ostanú.')) return;
     try { await db.deleteFoodItem(pre.id); bg.remove(); toast('Zmazané'); renderFood(); } catch (e) { toast(e.message, true); }
   });
 }
@@ -357,7 +357,7 @@ async function addPreset(r, meal, done, qty = 1) {
   let saved = exist;
   if (!saved) {
     const k = 100 / r.grams, t = r.ing.reduce((a, i) => { const f = i.grams / 100; a.kcal += i.per100.kcal * f; a.protein += i.per100.protein * f; a.carbs += i.per100.carbs * f; a.fat += i.per100.fat * f; return a; }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
-    const { photoOf } = await import('./recipes.photos.js');
+    const { photoOf } = await import('./recipes.photos2.js');
     const row = { name: r.name, is_recipe: true, servings: r.servings, total_grams: r0(r.grams), is_public: false, img: photoOf(r.id, 500),
       kcal: r0(t.kcal * k), protein: r1(t.protein * k), carbs: r1(t.carbs * k), fat: r1(t.fat * k),
       portions: [{ label: '1 porcia', g: r0(r.grams / r.servings) }], recipe: presetItems(r) };
@@ -439,7 +439,7 @@ export function openRecipeEditor(pre, meal, done, withTabs) {
           : { food_id: null, name: it.name, grams: Math.round(it.grams), per100: { kcal: it.estimate.kcal, protein: it.estimate.protein, carbs: it.estimate.carbs, fat: it.estimate.fat } });
       });
       $('#itxt').value = ''; $('#itbox').hidden = true; draw();
-      toast(`Pridané: ${got.length} ${got.length === 1 ? 'surovina' : got.length < 5 ? 'suroviny' : 'surovín'}`);
+      toast(`Pridané: ${got.length} ${got.length === 1 ? 'surovina' : got.length < 5 ? 'suroviny' : 'surôvin'}`);
     } catch (e) { toast(e.message, true); }
     finally { btn.disabled = false; btn.textContent = 'Rozpoznať suroviny'; }
   };
@@ -500,6 +500,6 @@ async function openScan(meal, done) {
   if (local) return openAdd(fromDb(local), meal, done);
   const off = await lookupBarcode(code).catch(() => null);
   if (off) return openAdd(fromOff(off), meal, done);
-  toast('Produkt zatiaľ nikto nepridal. Pridaj ho ty, ďalší ho už nájdu.');
+  toast('Produkt zatiaľ nikto nepridal. Pridaj ho ty, ďalš� ho už nájdu.');
   openFoodEditor({ barcode: code }, meal, done);
 }
