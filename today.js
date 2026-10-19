@@ -228,7 +228,7 @@ export async function renderToday() {
   // pás jedál pod kruhom: päť hlavných jedál, zapísané svietia farbou jedla a ukážu kcal
   const mealStrip = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner'].map(k => {
     const m = MEAL_META[k], kc = kcalOf(foods.filter(f => f.meal === k)), on = foods.some(f => f.meal === k);
-    return `<a class="mb ${on ? 'on' : ''}" style="--mc:${m.color}" href="#/jedlo?meal=${k}" aria-label="${m.label}${on ? ': zapísané' : ': pridať'}"><i>${on ? r0(kc) : '+'}</i><span>${m.label}</span></a>`;
+    return `<a class="mbp ${on ? 'on' : ''}" style="--mc:${m.color}" href="#/jedlo?meal=${k}" aria-label="${m.label}${on ? ': zapísané' : ': pridať'}"><i>${on ? r0(kc) : '+'}</i><span>${m.label}</span></a>`;
   }).join('');
   const goalPct = p.target_kcal ? Math.round(sum.kcal / p.target_kcal * 100) : 0;
 

@@ -68,7 +68,7 @@ export async function renderFood() {
     <div class="seg mb" id="mealseg">${Object.entries(MEALS()).map(([k, l]) => `<button data-meal="${k}" class="${k === meal ? 'on' : ''}">${l}</button>`).join('')}</div>
     ${aiBoxHtml()}
     <div class="input-row mb">
-      <input class="input" id="q" placeholder="Hľadaj akékoľvek jedlo alebo produkt" autocomplete="off" enterkeyhint="search">
+      <input class="input" id="q" placeholder="Hľadaj jedlo alebo produkt" autocomplete="off" enterkeyhint="search">
       <button class="btn icon" id="scan" title="Čiarový kód" aria-label="Skenovať čiarový kód"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M11 8v8M15 8v8M18 8v8"/></svg></button>
     </div>
     <div class="qa mb">

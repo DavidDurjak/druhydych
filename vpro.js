@@ -65,7 +65,7 @@ function tune() {
   if (row && ai && !row.dataset.vp) { row.dataset.vp = '1'; ai.parentNode.insertBefore(row, ai); }
   if (!seg.dataset.vp) {
     seg.dataset.vp = '1';
-    const on = () => seg.querySelector('button.on')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+    const on = () => seg.querySelector('button.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     on(); seg.addEventListener('click', () => requestAnimationFrame(on));
   }
 }
