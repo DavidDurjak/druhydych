@@ -12,6 +12,7 @@ import './trainflow.js';
 import './authretry.js';
 import './authhero.js';
 import './onboard.js';
+import './pokrok2.js';
 import './polish.js';
 import './ailang.js';
 import './vpro.js';
