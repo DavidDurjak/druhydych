@@ -1,6 +1,7 @@
-// Fotky receptov v191 (rozšírenie recipes.photos.js). [súbor, autor, licencia]
+// Fotky receptov v192 (rozšírenie recipes.photos.js; novšie fotky sú v recipes.photos3.js). [súbor, autor, licencia]
 import * as O from './recipes.photos.js';
-const P2 = {
+import { P3 } from './recipes.photos3.js';
+const P2 = { ...P3,
   '186-huoguo': ['6931543972128 .pic hd.jpg','Tongxin Liu','CC BY-SA 4.0'],
   '186-fotiaotiao': ['Buddha soup boul.jpg','SunSuke','CC BY-SA 2.5'],
   '186-poon-choi': ['Frozen Poon Choi after boiling (20220131210544).jpg','N509FZ','CC BY-SA 4.0'],
@@ -77,7 +78,7 @@ const P2 = {
   '182-mazariner': ['Mazariner1.jpg','Entheta','Public domain'],
   '182-travesseiros-de-sintra': ['Travesseiro de Sintra and Queijada de Sintra bakery pastries in Sintra, Portugal (55139884975).jpg','Philip Mallis from Melbourne','CC BY-SA 4.0'],
   '182-fattigmann': ['Fattigman.jpg','Mycoleptodiscus','CC BY-SA 3.0'],
-  '182-mezeskalacs': ['Mézeskalács szívecske rovással - Lebkuchen.jpg','Bandi','CC BY-SA 3.0'],
+  '182-mezeskalacs': ['Mézeskálacs szívecske rovással - Lebkuchen.jpg','Bandi','CC BY-SA 3.0'],
   '182-frikadeller': ['020230716 Frikadelle mit Gemüse und Kartoffeln.jpg','Silar','CC BY-SA 4.0'],
   '182-fiskeboller': ['Homemade fiskeboller (5892391074).jpg','jonasosthassel','CC BY 2.0'],
   '182-hernekeitto': ['Hernekeitto.jpg','User:Opalaisen','CC BY-SA 4.0'],
@@ -94,7 +95,7 @@ const P2 = {
   '183-kielbasa-grilovana': ['Grilled kielbasa.jpg','Cezary p at Polish Wikipedia','CC BY 2.5'],
   '183-buraczki-tarte': ['Buraczki tarte - 2024.03.07.jpg','Aw58','CC BY-SA 4.0'],
   '183-kokoretsi': ['Ioannina - kokoretsi.jpg','Ptyx','CC BY-SA 4.0'],
-  '183-polse-i-lompe': ['Pølse med lompe.jpg','Jon-Eric Melsæter','CC BY 2.0'],
+  '183-polse-i-lompe': ['Pølse med lompe.jpg','Jon-Eric Melsaeter','CC BY 2.0'],
   '183-ptasie-mleczko': ['Ptasie mleczko 2007 by RaBoe 02.jpg','Ra Boe','CC BY-SA 2.5'],
   '183-gehaktbal-jus': ['Gehaktballen (Dutch Meat Ball).JPG','Miansari66','CC0'],
   '183-komle-s-koleno': ['Komlemiddag.jpg','Jarvin','CC BY-SA 3.0'],
