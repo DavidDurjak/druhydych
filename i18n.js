@@ -154,9 +154,18 @@ function put(k, v) { if (!v) return; dict.set(k, v); out.add(v.trim()); }
 const NUM = /\d+(?:[.,:]\d+)*/g;
 function keyOf(core) { const nums = []; const k = core.replace(NUM, m => `{${nums.push(m) - 1}}`); return [k, nums]; }
 // preklad celého textu; null = ešte nie je v slovníku (pošle sa na preklad), undefined = netreba prekladať
+// skratky dní sú bez kontextu nejednoznačné (sk „So“ = sobota, nem. „So“ = nedeľa), preto ich dáva priamo kalendár zariadenia
+const OVR = new Map();
+if (LANG !== 'sk') {
+  try {
+    const f = new Intl.DateTimeFormat(LANG, { weekday: 'short' }), cap1 = t => t.charAt(0).toLocaleUpperCase(LANG) + t.slice(1);
+    ['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne'].forEach((d, i) => OVR.set(d, cap1(f.format(new Date(2024, 0, 1 + i))).replace(/\.$/, '')));
+  } catch (_) { /* bez kalendára */ }
+}
 function tr(text) {
   if (LANG === 'sk' || !text) return undefined;
   const core = text.trim();
+  const o = OVR.get(core); if (o) { out.add(o); return text.replace(core, o); }
   if (core.length < 1 || core.length > 600 || !/\p{L}/u.test(core) || out.has(core)) return undefined;
   const [k, nums] = keyOf(core);
   const v = dict.get(k);
