@@ -132,7 +132,7 @@ export async function renderFood() {
         recentIds = logs.map(l => l.food_id).filter(Boolean);
         $res.innerHTML = logs.length ? `<div class="fast-h"><span>${multi ? 'Vyber položky a pridaj naraz' : 'Ťukni na + a je to zapísané'}</span><button id="multi">${multi ? 'Zrušiť' : 'Vybrať viac'}</button></div>` + logs.map(l => {
           const k = put({ log: l });
-          return `<div class="res fast hasft ${multi ? 'multi' : ''}" data-k="${k}">${multi ? `<span class="fchk" data-chk="${k}"></span>` : ''}${thumb({ id: l.food_id, name: l.name })}<div class="n"><b>${h(l.name)}</b><span>${[l.brand, l.portion ? `${r1(l.qty)}× ${l.portion}` : `${r0(l.grams)} g`].filter(Boolean).map(h).join(' · ')}</span></div><span class="k mono">${r0(l.kcal)}</span>${multi ? '' : `<button class="qadd" data-qa="${k}" aria-label="Pridať">+</button>`}</div>`;
+          return `<div class="res fast hasft ${multi ? 'multi' : ''}" data-k="${k}">${multi ? `<span class="fchk" data-chk="${k}"></span>` : ''}${thumb({ id: l.food_id, name: l.name })}<div class="n"><b>${h(l.name)}</b><span>${[l.brand, l.portion ? `${r1(l.qty)}× ${l.portion}` : `${r0(l.grams)} g`].filter(Boolean).map(h).join(' · ')}</span><div class="mx"><i style="--c:#7CFFB2">B ${r0(l.protein)}</i><i style="--c:#5BB8FF">S ${r0(l.carbs)}</i><i style="--c:#FFC857">T ${r0(l.fat)}</i></div></div><span class="k mono">${r0(l.kcal)}</span>${multi ? '' : `<button class="qadd" data-qa="${k}" aria-label="Pridať">+</button>`}</div>`;
         }).join('') : '<p class="empty">Zatiaľ nič. Napíš hore, čo si jedol, vyhľadaj jedlo alebo naskenuj čiarový kód.</p>';
       } else {
         const mine = (await db.myFoods(uid)).map(fromDb);

@@ -14,6 +14,7 @@ import './authhero.js';
 import './polish.js';
 import './ailang.js';
 import './vpro.js';
+import './jedlo2.js';
 import './offline.js';
 
 const SP = '<div class="spinner"></div>';
