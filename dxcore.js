@@ -1,22 +1,22 @@
 // Stravovacie režimy: nastavenia, hodnotenie jedál (lepok, laktóza, alergény, cukrovka, soľ),
-// prevod údajov z Open Food Facts, výpočty glýkémie a spoločné štýly. Bez závislosti na app.js.
+// prevod údajov z Open Food Facts, výpočty glykémie a spoločné štýly. Bez závislosti na app.js.
 import * as db from './data.js';
 import { DIETS, tagsOfFood, judge } from './dietcore.js';
 export { DIETS };
 
 export const MODES = {
-  diabetes: { icon: '🩸', title: 'Cukrovka', sub: 'Sacharidy a sacharidové jednotky, glýkémia, nízky cukor, správa pre lekára' },
+  diabetes: { icon: '🩸', title: 'Cukrovka', sub: 'Sacharidy a sacharidové jednotky, glykémia, nízky cukor, správa pre lekára' },
   celiac: { icon: '🌾', title: 'Celiakia', sub: 'Bezlepková diéta: každé jedlo s lepkom je označené' },
   lactose: { icon: '🥛', title: 'Intolerancia laktózy', sub: 'Jedlá s laktózou, s malým obsahom a bez nej' },
   allergy: { icon: '🥜', title: 'Alergia na potraviny', sub: 'Vyberieš si svoje alergény a appka ich stráži' },
   salt: { icon: '🧂', title: 'Vysoký tlak', sub: 'Stráženie soli a upozornenie na veľmi slané jedlá' },
 };
 export const ALLERGENS = [['gluten', 'Lepok'], ['milk', 'Mlieko'], ['egg', 'Vajcia'], ['peanut', 'Arašidy'], ['nuts', 'Orechy'], ['soy', 'Soja'], ['fish', 'Ryby'],
-  ['crustaceans', 'Kôrovce'], ['molluscs', 'Mäkýše'], ['sesame', 'Sezam'], ['celery', 'Zeler'], ['mustard', 'Horčica'], ['lupin', 'Lupina'], ['sulphites', 'Siričitany']];
+  ['crustaceans', 'Kôrovce'], ['molluscs', 'Mäkkýše'], ['sesame', 'Sezam'], ['celery', 'Zeler'], ['mustard', 'Horčica'], ['lupin', 'Lupina'], ['sulphites', 'Siričitany']];
 const AL_NAME = Object.fromEntries(ALLERGENS.map(([k, v]) => [k, v.toLowerCase()]));
 export const alName = k => AL_NAME[k] || k;
 
-// cieľové rozsahy glýkémie (mmol/l): lo = hranica nízkeho cukru, hi = horná hranica dobrého rozsahu, fast = horná hranica nalačno
+// cieľové rozsahy glykémie (mmol/l): lo = hranica nízkeho cukru, hi = horná hranica dobrého rozsahu, fast = horná hranica nalačno
 export const DTYPES = {
   t1: { label: '1. typ', lo: 3.9, hi: 10, fast: 7, insulin: true },
   t2: { label: '2. typ', lo: 3.9, hi: 10, fast: 7, insulin: false },
@@ -110,9 +110,9 @@ export function assess(f, c = cfg()) {
   if (active('diabetes', c)) {
     const carbs = Number(f.carbs) || 0, sug = f.sugar == null ? null : Number(f.sugar), gi = f.gi == null ? null : Number(f.gi);
     let r = null;
-    if (sug != null && sug >= 22.5) r = ['warn', 'Veľa cukru', 'Veľa cukru: ' + n1(sug) + ' g na 100 g', 'Rýchle cukry zdvihnú glýkémiu najrýchlejšie. Zváž menšiu porciu alebo kombináciu s bielkovinami a vlákninou.'];
-    else if (gi != null) r = [gi >= 70 ? 'warn' : 'ok', 'GI ' + gi, (gi >= 70 ? 'Vysoký' : gi >= 56 ? 'Stredný' : 'Nízky') + ' glykemický index (' + gi + ')', 'Glykemický index ukazuje, ako rýchlo sacharidy zdvihnú glýkémiu. Orientačná hodnota, u každého je to trochu iné.'];
-    else if (carbs < 5) r = ['ok', 'Málo sacharidov', 'Málo sacharidov: ' + n1(carbs) + ' g na 100 g', 'Takmer nezdvíha glýkémiu.'];
+    if (sug != null && sug >= 22.5) r = ['warn', 'Veľa cukru', 'Veľa cukru: ' + n1(sug) + ' g na 100 g', 'Rýchle cukry zdvihnú glykémiu najrýchlejšie. Zváž menšiu porciu alebo kombináciu s bielkovinami a vlákninou.'];
+    else if (gi != null) r = [gi >= 70 ? 'warn' : 'ok', 'GI ' + gi, (gi >= 70 ? 'Vysoký' : gi >= 56 ? 'Stredný' : 'Nízky') + ' glykemický index (' + gi + ')', 'Glykemický index ukazuje, ako rýchlo sacharidy zdvihnú glykémiu. Orientačná hodnota, u každého je to trochu iné.'];
+    else if (carbs < 5) r = ['ok', 'Málo sacharidov', 'Málo sacharidov: ' + n1(carbs) + ' g na 100 g', 'Takmer nezdvíha glykémiu.'];
     if (r) out.push({ mode: 'diabetes', level: r[0], short: r[1], text: r[2], more: r[3] });
   }
   if (active('salt', c) && f.salt != null) {
@@ -158,7 +158,7 @@ export function offTags(p) {
   return { gluten, lactose, allergens, traces, vg };
 }
 
-// ---------- sacharidy a glýkémia ----------
+// ---------- sacharidy a glykémia ----------
 export const carbsOf = (f, g) => (Number(f.carbs) || 0) * g / 100;
 export const sjOf = (carbs, c = cfg()) => carbs / (Number(c.sj) || 10);
 export const gl = (gi, carbs) => gi == null ? null : gi * carbs / 100;
