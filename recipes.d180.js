@@ -81,7 +81,7 @@ export const R180 = [
   ['180-eiertatsch', 'Eiertätsch, švajčiarska vaječná palacinka s pažítkou', 'lunch', 'ch', 20, 2,
     [['vajce', 250], ['mlieko', 150], ['muka', 80], ['maslo', 30], ['x180_pazitka', 15], ['x180_sol', 3]],
     ['Rozšľahajte vajcia s mliekom, múkou a soľou do hladkého cesta.', 'Vmiešajte nadrobno nakrájanú pažítku.', 'Na masle vo veľkej panvici smažte cesto z oboch strán do zlatista.', 'Roztrhajte na kúsky a podávajte horúce.']],
-  ['180-zupa-jagodowa', 'Zupa jagodowa, poľská čučorieдková polievka', 'soup', 'pl', 30, 4,
+  ['180-zupa-jagodowa', 'Zupa jagodowa, poľská čučoriedková polievka', 'soup', 'pl', 30, 4,
     [['boruvky', 400], ['cukor', 60], ['citron', 30], ['skrob', 20], ['kyslasmotana', 100], ['cestoviny', 100]],
     ['Čučoriedky varte v 800 ml vody s cukrom 10 minút.', 'Pridajte citrónovú šťavu.', 'Škrob rozmiešajte v troche studenej vody, vlejte do polievky a krátko povarte do mierneho zhustnutia.', 'Cestoviny uvarte osobitne, nechajte scediť a rozdeľte do tanierov.', 'Zalejte polievkou a ozdobte kyslou smotanou.']],
 ];
