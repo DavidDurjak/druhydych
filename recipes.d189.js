@@ -1,5 +1,6 @@
 // Recepty v194: Filipíny, Indonézia, Vietnam, Thajsko, Kambodža, Nepal, Čína, Tunisko a Nigéria s fotkou
 import { R190 } from './recipes.d190.js';
+import { R191 } from './recipes.d191.js';
 export const R189 = [
   ['189-bibingka', 'Bibingka, filipínsky ryžový koláč s kokosom', 'cake', 'asia', 50, 6,
     [['x189_ryzmuka', 200], ['kokosmlieko', 250], ['vajce', 100], ['cukor', 80], ['maslo', 30], ['syr', 40]],
@@ -28,6 +29,6 @@ export const R189 = [
   ['189-moi-moi', 'Moi moi, nigérijský parený fazuľový nákyp', 'snack', 'tr', 80, 4,
     [['fazula', 300], ['paprika', 100], ['cibula', 60], ['olej', 30], ['vajce', 50]],
     ['Fazuľu namočte a zbavte šupiek, potom ju rozmixujte s paprikou a cibuľou.', 'Pridajte olej a osoľte.', 'Nalejte do foriem alebo alobalu.', 'Parte asi 50 minút.']]
-].concat(R190);
+].concat(R190, R191);
 
 export const I189 = { x189_ryzmuka: ['Ryžová múka', 366, 6, 80, 1.4] };
