@@ -23,27 +23,118 @@ function phoneLang() {
 }
 export function currentLang() { const c = getChoice(); return c !== 'auto' && OK.has(c) ? c : phoneLang(); }
 export function setChoice(c) { try { localStorage.setItem(KEY, c); } catch (_) { } location.reload(); }
+// pred prepnutím sa stiahne celý slovník jazyka, aby bola appka po reštarte hneď celá preložená (bez blikania slovenčiny)
+async function prefetch(code) {
+  if (code === 'sk') return;
+  const map = {}; let from = 0, newest = '';
+  for (;;) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/i18n?select=src,dst,created_at&lang=eq.${code}&order=created_at.asc`, { headers: { apikey: SUPABASE_ANON_KEY, Range: `${from}-${from + 999}`, 'Range-Unit': 'items' } });
+    if (!r.ok) throw new Error('i18n ' + r.status);
+    const rows = await r.json();
+    for (const x of rows) { map[x.src] = x.dst; if (x.created_at > newest) newest = x.created_at; }
+    if (rows.length < 1000) break;
+    from += 1000;
+  }
+  try { localStorage.setItem('fw_i18n_' + code, JSON.stringify(map)); localStorage.setItem('fw_i18n_t_' + code, newest); } catch (_) { /* plné úložisko */ }
+}
 
 const LANG = currentLang();
 H.lang = LANG;
 
-// ---------- výber jazyka v Profile (vedľa Vzhľadu) ----------
+// ---------- výber jazyka v Profile (vedľa Vzhľadu): vlastný zoznam ako v top appkách, nie systémový výber ----------
+const cap = t => t ? t[0].toLocaleUpperCase() + t.slice(1) : t;
+function localName(code) { try { return cap(new Intl.DisplayNames([LANG], { type: 'language' }).of(code)); } catch (_) { return ''; } }
+const nativeName = code => (LANGS.find(l => l[0] === code) || [, code])[1];
+const LCSS = `
+.lg-btn{display:flex;align-items:center;gap:12px;width:100%;margin-top:10px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card-2,rgba(255,255,255,.04));color:var(--text);font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lg-btn:active{transform:scale(.99)}
+.lg-btn .lg-g{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.lg-btn b{display:block;font-size:16px;font-weight:700}.lg-btn small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.lg-btn .lg-ch{margin-left:auto;color:var(--muted);flex:none}
+.lg-bg{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:lgf .18s ease-out}
+.lg-sh{width:100%;max-width:560px;height:84vh;max-height:84vh;display:flex;flex-direction:column;background:var(--card);border-radius:28px 28px 0 0;border-top:1px solid var(--line);padding:8px 0 env(safe-area-inset-bottom);animation:lgu .28s cubic-bezier(.2,.9,.2,1)}
+.lg-grab{width:38px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 6px}
+.lg-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 10px}.lg-hd h3{margin:0;font-size:20px;letter-spacing:-.01em}
+.lg-x{width:34px;height:34px;border-radius:50%;border:0;background:var(--card-2,rgba(255,255,255,.06));color:var(--text);font-size:18px;cursor:pointer}
+.lg-q{margin:0 18px 8px;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:14px;background:var(--card-2,rgba(255,255,255,.05));border:1px solid var(--line)}
+.lg-q input{flex:1;border:0;background:none;color:var(--text);font:inherit;font-size:16px;padding:11px 0;outline:none}
+.lg-ls{overflow:auto;padding:0 10px 14px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.lg-sec{font-size:12.5px;font-weight:700;color:var(--muted);padding:14px 10px 6px}
+.lg-it{display:flex;align-items:center;gap:12px;width:100%;padding:11px 10px;border:0;border-radius:14px;background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lg-it:active{background:var(--card-2,rgba(255,255,255,.05))}
+.lg-it b{display:block;font-size:16px;font-weight:650}.lg-it small{display:block;font-size:13px;color:var(--muted);margin-top:1px}
+.lg-it .lg-ok{margin-left:auto;flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center}
+.lg-it.on{background:color-mix(in srgb,var(--accent) 9%,transparent)}.lg-it.on .lg-ok{border-color:var(--accent);background:var(--accent);color:#06261a}
+.lg-it .lg-sp{margin-left:auto;width:20px;height:20px;border-radius:50%;border:2.5px solid color-mix(in srgb,var(--accent) 30%,transparent);border-top-color:var(--accent);animation:lgs .7s linear infinite}
+.lg-empty{padding:30px 10px;text-align:center;color:var(--muted)}
+.lg-note{font-size:12.5px;color:var(--muted);padding:2px 20px 10px;line-height:1.4}
+@keyframes lgu{from{transform:translateY(100%)}}@keyframes lgf{from{opacity:0}}@keyframes lgs{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.lg-bg,.lg-sh{animation:none}}`;
+const GLOBE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
+const CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function css() { if (document.getElementById('lg-css')) return; const st = document.createElement('style'); st.id = 'lg-css'; st.textContent = LCSS; document.head.appendChild(st); }
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function openPicker() {
+  css();
+  const cur = getChoice(), ph = phoneLang();
+  const phoneSet = [...new Set((navigator.languages || []).map(l => String(l).slice(0, 2).toLowerCase()).filter(c => OK.has(c)))];
+  const sug = [...new Set([...phoneSet, 'sk', 'cs', 'en', 'de'])].slice(0, 5);
+  const row = (code, title, sub) => `<button class="lg-it notranslate${code === cur ? ' on' : ''}" data-l="${code}"><span><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span><span class="lg-ok">${code === cur ? CHECK : ''}</span></button>`;
+  const item = code => { const n = nativeName(code), l = localName(code); return row(code, n, code === LANG || !l || l.toLowerCase() === n.toLowerCase() ? '' : l); };
+  const all = [...LANGS].map(l => l[0]).sort((x, y) => nativeName(x).localeCompare(nativeName(y), LANG));
+  const bg = document.createElement('div'); bg.className = 'lg-bg';
+  bg.innerHTML = `<div class="lg-sh" role="dialog" aria-modal="true" aria-label="Jazyk aplikácie"><div class="lg-grab"></div>
+    <div class="lg-hd"><h3>Jazyk aplikácie</h3><button class="lg-x" aria-label="Zavrieť">✕</button></div>
+    <label class="lg-q"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--muted)"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" placeholder="Hľadať jazyk" autocomplete="off" enterkeyhint="search"></label>
+    <div class="lg-ls"></div><p class="lg-note">Preklad robí AI, zriedka môže byť nepresný.</p></div>`;
+  const ls = bg.querySelector('.lg-ls'), q = bg.querySelector('input');
+  const draw = () => {
+    const f = q.value.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const hit = code => !f || [nativeName(code), localName(code), code].some(t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(f));
+    let h = '';
+    if (!f) {
+      h += row('auto', `${tr('Automaticky') || 'Automaticky'}`, `${tr('Podľa telefónu') || 'Podľa telefónu'}: ${nativeName(ph)}`);
+      h += `<div class="lg-sec">${tr('Navrhované') || 'Navrhované'}</div>` + sug.map(item).join('');
+      h += `<div class="lg-sec">${tr('Všetky jazyky') || 'Všetky jazyky'}</div>` + all.filter(c => !sug.includes(c)).map(item).join('');
+    } else {
+      const list = all.filter(hit);
+      h = list.length ? list.map(item).join('') : `<div class="lg-empty">${tr('Nič sa nenašlo') || 'Nič sa nenašlo'}</div>`;
+    }
+    ls.innerHTML = h;
+  };
+  const close = () => { bg.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  bg.addEventListener('click', async e => {
+    if (e.target === bg || e.target.closest('.lg-x')) { close(); return; }
+    const it = e.target.closest('[data-l]'); if (!it || bg.dataset.busy) return;
+    const code = it.dataset.l;
+    if (code === cur) { close(); return; }
+    bg.dataset.busy = '1';
+    ls.querySelectorAll('.lg-it').forEach(x => x.classList.toggle('on', x === it));
+    const ok = it.querySelector('.lg-ok'); if (ok) ok.outerHTML = '<span class="lg-sp" aria-label="Načítavam"></span>';
+    const target = code === 'auto' ? ph : code;
+    try { await Promise.race([prefetch(target), new Promise(r => setTimeout(r, 8000))]); } catch (_) { /* preklad sa doplní za behu */ }
+    setChoice(code);
+  });
+  q.addEventListener('input', draw);
+  document.addEventListener('keydown', onKey);
+  draw();
+  document.body.appendChild(bg);
+}
 function profileUi() {
   const theme = document.querySelector('#app #fwTheme');
   if (!theme) return;
   const had = document.querySelector('#fwLang');
   // karta ide vždy hneď pod Vzhľad (Profil si Vzhľad pri prekreslení presúva)
   if (had) { if (had.previousElementSibling !== theme) theme.after(had); return; }
+  css();
+  const c = getChoice(), code = c === 'auto' ? phoneLang() : c;
   const card = document.createElement('div');
   card.className = 'card'; card.id = 'fwLang'; card.style.marginTop = '14px';
-  const opts = [['auto', null], ...LANGS].map(([k, n]) => `<option value="${k}"${k === getChoice() ? ' selected' : ''}>${n || ''}</option>`).join('');
   card.innerHTML = `<b>Jazyk</b>
-    <select class="input notranslate" id="fwLangSel" style="margin-top:10px;width:100%;height:48px;font-size:16px">${opts}</select>
-    <p class="muted small" style="margin:8px 2px 0">Automaticky sa riadi jazykom telefónu. Preklad robí AI, zriedka môže byť nepresný.</p>`;
-  const sel = card.querySelector('#fwLangSel');
-  // „Automaticky“ sa ukáže v jazyku appky aj s tým, čo telefón práve používa
-  sel.options[0].textContent = `${tr('Automaticky') || 'Automaticky'} (${(LANGS.find(l => l[0] === phoneLang()) || [, 'English'])[1]})`;
-  sel.onchange = () => setChoice(sel.value);
+    <button class="lg-btn" id="fwLangBtn" type="button"><span class="lg-g">${GLOBE}</span><span><b class="notranslate">${esc(nativeName(code))}</b><small>${c === 'auto' ? 'Automaticky podľa telefónu' : 'Zmeniť jazyk aplikácie'}</small></span>
+      <svg class="lg-ch" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>`;
+  card.querySelector('#fwLangBtn').onclick = openPicker;
   theme.after(card);
 }
 const app = document.getElementById('app');
@@ -86,18 +177,21 @@ async function flush() {
   miss.clear();
   if (!keys.length) return;
   busy = true;
+  // dávky po 60 textov, tri naraz: prvé spustenie v novom jazyku je tak niekoľkonásobne rýchlejšie
+  const parts = []; for (let i = 0; i < keys.length; i += 60) parts.push(keys.slice(i, i + 60));
+  const one = async part => {
+    part.forEach(k => flying.add(k));
+    try {
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/i18n`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY }, body: JSON.stringify({ lang: LANG, strings: part }) });
+      const j = await r.json();
+      const m = j?.map || {};
+      part.forEach(k => { if (m[k]) put(k, m[k]); else failed.set(k, Date.now() + 120000); });
+    } catch (_) { part.forEach(k => failed.set(k, Date.now() + 60000)); }
+    part.forEach(k => flying.delete(k));
+    save(); scanAll();
+  };
   try {
-    for (let i = 0; i < keys.length; i += 80) {
-      const part = keys.slice(i, i + 80); part.forEach(k => flying.add(k));
-      try {
-        const r = await fetch(`${SUPABASE_URL}/functions/v1/i18n`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY }, body: JSON.stringify({ lang: LANG, strings: part }) });
-        const j = await r.json();
-        const m = j?.map || {};
-        part.forEach(k => { if (m[k]) put(k, m[k]); else failed.set(k, Date.now() + 120000); });
-      } catch (_) { part.forEach(k => failed.set(k, Date.now() + 60000)); }
-      part.forEach(k => flying.delete(k));
-      save(); scanAll();
-    }
+    await Promise.all([0, 1, 2].map(async () => { while (parts.length) await one(parts.shift()); }));
   } finally { busy = false; reveal(); }
 }
 async function sync() {
