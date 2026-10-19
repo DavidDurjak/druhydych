@@ -92,4 +92,13 @@ export const P3 = {
   '188-chikwangue': ['Kikwanga (chikwangue) à la façon de la RDC mais sans sauce et coupé.jpg','Lyokoï','CC BY-SA 4.0'],
   '188-luwombo': ['Chicken Luwombo.JPG','Namuganyi','CC BY-SA 4.0'],
   '188-mshikaki': ['Mshikaki.jpg','Bswitaba','CC BY-SA 4.0'],
+  '189-bibingka': ['Bibingka (Philippines).jpg','Obsidian Soul','CC0'],
+  '189-rawon': ['Rawon Bu Rima Leces.jpg','Ardhan Febriansyah','CC BY-SA 4.0'],
+  '189-goi-cuon': ['Gỏi cuốn.jpg','Tran Hai Duong','CC0'],
+  '189-boat-noodles': ['Boat noodles.jpg','Flickr user Alpha','CC BY-SA 2.0'],
+  '189-kuy-teav': ['Kuyteav.jpg','Goomba King','CC BY-SA 4.0'],
+  '189-chatamari': ['Meat Chatamari.jpg','Raunak Maskay','CC BY-SA 4.0'],
+  '189-dan-dan-noodles': ['Dandannoodles.jpg','Alpha','CC BY-SA 2.0'],
+  '189-ojja': ['Ojja, Tunisia.JPG','Shoestring','CC BY-SA 4.0'],
+  '189-moi-moi': ['Moi moi In Northern Nigeria 2.jpg','Hajjare','CC BY-SA 4.0'],
 };
