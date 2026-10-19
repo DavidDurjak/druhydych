@@ -1,0 +1,26 @@
+// Recepty v186: slovinské a chorvátske krémeše, švajčiarsky koláč s varenou hruškovou šťavou
+export const R170 = [
+  ['170-blejska-kremsnita', 'Blejská kremšnita', 'cake', 'balkan', 90, 12,
+    [['listkove', 400], ['mlieko', 500], ['cukor', 120], ['pudprasok', 50], ['vajce', 120], ['slahacka', 300]],
+    ['Lístkové cesto rozdeľte na dva pláty, prepichnite vidličkou a pečte na plechu s papierom pri 200 °C asi 18 minút do zlatista, potom nechajte vychladnúť.',
+     'Vo vyššom hrnci prevarte 400 ml mlieka s cukrom. Zvyšné mlieko rozmiešajte s pudingovým práškom a žĺtkami a za stáleho miešania vlejte do vriaceho mlieka.',
+     'Krém za stáleho miešania varte 2 až 3 minúty do zhustnutia a nechajte úplne vychladnúť, povrch prikryte fóliou.',
+     'Jeden plát cesta dajte do formy, natrite vychladnutým vanilkovým krémom a nechajte stuhnúť v chladničke aspoň hodinu.',
+     'Šľahačku vyšľahajte do pevnosti, naneste na krém a prikryte druhým plátom cesta, ktorý ste predtým nakrájali na porcie.',
+     'Pred podávaním posypte práškovým cukrom a rezy nechajte aspoň 2 hodiny v chlade.']],
+  ['170-samoborska-kremsnita', 'Samoborská kremšnita', 'cake', 'balkan', 100, 12,
+    [['listkove', 500], ['mlieko', 600], ['cukor', 140], ['pudprasok', 60], ['vajce', 100], ['slahacka', 250], ['maslo', 20]],
+    ['Lístkové cesto rozdeľte na dva pláty, prepichnite ich vidličkou a pečte pri 200 °C asi 20 minút do svetlozlatej farby, potom ich nechajte vychladnúť.',
+     'Z mlieka, cukru, pudingového prášku a žĺtkov uvarte hustý vanilkový krém, na konci vmiešajte maslo a nechajte ho vychladnúť.',
+     'Šľahačku vyšľahajte do pevnosti a opatrne ju vmiešajte do vychladnutého krému, aby vznikla ľahká hustá náplň.',
+     'Náplň rozotrite na spodný plát cesta vo formine, prikryte druhým plátom a mierne pritlačte.',
+     'Dezert nechajte aspoň 3 hodiny stuhnúť v chladničke, potom nakrájajte na štvorce a posypte práškovým cukrom.']],
+  ['170-tarte-au-vin-cuit', 'Tarte au vin cuit', 'cake', 'ch', 70, 8,
+    [['muka', 250], ['maslo', 125], ['cukor', 50], ['vajce', 150], ['x170_vincuit', 150], ['slahacka', 200]],
+    ['Z múky, studeného masla, 30 g cukru a jedného vajca zamiesite hladké cesto, zabaľte ho do fólie a nechajte 30 minút odpočívať v chladničke.',
+     'Cesto vyvaľkajte, vyložte ním vymastenú formu na koláč s okrajom, dno popichajte vidličkou a predpečte pri 180 °C 10 minút.',
+     'Varenú hruškovú šťavu rozmiešajte so zvyšným cukrom, dvomi vajcami a šľahačkou do hladkej zmesi.',
+     'Zmes nalejte na predpečené cesto a pečte pri 180 °C ďalších 25 až 30 minút, kým náplň nestuhne.',
+     'Koláč nechajte vo forme vychladnúť, podávajte pri izbovej teplote alebo mierne vlažný.']],
+];
+export const I170 = { 'x170_vincuit': ['Varená hruškovo-jablková šťava (vin cuit)', 270, 0.3, 66, 0.1] };
