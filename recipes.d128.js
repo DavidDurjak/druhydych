@@ -24,8 +24,6 @@ export const R128 = [
     ['Droždie rozmiešaj v teplom mlieku s lyžicou cukru a nechaj 10 minút.', 'Pridaj múku, zvyšný cukor, roztopené maslo, vajce a štipku soli a vymiesi hladké cesto, nechaj ho 60 minút kysnúť.', 'Cesto rozvaľkaj, nakrájaj na trojuholníky a zvinúť do rožkov.', 'Rožky potri rozšľahaným vajcom, posyp makom a nechaj 20 minút kysnúť.', 'Peč pri 200 °C asi 15 minút do zlatohneda.']],
   ['128-vyprazana-veka', 'Vyprážaná veka', 'breakfast', 'cz', 15, 2, [['chliebbiely', 200], ['mlieko', 150], ['vajce', 120], ['slnolej', 30], ['cesnak', 10]],
     ['Vajcia rozšľahaj s mliekom a štipkou soli.', 'Veku nakrájaj na plátky hrubé asi 2 cm.', 'Plátky namoč do vaječnej zmesi z oboch strán.', 'Opekaj na rozohriatom oleji z oboch strán do zlatohneda.', 'Podávaj potreté cesnakom.']],
-  ['128-syrova-omeleta', 'Syrová omeleta', 'breakfast', 'cz', 10, 1, [['vajce', 180], ['mlieko', 30], ['maslo', 10], ['syr', 50]],
-    ['Vajcia rozšľahaj s mliekom a štipkou soli.', 'Na panvici rozohrej maslo a vylej vaječnú zmes.', 'Po 2 minútach, keď spodok stuhne, posyp polovicu omelety strúhaným syrom.', 'Omeletu preloži na polovicu a nechaj ešte minútu na miernom ohni.']],
   ['128-prazenica-s-udeninou', 'Praženica s údeninou', 'breakfast', 'cz', 15, 2, [['vajce', 240], ['salama', 100], ['cibula', 50], ['maslo', 15], ['chlieb', 100]],
     ['Cibuľu a údeninu nakrájaj na malé kocky.', 'Na masle opeč cibuľu a údeninu 4 minúty.', 'Zaleje rozšľahanými vajcami a za stáleho miešania nechaj stuhnúť na miernom ohni.', 'Dochuť soľou a korením.', 'Podávaj s chlebom.']],
   ['128-prazenica-so-syrom', 'Praženica so syrom', 'breakfast', 'cz', 12, 2, [['vajce', 240], ['syr', 80], ['maslo', 15], ['mlieko', 40], ['rajciny', 100], ['bageta', 100]],

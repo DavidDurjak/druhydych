@@ -1,7 +1,5 @@
 // Recepty v172: francúzske a okolité jedlá z kategórií Commons
 export const R141 = [
-  ['141-zuppa-di-pesce', 'Talianska rybacia polievka zuppa di pesce', 'soup', 'it', 50, 4, [['treska', 300], ['kalamar', 150], ['kreveta', 150], ['musle', 200], ['cibula', 100], ['cesnak', 15], ['passata', 300], ['olej', 30], ['vino', 100]],
-    ['Na oleji opeč nasekanú cibuľu a cesnak do zmäknutia.', 'Podlej bielym vínom, nechaj odpariť a pridaj paradajkový pretlak s 500 ml vody.', 'Varte 15 minút, potom vlož kalamáre a kúsky tresky a varte 8 minút.', 'Pridaj krevety a očistené mušle a varte 4 minúty, kým sa mušle neotvoria.', 'Podávaj horúce s opečeným chlebom.']],
   ['141-neules', 'Neules, katalánske vianočné oblátky', 'snack', 'es', 40, 8, [['muka', 100], ['cukor', 80], ['maslo', 40], ['mlieko', 50], ['vajce', 60]],
     ['Zmiešaj roztopené maslo, cukor, vajce a mlieko.', 'Primiešaj preosiatu múku na hladké riedke cesto.', 'Na plech s papierom rozotri veľmi tenké kruhy a peč pri 180 C asi 6 minút do zlatista.', 'Ešte horúce zroluj do rúrok a nechaj vychladnúť.']],
   ['141-cakanka-so-sunkou', 'Čakanka so šunkou v syrovej omáčke', 'lunch', 'fr', 50, 2, [['x141_cikoria', 500], ['sunka', 150], ['maslo', 20], ['muka', 20], ['mlieko', 300], ['emental', 100]],

@@ -28,8 +28,6 @@ export const R137 = [
     ['Múky, droždie, 2 lyžičky soli a 500 ml vlažnej vody vymiesi na tuhé cesto a nechaj 60 minút kysnúť.', 'Cesto vytvaruj na štvorhranný bochník a nechaj ešte 30 minút odpočívať.', 'Povrch navlhči vodou, prikry fóliou a peč pri 230 °C prvých 15 minút.', 'Zníž teplotu na 190 °C a peč ďalších 45 minút.']],
   ['137-plootz', 'Rhönský Plootz s kyslou smotanou a slaninou', 'lunch', 'de', 90, 4, [['muka', 400], ['mlieko', 220], ['drozdie', 8], ['maslo', 40], ['kyslasmotana', 200], ['slanina', 100], ['cibula', 120]],
     ['Z múky, vlažného mlieka, droždia, masla a soli vymiesi cesto a nechaj ho hodinu kysnúť.', 'Cibuľu a slaninu nakrájaj na kocky a krátko opeč.', 'Cesto rozvaľkaj na plech do hrúbky asi 1 cm a nechaj ešte 15 minút odpočívať.', 'Natri kyslou smotanou a posyp slaninou a cibuľou.', 'Peč 20 minút pri 220 °C do zlatista.']],
-  ['137-wurstgulasch', 'Gulášová klobása Wurstgulasch', 'lunch', 'de', 40, 4, [['klobasa', 500], ['cibula', 200], ['paprika', 200], ['passata', 300], ['olej', 20]],
-    ['Cibuľu nakrájaj na kocky a opeč na oleji do sklovita.', 'Pridaj nakrájanú papriku a klobásu na kolieska a krátko opeč.', 'Zalej paradajkovým pretlakom a 150 ml vody, ochuť soľou a korením.', 'Dus 20 minút pod pokrievkou, kým omáčka nezhustne.']],
 ];
 export const I137 = {
   x137_raznamuka: ['Ražná múka', 325, 9, 76, 1.7],
