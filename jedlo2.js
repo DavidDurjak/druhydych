@@ -108,6 +108,8 @@ const CSS = `
 .screen:has(#mealseg) .empty{position:relative;padding:34px 18px 26px;text-align:center;border-radius:20px;border:1.5px dashed color-mix(in srgb,var(--text) 16%,transparent);color:var(--muted)}
 .screen:has(#mealseg) .empty::before{content:'🍽️';display:block;font-size:38px;margin-bottom:8px;animation:jBob2 3s ease-in-out infinite}
 @keyframes jBob2{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+body:has(.fast-bar) .bd-fab{opacity:0!important;pointer-events:none!important;transform:scale(.6)!important}
+.fast-bar{z-index:70}
 @media (prefers-reduced-motion:reduce){.screen:has(#mealseg) *,.screen:has(#mealseg)::before,.jh,.jh::after{animation:none!important;transition:none!important}}
 `;
 const st = document.createElement('style'); st.id = 'jedlo2css'; st.textContent = CSS; document.head.appendChild(st);
@@ -119,8 +121,8 @@ const META = {
 const IDEAS = ['2 vajcia a toast', 'skyr a banán', 'kuracie s ryžou', 'kebab a kofola', 'ovsená kaša s ovocím'];
 const HINTS = ['kuracie prsia', 'ovsená kaša', 'bryndzové halušky', 'skyr', 'banán', 'tvaroh', 'ryža basmati', 'avokádo', 'proteínová tyčinka'];
 const n0 = v => Math.round(Number(v) || 0);
-const num = (el, to, ms = 1000) => {
-  const t0 = performance.now(), from = 0;
+const num = (el, to, ms = 1000, from = 0) => {
+  const t0 = performance.now();
   const step = t => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = n0(from + (to - from) * e); if (k < 1 && el.isConnected) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 };
@@ -150,10 +152,12 @@ async function fill(hero, seg) {
   hero.classList.remove('sk'); hero.classList.toggle('over', over);
   const strong = hero.querySelector('.jh-t strong'), lab = hero.querySelector('.jh-t small'), sub = hero.querySelector('.jh-t span');
   lab.textContent = over ? 'Nad cieľom o' : 'Zostáva dnes';
-  strong.innerHTML = `<i>0</i><em>kcal</em>`; num(strong.querySelector('i'), Math.abs(left));
+  const prev = +hero.dataset.k || 0; hero.dataset.k = String(Math.abs(left));
+  strong.innerHTML = `<i>${n0(prev)}</i><em>kcal</em>`; num(strong.querySelector('i'), Math.abs(left), 700, prev);
   sub.textContent = `zjedené ${n0(sum.kcal)} z ${n0(tk)} kcal`;
   const ring = hero.querySelector('.f'), pc = hero.querySelector('.jh-ring b');
-  pc.innerHTML = `<span>0</span><small>%</small>`; num(pc.firstChild, pct * 100);
+  const pp = +hero.dataset.p || 0; hero.dataset.p = String(pct * 100);
+  pc.innerHTML = `<span>${n0(pp)}</span><small>%</small>`; num(pc.firstChild, pct * 100, 700, pp);
   requestAnimationFrame(() => requestAnimationFrame(() => { ring.style.strokeDashoffset = String(213.6 * (1 - pct)); }));
   const M = [['Bielkoviny', sum.protein, +p.target_protein, '#7CFFB2'], ['Sacharidy', sum.carbs, +p.target_carbs, '#5BB8FF'], ['Tuky', sum.fat, +p.target_fat, '#FFC857']];
   hero.querySelector('.jh-m').innerHTML = M.map(([l, v, t, col]) => `<div class="jm" style="--c:${col}">${l}<b>${n0(v)}<small>/ ${n0(t)} g</small></b><i><u data-w="${t ? Math.min(100, v / t * 100) : 0}"></u></i></div>`).join('');
@@ -180,7 +184,15 @@ function placeholderLoop(q) {
   }, 70);
 }
 
+let barTxt = '', barT = 0;
+function watchBar() {
+  const t = document.querySelector('.fast-bar')?.textContent || '';
+  if (t === barTxt) return; barTxt = t;
+  clearTimeout(barT);
+  barT = setTimeout(() => { const hero = document.querySelector('#jh'), seg = document.querySelector('#mealseg'); if (hero && seg) fill(hero, seg); }, 500);
+}
 function tune() {
+  watchBar();
   const seg = document.querySelector('#mealseg'); if (!seg || seg.dataset.j2) return;
   seg.dataset.j2 = '1';
   decorateMeals(seg, null);
