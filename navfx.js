@@ -29,7 +29,7 @@ function check() {
   else if (b >= 0) dir = -1;          // z podobrazovky späť na kartu
   else dir = back ? -1 : 1;           // do podobrazovky
   scr.style.setProperty('--fw-nx', dir * 18 + 'px');
-  scr.classList.remove('fw-nav-in'); void scr.offsetWidth; scr.classList.add('fw-nav-in');
+  scr.classList.add('fw-nav-in'); // nová obrazovka: bez vynúteného prepočtu rozloženia (šetrí desiatky ms pri každom prepnutí)
   scr.addEventListener('animationend', () => { scr.classList.remove('fw-nav-in'); scr.style.removeProperty('--fw-nx'); }, { once: true });
 }
 

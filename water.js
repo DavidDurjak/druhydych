@@ -9,8 +9,10 @@ import { ctx } from './app.js';
 const fmtL = ml => String(+(ml / 1000).toFixed(2)).replace('.', ',');
 const DAYS = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'];
 const CHIPS = [[150, 'Dúšok'], [250, 'Pohár'], [500, 'Fľaša']];
-const BOT = 'M30 4h20a3 3 0 0 1 3 3v8c0 6 14 12 14 26v96a12 12 0 0 1-12 12H25a12 12 0 0 1-12-12V41c0-14 14-20 14-26V7a3 3 0 0 1 3-3z';
-const Y0 = 149, Y1 = 22, H = Y0 - Y1, MAX = 8000;
+// športová fľaša: uzáver, hrdlo, ramená a telo so zaoblenými rohmi (viewBox 100 × 184)
+const BOT = 'M39 30h22c0 9 26 12 26 34v98a18 18 0 0 1-18 18H31a18 18 0 0 1-18-18V64c0-22 26-25 26-34z';
+const Y0 = 180, Y1 = 44, H = Y0 - Y1, MAX = 8000;
+const TK = (y) => `<line x1="72" x2="81" y1="${y}" y2="${y}"/>`;
 
 const CSS = `
 .wx{position:relative;margin:0 0 10px;padding:16px 14px 14px;border-radius:22px;border:1px solid rgba(110,200,255,.24);background:radial-gradient(120% 90% at 0% 0%,rgba(75,168,240,.22),transparent 62%),var(--card);overflow:hidden;transition:border-color .4s}
@@ -21,16 +23,17 @@ const CSS = `
 .wx-h h3{margin:0;font-size:17px}
 .wx-goal{font-size:12.5px;color:var(--muted);text-decoration:none}.wx-goal b{color:var(--text)}
 .wx-main{display:flex;gap:16px;align-items:center}
-.wx-bt{position:relative;flex:0 0 92px;height:166px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wx-bt{position:relative;flex:0 0 96px;height:176px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .wx-bt:active{transform:scale(.97)}
 .wx-bt svg{width:100%;height:100%;overflow:visible;display:block}
-.wx-liq{transform:translateY(var(--y,149px));transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
+.wx-liq{transform:translateY(var(--y,180px));transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
 .wx-wave{animation:wxw 3.4s linear infinite}
-@keyframes wxw{to{transform:translateX(-80px)}}
+@keyframes wxw{to{transform:translateX(-100px)}}
+.wx-bt .wx-glow{opacity:0;transition:opacity .6s}.wx.done .wx-bt .wx-glow{opacity:1}
 .wx-liq circle{fill:rgba(255,255,255,.55);animation:wxb 4s ease-in infinite}
 .wx-liq .b2{animation-delay:1.3s}.wx-liq .b3{animation-delay:2.4s}
 @keyframes wxb{0%{transform:translateY(0);opacity:0}15%{opacity:.8}100%{transform:translateY(-46px);opacity:0}}
-.wx-tk line{stroke:rgba(255,255,255,.4);stroke-width:1.4}
+.wx-tk line{stroke:rgba(255,255,255,.45);stroke-width:1.6;stroke-linecap:round}
 .wx-fl{position:absolute;left:50%;top:40%;transform:translateX(-50%);font-weight:800;font-size:18px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none;animation:wxf .9s ease-out forwards}
 @keyframes wxf{0%{opacity:0;transform:translate(-50%,10px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-34px)}}
 .wx-r{flex:1;min-width:0}
@@ -83,20 +86,29 @@ if (typeof document !== 'undefined' && !document.getElementById('wx-css')) {
 
 export function waterHtml({ ml, goalMl }) {
   const ticks = [];
-  for (let m = 500; m < goalMl; m += 500) { const y = (Y0 - m / goalMl * H).toFixed(1); ticks.push(`<line x1="57" x2="67" y1="${y}" y2="${y}"/>`); }
+  for (let m = 500; m < goalMl; m += 500) ticks.push(TK((Y0 - m / goalMl * H).toFixed(1)));
   return `<section class="wx${ml >= goalMl ? ' done' : ''}" id="wx">
     <div class="wx-h"><h3>💧 Pitný režim</h3><a class="wx-goal" href="#/ciele">cieľ <b>${fmtL(goalMl)} l</b> ✎</a></div>
     <div class="wx-main">
       <button class="wx-bt" data-wx="250" aria-label="Pridať pohár vody">
-        <svg viewBox="0 0 80 150" aria-hidden="true"><defs><clipPath id="wxc"><path d="${BOT}"/></clipPath>
-          <linearGradient id="wxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9BDBFF"/><stop offset="1" stop-color="#2F86E8"/></linearGradient></defs>
-          <path d="${BOT}" fill="rgba(91,184,255,.07)"/>
+        <svg viewBox="0 0 100 184" aria-hidden="true"><defs><clipPath id="wxc"><path d="${BOT}"/></clipPath>
+          <linearGradient id="wxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A8E2FF"/><stop offset=".55" stop-color="#4BA8F0"/><stop offset="1" stop-color="#1F6FD6"/></linearGradient>
+          <linearGradient id="wxglass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".35" stop-color="#fff" stop-opacity=".04"/><stop offset="1" stop-color="#fff" stop-opacity=".10"/></linearGradient>
+          <linearGradient id="wxcap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C9EDFF"/><stop offset="1" stop-color="#6CC0FA"/></linearGradient>
+          <radialGradient id="wxgl" cx=".5" cy=".6" r=".6"><stop offset="0" stop-color="#7CFFB2" stop-opacity=".55"/><stop offset="1" stop-color="#7CFFB2" stop-opacity="0"/></radialGradient></defs>
+          <ellipse class="wx-glow" cx="50" cy="110" rx="50" ry="78" fill="url(#wxgl)"/>
+          <rect x="34" y="3" width="32" height="20" rx="6" fill="url(#wxcap)"/>
+          <path d="M38 8.5h24M38 13h24M38 17.5h24" stroke="#2F86E8" stroke-opacity=".35" stroke-width="1.4"/>
+          <rect x="37" y="22" width="26" height="9" rx="2" fill="#8FD3FF" fill-opacity=".5"/>
+          <path d="${BOT}" fill="rgba(91,184,255,.08)"/>
           <g clip-path="url(#wxc)"><g class="wx-liq" style="--y:${Y0}px">
-            <g class="wx-wave"><path d="M0 0q20-6 40 0t40 0t40 0t40 0t40 0t40 0V200H0z" fill="url(#wxg)"/></g>
-            <circle class="b1" cx="28" cy="60" r="2.2"/><circle class="b2" cx="45" cy="70" r="1.6"/><circle class="b3" cx="38" cy="55" r="2"/></g>
+            <g class="wx-wave"><path d="M0 0q25-7 50 0t50 0t50 0t50 0t50 0V240H0z" fill="url(#wxg)"/><path d="M0 3q25-6 50 0t50 0t50 0t50 0t50 0" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2"/></g>
+            <circle class="b1" cx="34" cy="70" r="2.6"/><circle class="b2" cx="56" cy="84" r="1.9"/><circle class="b3" cx="46" cy="64" r="2.3"/></g>
             <g class="wx-tk">${ticks.join('')}</g></g>
-          <path d="${BOT}" fill="none" stroke="rgba(143,211,255,.6)" stroke-width="2"/>
-          <path d="M20 58V118" stroke="#fff" stroke-opacity=".2" stroke-width="3" stroke-linecap="round"/></svg>
+          <path d="${BOT}" fill="url(#wxglass)"/>
+          <path d="${BOT}" fill="none" stroke="rgba(160,220,255,.75)" stroke-width="2.2"/>
+          <path d="M24 74V156" stroke="#fff" stroke-opacity=".28" stroke-width="4" stroke-linecap="round"/>
+          <path d="M31 70V92" stroke="#fff" stroke-opacity=".18" stroke-width="2.5" stroke-linecap="round"/></svg>
       </button>
       <div class="wx-r">
         <div class="wx-big"><span id="wxN">${fmtL(ml)}</span><small>l</small></div>
@@ -201,7 +213,7 @@ export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday }) {
     const gb = q('.wx-goal b'); if (gb) gb.textContent = `${fmtL(goalMl)} l`;
     const gl = q('.wx-goal'); if (gl) gl.firstChild.textContent = goals[date] ? 'cieľ dňa ' : 'cieľ ';
     q('.wx-of').textContent = `z ${fmtL(goalMl)} l`;
-    const tk = []; for (let m = 500; m < goalMl; m += 500) { const y = (Y0 - m / goalMl * H).toFixed(1); tk.push(`<line x1="57" x2="67" y1="${y}" y2="${y}"/>`); }
+    const tk = []; for (let m = 500; m < goalMl; m += 500) tk.push(TK((Y0 - m / goalMl * H).toFixed(1)));
     q('.wx-tk').innerHTML = tk.join('');
     setFill(); paint();
   };

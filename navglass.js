@@ -32,13 +32,15 @@ const geo = nav => {
   const a0 = as[0].getBoundingClientRect(), w = a0.width;
   return { r, w, left0: a0.left - r.left - nav.clientLeft, cl: nav.clientLeft, n: as.length };
 };
+// poloha bubliny len cez CSS (šírka = jedna záložka, posun v percentách), bez merania rozloženia stránky pri každom prepnutí
 function place(nav, idx, anim = true) {
   const lens = nav.querySelector('.nav-lens'); if (!lens) return;
-  const g = geo(nav);
-  lens.style.width = g.w + 'px';
-  if (!anim) { lens.style.transition = 'none'; }
-  lens.style.transform = `translateX(${g.left0 + idx * g.w}px)`;
-  if (!anim) { void lens.offsetWidth; lens.style.transition = ''; }
+  const n = items(nav).length || 1;
+  lens.style.width = `calc((100% - 8px) / ${n})`;
+  lens.style.left = '4px';
+  if (!anim) lens.style.transition = 'none';
+  lens.style.transform = `translateX(${idx * 100}%)`;
+  if (!anim) requestAnimationFrame(() => { lens.style.transition = ''; });
 }
 function setup(nav) {
   if (nav.__g) return; nav.__g = 1;

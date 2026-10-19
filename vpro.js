@@ -31,7 +31,6 @@ const CSS = `
 .screen:has(#mealseg) .res.hasft.fast:last-child{margin-bottom:0}
 .screen:has(#mealseg) .res.hasft.fast .qadd{width:40px;height:40px;margin-left:2px}
 .screen:has(#mealseg) .results:has(.res.fast){padding:2px}
-body:has(.screen #mealseg) .bd-fab{display:none!important}
 
 /* ---------- Dnes ---------- */
 .fwdk-h h3,.dc-h h3{font-size:19px;font-weight:750;letter-spacing:-.015em}
@@ -39,9 +38,9 @@ body:has(.screen #mealseg) .bd-fab{display:none!important}
 #app #adaptCard.card.accent{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,var(--card)),var(--card));border:1px solid color-mix(in srgb,var(--accent) 26%,var(--line));box-shadow:none}
 #app .wx{padding:14px 14px 12px;margin-bottom:12px}
 #app .wx-h{margin-bottom:4px}
-#app .wx-main{gap:14px}
-#app .wx-bt{flex:0 0 62px;height:112px}
-#app .wx-big{font-size:38px}
+#app .wx-main{gap:16px;align-items:center}
+#app .wx-bt{flex:0 0 92px;height:168px;margin:-2px 0 -4px}
+#app .wx-big{font-size:42px}
 #app .wx-big small{font-size:20px}
 #app .wx-of{margin-top:3px}
 #app .wx-pct{margin-top:8px}

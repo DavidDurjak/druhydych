@@ -27,13 +27,14 @@ const cache = {};   // dátum -> { pct, tr }: pri ďalšom vykreslení sa stav u
 function paint(wk) {
   const bs = [...wk.querySelectorAll('.wk-d')];
   const hit = bs.map(b => { const c = cache[b.dataset.d]; return !!c && c.pct >= 0.85 && c.pct <= 1.1; });
+  const ws = bs.map(b => b.offsetWidth); // najprv všetky merania, potom zápisy (inak sa rozloženie prepočíta pri každom dni)
   bs.forEach((b, i) => {
     const c = cache[b.dataset.d]; if (!c) return;
     b.classList.toggle('hit', hit[i]);
     b.classList.toggle('over', c.pct > 1.1);
     b.classList.toggle('tr', !!c.tr);
     b.classList.toggle('chain', hit[i] && !!hit[i + 1]);
-    b.style.setProperty('--cw', b.offsetWidth + 'px');
+    b.style.setProperty('--cw', ws[i] + 'px');
   });
 }
 

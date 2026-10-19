@@ -8,8 +8,12 @@ import { aiBoxHtml, bindAiBox } from './ailog.js';
 import * as dx from './dxcore.js';
 import { thumb, fillThumbs } from './foodimg.js';
 import { openFoodSheet } from './foodsheet.js';
-import { openRecipeHub, hubTabs } from './recipes.js';
-import { photoOf } from './recipes.photos.js';
+import * as ff from './foodfast.js';
+// recepty (6 000+ jedál s fotkami, vyše 3 MB) sa načítajú až pri otvorení receptov, nie pri štarte appky
+let recMod = null;
+const loadRecipes = () => (recMod ||= import('./recipes.js'));
+const openRecipeHub = (...a) => loadRecipes().then(m => m.openRecipeHub(...a)).catch(() => toast('Recepty sa nepodarilo načítať, skús to znova', true));
+const hubTabs = active => `<div class="seg rh-seg" data-rh-seg><button data-rh="insp" class="${active === 'insp' ? 'on' : ''}">Inšpiruj sa</button><button data-rh="mine" class="${active === 'mine' ? 'on' : ''}">Môj recept</button></div>`;
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -155,9 +159,16 @@ export async function renderFood() {
     if (!q) { $tabs.style.display = ''; showTab(); return; }
     if (multi) { multi = false; chosen.clear(); drawBar(); }
     $tabs.style.display = 'none';
+    // okamžité výsledky z našej databázy v telefóne, server ich o chvíľu doplní
+    const fast = (dx.cfg().hide && !showHidden ? ff.search(q, 20).filter(f => !dx.isBad(f)) : ff.search(q, 20)).slice(0, 12);
+    if (fast.length) {
+      $res.classList.remove('stale');
+      $res.innerHTML = '<p class="sec">Databáza Fuelwind</p>' + fast.map(f => row(fromDb(f), put(fromDb(f)))).join('') + '<div class="spinner" style="margin:14px auto 4px;transform:scale(.7)"></div>';
+      bind();
+    }
     timer = setTimeout(async () => {
       const my = ++seq;
-      $res.innerHTML = '<div class="spinner"></div>';
+      if (!fast.length) $res.innerHTML = '<div class="spinner"></div>';
       const raw = await db.searchFoods(q, dx.cfg().hide ? 50 : 30).catch(() => []);
       if (my !== seq) return;
       const local = dx.cfg().hide && !showHidden ? raw.filter(f => !dx.isBad(f)).slice(0, 30) : raw;
@@ -187,11 +198,14 @@ export async function renderFood() {
         bind();
       } catch (err) { if (err.name !== 'AbortError') { const box = $res.querySelector('#offBox'); if (box) box.innerHTML = ''; } }
       }
-    }, 120);
+    }, fast.length ? 160 : 90);
   };
+  ff.ensure();
 
   $app().querySelector('#newFood').onclick = () => openFoodEditor({ name: $q.value.trim() }, meal, done);
-  $app().querySelector('#newRecipe').onclick = () => openRecipeHub(meal, done, recipeHubK);
+  const $nr = $app().querySelector('#newRecipe');
+  $nr.addEventListener('pointerdown', loadRecipes, { once: true });
+  $nr.onclick = () => openRecipeHub(meal, done, recipeHubK);
   $app().querySelector('#quick').onclick = () => openQuick(meal);
   $app().querySelector('#scan').onclick = () => openScan(meal, done);
   $app().querySelector('#copyY').onclick = async () => {
@@ -343,6 +357,7 @@ async function addPreset(r, meal, done, qty = 1) {
   let saved = exist;
   if (!saved) {
     const k = 100 / r.grams, t = r.ing.reduce((a, i) => { const f = i.grams / 100; a.kcal += i.per100.kcal * f; a.protein += i.per100.protein * f; a.carbs += i.per100.carbs * f; a.fat += i.per100.fat * f; return a; }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+    const { photoOf } = await import('./recipes.photos.js');
     const row = { name: r.name, is_recipe: true, servings: r.servings, total_grams: r0(r.grams), is_public: false, img: photoOf(r.id, 500),
       kcal: r0(t.kcal * k), protein: r1(t.protein * k), carbs: r1(t.carbs * k), fat: r1(t.fat * k),
       portions: [{ label: '1 porcia', g: r0(r.grams / r.servings) }], recipe: presetItems(r) };

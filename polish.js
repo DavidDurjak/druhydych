@@ -1,12 +1,12 @@
 // Drobné vizuálne doladenia naprieč appkou:
-// 1) obsah obrazoviek končí nad plávajúcim avatarom kouča, takže ho posledná karta ani text nikdy neprekryjú,
+// 1) obsah obrazoviek končí tesne nad spodnou lištou, bez prázdneho miesta pod poslednou kartou,
 // 2) čísla v týždennom reporte sa nikdy nevylejú z mriežky,
 // 3) prázdne Fotky: namiesto vety „Zatiaľ žiadne fotky.“ jasný štart premeny (tri pózy, tipy a tlačidlo na prvú fotku),
 // 4) Váha: história s nadpisom a zmenou oproti predošlému váženiu, desatinná čiarka podľa jazyka (84,7 kg, nie 84.7),
 // 5) Správy: bubliny ako v chate a prázdny stav s rýchlymi otázkami, ktoré sa jedným ťuknutím vpíšu do správy.
 import { currentLang } from './i18n.js';
 const CSS = `
-body:has(.bd-fab) #app>.screen:not(.no-nav):not(.fx-setup){padding-bottom:calc(var(--nav-h,72px) + env(safe-area-inset-bottom) + 88px)}
+#app>.screen:not(.no-nav):not(.fx-setup){padding-bottom:calc(var(--nav-h,72px) + env(safe-area-inset-bottom) + 18px)}
 .pz{text-align:center;padding:6px 2px 4px}
 .pz-poses{display:flex;justify-content:center;gap:10px;margin:4px 0 16px}
 .pz-pose{width:78px;border-radius:16px;padding:10px 0 8px;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent) 6%,transparent);color:var(--muted)}

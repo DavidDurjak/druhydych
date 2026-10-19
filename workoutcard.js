@@ -4,6 +4,9 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { EXERCISES } from './workouts.js';
+// kresba karty a anatomická mapa (~130 kB) sa načítajú až pri otvorení karty
+let ART = null;
+import { tr, currentLang } from './i18n.js';
 
 const W = 1080, H = 1920;
 const BG = '#0B0E12';
@@ -17,7 +20,8 @@ const exName = id => EXERCISES?.[id]?.name || id;
 const e1rm = (kg, reps) => kg * (1 + Math.min(reps, 20) / 30);
 
 export function calcStats(log, prior) {
-  const done = (log.sets || []).filter(s => s.done);
+  let done = (log.sets || []).filter(s => s.done);
+  if (!done.length) done = (log.sets || []).filter(s => s.ex && (Number(s.reps) > 0 || Number(s.kg) > 0 || s.ex === 'cardio'));
   const byEx = new Map();
   let volume = 0, cardioSets = 0;
   for (const s of done) {
@@ -49,141 +53,23 @@ export function calcStats(log, prior) {
   return { all: [...byEx.values()], volume, sets: done.length - cardioSets, cardioSets, exCount: byEx.size, prs, top, volPr: prior.length > 0 && volume > prevMaxVol && prevMaxVol > 0 };
 }
 
-// ---------- postava so svietiacimi svalmi: unikátny tvar každého tréningu (ako trasa na Strave) ----------
-const E = (x, y, rx, ry, rot = 0) => ({ e: [x, y, rx, ry, rot] });
-const FIG = {
-  sil: [E(100, 31, 16, 19), E(100, 53, 8, 9), E(100, 112, 38, 50), E(100, 190, 25, 18), E(52, 102, 11, 30, .12), E(148, 102, 11, 30, -.12), E(45, 154, 9, 27, .08), E(155, 154, 9, 27, -.08), E(41, 188, 7, 10), E(159, 188, 7, 10),
-    E(84, 242, 19, 54, .03), E(116, 242, 19, 54, -.03), E(82, 340, 13, 46), E(118, 340, 13, 46), E(80, 397, 12, 7), E(120, 397, 12, 7)],
-  front: {
-    delt: [E(60, 78, 13, 13), E(140, 78, 13, 13)], chest: [E(84, 98, 19, 16, -.2), E(116, 98, 19, 16, .2)], biceps: [E(51, 106, 8, 20, .12), E(149, 106, 8, 20, -.12)],
-    abs: [E(100, 146, 13, 33)], quads: [E(84, 242, 16, 47), E(116, 242, 16, 47)], calves: [E(82, 340, 10, 38), E(118, 340, 10, 38)],
-  },
-  back: {
-    back: [E(100, 78, 20, 14), E(80, 118, 14, 30, .25), E(120, 118, 14, 30, -.25)], rdelt: [E(60, 78, 13, 13), E(140, 78, 13, 13)], triceps: [E(51, 106, 8, 20, .12), E(149, 106, 8, 20, -.12)],
-    glutes: [E(86, 204, 17, 15), E(114, 204, 17, 15)], hams: [E(84, 247, 15, 44), E(116, 247, 15, 44)], calves: [E(82, 340, 11, 38), E(118, 340, 11, 38)],
-  },
-};
-// cvik -> svalové skupiny (váha)
-const MUS = { 'hrudník': { chest: 1, delt: .35, triceps: .3 }, 'ramená': { delt: 1, rdelt: .5 }, 'zadné ramená': { rdelt: 1 }, 'chrbát': { back: 1, biceps: .35, rdelt: .3 }, 'biceps': { biceps: 1 }, 'triceps': { triceps: 1 }, 'core': { abs: 1 },
-  'nohy': { quads: 1, glutes: .5 }, 'kvadricepsy': { quads: 1 }, 'zadný reťazec': { hams: 1, glutes: .7, back: .4 }, 'hamstringy': { hams: 1 }, 'zadok': { glutes: 1, hams: .3 }, 'lýtka': { calves: 1 } };
-export function muscleLoad(top) {
-  const m = {};
-  for (const e of top) { const w = MUS[EXERCISES?.[e.id]?.muscle]; if (!w) continue; for (const k in w) m[k] = (m[k] || 0) + e.sets * w[k]; }
-  const mx = Math.max(0, ...Object.values(m));
-  const out = {}; if (mx) for (const k in m) out[k] = m[k] / mx;
-  return out;
+// ---------- karta: kresba je v cardart.js (anatomická postava muža alebo ženy so svietiacimi svalmi) ----------
+const NUMW = n => ['', 'deň', 'dni', 'dni', 'dni'][n] || 'dní';
+function cardData(d, sex) {
+  const s = d.s, big = s.volume > 0, t0 = s.top[0], pr = s.prs[0];
+  const stats = [];
+  if (big) stats.push(['Objem', nf(s.volume), 'kg']);
+  if (d.dur) stats.push(['Čas', d.dur >= 60 ? `${Math.floor(d.dur / 60)}:${String(d.dur % 60).padStart(2, '0')}` : String(d.dur), d.dur >= 60 ? 'h' : 'min']);
+  stats.push(['Série', String(s.sets), '']);
+  if (stats.length < 3) stats.push(['Cviky', String(s.exCount), '']);
+  let highlight = null;
+  if (pr) highlight = { label: 'Osobný rekord', text: `${exName(pr.id)} · ${kgs(pr.kg)} kg × ${pr.reps}`, pr: true };
+  else if (s.volPr) highlight = { label: 'Rekord', text: 'Najväčší objem v histórii', pr: true };
+  else if (t0) highlight = { label: 'Najlepšia séria', text: t0.best ? `${exName(t0.id)} · ${kgs(t0.best.kg)} kg × ${t0.best.reps}` : `${exName(t0.id)} · ${t0.bw} opakovaní`, pr: false };
+  return { title: d.dayName, dateLabel: d.dateLabel, stats: stats.slice(0, 3), load: d.load, sex, muscles: ART.topMuscles(d.load), highlight,
+    streak: d.streak, streakText: `${d.streak} ${NUMW(d.streak)} v rade`, week: d.weekText };
 }
-function path(c, list, ox, oy, sc) {
-  list.forEach(({ e: [x, y, rx, ry, rot] }) => { c.beginPath(); c.ellipse(ox + x * sc, oy + y * sc, rx * sc, ry * sc, rot, 0, Math.PI * 2); c.fill(); });
-}
-const TORSO = [[62, 68], [138, 68], [135, 120], [125, 150], [119, 192], [81, 192], [75, 150], [65, 120]];
-function silCanvas(ox, oy, sc) {
-  const t = document.createElement('canvas'); t.width = W; t.height = H;
-  const x = t.getContext('2d'); x.fillStyle = x.strokeStyle = '#fff'; x.lineJoin = 'round'; x.lineWidth = 12 * sc;
-  x.beginPath(); TORSO.forEach(([a, b], i) => i ? x.lineTo(ox + a * sc, oy + b * sc) : x.moveTo(ox + a * sc, oy + b * sc)); x.closePath(); x.fill(); x.stroke();
-  path(x, FIG.sil.filter(o => o.e[3] !== 50), ox, oy, sc);
-  return t;
-}
-// tenký obrys postavy (ako biela trasa na Strave): obrys = silueta bez svojej zmenšenej kópie
-function outline(c, ox, oy, sc, r, alpha) {
-  const t = silCanvas(ox, oy, sc), e = document.createElement('canvas'); e.width = W; e.height = H;
-  const x = e.getContext('2d'); x.drawImage(t, 0, 0);
-  x.globalCompositeOperation = 'destination-in';
-  for (let i = 0; i < 12; i++) { const an = i / 12 * Math.PI * 2; x.drawImage(t, Math.cos(an) * r, Math.sin(an) * r); }
-  const o = document.createElement('canvas'); o.width = W; o.height = H;
-  const y = o.getContext('2d'); y.drawImage(t, 0, 0); y.globalCompositeOperation = 'destination-out'; y.drawImage(e, 0, 0);
-  c.save(); c.globalAlpha = alpha; c.drawImage(o, 0, 0); c.restore();
-}
-function figure(c, ox, oy, sc, side, load, style) {
-  c.save();
-  const parts = FIG[side];
-  if (style === 'clean') {
-    outline(c, ox, oy, sc, 3.2, .95);
-    for (const k in parts) {
-      const v = load[k] || 0; if (!v) continue;
-      c.shadowColor = `rgba(255,255,255,${.7 * v})`; c.shadowBlur = 26 * v; c.fillStyle = `rgba(255,255,255,${.32 + .55 * v})`;
-      path(c, parts[k], ox, oy, sc); c.shadowBlur = 0;
-    }
-  } else {
-    const t = silCanvas(ox, oy, sc); c.globalAlpha = .15; c.drawImage(t, 0, 0); c.globalAlpha = 1;
-    for (const k in parts) {
-      const v = load[k] || 0;
-      if (!v) { c.fillStyle = 'rgba(255,255,255,.07)'; path(c, parts[k], ox, oy, sc); continue; }
-      const a = .5 + .5 * v;
-      c.shadowColor = `rgba(255,120,30,${.9 * v})`; c.shadowBlur = 44 * v + 10;
-      c.fillStyle = v > .7 ? `rgba(255,196,90,${a})` : `rgba(255,118,38,${a})`;
-      path(c, parts[k], ox, oy, sc); c.shadowBlur = 0;
-    }
-  }
-  c.restore();
-}
-
-// štýly: 'foto' (tvoja fotka), 'dark' (tmavé pozadie), 'clear' (priehliadne PNG na nalepenie do story)
-export function draw(d, mode = 'dark', photo = null) {
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const c = cv.getContext('2d');
-  const sticker = mode === 'clear';
-  if (!sticker) {
-    c.fillStyle = BG; c.fillRect(0, 0, W, H);
-    if (mode === 'foto' && photo) {
-      const iw = photo.width, ih = photo.height, k = Math.max(W / iw, H / ih), w = iw * k, h = ih * k;
-      c.drawImage(photo, (W - w) / 2, (H - h) / 2, w, h);
-      const sc = c.createLinearGradient(0, 0, 0, H);
-      sc.addColorStop(0, 'rgba(0,0,0,.30)'); sc.addColorStop(.35, 'rgba(0,0,0,.06)'); sc.addColorStop(.65, 'rgba(0,0,0,.08)'); sc.addColorStop(1, 'rgba(0,0,0,.50)');
-      c.fillStyle = sc; c.fillRect(0, 0, W, H);
-    } else {
-      const g = c.createRadialGradient(W / 2, 1180, 60, W / 2, 1180, 900);
-      g.addColorStop(0, 'rgba(255,110,30,.30)'); g.addColorStop(.55, 'rgba(255,90,30,.08)'); g.addColorStop(1, 'rgba(11,14,18,0)');
-      c.fillStyle = g; c.fillRect(0, 0, W, H);
-    }
-  }
-  const shadow = on => { c.shadowColor = on ? (mode === 'dark' ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.6)') : 'transparent'; c.shadowBlur = on ? 26 : 0; c.shadowOffsetY = on ? 3 : 0; };
-  c.textAlign = 'center'; shadow(true);
-  // štatistiky ako na Strave: malý popis, veľké číslo
-  const big = d.s.volume > 0, t0 = d.s.top[0];
-  c.font = FONT(600, 36);
-  const stats = [
-    [big ? 'Objem' : 'Série', big ? `${nf(d.s.volume)} kg` : String(d.s.sets)],
-    d.dur ? ['Čas', durFmt(d.dur)] : [big ? 'Série' : 'Cviky', big ? String(d.s.sets) : String(d.s.exCount)],
-  ];
-  if (t0) stats.push([fit(c, exName(t0.id), 760), t0.best ? `${kgs(t0.best.kg)} kg × ${t0.best.reps}` : `${t0.bw} op.`]);
-  let y = 330;
-  stats.forEach(([l, v]) => {
-    c.fillStyle = 'rgba(255,255,255,.92)'; c.font = FONT(600, 36); c.fillText(l, W / 2, y);
-    c.fillStyle = '#fff'; c.font = FONT(800, 92); let fs = 92; while (c.measureText(v).width > W - 160 && fs > 56) { fs -= 6; c.font = FONT(800, fs); }
-    c.fillText(v, W / 2, y + 94); y += 178;
-  });
-  // rekord
-  const pr = d.s.prs[0];
-  if (pr || d.s.volPr) {
-    shadow(false); c.font = FONT(800, 34);
-    const t = pr ? `Nový rekord · ${fit(c, exName(pr.id), 600)}` : 'Najväčší objem v histórii'; const bw = Math.min(W - 80, c.measureText(t).width + 72), bx = W / 2 - bw / 2;
-    rr(c, bx, y - 14, bw, 72, 36);
-    if (mode === 'dark') { c.fillStyle = 'rgba(255,200,87,.92)'; c.fill(); c.fillStyle = '#2a1a00'; }
-    else { c.fillStyle = 'rgba(255,255,255,.16)'; c.fill(); c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2.5; c.stroke(); c.fillStyle = '#fff'; }
-    c.fillText(t, W / 2, y + 33); shadow(true);
-  }
-  // postava
-  const sc = 1.38, fw = 200 * sc, gap = 40, ox = (W - (fw * 2 + gap)) / 2, oy = 1010;
-  shadow(false);
-  const fst = mode === 'dark' ? 'fire' : 'clean';
-  figure(c, ox, oy, sc, 'front', d.load, fst); figure(c, ox + fw + gap, oy, sc, 'back', d.load, fst);
-  // pätička
-  shadow(true);
-  c.save(); c.translate(W / 2 - 168, 1778); c.scale(2.3, 2.3);
-  c.fillStyle = 'rgba(255,255,255,.25)'; c.strokeStyle = '#fff'; c.lineWidth = 1.8; c.lineJoin = 'round';
-  const p = new Path2D(FLAME); c.fill(p); c.stroke(p); c.restore();
-  c.textAlign = 'left'; c.fillStyle = '#fff'; c.font = FONT(800, 52); c.fillText('Fuelwind', W / 2 - 108, 1826);
-  c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,.85)'; c.font = FONT(600, 30);
-  c.fillText(`${d.dateLabel}${d.streak > 0 ? `  ·  ${d.streak} ${d.streak === 1 ? 'deň' : d.streak < 5 ? 'dni' : 'dní'} v rade` : ''}`, W / 2, 1878);
-  shadow(false);
-  return cv;
-}
-function fit(c, text, max) {
-  if (c.measureText(text).width <= max) return text;
-  let t = text; while (t.length > 3 && c.measureText(t + '…').width > max) t = t.slice(0, -1);
-  return t.trimEnd() + '…';
-}
+export function draw(d, mode = 'dark', photo = null, sex = 'm') { return ART.drawCard(cardData(d, sex), mode, photo, t => tr(t) || t); }
 
 async function build() {
   const st = ctx.state, uid = st.profile.id, date = st.date || calc.today();
@@ -196,15 +82,24 @@ async function build() {
   const log = logs.find(l => l.date === date); if (!log) throw new Error('Tréning nie je ukončený');
   const prior = logs.filter(l => l.date < date);
   const s = calcStats(log, prior);
+  // svaly: každá započítaná séria; keď nie je zapísaná žiadna, použijú sa cviky z plánu na tento deň
+  let list = s.all.flatMap(e => Array(e.sets).fill({ ex: e.id }));
+  if (!list.length) {
+    const day = plan?.days?.find((x, i) => i === log.plan_day || x.name === log.day_name);
+    list = (day?.exercises || []).flatMap(e => Array(Number(e.sets) || 1).fill({ ex: e.id }));
+    if (!s.sets) { s.sets = list.length; s.exCount = new Set(list.map(x => x.ex)).size; }
+  }
   const ws = calc.weekStart(date);
   const weekN = logs.filter(l => l.date >= ws && l.date <= calc.addDays(ws, 6)).length;
   const goal = st.profile.training_days || plan?.days?.length || 0;
   const dt = new Date(date + 'T00:00:00');
+  const lang = currentLang();
   return {
-    s, dur: Number(log.duration_min) || 0, load: muscleLoad(s.all), dayName: log.day_name || 'Tréning', name: (st.profile.name || '').split(' ')[0],
-    dateLabel: dt.toLocaleDateString('sk-SK', { day: 'numeric', month: 'long' }),
-    week: goal ? `${weekN}/${goal}` : String(weekN),
+    s, dur: Number(log.duration_min) || 0, load: ART.loadFrom(list, EXERCISES), dayName: log.day_name || 'Tréning', name: (st.profile.name || '').split(' ')[0],
+    dateLabel: dt.toLocaleDateString(lang === 'sk' ? 'sk-SK' : lang, { day: 'numeric', month: 'long' }),
+    weekText: goal ? `Tréning ${Math.min(weekN, 99)} z ${goal} tento týždeň` : '',
     streak: calc.streak ? calc.streak(dates) : 0,
+    sex: st.profile.sex === 'f' ? 'f' : 'm',
   };
 }
 
@@ -214,20 +109,26 @@ async function loadPhoto(file) {
 }
 async function open() {
   let d;
-  try { d = await build(); } catch (e) { ctx.toast(e.message || 'Karta sa nepodarila', true); return; }
+  try { ART ||= await import('./cardart.js'); d = await build(); } catch (e) { ctx.toast(e.message || 'Karta sa nepodarila', true); return; }
   try { await Promise.race([document.fonts.load('800 80px Sora'), new Promise(r => setTimeout(r, 1200))]); } catch (_) { /* náhradné písmo */ }
-  let mode = 'dark', photo = null, cv = draw(d, mode, photo);
+  let sex = d.sex; try { sex = localStorage.getItem('fw_card_sex') || d.sex; } catch (_) { /* nič */ }
+  let mode = 'dark', photo = null, cv = null, url = '';
   const bg = ctx.sheet(`<div class="row between"><h3>Karta tréningu</h3><button class="del" data-x aria-label="Zavrieť">×</button></div>
     <div class="wc-pv"><img alt="Náhľad karty tréningu"></div>
-    <div class="wc-seg"><button data-m="foto">Moja fotka</button><button data-m="dark" class="on">Tmavá</button><button data-m="clear">Priehľadná</button></div>
+    <div class="wc-opts">
+      <div class="wc-seg" role="group" aria-label="Pozadie"><button data-m="dark">Tmavá</button><button data-m="foto">Moja fotka</button><button data-m="clear">Nálepka</button></div>
+      <div class="wc-seg wc-sex" role="group" aria-label="Postava"><button data-s="m">Muž</button><button data-s="f">Žena</button></div>
+    </div>
     <p class="muted small wc-hint"></p>
     <input type="file" accept="image/*" id="wcFile" hidden>
-    <div class="row mt" style="gap:8px"><button class="btn" id="wcSave" style="flex:1">Uložiť</button><button class="btn primary" id="wcShare" style="flex:1">${navigator.canShare ? 'Zdieľať na story' : 'Stiahnuť'}</button></div>`);
+    <div class="row mt" style="gap:8px"><button class="btn" id="wcSave" style="flex:1">Uložiť</button><button class="btn primary" id="wcShare" style="flex:1.4">${navigator.canShare ? 'Zdieľať na story' : 'Stiahnuť'}</button></div>`);
   const img = bg.querySelector('img'), hint = bg.querySelector('.wc-hint'), file = bg.querySelector('#wcFile');
-  const HINT = { foto: 'Fotka z posilňovne dá najlepší výsledok. Ťukni na "Moja fotka" znova a vymeníš ju.', dark: 'Hotová karta bez fotky.', clear: 'PNG bez pozadia. V Instagrame ho nalepíš na vlastnú fotku alebo video ako nálepku.' };
+  const HINT = { foto: 'Najlepšie vyzerá fotka z posilňovne. Ťukni na Moja fotka znova a vymeníš ju.', dark: 'Hotová karta, stačí zdieľať.', clear: 'Priehľadná nálepka. V Instagrame ju prilepíš na svoju fotku alebo video.' };
   const redraw = () => {
-    cv = draw(d, mode, photo); img.src = cv.toDataURL('image/png'); hint.textContent = HINT[mode];
+    cv = draw(d, mode, photo, sex); hint.textContent = HINT[mode];
+    cv.toBlob(b => { if (!b) return; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(b); img.src = url; }, 'image/png');
     bg.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === mode));
+    bg.querySelectorAll('[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === sex));
     bg.querySelector('.wc-pv').classList.toggle('clr', mode === 'clear');
   };
   bg.querySelector('[data-x]').onclick = () => bg.remove();
@@ -235,6 +136,7 @@ async function open() {
     if (b.dataset.m === 'foto' && (!photo || mode === 'foto')) { file.click(); return; }
     mode = b.dataset.m; redraw();
   });
+  bg.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { sex = b.dataset.s; try { localStorage.setItem('fw_card_sex', sex); } catch (_) { /* nič */ } redraw(); });
   file.onchange = async () => {
     const f = file.files?.[0]; if (!f) return;
     try { photo = await loadPhoto(f); mode = 'foto'; redraw(); } catch (_) { ctx.toast('Fotku sa nepodarilo načítať', true); }
@@ -253,7 +155,13 @@ async function open() {
   redraw();
 }
 
-const CSS = `.wc-btn{width:100%;margin:2px 0 10px;border:0;border-radius:18px;padding:15px;font:inherit;font-weight:800;font-size:16px;color:#2a1200;background:linear-gradient(180deg,#FFD58A,#FF9D3D);cursor:pointer;box-shadow:0 6px 22px rgba(255,138,31,.28)}.wc-btn:active{transform:scale(.98)}.wc-pv{margin-top:10px;border-radius:18px;overflow:hidden;background:#0B0E12;line-height:0}.wc-pv img{width:100%;max-height:56vh;object-fit:contain;display:block;margin:0 auto}.wc-pv.clr{background:repeating-conic-gradient(#3a3f47 0 25%,#2b2f35 0 50%) 0 0/24px 24px}.wc-seg{display:flex;gap:6px;margin-top:10px}.wc-seg button{flex:1;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-weight:700;font-size:14px;padding:10px 4px;border-radius:14px;cursor:pointer}.wc-seg button.on{background:rgba(255,138,31,.2);border-color:#FF8A1F}.wc-hint{margin-top:8px;min-height:2.6em}`;
+const CSS = `.wc-btn{width:100%;margin:2px 0 10px;border:0;border-radius:18px;padding:15px;font:inherit;font-weight:800;font-size:16px;color:#05261a;background:linear-gradient(180deg,#9DFFC8,#3FD5C4);cursor:pointer;box-shadow:0 8px 26px rgba(63,213,196,.30)}.wc-btn:active{transform:scale(.98)}
+.wc-pv{margin-top:10px;border-radius:20px;overflow:hidden;background:#05070A;line-height:0;box-shadow:0 10px 40px rgba(0,0,0,.45)}.wc-pv img{width:100%;max-height:54vh;object-fit:contain;display:block;margin:0 auto;aspect-ratio:9/16}
+.wc-pv.clr{background:repeating-conic-gradient(#3a3f47 0 25%,#2b2f35 0 50%) 0 0/24px 24px}
+.wc-opts{display:flex;gap:8px;margin-top:12px}.wc-seg{display:flex;gap:4px;padding:4px;border-radius:16px;background:rgba(255,255,255,.06);flex:1}.wc-sex{flex:0 0 auto}
+.wc-seg button{flex:1;text-align:center;border:0;background:none;color:var(--muted,#9aa6b2);font:inherit;font-weight:700;font-size:13.5px;padding:9px 10px;border-radius:12px;cursor:pointer;white-space:nowrap}
+.wc-seg button.on{background:rgba(124,255,178,.16);color:#CFFFE3;box-shadow:inset 0 0 0 1px rgba(124,255,178,.45)}
+.wc-hint{margin-top:8px;min-height:1.4em}`;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 const root = document.getElementById('app');
 function enhance() {
@@ -264,3 +172,4 @@ function enhance() {
   fin.parentElement.before(b);
 }
 if (root) { new MutationObserver(enhance).observe(root, { childList: true, subtree: true }); enhance(); }
+export { open as openWorkoutCard };
