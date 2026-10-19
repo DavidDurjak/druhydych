@@ -12,7 +12,7 @@ const INFO = {
     <p><b>Ovos</b> je bez lepku len vtedy, ak je certifikovaný. Bežný býva kontaminovaný pšenicou.</p>
     <p><b>V reštaurácii</b> sa pýtaj na spoločný olej na vyprážanie, spoločné dosky a obaly. Na cestách ti pomôže karta v cudzom jazyku.</p>`],
   diabetes: ['Cukrovka: ako to appka počíta', `<p><b>SJ (sacharidová jednotka)</b> je množstvo sacharidov, ktoré si nastavíš na 10 alebo 12 g. Rožok s 28 g sacharidov je pri 10 g približne 2,8 SJ.</p>
-    <p><b>GI</b> (glykemický index) ukazuje, ako rýchlo sacharidy zdvihnú cukor. <b>GZ</b> (glykemická záťaž) je GI krát množstvo sacharidov, takže zohľadňuje aj porciu. Obe hodnoty sú orientačné a u každého človeka sú trochu iné.</p>
+    <p><b>GI</b> (glykemický index) ukazuje, ako rýchlo sacharidy zdvihnú cukor. <b>GZ</b> (glykemická záťaž) je GI krát množstvo sacharidov, takže zohľadňuje aj porčiu. Obe hodnoty sú orientačné a u každého človeka sú trochu iné.</p>
     <p><b>Pravidlo 15</b> pri nízkom cukre: 15 g rýchlych sacharidov, 15 minút čakať, znova zmerať. Tlačidlo „Mám nízky cukor“ ťa tým prevedie.</p>
     <p><b>Čo appka nerobí:</b> nepočíta dávky inzulínu ani liekov a nenahrádza lekára. Cieľový rozsah si nastav podľa svojho diabetológa.</p>`],
   lactose: ['Intolerancia laktózy: čo vedieť', `<p><b>Veľa laktózy</b> majú mlieko, jogurty, tvaroh, smotana a čerstvé syry. <b>Málo</b> majú dlho zrejúce syry (eidam, gouda, parmezán), maslo a niektoré fermentované výrobky. Znášanlivosť je individuálna.</p>
@@ -27,7 +27,7 @@ const INFO = {
   halal: ['Halal a kosher: čo appka vie', `<p>Appka označí bravčové mäso, alkohol a morské plody (kosher) podľa názvu jedla a zloženia.</p>
     <p><b>Nevie overiť</b>, či je mäso porazené podľa pravidiel ani či má prevádzka certifikát. Ten si over u predajcu alebo na obale.</p>`],
   salt: ['Vysoký tlak: soľ', `<p>Odporúčaný denný strop je približne <b>5 g soli</b>, čo je jedna čajová lyžička. Soľ vypočítaš zo sodíka: sodík × 2,5.</p>
-    <p>Najviac soli skrýva pečivo, údeniny, syry, polievky z balíčka, koreniace zmesi a hotové jedlá, nie len soľnnička.</p>
+    <p>Najviac soli skrýva pečivo, údeniny, syry, polievky z balíčka, koreniace zmesi a hotové jedlá, nie len to, čo dosolíš sám.</p>
     <p>Jedlá s viac ako 1,5 g soli na 100 g označujeme ako veľmi slané.</p>`],
 };
 
