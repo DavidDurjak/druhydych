@@ -132,7 +132,8 @@ export function drawCard(d, mode = 'dark', photo = null, T = s => s) {
   c.textAlign = 'right'; c.font = FONT(600, 32); c.fillStyle = 'rgba(255,255,255,.62)'; c.fillText(d.dateLabel, R, 148);
   // názov tréningu
   c.textAlign = 'left'; c.fillStyle = '#fff';
-  fitFont(c, d.title, 800, 104, 60, R - L); c.fillText(ell(c, d.title, R - L), L, 318);
+  const title = T(d.title);
+  fitFont(c, title, 800, 104, 60, R - L); c.fillText(ell(c, title, R - L), L, 318);
   check(c, L + 4, 376, 30, MINT);
   c.font = FONT(700, 32); c.fillStyle = MINT; c.fillText(T('Tréning dokončený'), L + 52, 388);
   // štatistiky: malý popis, veľké číslo
@@ -175,9 +176,9 @@ export function drawCard(d, mode = 'dark', photo = null, T = s => s) {
   c.textAlign = 'left'; c.font = FONT(700, 32);
   if (d.streak > 0) {
     c.save(); c.translate(L, 1818); c.scale(1.6, 1.6); c.fillStyle = '#FF9D3D'; c.fill(new Path2D(FLAME)); c.restore();
-    c.fillStyle = '#fff'; c.fillText(d.streakText, L + 46, 1850);
+    c.fillStyle = '#fff'; c.fillText(T(d.streakText), L + 46, 1850);
   }
-  if (d.week) { c.textAlign = 'right'; c.fillStyle = 'rgba(255,255,255,.62)'; c.font = FONT(600, 30); c.fillText(d.week, R, 1850); }
+  if (d.week) { c.textAlign = 'right'; c.fillStyle = 'rgba(255,255,255,.62)'; c.font = FONT(600, 30); c.fillText(T(d.week), R, 1850); }
   sh(false);
   return cv;
 }
