@@ -9,7 +9,14 @@ const KEY = 'fw_lang';
 const LANGS = [['sk', 'Slovenčina'], ['cs', 'Čeština'], ['de', 'Deutsch'], ['hu', 'Magyar'], ['pl', 'Polski'], ['en', 'English'], ['uk', 'Українська'],
   ['es', 'Español'], ['fr', 'Français'], ['it', 'Italiano'], ['ro', 'Română'], ['hr', 'Hrvatski'], ['sl', 'Slovenščina'], ['sr', 'Srpski'], ['bg', 'Български'],
   ['ru', 'Русский'], ['nl', 'Nederlands'], ['pt', 'Português'], ['sv', 'Svenska'], ['da', 'Dansk'], ['no', 'Norsk'], ['fi', 'Suomi'], ['tr', 'Türkçe'],
-  ['lt', 'Lietuvių'], ['lv', 'Latviešu'], ['et', 'Eesti'], ['el', 'Ελληνικά']];
+  ['lt', 'Lietuvių'], ['lv', 'Latviešu'], ['et', 'Eesti'], ['el', 'Ελληνικά'],
+  ['ar', 'العربية'], ['he', 'עברית'], ['fa', 'فارسی'], ['hi', 'हिन्दी'], ['bn', 'বাংলা'], ['ur', 'اردو'], ['zh', '中文'], ['ja', '日本語'], ['ko', '한국어'],
+  ['vi', 'Tiếng Việt'], ['id', 'Bahasa Indonesia'], ['ms', 'Bahasa Melayu'], ['th', 'ไทย'], ['tl', 'Filipino'], ['sw', 'Kiswahili'], ['ca', 'Català'],
+  ['is', 'Íslenska'], ['bs', 'Bosanski'], ['mk', 'Македонски'], ['sq', 'Shqip']];
+const RTL = new Set(['ar', 'he', 'fa', 'ur']);
+// kódy, ktoré telefóny posielajú inak ako my (nb/nn = nórčina, fil = filipínčina, iw = hebrejčina, in = indonézština)
+const ALIAS = { nb: 'no', nn: 'no', fil: 'tl', iw: 'he', in: 'id' };
+const codeOf = l => { const t = String(l).toLowerCase().split(/[-_]/)[0]; return ALIAS[t] || t.slice(0, 2); };
 const OK = new Set(LANGS.map(l => l[0]));
 const H = document.documentElement;
 
@@ -18,7 +25,7 @@ try { if (!localStorage.getItem(KEY) && Object.keys(localStorage).some(k => k.st
 
 export function getChoice() { try { return localStorage.getItem(KEY) || 'auto'; } catch (_) { return 'auto'; } }
 function phoneLang() {
-  for (const l of navigator.languages || [navigator.language || 'sk']) { const c = String(l).slice(0, 2).toLowerCase(); if (OK.has(c)) return c; }
+  for (const l of navigator.languages || [navigator.language || 'sk']) { const c = codeOf(l); if (OK.has(c)) return c; }
   return 'en';
 }
 export function currentLang() { const c = getChoice(); return c !== 'auto' && OK.has(c) ? c : phoneLang(); }
@@ -40,6 +47,7 @@ async function prefetch(code) {
 
 const LANG = currentLang();
 H.lang = LANG;
+H.dir = RTL.has(LANG) ? 'rtl' : 'ltr';
 
 // ---------- výber jazyka v Profile (vedľa Vzhľadu): vlastný zoznam ako v top appkách, nie systémový výber ----------
 const cap = t => t ? t[0].toLocaleUpperCase() + t.slice(1) : t;
@@ -77,7 +85,7 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function openPicker() {
   css();
   const cur = getChoice(), ph = phoneLang();
-  const phoneSet = [...new Set((navigator.languages || []).map(l => String(l).slice(0, 2).toLowerCase()).filter(c => OK.has(c)))];
+  const phoneSet = [...new Set((navigator.languages || []).map(codeOf).filter(c => OK.has(c)))];
   const sug = [...new Set([...phoneSet, 'sk', 'cs', 'en', 'de'])].slice(0, 5);
   const row = (code, title, sub) => `<button class="lg-it notranslate${code === cur ? ' on' : ''}" data-l="${code}"><span><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span><span class="lg-ok">${code === cur ? CHECK : ''}</span></button>`;
   const item = code => { const n = nativeName(code), l = localName(code); return row(code, n, code === LANG || !l || l.toLowerCase() === n.toLowerCase() ? '' : l); };
