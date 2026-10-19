@@ -130,7 +130,7 @@ function teasers(pg) {
   if (a.length !== 1 || !/Zapisuj aspoň/.test(a[0].textContent)) return;
   const items = [
     ['🍕', 'Víkend alebo týždeň? Uvidíš, kedy ješ viac.', '#FFB547'],
-    ['💪', 'Koľko dní z týžňa si splnil bielkoviny.', 'var(--accent)'],
+    ['💪', 'Koľko dní z týždňa si splnil bielkoviny.', 'var(--accent)'],
     ['🎯', 'Najpresnejší deň, keď si trafil cieľ na kalóriu.', '#5BB8FF'],
   ];
   box.classList.add('pe-tz');
