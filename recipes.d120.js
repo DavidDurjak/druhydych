@@ -20,8 +20,6 @@ export const R120 = [
     ['Rebrá potri soľou, rozdrveným cesnakom, horčicou a olejom a nechaj aspoň hodinu marinovať.', 'Rebrá zabaľ do alobalu a peč pri 160 stupňoch 90 minút.', 'Alobal odvi a peč ďalších 20 minút pri 200 stupňoch do zrumenenia.', 'Pred krájaním nechaj 5 minút odpočinúť.']],
   ['120-pecena-bravcova-kyta', 'Pečená bravčová kýta', 'lunch', 'cz', 150, 6, [['bravrezen', 1200], ['cesnak', 20], ['cibula', 150], ['mast', 30], ['mrkva', 100]],
     ['Kýtu osoľ, okoreň a potri roztlačeným cesnakom.', 'Daj do pekáča s masťou, nakrájanou cibuľou a mrkvou.', 'Peč pri 180 stupňoch asi 2 hodiny, polievaj výpekom a podlej trochou vody.', 'Nechaj 10 minút odpočinúť, nakrájaj a podávaj s výpekom.']],
-  ['120-pecena-sunka', 'Pečená šunka', 'lunch', 'cz', 180, 8, [['bravrezen', 1500], ['cesnak', 20], ['cibula', 150], ['horcica', 30], ['olej', 20]],
-    ['Mäso potri soľou, korením, horčicou a roztlačeným cesnakom a nechaj cez noc v chlade.', 'Daj do pekáča na cibuľu, podlej trochou vody a prikry.', 'Peč pri 170 stupňoch asi 2 a pol hodiny, v polovici času otoč a polej výpekom.', 'Odkryte dopeč 20 minút do zlatista, nechaj vychladnúť a krájaj na plátky.']],
   ['120-husacia-pasteta', 'Husacia paštéta', 'snack', 'cz', 100, 8, [['hus', 600], ['pecen', 200], ['cibula', 100], ['maslo', 60], ['zemla', 50]],
     ['Husacie mäso zbav kože a kostí, cibuľu opraž na masle.', 'Pečeň krátko opeč, aby bola ružová vo vnútri.', 'Mäso, pečeň, cibuľu a namočenú žemľu zomelj alebo rozmixuj, dochuť soľou a korením.', 'Hmotu daj do formy, peč vo vodnom kúpeli pri 160 stupňoch 45 minút a nechaj vychladnúť.']],
   ['120-vajickova-natierka', 'Vajíčková nátierka', 'snack', 'cz', 15, 4, [['vajce', 330], ['majoneza', 60], ['jogurtbiely', 60], ['cibulka', 30]],

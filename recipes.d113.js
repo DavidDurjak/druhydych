@@ -1,7 +1,5 @@
 // Recepty v168: poľské, maďarské a nemecké jedlá z kuchárskych zoznamov
 export const R113 = [
-  ['113-tokany', 'Tokány', 'lunch', 'hu', 70, 4, [['hovzadne', 600], ['slanina', 60], ['cibula', 200], ['paprika', 150], ['rajciny', 150], ['olej', 20]],
-    ['Hovädzie nakrájaj na prúžky hrubé ako prst a slaninu na kocky.', 'Slaninu vypeč na oleji, pridaj cibuľu a opeč do sklovita.', 'Pridaj mäso, opeč zo všetkých strán a podlej troškou vody.', 'Pridaj nakrájanú papriku a paradajky, soľ a mletú papriku.', 'Duš pod pokrievkou na miernom ohni asi 50 minút do mäkka. Podávaj s haluškami alebo ryžou.']],
   ['113-sezamova-chalva', 'Sezamová chalva', 'dessert', 'pl', 40, 10, [['tahini', 250], ['cukor', 200], ['pistacie', 50]],
     ['Cukor rozpusti v 80 ml vody a varte sirup na 118 stupňov.', 'Tahini mierne zohrej a vlej do neho horúci sirup.', 'Miešaj, kým sa hmota nezačne zrážať a hustnúť.', 'Primiešaj nasekané pistácie a vtlač do formy vystlanej papierom.', 'Nechaj aspoň 6 hodín vychladnúť a nakrájaj na kocky.']],
   ['113-kysnuty-kolac-s-jablkami', 'Kysnutý koláč s jablkami', 'cake', 'pl', 90, 12, [['muka', 400], ['mlieko', 200], ['drozdie', 20], ['cukor', 120], ['maslo', 80], ['vajce', 100], ['jablko', 600]],
@@ -18,8 +16,6 @@ export const R113 = [
     ['Slaninu nakrájaj na kocky a vypeč na oleji.', 'Pridaj nakrájanú cibuľu a speň do sklovita.', 'Pridaj kapustu, podlej 200 ml vody a duš 25 minút.', 'Posyp múkou, zamiešaj a povar ešte 5 minút do zhustnutia.']],
   ['113-grilovana-krkovicka', 'Grilovaná krkovička', 'lunch', 'pl', 40, 4, [['krkovicka', 800], ['cibula', 100], ['cesnak', 15], ['horcica', 30], ['olej', 30]],
     ['Krkovicu nakrájaj na steaky hrubé 2 cm.', 'Potri ich horčicou, olejom, pretlačeným cesnakom, soľou a cibuľou a nechaj 2 hodiny marinovať.', 'Rozpáľ gril alebo panvicu.', 'Grilujte steaky po 6 až 7 minút z každej strany do prepečenia.', 'Nechaj 5 minút odpočinúť a podávaj.']],
-  ['113-sive-zemiakove-haluski', 'Sivé zemiakové halušky', 'lunch', 'pl', 40, 4, [['zemiaky', 1000], ['muka', 80], ['slanina', 80], ['cibula', 80]],
-    ['Zemiaky nastrúhaj na jemno a odlej šťavu.', 'Primiešaj múku a soľ do hustej hmoty.', 'Lyžicou ju vkladaj do vriacej osolenej vody a varte 8 minút po vyplávaní.', 'Slaninu a cibuľu opeč na panvici.', 'Halušky poliaj škvarkami a podávaj.']],
   ['113-kuracia-pecen-s-jablkami', 'Kuracia pečeň s jablkami', 'lunch', 'pl', 25, 3, [['pecen', 500], ['jablko', 250], ['cibula', 150], ['maslo', 30], ['muka', 20], ['brusnice', 50]],
     ['Pečeň očisti, osoľ a obaľ v múke.', 'Cibuľu speň na masle do zlatista.', 'Pridaj pečeň a opekaj 4 minúty z každej strany.', 'Pridaj jablká nakrájané na mesiačiky a brusnicový džem.', 'Dusi 5 minút. Podávaj s kašou.']],
   ['113-losos-pecony-s-koprom', 'Losos pečený s kôprom', 'dinner', 'pl', 25, 2, [['losos', 400], ['maslo', 20], ['citron', 60], ['x113_kopor', 15], ['cesnak', 5], ['olej', 10]],
@@ -48,8 +44,6 @@ export const R113 = [
     ['Sušienky rozdrv, zmiešaj s roztopeným maslom a vtlač na dno formy.', 'Želatínu rozpusti podľa návodu v troche teplej vody.', 'Tvaroh vymiešaj s cukrom, vlej želatínu a primiešaj vyšľahanú smotanu.', 'Hmotu vlož na základ a uhlaď.', 'Chlad aspoň 4 hodiny a ozdob jahodami.']],
   ['113-jablkovy-kolac-s-posypkou', 'Jablkový koláč s posýpkou', 'cake', 'pl', 80, 10, [['muka', 450], ['maslo', 220], ['cukor', 150], ['vajce', 120], ['jablko', 1000]],
     ['Z 300 g múky, 120 g masla, 60 g cukru a vajec vypracuj cesto a vtlač na plech.', 'Jablká nastrúhaj, krátko podus a rozlož na cesto.', 'Zo zvyšnej múky, masla a cukru rukami rozdrob posýpku.', 'Posyp ňou jablká.', 'Pec pri 180 stupňoch asi 40 minút.']],
-  ['113-tekvicova-polievka', 'Tekvicová polievka', 'soup', 'pl', 35, 4, [['tekvica', 800], ['cibula', 100], ['zemiaky', 150], ['smotana', 100], ['olej', 20], ['cesnak', 5]],
-    ['Cibuľu a cesnak speň na oleji.', 'Pridaj nakrájanú tekvicu a zemiaky a zalej 800 ml vody.', 'Varte 20 minút do mäkka.', 'Rozmixuj, zjemni smotanou a osoľ.']],
   ['113-pusinkova-torta', 'Pusinková torta', 'cake', 'pl', 150, 12, [['x113_bielok', 200], ['cukor', 300], ['slahacka', 400], ['jahody', 300]],
     ['Bielky vyšľahaj do tuhého snehu a postupne vsyp cukor, kým pena nelesknie.', 'Na papier vytvaruj dva kruhy a suš v rúre pri 100 stupňoch asi 90 minút.', 'Nechaj vychladnúť v rúre.', 'Šľahačku vyšľahaj a použi ju medzi korže spolu s jahodami.']],
   ['113-zeleninova-polievka-po-polsky', 'Zeleninová polievka po poľsky', 'soup', 'pl', 40, 5, [['mrkva', 150], ['petrzlen', 100], ['zeler', 100], ['zemiaky', 250], ['karfiol', 150], ['hrasok', 100], ['maslo', 20]],
