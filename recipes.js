@@ -1,5 +1,5 @@
 // Recepty (v156): tlačidlo Recept otvorí okno s dvoma záložkami.
-//  Inšpiruj sa = knižnica takmer 600 receptov zo Slovenska, Čech, celéj Európy aj sveta s reálnymi fotkami,
+//  In:špiruj sa = knižnica takmer 600 receptov zo Slovenska, Čech, celéj Európy aj sveta s reálnymi fotkami,
 //   filter podľa jedla a krajiny, vyhľadávanie podľa názvu, suroviny aj krajiny, radenie podľa bielkovín alebo kalórií. Karta receptu má porcie, makrá, vplyv na deň, suroviny a postup.
 //  Môj recept = vlastný recept z surovín (pôvodný editor).
 import * as db from './data.js';
@@ -8,6 +8,8 @@ import { ctx } from './app.js';
 import { RECIPES, CATS, CUIS } from './recipes.all.js';
 import { photoOf, photoBackup, creditOf, allCredits } from './recipes.photos2.js';
 import './foodsheet.js';
+import * as dx from './dxcore.js';
+import { recipeTags, tagsOf, fit, DIETS } from './dietcore.js';
 
 const h = (...a) => ctx.h(...a), sheet = (...a) => ctx.sheet(...a);
 const MEALS = () => ctx.MEALS;
@@ -16,6 +18,16 @@ const r1 = v => Math.round(Number(v || 0) * 10) / 10;
 const fmt = v => String(r1(v)).replace('.', ',');
 
 const CSS = `
+.rh .rh-dx{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+.rh .rh-dx:empty{display:none}
+.rh .rh-dx button{flex:none;border:0;background:transparent;color:var(--accent);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;padding:4px 0}
+.rh .rh-mk{position:absolute;top:8px;left:8px;z-index:2;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:700;background:rgba(10,14,20,.78);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.rh .rh-mk.bad{color:#FF8FA4}.rh .rh-mk.warn{color:#FFC857}
+.rh .rh-fit{margin:12px 0 0;padding:11px 13px;border-radius:15px;border:1px solid var(--line);border-left-width:3px;background:var(--bg-2);display:grid;gap:3px}
+.rh .rh-fit b{font-size:14px}.rh .rh-fit span{font-size:12.5px;line-height:1.4;color:var(--muted)}.rh .rh-fit em{font-style:normal;font-size:11.5px;color:var(--muted);opacity:.85}
+.rh .rh-fit.ok{border-left-color:#7CFFB2}.rh .rh-fit.warn{border-left-color:#FFC857}.rh .rh-fit.bad{border-left-color:#FF5C7A;background:rgba(255,92,122,.08)}
+html[data-theme=light] .rh .rh-fit.bad b{color:#c02448}html[data-theme=light] .rh .rh-mk{background:rgba(255,255,255,.88)}
+html[data-theme=light] .rh .rh-mk.bad{color:#c02448}html[data-theme=light] .rh .rh-mk.warn{color:#8a5a00}
 .rh{min-height:calc(88vh - 40px)}
 .rh .rh-seg{margin:14px 0 0}
 .rh .rh-hd{display:flex;align-items:center;justify-content:space-between}
@@ -81,7 +93,30 @@ const CSS = `
 `;
 if (!document.getElementById('rh-css')) { const st = document.createElement('style'); st.id = 'rh-css'; st.textContent = CSS; document.head.appendChild(st); }
 
-// záložky Inšpiruj sa / Môj recept (používa ich aj editor vlastného receptu)
+
+// ---------- diéty a zdravotné režimy v receptoch ----------
+// Recepty sa posudzujú podľa surovín. Nevhodné sa predvolene skryjú (dá sa to vypnúť), pochybné dostanú upozornenie.
+let showAllRec = false;
+const prefs = () => { const c = dx.cfg(); return { diets: c.diets || [], modes: c.modes || [], allergens: c.allergens || [] }; };
+const hasPrefs = () => { const c = prefs(); return c.diets.length > 0 || c.modes.some(m => m === 'celiac' || m === 'lactose' || m === 'allergy'); };
+const verdict = r => hasPrefs() ? fit(recipeTags(r), prefs()) : { level: 'ok', items: [] };
+const DX_NAME = { celiac: 'Celiakia', lactose: 'Laktóza', allergy: 'Alergia' };
+const dxName = k => DIETS[k]?.title || DX_NAME[k] || k;
+// ktoré suroviny receptu robia problém
+function culprits(r) {
+  const out = [], c = prefs();
+  for (const i of r.ing) { const f = fit(tagsOf(i.name), c); if (f.level !== 'ok') out.push({ name: i.name, level: f.level, why: [...new Set(f.items.map(x => x.why))].join(', ') }); }
+  return out;
+}
+const dietBlock = r => {
+  if (!hasPrefs()) return '';
+  const v = verdict(r);
+  if (v.level === 'ok') return `<div class="rh-fit ok"><b>Sedí k tvojmu stravovaniu</b><span>${[...prefs().diets.map(dxName), ...prefs().modes.filter(m => DX_NAME[m]).map(dxName)].join(', ')}. Posúdené podľa surovín.</span></div>`;
+  const cs = culprits(r);
+  return `<div class="rh-fit ${v.level}"><b>${v.level === 'bad' ? 'Tento recept ti nesedí' : 'Over pri tomto recepte'}</b><span>${cs.slice(0, 6).map(x => `${h(x.name)} (${h(x.why)})`).join(', ') || 'Zloženie sa nepodarilo plne posúdiť'}${cs.length > 6 ? ' a ďalšie' : ''}.</span><em>Posúdené podľa názvov surovín, nie podľa presného zloženia výrobkov.</em></div>`;
+};
+
+// záložky Inšpiruj sa / Môj recept (používajú ich aj editor vlastného receptu)
 export const hubTabs = active => `<div class="seg rh-seg" data-rh-seg><button data-rh="insp" class="${active === 'insp' ? 'on' : ''}">Inšpiruj sa</button><button data-rh="mine" class="${active === 'mine' ? 'on' : ''}">Môj recept</button></div>`;
 
 const catFor = meal => ({ breakfast: 'breakfast', brunch: 'breakfast', lunch: 'lunch', afternoon: 'snack', dinner: 'dinner', late: 'dinner', snack: 'snack' }[meal] || 'all');
@@ -122,7 +157,7 @@ const ring = (key, label, color) => `<div class="fs-r" data-r="${key}" style="--
 
 // k = { addPreset(recipe, meal, done, servings), editPreset(recipe, meal, done), openMine(meal, done) }
 export function openRecipeHub(meal, done, k) {
-  let cat = catFor(meal), cuis = 'all', q = '', sort = 'rec', io = null;
+  let cat = catFor(meal), cuis = 'all', q = '', sort = 'rec', io = null, hidden = 0;
   const bg = sheet('<div class="rh fs"></div>');
   const root = bg.querySelector('.rh');
   const close = () => bg.remove();
@@ -134,9 +169,12 @@ export function openRecipeHub(meal, done, k) {
     const nq = norm(q).trim();
     let rows = nq ? SEARCH.filter(s => nq.split(/\s+/).every(w => s.t.includes(w))).map(s => s.r) : RECIPES.filter(r => cat === 'all' || r.cat === cat);
     if (!nq && cuis !== 'all') rows = rows.filter(r => r.cuis === cuis);
+    hidden = 0;
+    if (hasPrefs() && !showAllRec) { const keep = rows.filter(r => verdict(r).level !== 'bad'); hidden = rows.length - keep.length; rows = keep; }
     return sortRows(rows, sort);
   };
-  const card = r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ph" data-ph><img src="${photoOf(r.id, 500)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="rh-kc">${r.per.kcal} kcal</span></span><span class="rh-n"><b>${h(r.name)}</b><span>B ${r.per.protein} g · S ${r.per.carbs} g · T ${r.per.fat} g</span></span></button>`;
+  const mark = r => { if (!hasPrefs()) return ''; const l = verdict(r).level; return l === 'bad' ? '<span class="rh-mk bad">✕ nevhodné</span>' : l === 'warn' ? '<span class="rh-mk warn">! over</span>' : ''; };
+  const card = r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ph" data-ph>${mark(r)}<img src="${photoOf(r.id, 500)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="rh-kc">${r.per.kcal} kcal</span></span><span class="rh-n"><b>${h(r.name)}</b><span>B ${r.per.protein} g · S ${r.per.carbs} g · T ${r.per.fat} g</span></span></button>`;
   // karty sa dokreslľujú po dávkach pri rolovaní, aby sa okno otvorilo hneď aj pri stovkách receptov
   function paintGrid() {
     const rows = rowsNow();
@@ -161,6 +199,12 @@ export function openRecipeHub(meal, done, k) {
       io.observe(more);
     } else while (shown < rows.length) next();
     root.querySelector('#rhEmpty').innerHTML = rows.length ? '' : `<div class="rh-empty">Nič sa nenašlo. Skús iný názov, surovinu alebo krajinu.</div>`;
+    const dxn = root.querySelector('#rhDx');
+    if (dxn) {
+      if (!hasPrefs()) dxn.innerHTML = '';
+      else dxn.innerHTML = showAllRec ? `<span>Zobrazujem aj recepty, ktoré ti nesedia.</span><button type="button" id="rhDxT">Skryť nevhodné</button>` : `<span>Podľa tvojho stravovania${hidden ? ` skryté: ${hidden}` : ''}.</span>${hidden ? '<button type="button" id="rhDxT">Zobraziť všetky</button>' : ''}`;
+      const t = dxn.querySelector('#rhDxT'); if (t) t.onclick = () => { showAllRec = !showAllRec; paintGrid(); };
+    }
     root.querySelector('#rhCount').textContent = `${rows.length} ${rows.length === 1 ? 'recept' : rows.length < 5 && rows.length > 0 ? 'recepty' : 'receptov'}`;
   }
 
@@ -171,6 +215,7 @@ export function openRecipeHub(meal, done, k) {
       <div class="rh-cats">${[['all', 'Všetko'], ...CATS].map(([key, l]) => `<button data-c="${key}" class="${!q && key === cat ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
       <div class="rh-cuis">${[['all', 'Celý svet'], ...CUIS].map(([key, l]) => `<button data-u="${key}" class="${!q && key === cuis ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
       <div class="rh-sort"><span id="rhCount"></span>${SORTS.map(([key, l]) => `<button data-s="${key}" class="${key === sort ? 'on' : ''}">${h(l)}</button>`).join('')}</div>
+      <div class="rh-dx" id="rhDx"></div>
       <div class="rh-grid" id="rhGrid"></div><div class="rh-more" id="rhMore"></div><div id="rhEmpty"></div>
       <p class="rh-hint">Hodnoty sú vypočítané zo surovín. <a href="#" id="rhCred">Zdroje fotiek</a></p>`;
     root.querySelector('[data-x]').onclick = () => { if (io) io.disconnect(); close(); };
@@ -208,6 +253,7 @@ export function openRecipeHub(meal, done, k) {
       ${cr ? `<p class="rh-cr">Foto: ${h(cr.author)}, ${h(cr.license)} · <a href="${h(cr.page)}" target="_blank" rel="noopener">Wikimedia Commons</a></p>` : ''}
       <h2 class="rh-t">${h(r.name)}</h2>
       <div class="rh-chips"><span>${r.min} min</span><span>${h(catName(r.cat))}</span>${r.cuis && r.cuis !== 'fit' ? `<span>${h(cuisName(r.cuis))}</span>` : ''}<span>${r.servings === 1 ? '1 porcia' : r.servings + ' porcií v recepte'}</span></div>
+      ${dietBlock(r)}
       <div class="fs-box"><div class="rh-por"><div><b>Počet porcií</b><small id="rhPg"></small></div><div class="st"><button data-d="-1" aria-label="Menej">−</button><em id="rhM"></em><button data-d="1" aria-label="Viac">+</button></div></div>
         <div id="rhCalc" style="margin-top:14px"></div></div>
       <div class="fs-box fs-imp"><h3>Vplyv na tvoj deň <span id="rhDay"></span></h3>
