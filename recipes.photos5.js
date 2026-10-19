@@ -1,2 +1,33 @@
-// Fotky receptov (rezerva pre ďalšie kolo)
-export const P5 = {};
+// Fotky receptov v199 a novšie: [súbor, autor, licencia]. Ďalšie kolo ide do P6.
+import { P6 } from './recipes.photos6.js';
+export const P5 = {
+  ...P6,
+  '193-kat-kyi-kaik': ['Kat kyi hnyat.JPG','Hintha','CC BY-SA 3.0'],
+  '193-ngapyaw-baung': ['Ngapyawbaung.jpg','UserKwantonge','CC BY-SA 3.0'],
+  '193-pastel-de-camiguin': ['Pastel de camiguin.jpg','Shubert Ciencia','CC BY 2.0'],
+  '193-nilasing-na-hipon': ['Nilasing na hipon.jpg','Lokalpedia','CC BY-SA 4.0'],
+  '193-nilupak': ['A variety of Nilupak.jpg','Lokalpedia','CC BY-SA 4.0'],
+  '193-pinangat-na-isda': ['JfSubic9592BaliuagChapelfvf 12.JPG','Judgefloro','CC BY-SA 4.0'],
+  '193-lauya': ['Laollababoy.jpg','Chedlund808','CC BY-SA 4.0'],
+  '193-lengua-estofado': ['Cafe Roces Lengua.jpg','Yvette Tan','CC BY 2.0'],
+  '193-pritong-saging': ['Pritong saba or Pritong saging (fried saba bananas with muscovado sugar), Philippines.jpg','Obsidian Soul','CC0'],
+  '193-shakoy': ['Shakoy doughnut.jpg','Obsidian Soul','CC0'],
+  '193-tinapa': ['Tinapa.jpg','Shubert Ciencia','CC BY 2.0'],
+  '193-tiyula-itum': ['Tiyula Itum by Patrick Aye Beef Black Soup 8-37 screenshot.jpg','NURFADZRIE ABUBAKAR','CC BY 3.0'],
+  '193-tsokolate': ['Sikwate.jpg','Lyraauce','CC BY-SA 4.0'],
+  '193-tibok-tibok': ['Tibok-tibok, Queen of Kapampangan dessert.jpg','Lokalpedia','CC BY-SA 4.0'],
+  '193-puto-calasiao': ['07114jfHighway Churches Bagac Pilar Bridges Bataan Landmarksfvf 02.JPG','Judgefloro','Public domain'],
+  '193-shacha-noodles': ['Shachamian.JPG','Xmhaoyu','CC BY 3.0'],
+  '193-tshuah-ping': ['Bing guan cau mei.jpg','jaUserHadge','CC BY-SA 3.0'],
+  '193-hong-dou-tang': ['HK STT 石塘咀 Shek Tong Tsui 山道 Hill Road 業昌大廈 Yip Cheong Building 海悅海鮮酒家 Ocean Palace Seafood Chinese Restaurant food 紅豆糖水 Red bean dessert soup September 2022 Px3 04.jpg','Shusm Wlwawiv AA','CC BY-SA 4.0'],
+  '193-akuri': ['Dishoom, King\'s Cross, London.jpg','Ewan Munro','CC BY-SA 2.0'],
+  '193-chhena-kheeri': ['Chhena kheeri.png','Arav-can','CC BY-SA 4.0'],
+  '193-pheni': ['Pheni 2020 Rawalpindi.png','Wajid Shah','Public domain'],
+  '193-sukhdi': ['Sukhdi.jpg','Hamzaghanchi','CC BY-SA 3.0'],
+  '193-gosh-e-fil': ['Gosh-e-feel, Panjshir Restaurant.jpg','Ser Amantio di Nicolao','CC BY-SA 3.0'],
+  '193-riste': ['Rista wazwan.jpg','Oniongas','Public domain'],
+  '193-lakhamari': ['Lakha Mari .jpeg','Nirjal stha','CC BY-SA 4.0'],
+  '193-palathalikalu': ['Paal Kozhukattai - Sugar.JPG','Sengolkural','CC BY-SA 4.0'],
+  '193-enduri-pitha': ['Enduri Pitha.JPG','Swetabiswal','CC BY-SA 4.0'],
+  '193-tiler-khaja': ['তিলের খাজা.jpg','Rocky Masum','CC BY-SA 4.0'],
+};
