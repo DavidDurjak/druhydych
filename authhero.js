@@ -70,6 +70,9 @@ body.ah-on .hero+.screen{padding-top:0}
 #authf .btn.primary:active{transform:scale(.98)}
 .ah-trust{display:grid;gap:8px;margin:18px 4px 6px;font-size:13px;color:var(--muted)}
 .ah-trust div{display:flex;align-items:center;gap:10px}
+.ah-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 4px 0}
+.ah-chips span{height:28px;display:inline-flex;align-items:center;padding:0 11px;border-radius:99px;font-size:12.5px;color:var(--text);background:color-mix(in srgb,var(--accent) 9%,var(--bg-2));border:1px solid var(--line)}
+.ah-chips.h span{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
 .ah-trust svg{flex:none;width:18px;height:18px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:reduce){body.ah-on #app::before{animation:none}.ah-demo.ah-go::after{animation:none}.ah-items span{animation:none}.seg:has(+#authf)::before{transition:none}}
 @media (prefers-reduced-motion:reduce){.ah-in i{animation:none}.ah-out,.ah-ring .f,.ah-mac p i{transition:none}}
@@ -139,6 +142,7 @@ async function run(demo) {
 
 const ICO = {
   bolt: '<svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-9A5.3 5.3 0 0 1 12 6a5.3 5.3 0 0 1 9.3 6c-2.3 4.600-9.300 9-9.300 9z"/></svg>',
   book: '<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/></svg>',
 };
 function trust() {
@@ -147,7 +151,12 @@ function trust() {
   card.dataset.aht = '1';
   const t = document.createElement('div'); t.className = 'ah-trust';
   t.innerHTML = `<div>${ICO.bolt}<span>${tr('Zápis textom, hlasom aj fotkou jedla') || 'Zápis textom, hlasom aj fotkou jedla'}</span></div><div>${ICO.book}<span>${tr('Vyše 7 000 receptov s reálnou fotkou') || 'Vyše 7 000 receptov s reálnou fotkou'}</span></div>`;
+  const chip = (a, cls) => `<div class="ah-chips ${cls}">${a.map(x => `<span>${tr(x) || x}</span>`).join('')}</div>`;
+  const h = chip(['Cukrovka', 'Celiakia', 'Intolerancia laktózy', 'Alergie', 'Vysoký tlak'], 'h');
+  const f = chip(['Skener štítkov', 'Skener strojov v posilke', 'Tréningy', 'Kamaráti'], '');
+  t.insertAdjacentHTML('beforeend', `<div>${ICO.heart}<span>${tr('Režimy pre zdravie, ktoré strážia jedlá za teba') || 'Režimy pre zdravie, ktoré strážia jedlá za teba'}</span></div>`);
   card.after(t);
+  t.insertAdjacentHTML('afterend', h + f);
 }
 function scan() {
   document.body.classList.toggle('ah-on', !!document.querySelector('#app #authf'));
