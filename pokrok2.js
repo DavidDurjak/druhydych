@@ -1,6 +1,6 @@
 // Pokrok: krásne prázdne stavy pre nového používateľa a karta "Tvoj štart".
 // Keď ešte nie sú dáta, karty neukazujú pomlčky a prázdne grafy, ale náznak toho, čo sa tu objaví, a jedno jasné tlačidlo, čo urobiť.
-// Modul sa len pozerá na vykreslenú kartu Pokrok (nic nepočíta znova), takže výpočty ostávajú v progress.js.
+// Modul sa len pozerá na vykreslenú kartu Pokrok (nič nepočíta znova), takže výpočty ostávajú v progress.js.
 const CSS = `
 .pe-quest{position:relative;overflow:hidden;margin-bottom:12px;padding:16px;border-radius:22px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));
   background:radial-gradient(100% 140% at 100% 0%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 62%),var(--card);animation:peIn .6s cubic-bezier(.2,.9,.3,1) both}
@@ -130,7 +130,7 @@ function teasers(pg) {
   if (a.length !== 1 || !/Zapisuj aspoň/.test(a[0].textContent)) return;
   const items = [
     ['🍕', 'Víkend alebo týždeň? Uvidíš, kedy ješ viac.', '#FFB547'],
-    ['💪', 'Koľko dní z týždna si splnil bielkoviny.', 'var(--accent)'],
+    ['💪', 'Koľko dní z týžňa si splnil bielkoviny.', 'var(--accent)'],
     ['🎯', 'Najpresnejší deň, keď si trafil cieľ na kalóriu.', '#5BB8FF'],
   ];
   box.classList.add('pe-tz');
