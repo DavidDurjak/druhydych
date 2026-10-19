@@ -63,11 +63,11 @@ body.ah-on .hero+.screen{padding-top:0}
   background:var(--card-2);box-shadow:0 2px 8px rgba(0,0,0,.18);transition:transform .28s cubic-bezier(.3,1.1,.4,1)}
 .seg:has(+#authf):has(button[data-m=register].on)::before{transform:translateX(calc(100% + 4px))}
 .seg:has(+#authf) button.on{background:transparent!important}
-#authf .input{height:52px;border-radius:14px;transition:border-color .2s,box-shadow .2s,background .2s}
-#authf .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 20%,transparent)}
-#authf .btn.primary{position:relative;overflow:hidden;height:54px;border-radius:15px;font-size:16.5px;letter-spacing:-.01em;
+#authf .input,#onb .input{height:52px;border-radius:14px;transition:border-color .2s,box-shadow .2s,background .2s}
+#authf .input:focus,#onb .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 20%,transparent)}
+#authf .btn.primary,#onb .btn.primary{position:relative;overflow:hidden;height:54px;border-radius:15px;font-size:16.5px;letter-spacing:-.01em;
   box-shadow:0 10px 26px color-mix(in srgb,var(--accent) 34%,transparent);transition:transform .15s,box-shadow .2s}
-#authf .btn.primary:active{transform:scale(.98)}
+#authf .btn.primary:active,#onb .btn.primary:active{transform:scale(.98)}
 .ah-trust{display:grid;gap:8px;margin:18px 4px 6px;font-size:13px;color:var(--muted)}
 .ah-trust div{display:flex;align-items:center;gap:10px}
 .ah-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 4px 0}
@@ -191,7 +191,10 @@ document.addEventListener('input', e => {
   hint.classList.toggle('ah-ok', l >= 3);
 }, true);
 function scan() {
-  document.body.classList.toggle('ah-on', !!document.querySelector('#app #authf'));
+  const onb = document.querySelector('#app #onb');
+  document.body.classList.toggle('ah-on', !!(document.querySelector('#app #authf') || onb));
+  const dot = onb && document.querySelector('#app .brand .dot');
+  if (dot) dot.outerHTML = '<img src="icon.svg" alt="" width="32" height="32" style="border-radius:9px;box-shadow:0 6px 18px rgba(124,255,178,.18)">';
   trust();
   const hero = document.querySelector('#app .hero');
   if (hero && !hero.dataset.ah && document.querySelector('#authf')) build(hero);
