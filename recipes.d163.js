@@ -1,7 +1,5 @@
 // Recepty v178: slovenske koláče, rezy, nátierky, cestoviny a iné domáce jedlá (d163)
 export const R163 = [
-  ['163-bananove-rezy', 'Banánové rezy', 'cake', 'sk', 55, 12, [['banan', 400], ['muka', 250], ['cukor', 120], ['vajce', 150], ['olej', 100], ['orechy', 60], ['jogurt', 100]],
-    ['Rúru predhrej na 180 °C a plech vyložený papierom vymasti.', 'Vajcia vyšľahaj s cukrom, pridaj olej, jogurt a roztlačené banány.', 'Primiešaj múku s práškom do pečiva a nasekané orechy, cesto rozotri na plech.', 'Pec 30 až 35 minút do suchej špajle, vychladnuté nakrájaj na rezy.']],
   ['163-ribezlovy-kolac-so-snehom', 'Ríbezľový koláč so snehom', 'cake', 'sk', 70, 12, [['muka', 300], ['maslo', 150], ['cukor', 200], ['vajce', 240], ['x163_ribezle', 500]],
     ['Z múky, masla, polovice cukru a žĺtkov vymiesiš cesto, necháš ho 30 minút odpočinúť v chlade.', 'Cesto rozotri na plech a predpeč 15 minút na 180 °C.', 'Na korpus rozlož umyté ríbezle.', 'Z bielkov a zvyšného cukru ušľahaj tuhý sneh a natri ho na ríbezle.', 'Pec ďalších 20 minút na 160 °C, kým sneh nezozlatne.']],
   ['163-zebra-kolac', 'Zebra koláč', 'cake', 'sk', 60, 12, [['vajce', 200], ['cukor', 180], ['olej', 150], ['mlieko', 200], ['muka', 300], ['kakao', 20]],
@@ -18,8 +16,6 @@ export const R163 = [
     ['Z múky, masla, 50 g cukru a jedného vajca vymiesiš cesto a necháš ho 30 minút odpočinúť.', 'Cesto vtlač do formičiek na košíčky.', 'Orechy nasekaj a zmiešaj so zvyšným cukrom, smotanou, medom a vajcom.', 'Plnku rozdeľ do košíčkov a pec 25 minút na 180 °C.']],
   ['163-grilazky', 'Grilážky', 'snack', 'sk', 25, 10, [['cukor', 200], ['lieskovce', 150], ['maslo', 10]],
     ['Lieskovce nahrubo nasekaj a opeč ich nasucho na panvici.', 'Cukor rozpúšťaj na stredne miernom ohni, kým nezíska zlatohnedú farbu.', 'Pridaj maslo a orechy, rýchlo premiešaj.', 'Hmotu vylej na vymastený papier, rozotri a ešte teplú pokrájaj na kúsky.']],
-  ['163-domaca-klobasa', 'Domáca klobása', 'dinner', 'sk', 90, 6, [['bravcove', 800], ['slanina', 200], ['cesnak', 20], ['paprika', 15], ['mlieko', 100]],
-    ['Mäso a slaninu pomelie na hrubšie, pridaj pretlačený cesnak, mletú papriku, soľ, korenie a trochu vody.', 'Hmotu dobre premiešaj a nechaj v chlade aspoň 2 hodiny uležať.', 'Naplň ju do očistených bravčových čriev a v strede prekrúť na klobásky.', 'Klobásy prepichni a pec 35 až 40 minút na 180 °C, kým nie sú zlatohnedé.']],
   ['163-udene-maso-s-chrenom', 'Údené mäso s chrenom', 'lunch', 'sk', 90, 4, [['udene', 800], ['chren', 80], ['kyslasmotana', 100], ['chlieb', 150], ['horcica', 20]],
     ['Údené mäso daj do studenej vody a pomaly zohrievaj, nechaj ho 60 minút len pomaly pofukovať.', 'Chren nastrúhaj a zmiešaj s kyslou smotanou a horčicou.', 'Uvarené mäso nakrájaj na plátky.', 'Podávaj s chrenom a čerstvým chlebom.']],
   ['163-cestoviny-so-sunkou-a-smotanou', 'Cestoviny so šunkou a smotanou', 'lunch', 'sk', 25, 4, [['cestoviny', 300], ['sunka', 200], ['smotana', 200], ['cibula', 80], ['maslo', 20], ['parmezan', 40]],

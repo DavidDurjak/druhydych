@@ -36,8 +36,6 @@ export const R162 = [
     ['Cibuľu nadrobno nakrájaj a speň na oleji do zmäknutia.', 'Uvarenú šošovicu rozmixuj s cibuľou, cesnakom, citrónovou šťavou a soľou do hladka.', 'Dochuť paprikou, podľa potreby pridaj lyžicu vody.', 'Natri na chlieb a nechaj chvíľu v chladničke.']],
   ['162-sunkova-natierka', 'Šunková nátierka', 'snack', 'sk', 15, 4, [['sunka', 200], ['maslo', 60], ['vajce', 60], ['horcica', 10], ['uhorkykysle', 30], ['chlieb', 160]],
     ['Vajce uvar natvrdo, ošúp a nechaj vychladnúť.', 'Šunku a vajce pomeľ alebo nadrobno nasekaj, kyslé uhorky nadrobno nakrájaj.', 'Zmiešaj s mäkkým maslom a horčicou do hladkej pasty.', 'Natri na chlieb a ozdob uhorkou.']],
-  ['162-zeleninova-natierka', 'Zeleninová nátierka', 'snack', 'sk', 15, 4, [['tvaroh', 200], ['kyslasmotana', 50], ['mrkva', 100], ['paprika', 80], ['cibulka', 20], ['chlieb', 160]],
-    ['Mrkvu nastrúhaj najemno a papriku nakrájaj na drobné kocky.', 'Tvaroh rozmiešaj s kyslou smotanou do hladka.', 'Vmiešaj zeleninu, nasekanú cibuľku a osoľ.', 'Nechaj 30 minút v chladničke prestúpiť a natri na chlieb.']],
   ['162-chlieb-s-maslom-a-medom', 'Chlieb s maslom a medom', 'breakfast', 'sk', 5, 1, [['chlieb', 80], ['maslo', 15], ['med', 20]],
     ['Chlieb prípadne krátko opeč.', 'Natri ho maslom.', 'Poleň medom.', 'Podávaj hneď.']],
   ['162-tvaroh-s-pazitkou-a-cibulkou', 'Tvaroh s pažítkou a cibuľkou', 'dinner', 'sk', 25, 2, [['tvaroh', 250], ['kyslasmotana', 50], ['cibulka', 30], ['zemiaky', 400]],

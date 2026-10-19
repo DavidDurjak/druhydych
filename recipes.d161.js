@@ -2,8 +2,6 @@
 export const R161 = [
   ['161-cuketova-kremova', 'Cuketová krémová polievka', 'soup', 'sk', 35, 4, [['cuketa', 700], ['zemiaky', 200], ['cibula', 80], ['cesnak', 10], ['olej', 20], ['smotana', 100]],
     ['Cibuľu nakrájaj a opeč na oleji do sklovita, pridaj pretlačený cesnak.', 'Pridaj nakrájané zemiaky a cuketu, zalej 1 litrom vody a varte 20 minút do mäkka.', 'Polievku rozmixuj dohladka tyčovým mixérom.', 'Vlej smotanu, osoľ, opatrne prehrej a podávaj s opečeným chlebom.']],
-  ['161-kuracie-drobky-polievka', 'Polievka z kuracích drobkov', 'soup', 'sk', 70, 5, [['x161_kuracie_drobky', 400], ['mrkva', 120], ['petrzlen', 80], ['zeler', 80], ['cibula', 60], ['cestoviny', 80]],
-    ['Drobky (srdiečka, žalúdky) umy a vo veľkom hrnci zalej 2 litrami studenej vody.', 'Priveď do varu, odstráň penu a varte na miernom ohni 40 minút.', 'Pridaj nakrájanú mrkvu, petržlen, zeler a cibuľu a varte ďalších 20 minút.', 'Do vriacej polievky vsyp cestoviny a varte podľa návodu, osoľ.']],
   ['161-kapustova-s-fazulou', 'Kapustová polievka s fazuľou', 'soup', 'sk', 50, 5, [['kapustabiela', 400], ['bielafazula', 240], ['klobasa', 120], ['zemiaky', 200], ['cibula', 80], ['cesnak', 10], ['olej', 15]],
     ['Na oleji opeč nakrájanú cibuľu a klobásu na kolieska.', 'Pridaj nasekanú kapustu, kocky zemiakov a zalej 1,5 litra vody, varte 25 minút.', 'Vmiešaj scedenú fazuľu a pretlačený cesnak, povar ešte 10 minút.', 'Dochuť soľou a korením.']],
   ['161-jarna-zeleninova', 'Jarná zeleninová polievka', 'soup', 'sk', 35, 4, [['mrkva', 150], ['zemiaky', 200], ['fazulka', 150], ['hrasok', 100], ['brokolica', 100], ['petrzlen', 50], ['cibulka', 40], ['olej', 15]],

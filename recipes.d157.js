@@ -58,8 +58,6 @@ export const R157 = [
     ['Vločky, proteín a kakao zmiešaj v miske.', 'Pridaj arašidové maslo, med a mlieko a vymiešaj kompaktnú hmotu.', 'Vlhkými rukami vytvaruj asi 12 guliek.', 'Nechaj ich 30 minút stuhnúť v chladničke.']],
   ['157-bananove-muffiny-bez-cukru', 'Banánové muffiny bez cukru', 'snack', 'fit', 35, 6, [['banan', 300], ['vlocky', 150], ['vajce', 100], ['jogurt', 100], ['orechy', 30], ['olej', 15]],
     ['Rúru predhrej na 180 °C a formu na muffiny vylož papierovými košíčkami.', 'Zrelé banány roztlač a zmiešaj s vajcami, jogurtom a olejom.', 'Pridaj pomleté vločky, lyžičku prášku do pečiva, škoricu a nasekané orechy a premiešaj.', 'Cesto rozdeľ do košíčkov a peč 20 až 22 minút.']],
-  ['157-datlove-tycinky-orechy', 'Datlové tyčinky s orechmi', 'snack', 'fit', 20, 6, [['datle', 200], ['mandle', 80], ['orechy', 60], ['vlocky', 40], ['kakao', 10]],
-    ['Datle namoč na 10 minút do teplej vody a sceď.', 'V sekáčiku nasekaj mandle a orechy nahrubo.', 'Pridaj datle, vločky a kakao a mixuj, kým nevznikne lepivá hmota.', 'Hmotu natlač do formy vystlanej papierom, nechaj 1 hodinu stuhnúť v chladničke a nakrájaj na tyčinky.']],
   ['157-zelene-smoothie-spenat-jablko', 'Zelené smoothie so špenátom a jablkom', 'snack', 'fit', 5, 1, [['spenat', 40], ['jablko', 150], ['banan', 80], ['jogurt', 100], ['citron', 10]],
     ['Jablko zbav jadrovníka a nakrájaj na kúsky.', 'Do mixéra daj špenát, jablko, banán, jogurt, citrónovú šťavu a 100 ml studenej vody.', 'Mixuj do hladka a hneď podávaj.']],
   ['157-proteinovy-shake-jahody', 'Proteínový shake s jahodami', 'snack', 'fit', 5, 1, [['jahody', 150], ['proteinp', 30], ['mlieko', 250], ['jogurt', 50]],
@@ -100,8 +98,6 @@ export const R157 = [
     ['Tofu nakrájaj na kocky a opeč na suchej panvici dozlatista.', 'Kapustu nakrájaj na tenké rezančeky, mrkvu nastrúhaj, uhorku a papriku nakrájaj na prúžky.', 'Arašidové maslo rozmiešaj so sójovou omáčkou, citrónovou šťavou a 2 lyžicami teplej vody.', 'Zeleninu premiešaj s dresingom a navrch daj tofu.']],
   ['157-jahodova-proteinova-zmrzlina', 'Jahodová proteínová zmrzlina', 'dessert', 'fit', 10, 2, [['jahody', 300], ['skyr', 200], ['proteinp', 25], ['med', 15]],
     ['Jahody vopred zmraz aspoň na 4 hodiny.', 'Mrazené jahody daj do silného mixéra so skyrom, proteínom a medom.', 'Mixuj do hustého krému, podľa potreby pridaj lyžicu mlieka.', 'Podávaj hneď ako mäkkú zmrzlinu alebo daj na 30 minút do mrazničky.']],
-  ['157-tropicke-smoothie-mango-ananas', 'Tropické smoothie s mangom a ananásom', 'snack', 'fit', 5, 1, [['mango', 120], ['ananas', 120], ['skyr', 150], ['pomaranc', 100]],
-    ['Mango a ananás olúp a nakrájaj na kúsky, pomaranč vytlač.', 'Do mixéra daj ovocie, pomarančovú šťavu, skyr a pár kociek ľadu.', 'Mixuj do hladka a podávaj vychladené.']],
 ];
 export const I157 = {
   x157_broskyna: ['Broskyňa', 39, 0.9, 9.5, 0.3],
