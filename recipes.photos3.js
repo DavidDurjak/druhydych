@@ -1,5 +1,7 @@
 // Fotky receptov v192 a novšie: nové fotky sa pridávajú sem. [súbor, autor, licencia]
+import { P4 } from './recipes.photos4.js';
 export const P3 = {
+  ...P4,
   '187-lassi': ['Lassi 1.jpg','Gaurav Dhwaj Khadka','CC BY-SA 4.0'],
   '187-gorur-kolija-bhuna': ['Gorur Kolija Bhuna (Beef Liver Curry).jpg','AshiqJB007','CC BY-SA 4.0'],
   '187-dal-bhat': ['Dal bhat.jpg','Gaurav Dhwaj Khadka','CC BY-SA 4.0'],
