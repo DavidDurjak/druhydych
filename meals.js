@@ -21,14 +21,14 @@ const F = {
   mushroom: ['Šampiňóny', 22, 3.1, 3.3, 0.3], whey: ['Srvátkový proteín', 400, 80, 8, 6], tofu: ['Tofu', 76, 8, 1.9, 4.8], lentils: ['Šošovica (suchá)', 353, 25, 60, 1.1],
   hummus: ['Hummus', 166, 8, 14, 9.6], quinoa: ['Quinoa (suchá)', 368, 14, 64, 6], spinach: ['Špenát', 23, 2.9, 3.6, 0.4], ricecake: ['Ryžové chlebíčky', 387, 8, 82, 2.8],
   mozz: ['Mozzarella light', 165, 24, 1, 7], carrot: ['Mrkva', 41, 0.9, 10, 0.2],
-  soymilk: ['Sójový nápoj nesladený', 39, 3.3, 2.5, 1.9], tempeh: ['Tempeh', 193, 20, 9, 11], beans: ['Biela fažuľa (konzerva)', 95, 6.7, 17, 0.5], chickpeas: ['Cícer (konzerva)', 139, 7.2, 20, 2.6],
+  soymilk: ['Sójový nápoj nesladený', 39, 3.3, 2.5, 1.9], tempeh: ['Tempeh', 193, 20, 9, 11], beans: ['Biela fazuľa (konzerva)', 95, 6.7, 17, 0.5], chickpeas: ['Cícer (konzerva)', 139, 7.2, 20, 2.6],
 };
 const ORDER = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner'];
 const MEAL_LABEL = { breakfast: 'Raňajky', brunch: 'Desiata', lunch: 'Obed', afternoon: 'Olovrant', dinner: 'Večera' };
 const day = (b, br, l, a, d) => ({ breakfast: b, brunch: br, lunch: l, afternoon: a, dinner: d });
 
 const PLANS = [
-  { id: 'bal', icon: '\u{1F37D}️', name: 'Vyvážený', desc: 'Klasika: mäso, ryba, vajcia, príloha a zelenina.', days: [
+  { id: 'bal', icon: '🍽️', name: 'Vyvážený', desc: 'Klasika: mäso, ryba, vajcia, príloha a zelenina.', days: [
     day('oats:70 milk:200 banana:100 almonds:10', 'skyr:150 berries:80', 'chicken:150 rice:80 broccoli:150 oil:10', 'bread:60 ham:50 cucumber:100', 'salmon:140 potato:250 tomato:150 oil:8'),
     day('egg:150 bread:80 tomato:100 pepper:80', 'banana:120 pb:15', 'pasta:90 beef:120 tomato:200 oil:8', 'yogurt:200 oats:30', 'tuna:130 bread:70 cucumber:150 pepper:100 oil:5'),
     day('yogurt:200 oats:60 berries:80 honey:10', 'apple:150 almonds:20', 'chicken:150 sweet:250 zucchini:150 oil:10', 'skyr:150 banana:100', 'egg:120 mushroom:150 bread:70 tomato:100 oil:5'),
@@ -95,7 +95,7 @@ const CSS = `.pl-b{display:inline-block;margin-top:5px;font-style:normal;font-si
 .pl-n{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.4}`;
 if (!document.getElementById('plan-css')) { const s = document.createElement('style'); s.id = 'plan-css'; s.textContent = CSS; document.head.appendChild(s); }
 
-const DNI = ['nedĞla', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'];
+const DNI = ['nedeľa', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'];
 const plural = n => n === 1 ? 'deň' : n < 5 ? 'dni' : 'dní';
 
 export function openPlans() {
