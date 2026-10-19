@@ -192,11 +192,17 @@ export async function renderToday() {
     <button class="wk-nav" data-wk="7" aria-label="Ďalší týždeň">›</button>
   </div>`;
 
-  // makrá: bielkoviny, sacharidy a tuky jednou farbou, vláknina inou; prekročený cieľ = červená
-  const macro = (lbl, val, target, color, noOver = false, dec = false) => {
-    const f = v => dec ? String(Math.round(v * 10) / 10).replace('.', ',') : r0(v);
-    const pct = target ? Math.min(100, val / target * 100) : 0, over = !noOver && target && f(val) !== f(target) && val > target;
-    return `<div class="mc ${over ? 'over' : ''}"><div class="mc-h"><span><u style="background:${color}"></u>${lbl}</span><b>${f(val)}<small> / ${f(target)} g</small></b></div><div class="mc-b"><i style="width:${pct}%;background:${over ? 'var(--danger)' : color}"></i></div>${over ? `<em class="mc-o">+${f(val - target)} g nad cieľ</em>` : ''}</div>`;
+  // makrá: každé má vlastnú farbu (bielkoviny mätová, sacharidy modrá, tuky jantárová), tie isté farby majú aj krúžky v kruhu
+  const MC = { p: '#7CFFB2', c: '#5BB8FF', f: '#FFC857', fi: '#B794FF', su: '#FF8FB1', sa: '#9FB3C8' };
+  const fmt = (v, dec) => dec ? String(Math.round(v * 10) / 10).replace('.', ',') : r0(v);
+  const macroTile = (lbl, val, target, color) => {
+    const pct = target ? Math.min(100, val / target * 100) : 0, over = target && r0(val) !== r0(target) && val > target;
+    const note = !target ? '' : over ? `+${r0(val - target)} g nad cieľom` : `ešte ${r0(Math.max(0, target - val))} g`;
+    return `<div class="mt" style="--c:${color}"><span class="mt-l">${lbl}</span><b><i data-count="${r0(val)}">${r0(val)}</i><small>/ ${r0(target)} g</small></b><div class="mt-b"><i style="width:${pct}%"></i></div><em>${note}</em></div>`;
+  };
+  const miniStat = (lbl, val, target, color, limit = false) => {
+    const pct = target ? Math.min(100, val / target * 100) : 0, over = limit && target && val > target;
+    return `<div class="ms ${over ? 'over' : ''}" style="--c:${color}"><span>${lbl}</span><b>${fmt(val, true)}<small> / ${fmt(target, true)} g</small></b><div class="ms-b"><i style="width:${pct}%"></i></div></div>`;
   };
   // cukry a soľ (odporúčania WHO: cukry do 50 g, soľ do 5 g) priamo v hlavnej karte
   const sugar = foods.reduce((a, f) => a + Number(f.sugar || 0), 0);
@@ -205,14 +211,24 @@ export async function renderToday() {
   const fiber = foods.reduce((a, f) => a + Number(f.fiber || 0), 0);
   const fiberGoal = Math.max(25, Math.round((p.target_kcal || 2000) / 1000 * 14));
   const fiberGap = foods.length > 0 && foods.some(f => f.fiber == null);
-  // koráltky jedál okolo kruhu: 5 hlavných jedál podľa odporúčaného rozdelenia dňa
-  const BEAD_R = 106, BOX = 236;
-  let beadAcc = 0;
-  const beads = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner'].map(k => {
-    const m = MEAL_META[k], mid = beadAcc + m.share / 2; beadAcc += m.share;
-    const ang = mid * 2 * Math.PI, x = BOX / 2 + BEAD_R * Math.sin(ang) - 14, y = BOX / 2 - BEAD_R * Math.cos(ang) - 14;
-    const on = foods.some(f => f.meal === k);
-    return `<a class="bead ${on ? 'on' : ''}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--mc:${m.color}" href="#/jedlo?meal=${k}" aria-label="${m.label}${on ? ': zapísané' : ': pridať'}">${m.icon}</a>`;
+  // štyri sústredné krúžky: vonkajší = kalórie, vnútorné tri = bielkoviny, sacharidy, tuky
+  const RS = 252, CX = RS / 2;
+  const ringLayer = (r, sw, pct, stroke, cls = '') => {
+    const c = 2 * Math.PI * r, k = Math.max(0, Math.min(1, pct || 0));
+    return `<circle cx="${CX}" cy="${CX}" r="${r}" fill="none" stroke="var(--track)" stroke-width="${sw}" opacity=".7"/>
+      <circle class="rg-fill ${cls}" cx="${CX}" cy="${CX}" r="${r}" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c}" data-off="${c * (1 - k)}" transform="rotate(-90 ${CX} ${CX})"/>`;
+  };
+  const rings = `<svg class="hk-rings" width="${RS}" height="${RS}" viewBox="0 0 ${RS} ${RS}" aria-hidden="true">
+    <defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${over ? '#B6B6FF' : '#7CFFB2'}"/><stop offset="1" stop-color="${over ? '#8C8CFF' : '#2FD3C0'}"/></linearGradient></defs>
+    ${ringLayer(116, 15, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'o0')}
+    ${ringLayer(97, 8, p.target_protein ? sum.protein / p.target_protein : 0, MC.p, 'o1')}
+    ${ringLayer(86, 8, p.target_carbs ? sum.carbs / p.target_carbs : 0, MC.c, 'o2')}
+    ${ringLayer(75, 8, p.target_fat ? sum.fat / p.target_fat : 0, MC.f, 'o3')}
+  </svg>`;
+  // pás jedál pod kruhom: päť hlavných jedál, zapísané svietia farbou jedla a ukážu kcal
+  const mealStrip = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner'].map(k => {
+    const m = MEAL_META[k], kc = kcalOf(foods.filter(f => f.meal === k)), on = foods.some(f => f.meal === k);
+    return `<a class="mb ${on ? 'on' : ''}" style="--mc:${m.color}" href="#/jedlo?meal=${k}" aria-label="${m.label}${on ? ': zapísané' : ': pridať'}"><i>${on ? r0(kc) : '+'}</i><span>${m.label}</span></a>`;
   }).join('');
   const goalPct = p.target_kcal ? Math.round(sum.kcal / p.target_kcal * 100) : 0;
 
@@ -260,24 +276,23 @@ export async function renderToday() {
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
     ${firstCard || backCard}
     <section class="hero-k ${over ? 'over' : ''}">
+      <div class="hk-top"><span class="hk-t">${isFuture ? 'Plán dňa' : 'Dnešný cieľ'}</span><a class="hk-edit" href="#/ciele" aria-label="Upraviť ciele">${p.target_kcal} kcal<i>✎</i></a></div>
       <div class="hk-ring">
         <div class="breath"></div>
-        ${ringSvg(176, 13, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'big')}
-        <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7CFFB2"/><stop offset="1" stop-color="#3FD5C4"/></linearGradient></defs></svg>
+        ${rings}
         <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span><em class="hk-pc">${goalPct} % cieľa</em></div>
-        ${beads}
       </div>
-      <div class="hk-stats">
-        <div class="hk-st"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'naplánované' : 'zjedené'}</span></div>
-        <a class="hk-st" href="#/ciele" aria-label="Upraviť ciele"><b>${p.target_kcal}</b><span>cieľ<i>✎</i></span></a>
-      </div>
+      <div class="hk-eat"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'kcal naplánované' : 'kcal zjedené'}</span></div>
+      <div class="hk-meals">${mealStrip}</div>
       <div class="hk-macros">
-        ${macro('Bielkoviny', sum.protein, p.target_protein, 'var(--mac)')}
-        ${macro('Sacharidy', sum.carbs, p.target_carbs, 'var(--mac)')}
-        ${macro('Tuky', sum.fat, p.target_fat, 'var(--mac)')}
-        ${macro('Vláknina', fiber, fiberGoal, 'var(--fib)', true)}
-        ${macro('Cukry', sugar, 50, 'var(--fib)', false, true)}
-        ${macro('Soľ', salt, 5, 'var(--fib)', false, true)}
+        ${macroTile('Bielkoviny', sum.protein, p.target_protein, MC.p)}
+        ${macroTile('Sacharidy', sum.carbs, p.target_carbs, MC.c)}
+        ${macroTile('Tuky', sum.fat, p.target_fat, MC.f)}
+      </div>
+      <div class="hk-minis">
+        ${miniStat('Vláknina', fiber, fiberGoal, MC.fi)}
+        ${miniStat('Cukry', sugar, 50, MC.su, true)}
+        ${miniStat('Soľ', salt, 5, MC.sa, true)}
       </div>
       ${fiberGap ? '<p class="hk-note">Vláknina, cukry a soľ sa počítajú len z jedál, ktoré tieto údaje majú. Odporúčania WHO: cukry do 50 g, soľ do 5 g.</p>' : ''}
     </section>
