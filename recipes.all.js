@@ -191,7 +191,7 @@ const I = { ...I0, ...I12, ...I13, ...I14, ...I15, ...I16, ...I17, ...I18, ...I1
 export { CATS };
 
 // odkiaľ jedlo pochádza (pôvodné fit recepty majú kuchyňu 'fit', pokiaľ nie sú uvedené nižšie)
-export const CUIS = [['fit', 'Fit'], ['sk', 'Slovensko'], ['cz', 'Česko'], ['hu', 'Maďarsko'], ['pl', 'Poľsko'], ['east', 'Východná Európa'], ['de', 'Nemecko a Rakúsko'], ['ch', 'Švajčiarsko a Benelux'], ['it', 'Taliansko'], ['gr', 'Grécko'], ['es', 'Španielsko'], ['pt', 'Portugalsko'], ['fr', 'Francúzsko'], ['uk', 'Brittánia'], ['nordic', 'Škandinávia'], ['balkan', 'Balkán'], ['tr', 'Orient a Afrika'], ['asia', 'Ázia'], ['america', 'Amerika']];
+export const CUIS = [['fit', 'Fit'], ['sk', 'Slovensko'], ['cz', 'Česko'], ['hu', 'Maďarsko'], ['pl', 'Poľsko'], ['east', 'Východná Európa'], ['de', 'Nemecko a Rakúsko'], ['ch', 'Švajčiarsko a Benelux'], ['it', 'Taliansko'], ['gr', 'Grécko'], ['es', 'Španielsko'], ['pt', 'Portugalsko'], ['fr', 'Francúzsko'], ['uk', 'Británia'], ['nordic', 'Škandinávia'], ['balkan', 'Balkán'], ['tr', 'Orient a Afrika'], ['asia', 'Ázia'], ['america', 'Amerika']];
 const C0 = { 'bryndzove-halusky': 'sk', kapustnica: 'sk', 'bryndzova-natierka': 'sk', 'sulance-mak': 'sk', makovnik: 'sk', zemiakova: 'sk', 'zemiakove-placky': 'sk', 'plnena-paprika': 'sk', fazulova: 'sk', sosovicova: 'sk',
   'hubova-kulajda': 'cz', cesnakova: 'cz', 'vanilkove-rozky': 'cz', babovka: 'cz', 'kuracia-polievka': 'cz', 'ryzovy-nakyp': 'cz',
   gulas: 'hu', 'jablkovy-zavin': 'de', 'spagety-bolonske': 'it', caprese: 'it', minestrone: 'it', tiramisu: 'it', 'panna-cotta': 'it', frittata: 'it', rizoto: 'it', 'fit-lasagne': 'it', 'kuracie-caprese': 'it', 'fit-pizza': 'it',
