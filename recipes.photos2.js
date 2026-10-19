@@ -1,6 +1,24 @@
-// Fotky receptov v187 (rozšírenie recipes.photos.js). [súbor, autor, licencia]
+// Fotky receptov v190 (rozšírenie recipes.photos.js). [súbor, autor, licencia]
 import * as O from './recipes.photos.js';
 const P2 = {
+  '185-filet-danvers': ['Filet d\'Anvers tranches.jpg','Ibu','CC BY-SA 4.0'],
+  '185-mostbrockli': ['Mostbröckli.jpg','Adrian Michael','CC BY-SA 3.0'],
+  '185-zuger-kirschtorte': ['Zuger Kirschtorte.jpg','kochtopf','CC BY 2.0'],
+  '185-boutefas': ['Boutefas2.jpg','Popo le Chien','CC0'],
+  '185-schlorzifladen': ['Schlorzifladen.jpg','Plutowiki','CC0'],
+  '185-gourmetten': ['Gourmetten (38439391735).jpg','www.snack-nieuws.nl','CC BY 2.0'],
+  '185-debrecziner': ['Debrecziner.jpg','neuvedený autor','CC BY-SA 2.5'],
+  '185-turo-rudi': ['Turo Rudi - Broken in half.jpg','Gargaj / Conspiracy','CC BY-SA 2.5'],
+  '185-fruktsoppa': ['Fruit soup (Swedish Varma Koppen) (3077175410).jpg','Josefine Stenudd','CC BY 2.0'],
+  '185-mustamakkara': ['Mustamakkara Meal.jpg','Sampo Ruohomäki','CC BY-SA 4.0'],
+  '185-krabbelurer': ['Krabbelurer.jpg','Ricciarellis','CC BY-SA 4.0'],
+  '185-aggost': ['Äggost.JPG','Trytrtyury456567','CC BY-SA 3.0'],
+  '185-viili': ['Viili.jpg','JP001','CC BY-SA 4.0'],
+  '185-knysza': ['Knysza 2017.jpg','Piotr967','CC BY-SA 4.0'],
+  '185-watrobka-cibulka': ['Pig\'s liver with sauteed onion.jpg','FotoosVanRobin','CC BY-SA 2.0'],
+  '185-kotlety-jajeczne': ['02021 0388 (2) Eierkoteletts.jpg','Silar','CC BY-SA 4.0'],
+  '185-farinheira': ['Farinheira.jpg','Adrião','CC BY-SA 2.5'],
+  '185-salpicao': ['Salpicão.jpg','Adrião','CC BY-SA 3.0'],
   '181-kroket': ['Kroket at Restaurant Loetje in Delft (07-07-2025).jpg','Stck w','CC BY-SA 4.0'],
   '181-udeny-uhor': ['Gerookte paling.jpeg','Tasja','CC BY-SA 3.0'],
   '181-gulasz-wieprzowy': ['Gulasz wieprzowy z ziemniakami i kiszonymi ogórkami - 29.03.2026.jpg','Aw58','CC BY 4.0'],
