@@ -198,7 +198,7 @@ export async function renderToday() {
   const macroTile = (lbl, val, target, color) => {
     const pct = target ? Math.min(100, val / target * 100) : 0, over = target && r0(val) !== r0(target) && val > target;
     const note = !target ? '' : over ? `+${r0(val - target)} g nad cieľom` : `ešte ${r0(Math.max(0, target - val))} g`;
-    return `<div class="mt" style="--c:${color}"><span class="mt-l">${lbl}</span><b><i data-count="${r0(val)}">${r0(val)}</i><small>/ ${r0(target)} g</small></b><div class="mt-b"><i style="width:${pct}%"></i></div><em>${note}</em></div>`;
+    return `<div class="mtile" style="--c:${color}"><span class="mt-l">${lbl}</span><b><i data-count="${r0(val)}">${r0(val)}</i><small>/ ${r0(target)} g</small></b><div class="mt-b"><i style="width:${pct}%"></i></div><em>${note}</em></div>`;
   };
   const miniStat = (lbl, val, target, color, limit = false) => {
     const pct = target ? Math.min(100, val / target * 100) : 0, over = limit && target && val > target;
