@@ -4,6 +4,8 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { renderToday } from './today.js';
+import * as dx from './dxcore.js';
+import { tagsOfAll, fit, DIETS } from './dietcore.js';
 
 const root = document.getElementById('app');
 
@@ -19,13 +21,14 @@ const F = {
   mushroom: ['Šampiňóny', 22, 3.1, 3.3, 0.3], whey: ['Srvátkový proteín', 400, 80, 8, 6], tofu: ['Tofu', 76, 8, 1.9, 4.8], lentils: ['Šošovica (suchá)', 353, 25, 60, 1.1],
   hummus: ['Hummus', 166, 8, 14, 9.6], quinoa: ['Quinoa (suchá)', 368, 14, 64, 6], spinach: ['Špenát', 23, 2.9, 3.6, 0.4], ricecake: ['Ryžové chlebíčky', 387, 8, 82, 2.8],
   mozz: ['Mozzarella light', 165, 24, 1, 7], carrot: ['Mrkva', 41, 0.9, 10, 0.2],
+  soymilk: ['Sójový nápoj nesladený', 39, 3.3, 2.5, 1.9], tempeh: ['Tempeh', 193, 20, 9, 11], beans: ['Biela fažuľa (konzerva)', 95, 6.7, 17, 0.5], chickpeas: ['Cícer (konzerva)', 139, 7.2, 20, 2.6],
 };
 const ORDER = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner'];
 const MEAL_LABEL = { breakfast: 'Raňajky', brunch: 'Desiata', lunch: 'Obed', afternoon: 'Olovrant', dinner: 'Večera' };
 const day = (b, br, l, a, d) => ({ breakfast: b, brunch: br, lunch: l, afternoon: a, dinner: d });
 
 const PLANS = [
-  { id: 'bal', icon: '🍽️', name: 'Vyvážený', desc: 'Klasika: mäso, ryba, vajcia, príloha a zelenina.', days: [
+  { id: 'bal', icon: '\u{1F37D}️', name: 'Vyvážený', desc: 'Klasika: mäso, ryba, vajcia, príloha a zelenina.', days: [
     day('oats:70 milk:200 banana:100 almonds:10', 'skyr:150 berries:80', 'chicken:150 rice:80 broccoli:150 oil:10', 'bread:60 ham:50 cucumber:100', 'salmon:140 potato:250 tomato:150 oil:8'),
     day('egg:150 bread:80 tomato:100 pepper:80', 'banana:120 pb:15', 'pasta:90 beef:120 tomato:200 oil:8', 'yogurt:200 oats:30', 'tuna:130 bread:70 cucumber:150 pepper:100 oil:5'),
     day('yogurt:200 oats:60 berries:80 honey:10', 'apple:150 almonds:20', 'chicken:150 sweet:250 zucchini:150 oil:10', 'skyr:150 banana:100', 'egg:120 mushroom:150 bread:70 tomato:100 oil:5'),
@@ -40,9 +43,27 @@ const PLANS = [
     day('egg:150 bread:80 tomato:100 spinach:50', 'apple:150 almonds:20', 'pasta:90 mozz:60 tomato:200 zucchini:100 oil:8', 'yogurt:200 oats:30 honey:8', 'egg:120 potato:250 mushroom:150 oil:6'),
     day('skyr:200 oats:60 berries:80', 'banana:120 pb:15', 'tofu:150 rice:70 pepper:150 broccoli:150 oil:8', 'cottage:150 cucumber:100 ricecake:20', 'lentils:70 sweet:200 spinach:100 yogurt:50 oil:6'),
   ] },
+  { id: 'vegan', icon: '🌱', name: 'Vegánsky', desc: 'Bez živočíšnych produktov: strukoviny, tofu, tempeh, ovsené vločky a zelenina.', days: [
+    day('oats:70 soymilk:250 banana:100 almonds:15', 'apple:150 pb:20', 'lentils:80 rice:50 carrot:100 spinach:100 oil:8', 'hummus:70 bread:60 cucumber:100', 'tofu:180 quinoa:60 broccoli:200 oil:8'),
+    day('oats:60 soymilk:250 berries:100 pb:15', 'banana:120 almonds:20', 'chickpeas:200 rice:60 tomato:200 zucchini:100 oil:8', 'ricecake:30 pb:20 apple:100', 'tempeh:150 potato:250 mushroom:150 oil:8'),
+    day('bread:90 hummus:70 tomato:100 spinach:50', 'berries:100 almonds:20 banana:100', 'beans:200 sweet:250 pepper:100 oil:8', 'soymilk:250 oats:30', 'tofu:150 rice:70 pepper:150 broccoli:150 oil:8'),
+  ] },
+  { id: 'pesc', icon: '🐟', name: 'Ryby, bez mäsa', desc: 'Losos, tuniak, vajcia a mliečne výrobky. Bez hydiny a červeného mäsa.', days: [
+    day('oats:70 milk:200 banana:100 almonds:10', 'skyr:150 berries:80', 'salmon:150 rice:70 broccoli:150 oil:8', 'bread:60 tuna:60 cucumber:100', 'egg:120 potato:250 mushroom:150 oil:6'),
+    day('egg:150 bread:80 tomato:100 pepper:80', 'banana:120 pb:15', 'pasta:90 tuna:120 tomato:200 oil:8', 'yogurt:200 oats:30', 'salmon:140 sweet:200 spinach:100 oil:6'),
+    day('skyr:250 oats:50 berries:80', 'apple:150 almonds:20', 'tuna:150 rice:70 pepper:150 zucchini:100 oil:8', 'cottage:150 cucumber:100 ricecake:20', 'salmon:130 quinoa:60 broccoli:200 oil:8'),
+  ] },
+  { id: 'gf', icon: '🌾', name: 'Bez lepku', desc: 'Bez pšenice, raže, jačmeňa a ovsa: ryža, zemiaky, quinoa, vajcia, mäso a ryby.', days: [
+    day('egg:150 potato:150 tomato:100 pepper:80 oil:5', 'yogurt:200 banana:100 berries:60', 'chicken:150 rice:80 broccoli:150 oil:10', 'ricecake:30 cottage:100 cucumber:100', 'salmon:140 potato:250 spinach:100 oil:8'),
+    day('yogurt:250 berries:100 almonds:15 honey:10', 'apple:150 pb:20', 'beef:130 rice:80 tomato:200 zucchini:100 oil:8', 'hummus:60 ricecake:30 cucumber:100 carrot:80', 'tuna:130 potato:250 pepper:100 oil:8'),
+    day('egg:200 tomato:150 mushroom:100 oil:6', 'skyr:200 banana:100', 'chicken:170 quinoa:70 zucchini:150 oil:8', 'cottage:150 apple:120', 'salmon:140 sweet:200 broccoli:150 oil:6'),
+  ] },
 ];
 
 const parse = s => s.split(' ').map(t => { const [k, g] = t.split(':'); return { k, g: Number(g) }; });
+// vhodnosť jedálnička pre diéty a zdravotné režimy používateľa (podľa surovín všetkých dní)
+const planTags = pl => { const names = new Set(); pl.days.forEach(d => ORDER.forEach(m => parse(d[m]).forEach(i => names.add(F[i.k][0])))); return tagsOfAll([...names]); };
+const planFit = pl => { const c = dx.cfg(); const pref = { diets: c.diets || [], modes: (c.modes || []).filter(m => m === 'celiac' || m === 'lactose' || m === 'allergy'), allergens: c.allergens || [] }; if (!pref.diets.length && !pref.modes.length) return null; return fit(planTags(pl), pref); };
 const nutr = (k, g) => { const f = F[k], x = g / 100; return { kcal: f[1] * x, protein: f[2] * x, carbs: f[3] * x, fat: f[4] * x }; };
 const r1 = v => Math.round(v * 10) / 10;
 const snap = g => Math.max(5, Math.round(g / 5) * 5);
@@ -56,7 +77,8 @@ function scaledDay(d, targetKcal) {
   return { meals, total };
 }
 
-const CSS = `.plan-card{-webkit-appearance:none;appearance:none;display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:0 0 14px;padding:12px 14px;border-radius:18px;border:1px solid var(--line,#232a33);background:var(--card,#151a21);color:var(--text,#fff);font:inherit;cursor:pointer}
+const CSS = `.pl-b{display:inline-block;margin-top:5px;font-style:normal;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px}.pl-b.ok{background:rgba(124,255,178,.16);color:#7CFFB2}.pl-b.warn{background:rgba(255,200,87,.16);color:#FFC857}.pl-b.bad{background:rgba(255,92,122,.16);color:#FF8FA4}html[data-theme=light] .pl-b.ok{color:#0b7a46}html[data-theme=light] .pl-b.warn{color:#8a5a00}html[data-theme=light] .pl-b.bad{color:#c02448}
+.plan-card{-webkit-appearance:none;appearance:none;display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:0 0 14px;padding:12px 14px;border-radius:18px;border:1px solid var(--line,#232a33);background:var(--card,#151a21);color:var(--text,#fff);font:inherit;cursor:pointer}
 .plan-card:active{transform:scale(.985)}
 .pc-i{font-size:24px}.pc-t{flex:1;display:flex;flex-direction:column;gap:2px}.pc-t b{font-size:15px}.pc-t small{font-size:12.5px;color:var(--muted)}.plan-card>i{font-style:normal;color:var(--muted);font-size:20px}
 .pl-lead{font-size:13px;color:var(--muted);margin:6px 0 14px;line-height:1.45}
@@ -73,26 +95,29 @@ const CSS = `.plan-card{-webkit-appearance:none;appearance:none;display:flex;ali
 .pl-n{font-size:11.5px;color:var(--muted);margin:10px 0 0;line-height:1.4}`;
 if (!document.getElementById('plan-css')) { const s = document.createElement('style'); s.id = 'plan-css'; s.textContent = CSS; document.head.appendChild(s); }
 
-const DNI = ['nedeľa', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'];
+const DNI = ['nedĞla', 'pondelok', 'utorok', 'streda', 'štvrtok', 'piatok', 'sobota'];
 const plural = n => n === 1 ? 'deň' : n < 5 ? 'dni' : 'dní';
 
 export function openPlans() {
   const p = ctx.state.profile, uid = p.id, target = p.target_kcal || 2000, t = calc.today();
   const nextMon = calc.addDays(calc.weekStart(t), 7);
   const starts = [[t, 'Dnes'], [calc.addDays(t, 1), 'Zajtra'], [nextMon, 'Od pondelka']];
-  let plan = PLANS[0].id, start = starts[1][0], len = 7;
+  const fits = Object.fromEntries(PLANS.map(pl => [pl.id, planFit(pl)]));
+  const order = [...PLANS].sort((a, b) => (fits[a.id] ? (fits[a.id].level === 'ok' ? 0 : fits[a.id].level === 'warn' ? 1 : 2) : 0) - (fits[b.id] ? (fits[b.id].level === 'ok' ? 0 : fits[b.id].level === 'warn' ? 1 : 2) : 0));
+  let plan = order[0].id, start = starts[1][0], len = 7;
   const bg = ctx.sheet(`<h3>Hotový jedálniček</h3>
     <p class="pl-lead">Vyber štýl. Gramáže sa prepočítajú na tvojich ${target} kcal a jedlá sa zapíšu do plánovača. Potom ich môžeš ľubovoľne upraviť.</p>
     <div id="plList"></div>
     <p class="pl-s">Odkedy</p><div class="pl-o" id="plStart">${starts.map(([d, l], i) => `<button data-s="${d}" class="${i === 1 ? 'on' : ''}">${l}</button>`).join('')}</div>
     <p class="pl-s">Na koľko dní</p><div class="pl-o" id="plLen">${[3, 7, 14].map(n => `<button data-n="${n}" class="${n === 7 ? 'on' : ''}">${n} ${plural(n)}</button>`).join('')}</div>
     <button class="btn primary" id="plGo">Naplánovať</button>
-    <p class="pl-n">Hodnoty sú orientačné. Ide o štartovací bod, nie o lekársku diétu. Pri alergiách alebo ochoreniach si jedlá skontroluj. Dni, kde už máš zapísané jedlo, sa preskočia.</p>`);
+    <p class="pl-n">Hodnoty sú orientačné. Ide o štartovací bod, nie o lekársku diétu. Pri alergiách alebo ochoreniach si jedlá skontroluj, vhodnosť sa posudzuje len podľa názvov surovín. Dni, kde už máš zapísané jedlo, sa preskočia.</p>`);
   const list = bg.querySelector('#plList');
+  const badge = f => !f ? '' : f.level === 'ok' ? '<em class="pl-b ok">Vhodné pre teba</em>' : f.level === 'warn' ? `<em class="pl-b warn">Over: ${[...new Set(f.items.map(i => i.why))].join(', ')}</em>` : `<em class="pl-b bad">Nesedí: ${[...new Set(f.items.map(i => i.why))].join(', ')}</em>`;
   const drawList = () => {
-    list.innerHTML = PLANS.map(pl => {
+    list.innerHTML = order.map(pl => {
       const sd = scaledDay(pl.days[0], target), t0 = sd.total;
-      return `<div class="pl ${pl.id === plan ? 'on' : ''}" data-p="${pl.id}"><div class="pl-h"><span>${pl.icon}</span><div><b>${pl.name}</b><small>${pl.desc}</small></div></div>
+      return `<div class="pl ${pl.id === plan ? 'on' : ''}" data-p="${pl.id}"><div class="pl-h"><span>${pl.icon}</span><div><b>${pl.name}</b><small>${pl.desc}</small>${badge(fits[pl.id])}</div></div>
         <p class="pl-m">≈ ${Math.round(t0.kcal)} kcal · B ${Math.round(t0.protein)} g · S ${Math.round(t0.carbs)} g · T ${Math.round(t0.fat)} g denne</p>
         <details><summary>Ukážka dňa</summary><div class="pl-d">${sd.meals.map(m => `<div><b>${MEAL_LABEL[m.meal]}</b><span>${m.items.map(i => `${F[i.k][0]} ${i.g} g`).join(', ')}</span></div>`).join('')}</div></details></div>`;
     }).join('');
