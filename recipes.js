@@ -1,12 +1,12 @@
 // Recepty (v156): tlačidlo Recept otvorí okno s dvoma záložkami.
-//  Inšpiruj sa = knižnica takmer 600 receptov zo Slovenska, Česka, celej Európy aj sveta s reálnymi fotkami,
+//  Inšpiruj sa = knižnica takmer 600 receptov zo Slovenska, Čech, celéj Európy aj sveta s reálnymi fotkami,
 //   filter podľa jedla a krajiny, vyhľadávanie podľa názvu, suroviny aj krajiny, radenie podľa bielkovín alebo kalórií. Karta receptu má porcie, makrá, vplyv na deň, suroviny a postup.
 //  Môj recept = vlastný recept z surovín (pôvodný editor).
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { RECIPES, CATS, CUIS } from './recipes.all.js';
-import { photoOf, photoBackup, creditOf, allCredits } from './recipes.photos.js';
+import { photoOf, photoBackup, creditOf, allCredits } from './recipes.photos2.js';
 import './foodsheet.js';
 
 const h = (...a) => ctx.h(...a), sheet = (...a) => ctx.sheet(...a);
@@ -137,7 +137,7 @@ export function openRecipeHub(meal, done, k) {
     return sortRows(rows, sort);
   };
   const card = r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ph" data-ph><img src="${photoOf(r.id, 500)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="rh-kc">${r.per.kcal} kcal</span></span><span class="rh-n"><b>${h(r.name)}</b><span>B ${r.per.protein} g · S ${r.per.carbs} g · T ${r.per.fat} g</span></span></button>`;
-  // karty sa dokresľujú po dávkach pri rolovaní, aby sa okno otvorilo hneď aj pri stovkách receptov
+  // karty sa dokreslľujú po dávkach pri rolovaní, aby sa okno otvorilo hneď aj pri stovkách receptov
   function paintGrid() {
     const rows = rowsNow();
     const g = root.querySelector('#rhGrid'), more = root.querySelector('#rhMore');
