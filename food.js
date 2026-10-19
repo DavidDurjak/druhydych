@@ -23,7 +23,7 @@ function parseOFF(p) {
   };
 }
 
-const FIELDS = 'image_front_small_url,image_small_url,product_name,product_name_sk,product_name_en,brands,nutriments,code,allergens_tags,traces_tags,labels_tags,ingredients_text,ingredients_text_sk';
+const FIELDS = 'image_front_small_url,image_small_url,product_name,product_name_sk,product_name_en,brands,nutriments,code,allergens_tags,traces_tags,labels_tags,ingredients_analysis_tags,ingredients_text,ingredients_text_sk';
 
 export async function searchOFF(q, { signal } = {}) {
   if (!q || q.length < 2) return [];
