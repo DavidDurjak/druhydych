@@ -73,6 +73,13 @@ body.ah-on .hero+.screen{padding-top:0}
 .ah-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 4px 0}
 .ah-chips span{height:28px;display:inline-flex;align-items:center;padding:0 11px;border-radius:99px;font-size:12.5px;color:var(--text);background:color-mix(in srgb,var(--accent) 9%,var(--bg-2));border:1px solid var(--line)}
 .ah-chips.h span{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.ah-pm{display:flex;gap:4px;margin:8px 2px 0}
+.ah-pm i{flex:1;height:4px;border-radius:99px;background:var(--line);transition:background .2s}
+.ah-pm[data-l="1"] i:nth-child(-n+1){background:#ef5b5b}
+.ah-pm[data-l="2"] i:nth-child(-n+2){background:#ffb547}
+.ah-pm[data-l="3"] i:nth-child(-n+3){background:var(--accent)}
+.ah-pm[data-l="4"] i{background:var(--accent)}
+.af-hint.ah-ok{color:var(--accent)}
 .ah-trust svg{flex:none;width:18px;height:18px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:reduce){body.ah-on #app::before{animation:none}.ah-demo.ah-go::after{animation:none}.ah-items span{animation:none}.seg:has(+#authf)::before{transition:none}}
 @media (prefers-reduced-motion:reduce){.ah-in i{animation:none}.ah-out,.ah-ring .f,.ah-mac p i{transition:none}}
@@ -158,6 +165,31 @@ function trust() {
   card.after(t);
   t.insertAdjacentHTML('afterend', h + f);
 }
+
+// živý ukazovateľ sily hesla pri registrácii (namiesto chyby až po odoslaní)
+const WEAK = /^(12345678|123456789|1234567890|password|heslo123|heslo1234|qwertyui|qwerty123|11111111|abcd1234|slovensko)/i;
+function strength(v) {
+  if (!v) return [0, ''];
+  if (v.length < 8) return [1, `Ešte ${8 - v.length} ${8 - v.length === 1 ? 'znak' : (8 - v.length < 5 ? 'znaky' : 'znakov')}`];
+  if (WEAK.test(v) || /^(.)\1+$/.test(v)) return [1, 'Príliš časté heslo, skús iné'];
+  let sc = 2;
+  if (v.length >= 12) sc++;
+  if (/[a-zá-ž]/i.test(v) && /\d/.test(v) && (/[A-ZÁ-Ž]/.test(v) || /[^\w\s]/.test(v))) sc++;
+  return [sc, ['', '', 'Dobré, aspoň 8 znakov', 'Silné heslo', 'Veľmi silné heslo'][sc]];
+}
+document.addEventListener('input', e => {
+  const pw = e.target;
+  if (!(pw instanceof HTMLInputElement) || pw.name !== 'password') return;
+  const f = pw.form; if (!f || f.id !== 'authf' || !f.querySelector('[name=name]')) return;
+  const hint = f.querySelector('.af-hint'); if (!hint) return;
+  let m = f.querySelector('.ah-pm');
+  if (!m) { m = document.createElement('div'); m.className = 'ah-pm'; m.setAttribute('aria-hidden', 'true'); m.innerHTML = '<i></i><i></i><i></i><i></i>'; hint.after(m); }
+  if (!hint.dataset.t) hint.dataset.t = hint.textContent;
+  const [l, msg] = strength(pw.value);
+  m.dataset.l = l;
+  hint.textContent = msg ? (tr(msg) || msg) : hint.dataset.t;
+  hint.classList.toggle('ah-ok', l >= 3);
+}, true);
 function scan() {
   document.body.classList.toggle('ah-on', !!document.querySelector('#app #authf'));
   trust();
