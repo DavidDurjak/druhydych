@@ -2,6 +2,7 @@
 // s krúžkom postupu. Po poslednej sérii sa cvik zbalí so zelenou fajkou a sám sa otvorí ďalší. Cviky sú hneď pod hlavnou kartou,
 // plán a nástroje (Skenuj stroj, blok, analýza postavy) idú pod tlačidlo Ukončiť. Mení len zobrazenie, dáta a ukladanie ostávajú.
 import { EXERCISES } from './workouts.js';
+import * as U from './units.js';
 
 const CSS = `
 .tf .card.ex{padding:0;transition:box-shadow .35s,border-color .35s,background .35s}
@@ -93,9 +94,9 @@ function line(card) {
   const top = Math.max(0, ...kgs);
   if (ss.length && d === ss.length) {
     const vol = ss.reduce((a, s) => a + num($('[data-f=kg]', s)?.value) * num($('[data-f=reps]', s)?.value), 0);
-    return `<b>Hotovo</b> · ${ss.length} ${ss.length >= 5 ? 'sérií' : ss.length === 1 ? 'séria' : 'série'}${vol ? ` · ${Math.round(vol).toLocaleString('sk-SK')} kg objem` : ''}`;
+    return `<b>Hotovo</b> · ${ss.length} ${ss.length >= 5 ? 'sérií' : ss.length === 1 ? 'séria' : 'série'}${vol ? ` · ${Math.round(vol).toLocaleString('sk-SK')} ${U.wUnit()} objem` : ''}`;
   }
-  return `<b>${plan}</b>${top ? ` · ${kgf(top)} kg` : ''}${d ? ` · ${d} z ${ss.length} hotové` : ''}`;
+  return `<b>${plan}</b>${top ? ` · ${kgf(top)} ${U.wUnit()}` : ''}${d ? ` · ${d} z ${ss.length} hotové` : ''}`;
 }
 
 function paint(scr) {

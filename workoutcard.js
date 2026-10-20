@@ -7,6 +7,7 @@ import { EXERCISES } from './workouts.js';
 // kresba karty a anatomická mapa (~130 kB) sa načítajú až pri otvorení karty
 let ART = null;
 import { tr, currentLang } from './i18n.js';
+import * as U from './units.js';
 
 const W = 1080, H = 1920;
 const BG = '#0B0E12';
@@ -15,7 +16,7 @@ const FLAME = 'M13.4 2.6c.3 2.6 2.1 3.9 3.5 5.9 1.5 2.1 2.1 4.2 1.6 6.4-.7 3.1-3
 const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
 const nf = n => Math.round(n).toLocaleString('sk-SK').replace(/ /g, ' ');
 const durFmt = m => m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m} min`;
-const kgs = n => String(Math.round(n * 10) / 10).replace('.', ',');
+const kgs = n => U.fmtWt(n);
 const exName = id => EXERCISES?.[id]?.name || id;
 const e1rm = (kg, reps) => kg * (1 + Math.min(reps, 20) / 30);
 
@@ -58,14 +59,14 @@ const NUMW = n => ['', 'deň', 'dni', 'dni', 'dni'][n] || 'dní';
 function cardData(d, sex) {
   const s = d.s, big = s.volume > 0, t0 = s.top[0], pr = s.prs[0];
   const stats = [];
-  if (big) stats.push(['Objem', nf(s.volume), 'kg']);
+  if (big) stats.push(['Objem', nf(U.toW(s.volume)), U.wUnit()]);
   if (d.dur) stats.push(['Čas', d.dur >= 60 ? `${Math.floor(d.dur / 60)}:${String(d.dur % 60).padStart(2, '0')}` : String(d.dur), d.dur >= 60 ? 'h' : 'min']);
   stats.push(['Série', String(s.sets), '']);
   if (stats.length < 3) stats.push(['Cviky', String(s.exCount), '']);
   let highlight = null;
-  if (pr) highlight = { label: 'Osobný rekord', text: `${exName(pr.id)} · ${kgs(pr.kg)} kg × ${pr.reps}`, pr: true };
+  if (pr) highlight = { label: 'Osobný rekord', text: `${exName(pr.id)} · ${kgs(pr.kg)} ${U.wUnit()} × ${pr.reps}`, pr: true };
   else if (s.volPr) highlight = { label: 'Rekord', text: 'Najväčší objem v histórii', pr: true };
-  else if (t0) highlight = { label: 'Najlepšia séria', text: t0.best ? `${exName(t0.id)} · ${kgs(t0.best.kg)} kg × ${t0.best.reps}` : `${exName(t0.id)} · ${t0.bw} opakovaní`, pr: false };
+  else if (t0) highlight = { label: 'Najlepšia séria', text: t0.best ? `${exName(t0.id)} · ${kgs(t0.best.kg)} ${U.wUnit()} × ${t0.best.reps}` : `${exName(t0.id)} · ${t0.bw} opakovaní`, pr: false };
   return { title: d.dayName, dateLabel: d.dateLabel, stats: stats.slice(0, 3), load: d.load, sex, muscles: ART.topMuscles(d.load), highlight,
     streak: d.streak, streakText: `${d.streak} ${NUMW(d.streak)} v rade`, week: d.weekText };
 }

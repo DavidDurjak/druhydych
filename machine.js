@@ -4,6 +4,7 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { EXERCISES, nextDay } from './workouts.js';
+import * as U from './units.js';
 
 const h = (...a) => ctx.h(...a);
 const CSS = `
@@ -38,7 +39,7 @@ const REPS = { H: [6, 8], M: [8, 12], L: [10, 15], X: [12, 20] };
 const REST = { H: 180, M: 120, L: 90, X: 60 };
 const LOWER = /kvadriceps|zadok|zadn|stehn|lýtk/i;
 
-const fmtKg = n => String(+Number(n).toFixed(1)).replace('.', ',');
+const fmtKg = n => U.fmtWt(n);
 const dShort = iso => { const d = new Date(iso + 'T00:00:00'); return `${d.getDate()}. ${d.getMonth() + 1}.`; };
 
 // resize fotky na max 1024 px (menej dát, rýchlejšie rozpoznanie)
@@ -95,9 +96,9 @@ export function prescribe({ id, plan, logs, goal, dayNo }) {
     const top = Math.max(...last.sets.map(s => s.kg));
     const atTop = last.sets.filter(s => s.kg === top);
     const min = Math.min(...atTop.map(s => s.reps));
-    if (atTop.length >= Math.min(2, sets) && atTop.every(s => s.reps >= rrange[1])) { kg = top + (lower ? 5 : 2.5); go = `Dnes skús ${fmtKg(kg)} kg. Minule si dal hornú hranicu opakovaní, čas pridať.`; }
-    else if (min < rrange[0]) { kg = top; go = `Drž ${fmtKg(top)} kg a cieľ je aspoň ${rrange[0]} opakovaní v každej sérii. Váhu zatiaľ nezvyšuj.`; }
-    else { kg = top; go = `Drž ${fmtKg(top)} kg a skús pridať opakovanie v každej sérii (cieľ ${rrange[1]}). Až potom pridaj váhu.`; }
+    if (atTop.length >= Math.min(2, sets) && atTop.every(s => s.reps >= rrange[1])) { kg = U.imp() ? U.fromW(Math.round(U.toW(top) / 5) * 5 + (lower ? 10 : 5)) : top + (lower ? 5 : 2.5); go = `Dnes skús ${fmtKg(kg)} ${U.wUnit()}. Minule si dal hornú hranicu opakovaní, čas pridať.`; }
+    else if (min < rrange[0]) { kg = top; go = `Drž ${fmtKg(top)} ${U.wUnit()} a cieľ je aspoň ${rrange[0]} opakovaní v každej sérii. Váhu zatiaľ nezvyšuj.`; }
+    else { kg = top; go = `Drž ${fmtKg(top)} ${U.wUnit()} a skús pridať opakovanie v každej sérii (cieľ ${rrange[1]}). Až potom pridaj váhu.`; }
   } else {
     go = `Začni ľahšie: zober váhu, s ktorou dáš ${rrange[1]} opakovaní a ${rir} by ti ešte zostali v rezerve. Zapíš si ju, nabudúce na ňu nadviažem.`;
   }
@@ -119,7 +120,7 @@ function resultHtml(res, rx, preview, id) {
     today = `<div class="mc-today"><small>${rx.inToday ? 'Dnes v tvojom pláne' : rx.planDay ? `V pláne máš ten cvik v dni D${rx.planDay}` : 'Nie je v tvojom pláne, ber to ako odporúčanie'}</small>
       <div class="mc-big">${rx.sets} × ${rx.reps[0]}-${rx.reps[1]}<span>pauza ${mins}</span></div>
       <small>Nechaj si ${rx.rir} ${rx.rir === 1 ? 'opakovanie' : 'opakovania'} v rezerve.</small>
-      ${rx.last ? `<p class="mc-last">Naposledy (${dShort(rx.last.date)}): <b>${rx.last.sets.map(s => `${fmtKg(s.kg)} kg × ${s.reps}`).join(', ')}</b></p>` : ''}
+      ${rx.last ? `<p class="mc-last">Naposledy (${dShort(rx.last.date)}): <b>${rx.last.sets.map(s => `${fmtKg(s.kg)} ${U.wUnit()} × ${s.reps}`).join(', ')}</b></p>` : ''}
       <p class="mc-go">${h(rx.go)}</p>${rx.extra ? `<p class="mc-note">${h(rx.extra)}</p>` : ''}</div>`;
   } else {
     today = `<div class="mc-sec"><b>Séria a váhy</b><p>Tento cvik zatiaľ nemáme v katalógu, tak ti nevieme spočítať váhy. Rob 3 série po 8 až 12 opakovaní, tak aby ti 2 opakovania zostali v rezerve.</p></div>`;
