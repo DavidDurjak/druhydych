@@ -1,6 +1,7 @@
 // Fuelwind: hlavná aplikácia (routing + obrazovky)
 import * as db from './data.js';
 import * as calc from './calc.js';
+import * as U from './units.js';
 import * as v2 from './app2.js';
 import * as push from './push.js';
 import * as fd from './foods.js';
@@ -18,6 +19,7 @@ import * as hb from './habits.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
+U.onSave(u => { if (state.profile) state.profile.units = u; return state.session ? db.sb.from('profiles').update({ units: u }).eq('id', state.session.user.id) : null; });
 
 const MEALS = { breakfast: 'Raňajky', brunch: 'Desiata', lunch: 'Obed', afternoon: 'Olovrant', dinner: 'Večera', late: 'Druhá večera', snack: 'Snack' };
 export const ctx = {};
@@ -176,7 +178,7 @@ async function routeInner(my) {
   let path = hash.split('?')[0];
   if (path !== state.curPath) { state.prevPath = state.curPath; state.curPath = path; }
   if (!state.session) return renderAuth();
-  if (!state.profile) { const p = await loadProfile(state.session.user.id); if (my !== routeSeq) return; state.profile = p; }
+  if (!state.profile) { const p = await loadProfile(state.session.user.id); if (my !== routeSeq) return; state.profile = p; U.adopt(p); }
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
     '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals,
@@ -314,7 +316,7 @@ function weightChart(tr) {
   const y = v => pt + (1 - (v - min) / (max - min)) * (H - pt - pb);
   const ticks = [min, (min + max) / 2, max];
   return `<svg class="chart" viewBox="0 0 ${W} ${H}">
-    ${ticks.map(t => `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text class="lbl" x="2" y="${y(t) + 4}">${t.toFixed(1)}</text>`).join('')}
+    ${ticks.map(t => `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text class="lbl" x="2" y="${y(t) + 4}">${U.fmtW(t)}</text>`).join('')}
     ${data.map((d, i) => `<circle class="raw" cx="${x(i)}" cy="${y(d.weight)}" r="4"/>`).join('')}
     <path class="trend" d="${data.map((d, i) => `${i ? 'L' : 'M'}${x(i)},${y(d.trend)}`).join(' ')}"/>
     <text class="lbl" x="${pl}" y="${H - 6}">${calc.fmtDate(data[0].date)}</text><text class="lbl" x="${W - pr}" y="${H - 6}" text-anchor="end">${calc.fmtDate(data[data.length - 1].date)}</text>
@@ -331,22 +333,24 @@ async function renderWeight() {
   $app.innerHTML = `<div class="screen">
     <div class="topbar"><h1>Váha</h1>${datePicker()}</div>
     <div class="card">
-      <form id="wf" class="input-row"><input class="input" type="number" step="0.1" inputmode="decimal" name="w" placeholder="kg" value="${todayRow ? todayRow.weight_kg : ''}" required><input class="input" type="number" step="0.5" inputmode="decimal" name="waist" placeholder="pás cm" value="${todayRow?.waist_cm ?? ''}" style="max-width:110px"><button class="btn sm primary" type="submit">Uložiť</button></form>
+      <div class="un-bar"><span>Jednotky</span>${U.switchHtml()}</div>
+      <form id="wf" class="input-row"><input class="input" type="number" step="0.1" inputmode="decimal" name="w" placeholder="${U.wUnit()}" value="${todayRow ? U.inW(todayRow.weight_kg) : ''}" required><input class="input" type="number" step="0.5" inputmode="decimal" name="waist" placeholder="pás ${U.lUnit()}" value="${U.inL(todayRow?.waist_cm)}" style="max-width:110px"><button class="btn sm primary" type="submit">Uložiť</button></form>
       <p class="muted small mt">Váž sa ráno, po WC, pred jedlom. Denné výkyvy sú normálne, pozeraj trend (zelená čiara).</p>
     </div>
     <div class="grid3 mb">
-      <div class="stat"><b class="mono">${last ? last.trend.toFixed(1) : '–'}</b><span>kg trend</span></div>
-      <div class="stat"><b class="mono">${last ? (last.trend - startW > 0 ? '+' : '') + (last.trend - startW).toFixed(1) : '–'}</b><span>od štartu (${startW.toFixed(1)})</span></div>
-      <div class="stat"><b class="mono">${ch7 == null ? '–' : (ch7 > 0 ? '+' : '') + ch7.toFixed(1)}</b><span>kg / 7 dní</span></div>
+      <div class="stat"><b class="mono">${last ? U.fmtW(last.trend) : '–'}</b><span>${U.wUnit()} trend</span></div>
+      <div class="stat"><b class="mono">${last ? U.fmtWD(last.trend - startW) : '–'}</b><span>od štartu (${U.fmtW(startW)})</span></div>
+      <div class="stat"><b class="mono">${ch7 == null ? '–' : U.fmtWD(ch7)}</b><span>${U.wUnit()} / 7 dní</span></div>
     </div>
     <div class="card">${weightChart(tr)}</div>
-    <div class="card">${weights.length ? [...weights].reverse().slice(0, 30).map(w => `<div class="item"><div class="n"><b>${calc.fmtDate(w.date)} ${w.date.slice(0, 4)}</b><span>${w.waist_cm ? 'pás ' + w.waist_cm + ' cm' : ''}</span></div><span class="k mono">${Number(w.weight_kg).toFixed(1)} kg</span><button class="del" data-del="${w.id}">×</button></div>`).join('') : '<div class="empty">Žiadne váženia.</div>'}</div>
+    <div class="card">${weights.length ? [...weights].reverse().slice(0, 30).map(w => `<div class="item"><div class="n"><b>${calc.fmtDate(w.date)} ${w.date.slice(0, 4)}</b><span>${w.waist_cm ? 'pás ' + U.fmtL(w.waist_cm) : ''}</span></div><span class="k mono">${U.fmtWU(w.weight_kg)}</span><button class="del" data-del="${w.id}">×</button></div>`).join('') : '<div class="empty">Žiadne váženia.</div>'}</div>
   </div>${nav('#/vaha')}`;
   bindDatePicker($app, renderWeight);
+  U.bindSwitch($app, () => renderWeight());
   $app.querySelector('#wf').onsubmit = async e => {
     e.preventDefault(); const f = new FormData(e.target);
     try {
-      await db.upsertWeight({ user_id: uid, date: state.date, weight_kg: Number(f.get('w')), waist_cm: f.get('waist') ? Number(f.get('waist')) : null });
+      await db.upsertWeight({ user_id: uid, date: state.date, weight_kg: U.outW(f.get('w')), waist_cm: f.get('waist') ? U.outL(f.get('waist')) : null });
       toast('Uložené'); renderWeight();
     } catch (err) { toast(err.message, true); }
   };
@@ -392,7 +396,7 @@ async function renderProfile() {
       <div class="grid2 mt">
         <div class="stat"><b class="mono">${p.target_kcal || '–'}</b><span>kcal cieľ</span></div>
         <div class="stat"><b class="mono">${p.target_protein || '–'} g</b><span>bielkoviny</span></div>
-        <div class="stat"><b class="mono">${p.start_weight || '–'} kg</b><span>štartová váha</span></div>
+        <div class="stat"><b class="mono">${p.start_weight ? U.fmtWU(p.start_weight) : '–'}</b><span>štartová váha</span></div>
         <div class="stat"><b class="mono">${p.start_date ? calc.fmtDate(p.start_date) : '–'}</b><span>štart</span></div>
       </div>
       <p class="muted small mt">Cieľ: ${calc.GOAL[p.goal]?.label || '–'} · ${calc.ACTIVITY[p.activity]?.label || ''} · ${p.targets_mode === 'custom' ? 'vlastné makrá' : 'automatické makrá'}</p>
