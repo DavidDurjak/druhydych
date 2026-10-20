@@ -86,19 +86,36 @@
         W.prototype.takeRecords = function () { var r = this._buf.concat(this._o.takeRecords()); this._buf = []; return r; };
         W.__fw = true; window.MutationObserver = W;
       }
-      var F = window.fetch, inflight = {};
+      var F = window.fetch, inflight = {}, memo = {}, ver = 0, TTL = 20000;
+      // krátka pamäť na odpovede databázy: pri preklikávaní kariet sa tie isté dopyty nesťahujú znova. Každý zápis ju hneď vymaže.
+      window.__fwFlush = function () { memo = {}; ver++; };
+      var lastHash = location.hash;
+      window.addEventListener('hashchange', function () { if (location.hash === lastHash) window.__fwFlush(); lastHash = location.hash; });
+      var skip = /\/rest\/v1\/(messages|friend|buddy|invite|notif)/i;
       if (F) window.fetch = function (input, init) {
         try {
           var url = typeof input === 'string' ? input : input && input.url;
           var method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
-          if (method !== 'GET' || !url || url.indexOf('.supabase.co/rest/v1/') < 0) return F.apply(this, arguments);
-          var h = (init && init.headers) || (input && input.headers), auth = '';
-          if (h) auth = typeof h.get === 'function' ? (h.get('authorization') || '') : (h.Authorization || h.authorization || '');
-          var key = url + '|' + auth;
+          if (!url || url.indexOf('.supabase.co/') < 0) return F.apply(this, arguments);
+          if (method !== 'GET') { memo = {}; ver++; return F.apply(this, arguments); }
+          if (url.indexOf('.supabase.co/rest/v1/') < 0) return F.apply(this, arguments);
+          var h = (init && init.headers) || (input && input.headers);
+          var hv = function (n) { if (!h) return ''; return typeof h.get === 'function' ? (h.get(n) || '') : (h[n] || h[n.toLowerCase()] || h[n.charAt(0).toUpperCase() + n.slice(1)] || ''); };
+          var key = url + '|' + hv('authorization') + '|' + hv('accept') + '|' + hv('prefer') + '|' + hv('range');
+          var useMemo = !skip.test(url), hit = useMemo && memo[key];
+          if (hit && Date.now() - hit.t < TTL) return Promise.resolve(new Response(hit.b, { status: hit.s, statusText: hit.st, headers: hit.h }));
           if (!inflight[key]) {
-            inflight[key] = F.apply(this, arguments);
+            var v0 = ver, p = inflight[key] = F.apply(this, arguments);
             var done = function () { delete inflight[key]; };
-            inflight[key].then(done, done);
+            p.then(done, done);
+            if (useMemo) p.then(function (r) {
+              if (!r || (r.status !== 200 && r.status !== 206)) return;
+              r.clone().text().then(function (b) {
+                if (v0 !== ver) return; // medzitým prebehol zápis: túto odpoveď neukladaj
+                var hs = []; r.headers.forEach(function (val, name) { hs.push([name, val]); });
+                memo[key] = { t: Date.now(), b: b, s: r.status, st: r.statusText, h: hs };
+              }).catch(function () {});
+            }, function () {});
           }
           return inflight[key].then(function (r) { return r.clone(); });
         } catch (e) { return F.apply(this, arguments); }
@@ -152,6 +169,7 @@
   <link rel="stylesheet" href="micro.css">
   <link rel="stylesheet" href="suggest.css">
   <link rel="stylesheet" href="buddy.css">
+  <link rel="stylesheet" href="perf.css">
 </head>
 <body>
   <div id="app"><div class="sk" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><i class="e"></i></div></div>
