@@ -272,6 +272,7 @@ export async function renderToday() {
       ${isToday ? '' : '<button class="tdh-now" data-now>Dnes</button>'}
       <a class="tdh-streak ${strk ? 'on' : ''}" href="#/vaha" title="Dni v rade" data-saved="${strkSaved}">🔥 ${strk}</a>
     </header>
+    ${isToday ? '' : `<div class="dayban"><span>Zapisuješ za <b>${longDate(st.date)}</b></span><button type="button" data-now>Späť na dnes</button></div>`}
     ${weekStrip}
     ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
     ${firstCard || backCard}
@@ -297,10 +298,10 @@ export async function renderToday() {
       ${fiberGap ? '<p class="hk-note">Vláknina, cukry a soľ sa počítajú len z jedál, ktoré tieto údaje majú. Odporúčania WHO: cukry do 50 g, soľ do 5 g.</p>' : ''}
     </section>
     <div class="qk">
-      <a class="qk-b" href="#/jedlo?q=1"><b>🔎</b><span>Hľadať</span></a>
-      <a class="qk-b" href="#/jedlo?scan=1"><b>▥</b><span>Kód</span></a>
-      <a class="qk-b ai" href="#/jedlo?ai=1"><b>✦</b><span>AI zápis</span></a>
-      <button class="qk-b" data-dm><b>⋯</b><span>Deň</span></button>
+      <a class="qk-b" href="#/jedlo?q=1" style="--c:var(--qk-blue)"><i class="qk-i"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></i><span>Hľadať</span></a>
+      <a class="qk-b" href="#/jedlo?scan=1" style="--c:var(--qk-amber)"><i class="qk-i qk-scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5.5A1.5 1.5 0 0 1 4.5 4H7M17 4h2.5A1.5 1.5 0 0 1 21 5.5V8M21 16v2.5a1.5 1.5 0 0 1-1.5 1.5H17M7 20H4.5A1.5 1.5 0 0 1 3 18.5V16"/><path d="M8 9v6M12 9v6M16 9v6"/></svg></i><span>Kód</span></a>
+      <a class="qk-b ai" href="#/jedlo?ai=1" style="--c:var(--accent)"><i class="qk-i qk-ai"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="s1" d="M11 4l1.9 5.1L18 11l-5.1 1.9L11 18l-1.9-5.1L4 11l5.1-1.9z" fill="currentColor" stroke="none"/><path class="s2" d="M18.5 3.5v3M17 5h3"/><path class="s3" d="M18 15.5v3M16.5 17h3"/></svg></i><span>AI zápis</span></a>
+      <button class="qk-b" data-dm style="--c:var(--qk-violet)"><i class="qk-i"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4M14 15H9.5M11.5 13l-2 2 2 2"/></svg></i><span>Iný deň</span></button>
     </div>
     ${weekLine}
     ${budLine}
@@ -359,7 +360,7 @@ export async function renderToday() {
   const go = d => { st.date = d; renderToday(); };
   root.querySelectorAll('[data-d]').forEach(b => b.onclick = () => go(b.dataset.d));
   root.querySelectorAll('[data-wk]').forEach(b => b.onclick = () => go(calc.addDays(st.date, Number(b.dataset.wk))));
-  root.querySelector('[data-now]')?.addEventListener('click', () => go(calc.today()));
+  root.querySelectorAll('[data-now]').forEach(b => b.addEventListener('click', () => go(calc.today())));
   root.querySelector('.tdh-dp')?.addEventListener('change', e => { if (e.target.value) go(e.target.value); });
   // potiahnutie do strán: predchádzajúci / ďalší deň
   const scr = root.querySelector('.screen.td'); let sx = 0, sy = 0, t0 = 0, ok = false;
@@ -369,7 +370,7 @@ export async function renderToday() {
     if (Math.abs(dx) > 80 && Math.abs(dy) < 40 && Date.now() - t0 < 600) go(calc.addDays(st.date, dx < 0 ? 1 : -1));
   }, { passive: true });
   root.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => mealMenu(b.dataset.mm, foods, uid));
-  root.querySelector('[data-dm]')?.addEventListener('click', () => dayMenu(foods, uid));
+  root.querySelector('[data-dm]')?.addEventListener('click', () => dayPick(foods, uid, go));
   push.bindPushCard(renderToday);
   root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
   root.querySelectorAll('[data-edit]').forEach(el => el.onclick = () => { const f = foods.find(x => x.id === Number(el.dataset.edit)); if (f) openLogEdit(f, renderToday); });
@@ -419,6 +420,18 @@ function mealMenu(meal, foods, uid) {
     if (!clr.dataset.sure) { clr.dataset.sure = 1; clr.innerHTML = '<span>⚠️</span>Klikni znova a vymaže sa to'; return; }
     try { await db.clearMeal(uid, st.date, meal); bg.remove(); renderToday(); } catch (e) { toast(e.message, true); }
   });
+}
+
+function dayPick(foods, uid, go) {
+  const st = state(), t = calc.today();
+  const pick = [[t, 'Dnes'], [calc.addDays(t, -1), 'Včera'], [calc.addDays(t, -2), 'Predvčerom']].filter(([d]) => d !== st.date);
+  const bg = ctx.sheet(`<h3>Zapísať jedlo za iný deň</h3><p class="muted small mt">Vyber deň a potom pridávaj jedlá ako zvyčajne.</p><div class="mm">
+    ${pick.map(([d, l]) => sheetBtn('d' + d, '📅', `${l}<small>${longDate(d)}</small>`)).join('')}
+    <label class="mm-b mm-date"><span>🗓</span>Vybrať iný dátum<input type="date" max="${t}" value="${st.date}" aria-label="Vybrať dátum"></label>
+    ${sheetBtn('more', '⋯', 'Možnosti tohto dňa (kopírovať, vymazať)')}</div>`);
+  pick.forEach(([d]) => bg.querySelector(`[data-a="d${d}"]`).onclick = () => { bg.remove(); go(d); });
+  bg.querySelector('.mm-date input').addEventListener('change', e => { if (e.target.value) { bg.remove(); go(e.target.value); } });
+  bg.querySelector('[data-a=more]').onclick = () => { bg.remove(); dayMenu(foods, uid); };
 }
 
 function dayMenu(foods, uid) {
