@@ -6,6 +6,7 @@ import { contestPhase, peakProtocol, PEAK_RISK, generatePlan, nextDay, EXERCISES
 import { ctx } from './app.js';
 import * as rp from './report.js';
 import { physiqueCardHtml, openPhysique } from './physique.js';
+import * as U from './units.js';
 
 // ctx sa naplní až po načítaní app.js, preto lenivé gettery
 const $app = () => ctx.$app;
@@ -118,10 +119,10 @@ export async function renderTraining() {
     ${day.exercises.map(e => `<div class="card ex">
       <div class="exh"><div class="exn"><h3>${h(e.name)}</h3>${exMeta(e, lastKg[e.id])}</div>${plan.meta?.v === 2 && e.id !== 'cardio' && e.reps ? `<button class="swapbtn" data-swap="${e.id}" aria-label="Vymeniť cvik" title="Vymeniť cvik">⇄</button>` : ''}</div>
       ${exCue(e)}
-      ${e.reps ? '<div class="setsh"><span></span><span>kg</span><span>opakovania</span><span></span></div>' : ''}
+      ${e.reps ? `<div class="setsh"><span></span><span>${U.wUnit()}</span><span>opakovania</span><span></span></div>` : ''}
       <div class="sets">${sets.filter(s => s.ex === e.id).map(s => `<div class="set ${s.done ? 'done' : ''}" data-ex="${e.id}" data-set="${s.set}">
         <span class="setno">${s.set}</span>
-        ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="${e.startKg && !lastKg[e.id] ? e.startKg : 'kg'}" value="${s.kg ?? ''}" data-f="kg" aria-label="Váha v kg, séria ${s.set}"><input class="input sm" inputmode="numeric" placeholder="${h(e.reps)}" value="${s.reps ?? ''}" data-f="reps" aria-label="Opakovania, séria ${s.set}">` : `<span class="muted small" style="grid-column:2/4">${Math.round(e.seconds / 60)} min</span>`}
+        ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="${e.startKg && !lastKg[e.id] ? U.inW(e.startKg) : U.wUnit()}" value="${U.inW(s.kg)}" data-f="kg" aria-label="Váha v ${U.wUnit() === 'lb' ? 'librách' : 'kg'}, séria ${s.set}"><input class="input sm" inputmode="numeric" placeholder="${h(e.reps)}" value="${s.reps ?? ''}" data-f="reps" aria-label="Opakovania, séria ${s.set}">` : `<span class="muted small" style="grid-column:2/4">${Math.round(e.seconds / 60)} min</span>`}
         <button class="chk" data-chk aria-label="Hotovo">✓</button></div>`).join('')}</div>
     </div>`).join('')}
     <div class="row" style="gap:8px"><button class="btn primary" id="finish">${todayLog?.done ? 'Uložiť zmeny' : 'Ukončiť tréning'}</button><button class="btn sm ghost" id="replan">Nový plán</button></div>
@@ -138,7 +139,7 @@ export async function renderTraining() {
     const el = $app().querySelector(`.set[data-ex="${s.ex}"][data-set="${s.set}"]`);
     if (!el) return s;
     const kg = el.querySelector('[data-f=kg]')?.value, reps = el.querySelector('[data-f=reps]')?.value;
-    return { ...s, kg: kg === '' || kg == null ? null : Number(kg), reps: reps === '' || reps == null ? null : Number(reps), done: el.classList.contains('done') };
+    return { ...s, kg: kg === '' || kg == null ? null : U.outW(kg), reps: reps === '' || reps == null ? null : Number(reps), done: el.classList.contains('done') };
   });
   let saveTimer = null;
   const autosave = (done = false) => { clearTimeout(saveTimer); saveTimer = setTimeout(() => db.upsertWorkoutLog({ user_id: uid, date: state.date, plan_day: dayNo, day_name: day.name, sets: collect(), done: done || !!todayLog?.done }).catch(e => toast(e.message, true)), 400); };
@@ -184,7 +185,7 @@ function peakBlock(plan, left) {
   const kg = plan.meta.params?.weightKg || state.profile.start_weight;
   const today = peakProtocol(left, kg), next = left > 0 ? peakProtocol(left - 1, kg) : null;
   const box = x => `<p class="small" style="margin:10px 0 4px"><b>${h(x.title)}</b></p><ul class="small" style="margin:0 0 0 18px;padding:0;line-height:1.5">${x.items.map(t => `<li style="margin-bottom:6px">${h(t)}</li>`).join('')}</ul>`;
-  return `<div class="px-caut" style="margin-top:10px"><b>Profi peak week</b><p class="small" style="margin:4px 0 0">Dnes a zajtra podľa dátumu súťaže. Telesná hmotnosť pre výpočet: ${kg ? h(String(kg)) + ' kg' : 'nezadaná (uvedené v g a ml na kg)'}.</p>${box(today)}${next ? box(next) : ''}
+  return `<div class="px-caut" style="margin-top:10px"><b>Profi peak week</b><p class="small" style="margin:4px 0 0">Dnes a zajtra podľa dátumu súťaže. Telesná hmotnosť pre výpočet: ${kg ? U.fmtWU(kg) : 'nezadaná (uvedené v g a ml na kg)'}.</p>${box(today)}${next ? box(next) : ''}
     <p class="small" style="margin:10px 0 0;opacity:.85">Plán je nad rámec bežných odporúčaní a robíš ho na vlastné riziko. Diuretiká, laxatíva, lieky ani saunové vysúšanie v appke nenájdeš.</p>
     <button class="btn sm ghost" id="peakLock" style="margin-top:8px">Skryť profi plán</button></div>`;
 }
@@ -302,7 +303,7 @@ function exMeta(e, last) {
   if (e.id !== 'cardio' && e.rest) {
     if (e.rir != null) bits.push(`rezerva ${e.rir}`);
     bits.push(`pauza ${e.rest >= 120 ? Math.round(e.rest / 60 * 2) / 2 + ' min' : e.rest + ' s'}`);
-    if (!last && e.startKg) bits.push(`začni okolo ${e.startKg} kg`);
+    if (!last && e.startKg) bits.push(`začni okolo ${U.fmtWt(e.startKg)} ${U.wUnit()}`);
   }
   return `<p class="exm">${bits.join(' · ')}</p>`;
 }
