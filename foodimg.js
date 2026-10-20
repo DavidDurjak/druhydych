@@ -124,4 +124,19 @@ export async function hydrate(root = document) {
 }
 setInterval(() => document.querySelectorAll('.ft.ld').forEach(e => { if (!e.dataset.t) e.dataset.t = String(Date.now()); else if (Date.now() - Number(e.dataset.t) > 3000) e.classList.remove('ld'); }), 1000);
 let tm = null;
-new MutationObserver(() => { clearTimeout(tm); tm = setTimeout(() => hydrate(document).catch(() => { }), 120); }).observe(document.documentElement, { childList: true, subtree: true });
+// riadky jedal v Dnes: fotka z pamate sa vlozi hned (v tom istom okamihu ako sa riadok vykresli), aby ikonka neprebliknula
+function syncFill() {
+  const m = hits();
+  document.querySelectorAll('.ml-list .fi:not(.ph)').forEach(el => {
+    const b = el.parentNode.querySelector('.fn b'); if (!b) return;
+    const u = m.get(b.textContent); if (!u) return;
+    const im = new Image(); im.alt = ''; im.referrerPolicy = 'no-referrer'; im.src = u;
+    el.classList.add('ph'); el.textContent = ''; el.appendChild(im);
+  });
+}
+// po kliknutí na krížik riadok hneď zmizne, nečaká sa na prekreslenie
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.ml-list .del'); const li = b && b.closest('li');
+  if (li) { li.style.transition = 'opacity .12s'; li.style.opacity = '0'; li.style.pointerEvents = 'none'; }
+}, true);
+new MutationObserver(() => { syncFill(); clearTimeout(tm); tm = setTimeout(() => hydrate(document).catch(() => { }), 120); }).observe(document.documentElement, { childList: true, subtree: true });
