@@ -1,12 +1,35 @@
 // Výpočty: kalorické ciele, makrá, trend váhy. Čistá logika (jednotky len pre texty).
 import { fmtWT, wUnit } from './units.js';
 
-export const ACTIVITY = {
+const ACT_BASE = {
   low:      { label: 'Sedavý (kancelária, škola, bez športu)', factor: 1.2 },
   light:    { label: 'Ľahký (1 až 2 tréningy týždenne)',  factor: 1.375 },
   moderate: { label: 'Stredný (3 až 4 tréningy týždenne)', factor: 1.55 },
   high:     { label: 'Vysoký (5+ tréningov týždenne)',    factor: 1.725 },
 };
+
+// Presnejšia aktivita: kód 'a:<deň>:<kroky>:<tréningy>' (napr. a:desk:5500:4) sa ukladá do rovnakého stĺpca ako štyri staré úrovne.
+// Výdaj = bazál × 1,2 (sedavý základ) + príplatok za prácu + kroky nad 4000 + tréningy (350 kcal na tréning).
+export const JOBS = {
+  desk:  { label: 'Sedím väčšinu dňa', sub: 'škola, kancelária', extra: 0,    steps: 5000 },
+  stand: { label: 'Som na nohách',     sub: 'obchod, gastro, učenie', extra: 0.05, steps: 8000 },
+  phys:  { label: 'Fyzická práca',     sub: 'stavba, sklad, záhrada', extra: 0.15, steps: 11000 },
+};
+export const KCAL_PER_SESSION = 350;
+const ACT_RE = /^a:(desk|stand|phys):(\d{3,5}):([0-7])$/;
+export function encodeActivity({ job, steps, days }) {
+  const j = JOBS[job] ? job : 'desk';
+  const st = Math.max(0, Math.min(30000, Math.round(Number(steps) || JOBS[j].steps)));
+  return `a:${j}:${Math.max(100, st)}:${Math.max(0, Math.min(7, Math.round(Number(days) || 0)))}`;
+}
+export function decodeActivity(code) {
+  const m = ACT_RE.exec(String(code || ''));
+  return m ? { job: m[1], steps: Number(m[2]), days: Number(m[3]) } : null;
+}
+const actLabel = d => `${JOBS[d.job].label}, ${d.steps.toLocaleString('sk-SK')} krokov`;
+export const ACTIVITY = new Proxy(ACT_BASE, {
+  get(t, k) { if (typeof k === 'string' && k.startsWith('a:')) { const d = decodeActivity(k); return d ? { label: actLabel(d), factor: null, detail: d } : undefined; } return t[k]; },
+});
 
 export const GOAL = {
   lose:     { label: 'Schudnúť',       delta: -500 },
@@ -28,15 +51,20 @@ export function bmr({ sex, weightKg, heightCm, age }) {
   return Math.round(sex === 'm' ? base + 5 : base - 161);
 }
 
-export function tdee(bmrValue, activity) {
-  const f = (ACTIVITY[activity] || ACTIVITY.light).factor;
+export function tdee(bmrValue, activity, weightKg) {
+  const d = decodeActivity(activity);
+  if (d && weightKg) {
+    const stepKcal = Math.max(0, d.steps - 4000) * 0.0004 * weightKg;   // čistý výdaj chôdze nad bežný sedavý deň
+    return Math.round(bmrValue * (1.2 + JOBS[d.job].extra) + stepKcal + (d.days * KCAL_PER_SESSION) / 7);
+  }
+  const f = (ACT_BASE[activity] || ACT_BASE.light).factor;
   return Math.round(bmrValue * f);
 }
 
 export function targets({ sex, weightKg, heightCm, birthYear, activity, goal }) {
   const age = ageFromYear(birthYear);
   const b = bmr({ sex, weightKg, heightCm, age });
-  const t = tdee(b, activity);
+  const t = tdee(b, activity, weightKg);
   let delta = (GOAL[goal] || GOAL.maintain).delta;
   if (delta < -MAX_DEFICIT) delta = -MAX_DEFICIT;
   let kcal = t + delta;
