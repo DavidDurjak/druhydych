@@ -1,0 +1,23 @@
+/* Vykon: animacie, ktore donutili prehliadac prekreslovat obrazovku 60x za sekundu aj v klude.
+   Nahradene variantmi, ktore bezia na grafickej karte (transform, opacity), alebo staticke. */
+
+/* odznaky v Pokroku: svetlo po medaili len pri zlatej a diamantovej, ziara bez animacie box-shadow */
+.bx-m.bronze::after, .bx-m.silver::after { animation: none !important; }
+.bx-m.diamond:not(.new), .bx-m.gold:not(.new), .bx-lvn { animation: none !important; }
+.bx-m.gold:not(.new) { box-shadow: inset 0 0 0 2px rgba(255,255,255,.5), 0 4px 20px rgba(255,181,71,.55); }
+.bx-m.diamond:not(.new) { box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), 0 4px 22px rgba(91,224,210,.6); }
+.bx-lvn { box-shadow: 0 4px 20px rgba(255,181,71,.55); }
+.bx-m.gold::after, .bx-m.diamond::after { will-change: transform; }
+
+/* Pokrok: dnesny den bez pulzovania tienom */
+.pgx-gc .pg-gw i.g-now { animation: none !important; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--accent) 60%, transparent); }
+.hm-w i.g-now { animation: none !important; }
+
+/* Jedlo: AI ramik bez rotacie (animacia vlastnosti --jang prekreslovala maskovany gradient stale), ziara len pulzuje priesvitnostou */
+.screen:has(#mealseg) .ai-box::before { animation: none !important; }
+.screen:has(#mealseg) .ai-box::after { animation: jGlowP 4s ease-in-out infinite !important; will-change: opacity; }
+@keyframes jGlowP { 50% { opacity: .5; } }
+
+/* Jedlo: skenovacia ciara sa hybe cez transform namiesto top (top spusta prepocet rozlozenia) */
+.screen:has(#mealseg) #scan::after { animation: jScanT 2.4s ease-in-out infinite !important; will-change: transform, opacity; }
+@keyframes jScanT { 0%, 100% { transform: translateY(0); opacity: .2; } 50% { transform: translateY(22px); opacity: 1; } }

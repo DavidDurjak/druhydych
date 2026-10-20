@@ -72,5 +72,5 @@ body.bd-open .bd-fab { display: none !important; }
 .bd-m.coach > :not(.bd-mav) { grid-column: 2; justify-self: start; }
 .bd-head > .bd-av { flex: none; }
 @keyframes bdfloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1px; } }
-.bd-anim .bd-fig { animation: bdfloat 4s ease-in-out infinite; }
+/* pohupovanie o 1 px vyradene: animacia casti SVG nutila prepocet rozlozenia 60x za sekundu na kazdej obrazovke */
 @media (prefers-reduced-motion: reduce) { .bd-typing i { animation: none; opacity: .6; } .bd-anim .bd-fig, .bd-anim .bd-eyes { animation: none; } }
