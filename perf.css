@@ -129,3 +129,51 @@ html[data-theme=light] .screen.td .ml, html[data-theme=light] .screen.td .tile, 
 @media (prefers-reduced-motion: reduce) { .screen.td .tdh-streak.on::after, .screen.td .hk-ring::before, .screen.td .mt-b i::after, .screen.td .qk-b.ai::after { animation: none; } .screen.td .hk-ring::before, .screen.td .mt-b i::after, .screen.td .qk-b.ai::after { display: none; } }
 .screen.td .hero-k.over .hk-ring::before { background: conic-gradient(from 0deg, transparent 0 70%, rgba(140,140,255,.7) 88%, transparent 90% 100%); }
 .screen.td .hero-k.over .hk-rings .o0 { filter: drop-shadow(0 0 10px rgba(140,140,255,.6)); }
+
+/* ============ Dnes: Fuel orb. Stred kruhu je sklenena nadrz, ktoru plni tekute palivo podla % cielu ============ */
+@property --lv { syntax: '<number>'; inherits: true; initial-value: 0; }
+.screen.td .hk-ring { --liq: rgba(70,230,170,.40); --liq2: rgba(140,255,215,.30); --tick: var(--accent); transition: --lv 1.8s cubic-bezier(.22,.9,.25,1); }
+.screen.td .hero-k.over .hk-ring { --liq: rgba(140,140,255,.42); --liq2: rgba(190,190,255,.30); --tick: #9C9CFF; }
+html[data-theme=light] .screen.td .hk-ring { --liq: rgba(20,170,120,.34); --liq2: rgba(60,210,160,.28); }
+html[data-theme=light] .screen.td .hero-k.over .hk-ring { --liq: rgba(110,110,240,.34); --liq2: rgba(150,150,255,.26); }
+/* nadrz */
+.screen.td .breath { inset: 55px; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.05), rgba(0,0,0,.18) 100%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14), inset 0 -16px 30px rgba(0,0,0,.28), 0 0 30px -6px color-mix(in srgb, var(--tick) 40%, transparent); animation: none; transform: translateZ(0); }
+.screen.td .hero-k.over .breath { background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.05), rgba(0,0,0,.18) 100%); }
+html[data-theme=light] .screen.td .breath { background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.9), rgba(200,215,225,.5) 100%); box-shadow: inset 0 0 0 1px rgba(20,40,60,.12), inset 0 -14px 26px rgba(20,40,60,.1); }
+.lq { position: absolute; left: 0; right: 0; top: 0; bottom: 0; transform: translateY(calc(100% - var(--lv) * 1%)); will-change: transform; }
+.lq::before { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: -2px; background: var(--liq); }
+.lq b { position: absolute; left: 0; width: 200%; height: 18px; background: var(--liq); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 18' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q30 -1 60 9 T120 9 V18 H0Z'/%3E%3C/svg%3E") repeat-x 0 0 / 25% 100%; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 18' preserveAspectRatio='none'%3E%3Cpath d='M0 9 Q30 -1 60 9 T120 9 V18 H0Z'/%3E%3C/svg%3E") repeat-x 0 0 / 25% 100%; }
+.lq .w1 { top: -17px; animation: lqWave 5.5s linear infinite; will-change: transform; }
+.lq .w2 { top: -22px; background: var(--liq2); animation: lqWave 8s linear infinite reverse; will-change: transform; }
+@keyframes lqWave { to { transform: translateX(-50%); } }
+/* bubliny stupaju v kvapaline */
+.lq::after { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; background:
+  radial-gradient(circle 2.5px at 22% 86%, rgba(255,255,255,.55) 96%, transparent), radial-gradient(circle 1.8px at 38% 62%, rgba(255,255,255,.45) 96%, transparent),
+  radial-gradient(circle 3px at 64% 92%, rgba(255,255,255,.5) 96%, transparent), radial-gradient(circle 2px at 78% 70%, rgba(255,255,255,.4) 96%, transparent), radial-gradient(circle 1.6px at 52% 78%, rgba(255,255,255,.45) 96%, transparent);
+  animation: lqRise 7s linear infinite; will-change: transform, opacity; }
+@keyframes lqRise { 0% { transform: translateY(18%); opacity: 0; } 15% { opacity: 1; } 85% { opacity: .8; } 100% { transform: translateY(-34%); opacity: 0; } }
+/* sklenena odlesk cez nadrz */
+.screen.td .breath::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(120% 70% at 30% 8%, rgba(255,255,255,.30), rgba(255,255,255,0) 46%), linear-gradient(200deg, transparent 60%, rgba(255,255,255,.07)); pointer-events: none; }
+html[data-theme=light] .screen.td .breath::after { background: radial-gradient(120% 70% at 30% 8%, rgba(255,255,255,.85), rgba(255,255,255,0) 46%); }
+/* cislo nad kvapalinou: citatelne vzdy */
+.screen.td .hk-c b { text-shadow: 0 2px 14px rgba(0,0,0,.45), 0 0 26px color-mix(in srgb, var(--tick) 35%, transparent); }
+html[data-theme=light] .screen.td .hk-c b { text-shadow: 0 1px 0 rgba(255,255,255,.8); }
+.screen.td .hk-c span { text-shadow: 0 1px 8px rgba(0,0,0,.4); color: color-mix(in srgb, var(--text) 78%, transparent); }
+html[data-theme=light] .screen.td .hk-c span { text-shadow: none; }
+/* ciferník: rysky okolo kruhu sa rozsvecuju podla splneneho cielu */
+.screen.td .hk-ring::after { content: ''; position: absolute; left: 50%; top: 50%; width: 272px; height: 272px; margin: -136px 0 0 -136px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(var(--tick) 0, var(--tick) calc(var(--lv) * 3.6deg), rgba(255,255,255,.17) calc(var(--lv) * 3.6deg), rgba(255,255,255,.17) 360deg);
+  -webkit-mask: repeating-conic-gradient(#000 0 1.1deg, transparent 1.1deg 6deg), radial-gradient(circle, transparent 0 128px, #000 129px 135px, transparent 136px); -webkit-mask-composite: source-in;
+  mask: repeating-conic-gradient(#000 0 1.1deg, transparent 1.1deg 6deg), radial-gradient(circle, transparent 0 128px, #000 129px 135px, transparent 136px); mask-composite: intersect; }
+html[data-theme=light] .screen.td .hk-ring::after { background: conic-gradient(var(--tick) 0, var(--tick) calc(var(--lv) * 3.6deg), rgba(20,40,60,.16) calc(var(--lv) * 3.6deg), rgba(20,40,60,.16) 360deg); }
+/* polarne svetlo v pozadi karty (plavu len textury, ziadne prekreslovanie) */
+.screen.td .hero-k { isolation: isolate; }
+.screen.td .hero-k::before, .screen.td .hero-k::after { content: ''; position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; will-change: transform; }
+.screen.td .hero-k::before { width: 300px; height: 300px; left: -110px; top: -90px; background: radial-gradient(circle, rgba(124,255,178,.26), transparent 66%); animation: aurA 16s ease-in-out infinite alternate; }
+.screen.td .hero-k::after { width: 280px; height: 280px; right: -100px; bottom: -80px; background: radial-gradient(circle, rgba(120,130,255,.26), transparent 66%); animation: aurB 19s ease-in-out infinite alternate; }
+.screen.td .hero-k.over::before { background: radial-gradient(circle, rgba(140,140,255,.28), transparent 66%); }
+@keyframes aurA { to { transform: translate(90px, 70px) scale(1.15); } }
+@keyframes aurB { to { transform: translate(-80px, -60px) scale(1.2); } }
+html[data-theme=light] .screen.td .hero-k::before { background: radial-gradient(circle, rgba(60,210,150,.3), transparent 66%); }
+html[data-theme=light] .screen.td .hero-k::after { background: radial-gradient(circle, rgba(130,150,255,.24), transparent 66%); }
+@media (prefers-reduced-motion: reduce) { .lq .w1, .lq .w2, .lq::after, .screen.td .hero-k::before, .screen.td .hero-k::after { animation: none; } .screen.td .hk-ring { transition: none; } }
