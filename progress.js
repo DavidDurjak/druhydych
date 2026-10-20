@@ -4,6 +4,7 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { defaultWeek } from './report.js';
+import * as U from './units.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -14,8 +15,9 @@ if (!document.getElementById('pgx-css')) { const l = document.createElement('lin
 let period = 30; // 7 | 30 | 'all'
 let prevPer = 1; // index predošlého obdobia (pre plynulý posun indikátora)
 
-const fmt1 = v => (Math.round(v * 10) / 10).toLocaleString('sk-SK', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const sign = v => (v > 0 ? '+' : v < 0 ? '−' : '') + fmt1(Math.abs(v));
+// vždy v kg na vstupe, zobrazí sa v zvolených jednotkách (kg alebo lb)
+const fmt1 = v => U.fmtW(v);
+const sign = v => U.fmtWD(v);
 const dayName = iso => ['ne', 'po', 'ut', 'st', 'št', 'pi', 'so'][new Date(iso + 'T00:00:00').getDay()];
 const diffDays = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
 
@@ -46,7 +48,7 @@ function paceVerdict(goal, weekly, weight) {
     if (pct >= 0.15) return { cls: 'ok', text: 'Ideálne tempo naberania svalov.' };
     return { cls: 'mid', text: 'Váha sa nehýbe. Pridaj 150 až 200 kcal, najlepšie zo sacharidov.' };
   }
-  return Math.abs(pct) < 0.3 ? { cls: 'ok', text: 'Váha je stabilná, presne podľa cieľa.' } : { cls: 'mid', text: `Váha sa mení o ${sign(weekly)} kg týždenne. Pri udržiavaní uprav príjem o 100 až 150 kcal.` };
+  return Math.abs(pct) < 0.3 ? { cls: 'ok', text: 'Váha je stabilná, presne podľa cieľa.' } : { cls: 'mid', text: `Váha sa mení o ${sign(weekly)} ${U.wUnit()} týždenne. Pri udržiavaní uprav príjem o 100 až 150 kcal.` };
 }
 
 // hladká krivka (Catmull-Rom), kontrolné body orezané do rozsahu, aby krivka nepreletela mimo dát
@@ -141,8 +143,8 @@ const BADGES = [
   { id: 'streak21', icon: '⚡', name: '21 dní v rade', test: s => s.bestStreak >= 21 },
   { id: 'items100', icon: '🍽️', name: '100 jedál', test: s => s.totalItems >= 100 },
   { id: 'protein', icon: '💪', name: 'Bielkovinový týždeň', test: s => s.proteinWeek },
-  { id: 'kg2', icon: '🎯', name: s => s.goal === 'gain' ? '+2 kg' : '−2 kg', test: s => s.goal === 'gain' ? s.change >= 2 : s.change <= -2 },
-  { id: 'kg5', icon: '🏆', name: s => s.goal === 'gain' ? '+5 kg' : '−5 kg', test: s => s.goal === 'gain' ? s.change >= 5 : s.change <= -5 },
+  { id: 'kg2', icon: '🎯', name: s => `${s.goal === 'gain' ? '+' : '−'}${U.imp() ? 5 : 2} ${U.wUnit()}`, test: s => { const n = U.fromW(U.imp() ? 5 : 2); return s.goal === 'gain' ? s.change >= n : s.change <= -n; } },
+  { id: 'kg5', icon: '🏆', name: s => `${s.goal === 'gain' ? '+' : '−'}${U.imp() ? 10 : 5} ${U.wUnit()}`, test: s => { const n = U.fromW(U.imp() ? 10 : 5); return s.goal === 'gain' ? s.change >= n : s.change <= -n; } },
   { id: 'half', icon: '⛰️', name: 'Polovica programu', test: s => s.programDay >= 42 },
   { id: 'done', icon: '🥇', name: 'Celý program', test: s => s.programDay >= 84 },
   { id: 'comeback', icon: '🌬️', name: 'Druhý dych', test: s => s.comebacks >= 1 },
@@ -243,7 +245,7 @@ export async function renderProgress() {
   const chips = tp.length >= 2 ? (() => {
     const ts = tp.map(t => t.trend), dlt = ts[ts.length - 1] - ts[0];
     const good = p.goal === 'gain' ? dlt > 0.05 : p.goal === 'lose' ? dlt < -0.05 : Math.abs(dlt) < 0.5;
-    return `<div class="pgx-chips"><div class="${good ? 'good' : ''}"><b>${sign(dlt)}<small> kg</small></b><span>v tomto období</span></div><div><b>${fmt1(Math.min(...ts))}<small> kg</small></b><span>najnižšia</span></div><div><b>${fmt1(Math.max(...ts))}<small> kg</small></b><span>najvyššia</span></div></div>`;
+    return `<div class="pgx-chips"><div class="${good ? 'good' : ''}"><b>${sign(dlt)}<small> ${U.wUnit()}</small></b><span>v tomto období</span></div><div><b>${fmt1(Math.min(...ts))}<small> ${U.wUnit()}</small></b><span>najnižšia</span></div><div><b>${fmt1(Math.max(...ts))}<small> ${U.wUnit()}</small></b><span>najvyššia</span></div></div>`;
   })() : '';
 
   // séria zapisovania: dni v rade (dnes sa ešte nerátá ako prerušená), rekord, najbližší míľnik
@@ -274,14 +276,14 @@ export async function renderProgress() {
       <div class="pgx-htop">
         <div class="pgx-hl">
           <span class="pg-lbl">Od štartu</span>
-          <b class="pgx-big ${goodDir ? 'good' : change ? 'bad' : ''}"><span ${last ? `data-to="${change}" data-dec="1" data-sign="1"` : ''}>${last ? sign(change) : '–'}</span><small> kg</small></b>
-          <p class="pgx-sub">${last ? `Teraz <b>${fmt1(last.trend)} kg</b>` : 'Zatiaľ bez váženia'}${weekly != null ? `<br>${sign(weekly)} kg za týždeň` : ''}</p>
+          <b class="pgx-big ${goodDir ? 'good' : change ? 'bad' : ''}"><span ${last ? `data-to="${U.toW(change)}" data-dec="1" data-sign="1"` : ''}>${last ? sign(change) : '–'}</span><small> ${U.wUnit()}</small></b>
+          <p class="pgx-sub">${last ? `Teraz <b>${fmt1(last.trend)} ${U.wUnit()}</b>` : 'Zatiaľ bez váženia'}${weekly != null ? `<br>${sign(weekly)} ${U.wUnit()} za týždeň` : ''}</p>
         </div>
         <div class="pgx-rw">${rings(R)}<div class="pgx-rc"><b data-to="${elapsed}">${elapsed}</b><span>z ${PROGRAM_DAYS} dní</span></div></div>
       </div>
       <div class="pgx-rl">${R.map(r => `<span><i style="background:${r.c}"></i>${r.l}<b>${Math.round(Math.min(1, r.v) * 100)} %</b></span>`).join('')}</div>
       ${weightChart(period === 'all' ? tr : (trPeriod.length >= 2 ? trPeriod : tr.slice(-2)), startW, period === 'all' ? projection : null)}
-      ${period === 'all' && projection ? `<div class="pgx-fc"><span>🏁</span><p>Pri tomto tempe budeš ${calc.fmtDate(endDate)} vážiť približne <b>${fmt1(projection.w)} kg</b>.</p></div>` : projection ? `<p class="pgx-hint">Predpoveď do konca programu uvidíš v zobrazení Celý program.</p>` : ''}
+      ${period === 'all' && projection ? `<div class="pgx-fc"><span>🏁</span><p>Pri tomto tempe budeš ${calc.fmtDate(endDate)} vážiť približne <b>${fmt1(projection.w)} ${U.wUnit()}</b>.</p></div>` : projection ? `<p class="pgx-hint">Predpoveď do konca programu uvidíš v zobrazení Celý program.</p>` : ''}
       ${chips}
       <p class="pg-pace ${pace.cls}">${pace.text}</p>
     </section>
@@ -347,7 +349,7 @@ function bindChart(cw) {
     cur.setAttribute('x1', best[0]); cur.setAttribute('x2', best[0]);
     const lx = best[0] / W * 100, ly = best[1] / H * 100;
     dot.style.left = lx + '%'; dot.style.top = ly + '%';
-    tip.innerHTML = `<b>${fmt1(best[3])} kg</b><span>${calc.fmtDate(best[2])}${Math.abs(best[4] - best[3]) >= 0.05 ? ` · vážené ${fmt1(best[4])}` : ''}</span>`;
+    tip.innerHTML = `<b>${fmt1(best[3])} ${U.wUnit()}</b><span>${calc.fmtDate(best[2])}${Math.abs(best[4] - best[3]) >= 0.05 ? ` · vážené ${fmt1(best[4])}` : ''}</span>`;
     tip.style.left = Math.max(14, Math.min(86, lx)) + '%';
     cw.classList.add('on');
     if (navigator.vibrate && cw.__last !== best[2]) { cw.__last = best[2]; navigator.vibrate(4); }
