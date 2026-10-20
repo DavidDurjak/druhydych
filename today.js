@@ -12,6 +12,7 @@ import { openLogEdit } from './logedit.js';
 import * as rd from './readiness.js';
 import { waterHtml, bindWater } from './water.js';
 import * as U from './units.js';
+import * as ad from './adapt.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -120,7 +121,7 @@ export async function renderToday() {
   // doplnková karta, ktorá nestihne do 2,5 s, sa tentokrát vynechá (obrazovka nikdy nečaká na pomalú maličkosť)
   const soft = (pr, d) => Promise.race([pr.catch(() => d), new Promise(r => setTimeout(() => r(d), 2500))]);
   const weightsP = db.listWeights(uid);
-  const adaptP = isToday && p.targets_mode !== 'custom' ? soft(weightsP.then(w => v2.checkAdaptive(p, w)), null) : Promise.resolve(null);
+  const adaptP = isToday && p.targets_mode !== 'custom' ? soft(weightsP.then(w => ad.check(p, w)), null) : Promise.resolve(null);
   const pushP = isToday ? soft(push.pushPromptCard(), '') : Promise.resolve('');
   const actP = soft(hw.activityCard(uid, st.date), '');
   const weekP = isToday ? soft(ck.weekCardHtml(uid), '') : Promise.resolve('');
@@ -316,8 +317,9 @@ export async function renderToday() {
     ${firstRun ? '' : pushCard}
     ${newcomer ? '' : weekCard}
     ${newcomer ? '' : repCard}
-    ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">Adaptívny cieľ</span></div>
+    ${adaptive ? `<div class="card accent" id="adaptCard"><div class="row between"><h3>Týždenné prehodnotenie</h3><span class="chip">${adaptive.measured ? 'Z tvojich dát' : 'Adaptívny cieľ'}</span></div>
       <p class="small mt">${h(adaptive.reason)}</p>
+      ${adaptive.measured ? ad.measuredHtml(adaptive) : ''}
       <p class="muted small mt">Priemer ${adaptive.avg} kcal z ${adaptive.days} dní, trend ${U.fmtWD(adaptive.ch)} ${U.wUnit()}</p>
       ${adaptive.adjust ? `<div class="row mt" style="gap:8px"><button class="btn sm primary" id="adaptYes">Nastaviť ${adaptive.newKcal} kcal</button><button class="btn sm ghost" id="adaptNo">Nechať ${p.target_kcal}</button></div>` : `<button class="btn sm ghost mt" id="adaptNo">OK</button>`}
     </div>` : ''}
