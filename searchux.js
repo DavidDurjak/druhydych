@@ -1,5 +1,5 @@
 // Hľadanie jedla bez blikania (ako v top appkách): počas písania ostávajú staré výsledky na mieste, jemne sa stlmia
-// a vymenia sa za nové, až keď prídu. Koliesko sa ukáže len pri prvom hľadání. Rovnaké hľadanie sa zopakuje hneď z pamäte.
+// a vymenia sa za nové, až keď prídu. Koliesko sa ukáže len pri prvom hľadaní. Rovnaké hľadanie sa zopakuje hneď z pamäte.
 import * as db from './data.js';
 import { ctx } from './app.js';
 import './trainfx.js';
@@ -14,6 +14,7 @@ import './authhero.js';
 import './onboard.js';
 import './activity.js';
 import './overload.js';
+import './adherence.js';
 import './pokrok2.js'; import './kouc2.js';
 import './polish.js';
 import './ailang.js';
