@@ -278,8 +278,8 @@ export async function renderToday() {
     ${firstCard || backCard}
     <section class="hero-k ${over ? 'over' : ''}">
       <div class="hk-top"><span class="hk-t">${isFuture ? 'Plán dňa' : 'Dnešný cieľ'}</span><a class="hk-edit" href="#/ciele" aria-label="Upraviť ciele">${p.target_kcal} kcal<i>✎</i></a></div>
-      <div class="hk-ring">
-        <div class="breath"></div>
+      <div class="hk-ring" style="--lv:0" data-lv="${Math.max(0, Math.min(100, goalPct))}">
+        <div class="breath"><i class="lq"><b class="w1"></b><b class="w2"></b></i></div>
         ${rings}
         <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span><em class="hk-pc">${goalPct} % cieľa</em></div>
       </div>
@@ -350,7 +350,7 @@ export async function renderToday() {
   const root = $app();
   rd.bindReadiness(root, { uid, date: st.date, ci: checkin, onSaved: renderToday });
   // animácie: krúžky sa nabehnú, čísla dobehnú
-  requestAnimationFrame(() => requestAnimationFrame(() => root.querySelectorAll('.rg-fill').forEach(c => c.setAttribute('stroke-dashoffset', c.dataset.off))));
+  requestAnimationFrame(() => requestAnimationFrame(() => { root.querySelectorAll('.rg-fill').forEach(c => c.setAttribute('stroke-dashoffset', c.dataset.off)); root.querySelectorAll('.hk-ring').forEach(e => e.style.setProperty('--lv', e.dataset.lv)); }));
   if (!reduceMotion()) root.querySelectorAll('[data-count]').forEach(el => {
     const to = Number(el.dataset.count); if (!to) return; const t0 = performance.now();
     const step = t => { const k = Math.min(1, (t - t0) / 700); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
