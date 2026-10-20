@@ -89,8 +89,9 @@ const CSS = `
 .un-h .input{min-width:0;flex:1 1 0}
 .un-h i{font-style:normal;font-size:13px;font-weight:700;color:var(--muted);flex:none;margin-right:3px}
 .un-w{position:relative}
-.un-w .un-u{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:var(--muted);pointer-events:none}
-.ob-row3.un-imp{grid-template-columns:.85fr 1.6fr 1fr}
+.un-w .input{padding-right:34px}
+.un-w .un-u{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:700;color:var(--muted);pointer-events:none}
+.ob-row3.un-imp{grid-template-columns:.8fr 1.45fr 1.3fr}
 `;
 if (typeof document !== 'undefined' && !document.getElementById('un-css')) { const el = document.createElement('style'); el.id = 'un-css'; el.textContent = CSS; document.head.appendChild(el); }
 
