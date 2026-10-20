@@ -3,6 +3,8 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import * as U from './units.js';
+import * as T from './tdee.js';
+import { measuredHtml } from './adapt.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -62,8 +64,24 @@ export async function renderGoals() {
   const weights = await db.listWeights(p.id).catch(() => []);
   const kg = Number(weights[weights.length - 1]?.weight_kg || p.start_weight || 75);
   const auto = calc.targets({ sex: p.sex, weightKg: kg, heightCm: Number(p.height_cm), birthYear: p.birth_year, activity: p.activity, goal: p.goal });
+  // skutočný výdaj z tvojich zápisov (príjem a trend váhy); bez dát ostáva vzorec
+  let use = auto, measured = '';
+  try {
+    const wl = weights.map(w => ({ date: w.date, weight: Number(w.weight_kg) }));
+    if (wl.length >= T.MIN_WEIGHINS) {
+      const fd = await db.foodByDay(p.id, calc.addDays(calc.today(), -T.WINDOW), calc.addDays(calc.today(), -1));
+      const ibd = {}; Object.keys(fd).forEach(d => { ibd[d] = fd[d].kcal; });
+      const est = T.estimateTdee({ intakeByDay: ibd, weights: wl, formulaTdee: auto.tdee, today: calc.today() });
+      if (est.ok && est.w >= 0.25) {
+        const want = T.targetFromTdee({ tdee: est.tdee, goal: p.goal, sex: p.sex, currentTarget: null }).newKcal;
+        const fat = r0(want * 0.25 / 9);
+        use = { ...auto, tdee: est.tdee, kcal: want, fat, carbs: Math.max(0, r0((want - auto.protein * 4 - fat * 9) / 4)) };
+        measured = measuredHtml({ measured: true, formula: est.formula, tdee: est.tdee, days: est.days, confText: T.confText(est.conf), clamped: est.clamped });
+      }
+    }
+  } catch (_) { /* ostane vzorec */ }
   let mode = p.targets_mode === 'custom' ? 'custom' : 'auto';
-  const t = { kcal: r0(p.target_kcal || auto.kcal), p: r0(p.target_protein || auto.protein), c: r0(p.target_carbs || auto.carbs), f: r0(p.target_fat || auto.fat) };
+  const t = { kcal: r0(p.target_kcal || use.kcal), p: r0(p.target_protein || use.protein), c: r0(p.target_carbs || use.carbs), f: r0(p.target_fat || use.fat) };
   let lastEdited = null, preset = null;
   let water = p.water_goal || 8;
 
@@ -102,18 +120,19 @@ export async function renderGoals() {
 
       ${mode === 'auto' ? `<section class="pg-card">
         <h3>Tvoje automatické ciele</h3>
-        <p class="muted small mt">${calc.GOAL[p.goal]?.label || ''} · ${U.fmtW(kg)} ${U.wUnit()} · výdaj ${auto.tdee} kcal</p>
+        <p class="muted small mt">${calc.GOAL[p.goal]?.label || ''} · ${U.fmtW(kg)} ${U.wUnit()} · výdaj ${use.tdee} kcal${measured ? ' (z tvojich dát)' : ''}</p>
         <div class="gl-auto">
-          <div><b>${auto.kcal}</b><span>kcal</span></div>
-          <div><b>${auto.protein}</b><span>bielkoviny g</span></div>
-          <div><b>${auto.carbs}</b><span>sacharidy g</span></div>
-          <div><b>${auto.fat}</b><span>tuky g</span></div>
+          <div><b>${use.kcal}</b><span>kcal</span></div>
+          <div><b>${use.protein}</b><span>bielkoviny g</span></div>
+          <div><b>${use.carbs}</b><span>sacharidy g</span></div>
+          <div><b>${use.fat}</b><span>tuky g</span></div>
         </div>
+        ${measured}
         <p class="muted small mt">Cieľ alebo aktivitu zmeníš v Profile cez „Upraviť údaje“.</p>
       </section>` : `
       <section class="pg-card">
         <div class="gl-kcal"><button class="gl-step" data-k="-50" aria-label="Menej kalórií">−</button><input id="glK" type="number" inputmode="numeric" value="${t.kcal}" aria-label="Kalórie"><button class="gl-step" data-k="50" aria-label="Viac kalórií">+</button></div>
-        <p class="gl-sub">kcal denne · automaticky by to bolo ${auto.kcal}</p>
+        <p class="gl-sub">kcal denne · automaticky by to bolo ${use.kcal}</p>
       </section>
       <div class="gl-presets">${PRESETS.map(pr => `<button data-pr="${pr.id}" class="${preset === pr.id ? 'on' : ''}">${pr.name}</button>`).join('')}</div>
       <section class="pg-card">
@@ -165,7 +184,7 @@ export async function renderGoals() {
   const save = async () => {
     const btn = $app().querySelector('#glSave'); btn.disabled = true;
     const next = mode === 'auto'
-      ? { targets_mode: 'auto', target_kcal: auto.kcal, target_protein: auto.protein, target_carbs: auto.carbs, target_fat: auto.fat, water_goal: water }
+      ? { targets_mode: 'auto', target_kcal: use.kcal, target_protein: use.protein, target_carbs: use.carbs, target_fat: use.fat, water_goal: water }
       : { targets_mode: 'custom', target_kcal: r0(sumKcal()), target_protein: t.p, target_carbs: t.c, target_fat: t.f, water_goal: water };
     try {
       st.profile = await db.applyTarget(p.id, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: next.target_kcal, reason: mode === 'auto' ? 'Automatické ciele' : 'Vlastné ciele', avg_intake: null, trend_change: null }, next);
