@@ -52,3 +52,101 @@ html[data-theme=light] { --qk-blue: #1E6FD0; --qk-amber: #C77700; --qk-violet: #
 .mm-b small { display: block; margin-left: auto; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .mm-date { position: relative; overflow: hidden; }
 .mm-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+/* ============ Dnes v2: kompaktna hlavna karta, zivsi pohyb, stihlejsie jedla ============ */
+.screen.td { --r: 24px; }
+/* hlavicka */
+.screen.td .tdh-g { font-size: 29px; font-weight: 800; letter-spacing: -.035em; }
+.screen.td .tdh-streak { padding: 9px 13px; font-size: 15px; box-shadow: 0 6px 18px -8px rgba(255,181,71,.55); }
+.screen.td .tdh-streak.on { background: linear-gradient(135deg, rgba(255,181,71,.2), rgba(255,122,89,.1)); }
+/* tyzdenny pas */
+.screen.td .wk-d.sel { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, var(--card)), var(--card)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent), 0 8px 20px -12px var(--accent); }
+.screen.td .wk-d { transition: background .2s, transform .15s; }
+.screen.td .wk-d:active { transform: scale(.92); }
+
+/* hlavna karta */
+.screen.td .hero-k { padding: 16px 16px 16px; border-radius: 30px; gap: 0; border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line));
+  background: radial-gradient(80% 90% at 0% 0%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 62%), radial-gradient(70% 80% at 100% 100%, color-mix(in srgb, var(--m-dinner) 12%, transparent) 0%, transparent 65%), var(--card);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 22px 44px -26px rgba(0,0,0,.65); }
+.screen.td .hero-k.over { background: radial-gradient(80% 90% at 0% 0%, rgba(140,140,255,.2) 0%, transparent 62%), var(--card); border-color: rgba(140,140,255,.3); }
+.screen.td .hk-body { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+.screen.td .hk-ring { flex: 0 0 auto; width: 164px; height: 164px; margin: 0; }
+.screen.td .hk-ring .breath { inset: 28px; animation: breath 5.5s ease-in-out infinite; will-change: transform, opacity; }
+.screen.td .hk-rings { position: absolute; left: 0; top: 0; overflow: visible; }
+.screen.td .hk-rings .o0 { filter: drop-shadow(0 0 8px rgba(124,255,178,.55)); }
+.screen.td .hk-c b { font-size: 34px; letter-spacing: -.05em; }
+.screen.td .hk-c span { margin-top: 3px; font-size: 11.5px; line-height: 1.2; }
+/* lesk, ktory raz za cas prejde po kruhu (otaca sa len textura, bez prekreslovania) */
+.hk-sw { position: absolute; inset: 4px; border-radius: 50%; pointer-events: none; opacity: .5; background: conic-gradient(from 0deg, transparent 0 62%, color-mix(in srgb, var(--accent) 55%, transparent) 80%, transparent 82% 100%); -webkit-mask: radial-gradient(circle, transparent 56%, #000 57%, #000 100%); mask: radial-gradient(circle, transparent 56%, #000 57%, #000 100%); animation: hkSweep 7s linear infinite; will-change: transform; }
+@keyframes hkSweep { to { transform: rotate(360deg); } }
+.screen.td .hk-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.screen.td .hk-eat { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin: 0; }
+.screen.td .hk-eat b { font-size: 22px; }
+.screen.td .hk-eat span { font-size: 12px; }
+.screen.td .hk-pc { margin: 0 0 0 auto; padding: 2px 8px; border-radius: 99px; font-size: 11.5px; font-weight: 800; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-style: normal; }
+.screen.td .hk-macros { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+.screen.td .mtile { padding: 0; gap: 5px; background: none; border: 0; border-radius: 0; }
+.screen.td .mt-h { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.screen.td .mt-l { font-size: 12px; font-weight: 700; color: var(--c); }
+.screen.td .mtile b { display: inline; font-size: 15px; letter-spacing: -.02em; }
+.screen.td .mtile b small { font-size: 11px; }
+.screen.td .mt-b { height: 7px; background: color-mix(in srgb, var(--c) 14%, var(--track)); }
+.screen.td .mt-b i { transform-origin: left; }
+.screen.td .mtile.over b { color: var(--danger); }
+.screen.td .hk-minis { gap: 12px; margin-top: 14px; padding: 12px 2px 0; }
+
+/* rychle tlacidla: o kus vyssie, hned pod kartou */
+.screen.td .qk { margin-bottom: 16px; }
+.screen.td .qk-b { box-shadow: 0 10px 22px -16px rgba(0,0,0,.6); }
+.screen.td .qk-b.ai { box-shadow: 0 10px 26px -14px var(--accent); }
+
+/* tip */
+.screen.td .tip { position: relative; align-items: center; padding: 13px 16px 13px 14px; border-radius: 20px; overflow: hidden; }
+.screen.td .tip::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+.screen.td .tip-i { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 13px; font-size: 20px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
+/* jedla */
+.screen.td .meals { gap: 10px; }
+.screen.td .ml { border-radius: var(--r); box-shadow: 0 12px 26px -20px rgba(0,0,0,.6); background: linear-gradient(120deg, color-mix(in srgb, var(--mc) 7%, var(--card)), var(--card) 55%); }
+.screen.td .ml::before { top: 14px; bottom: 14px; width: 3px; box-shadow: 0 0 12px var(--mc); }
+.screen.td .ml-ic { width: 48px; height: 48px; border-radius: 16px; font-size: 25px; }
+.screen.td .ml-add { width: 44px; height: 44px; transition: transform .18s cubic-bezier(.3,1.6,.5,1); box-shadow: 0 8px 18px -8px var(--mc); }
+.screen.td .ml-add:active { transform: scale(.88) rotate(90deg); }
+.screen.td .ml.empty { min-height: 0; padding: 10px 12px 10px 16px; gap: 12px; background: color-mix(in srgb, var(--card) 70%, transparent); border-style: dashed; border-color: color-mix(in srgb, var(--mc) 30%, var(--line)); box-shadow: none; }
+.screen.td .ml.empty .ml-ic { width: 40px; height: 40px; border-radius: 13px; font-size: 21px; }
+.screen.td .ml.empty .ml-t h3 { font-size: 15.5px; }
+.screen.td .ml.empty .ml-t span { font-size: 12.5px; }
+.screen.td .ml.empty .ml-add { width: 36px; height: 36px; font-size: 22px; background: transparent; color: var(--mc); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--mc) 60%, transparent); }
+.screen.td .ml.empty .ml-more { display: none; }
+.screen.td .ml-x { display: flex; align-items: center; gap: 8px; padding: 2px 2px 0; }
+.screen.td .ml-x > span { font-size: 12px; font-weight: 700; color: var(--muted); margin-right: 2px; }
+.screen.td .ml-xb { -webkit-appearance: none; appearance: none; display: inline-flex; align-items: center; gap: 7px; padding: 8px 8px 8px 11px; border-radius: 99px; border: 1.5px dashed color-mix(in srgb, var(--mc) 50%, var(--line)); background: transparent; color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: transform .15s; }
+.screen.td .ml-xb i { font-style: normal; font-size: 15px; }
+.screen.td .ml-xb b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: color-mix(in srgb, var(--mc) 25%, transparent); color: var(--mc); font-size: 15px; line-height: 1; }
+.screen.td .ml-xb:active { transform: scale(.94); }
+
+/* dlazdice trening, vaha, check-in */
+.screen.td .tile { border-radius: var(--r); background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 8%, var(--card)), var(--card) 60%); box-shadow: 0 12px 26px -20px rgba(0,0,0,.6); }
+.screen.td .tile h3 { font-size: 15px; }
+.screen.td .tile.wg p b { font-size: 26px; letter-spacing: -.04em; }
+.screen.td .ci { border-radius: var(--r); box-shadow: 0 12px 26px -20px rgba(0,0,0,.6); }
+.screen.td .an { border-radius: var(--r); }
+
+/* svetly rezim */
+html[data-theme=light] .screen.td .hero-k { background: radial-gradient(80% 90% at 0% 0%, color-mix(in srgb, var(--accent) 22%, transparent) 0%, transparent 60%), #fff; box-shadow: 0 18px 38px -24px rgba(20,40,60,.3); }
+html[data-theme=light] .screen.td .hk-rings .o0 { filter: none; }
+html[data-theme=light] .screen.td .ml, html[data-theme=light] .screen.td .tile { box-shadow: 0 10px 24px -18px rgba(20,40,60,.3); }
+
+/* vstup obrazovky: len raz po otvoreni appky, len transform a opacity */
+@keyframes tdUp { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+.td-in > * { animation: tdUp .6s cubic-bezier(.2,.8,.2,1) both; }
+.td-in > :nth-child(2) { animation-delay: .04s; } .td-in > :nth-child(3) { animation-delay: .08s; } .td-in > :nth-child(4) { animation-delay: .13s; }
+.td-in > :nth-child(5) { animation-delay: .18s; } .td-in > :nth-child(6) { animation-delay: .23s; } .td-in > :nth-child(7) { animation-delay: .28s; }
+.td-in > :nth-child(n+8) { animation-delay: .32s; }
+.td-in .hk-ring { animation: tdPop .9s cubic-bezier(.2,1.2,.3,1) .12s both; }
+@keyframes tdPop { from { opacity: 0; transform: scale(.7) rotate(-40deg); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hk-sw, .screen.td .hk-ring .breath { animation: none; } .td-in > *, .td-in .hk-ring { animation: none; } }
+@media (max-width: 350px) { .screen.td .hk-ring { width: 140px; height: 140px; } .screen.td .hk-rings { transform: scale(.854); transform-origin: 0 0; } }
+.screen.td .mt-h b { display: flex; align-items: baseline; gap: 3px; white-space: nowrap; }
+.screen.td .mt-h b i, .screen.td .mt-h b small { display: inline; margin: 0; }
+.screen.td .hk-note { margin-top: 10px; font-size: 11px; opacity: .8; }
