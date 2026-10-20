@@ -31,6 +31,9 @@ const INFO = {
     <p>Jedlá s viac ako 1,5 g soli na 100 g označujeme ako veľmi slané.</p>`],
 };
 
+const DCOL = { vegetarian: '#7CFFB2', vegan: '#5EEAA0', pescatarian: '#5BB8FF', nopork: '#FF8FB1', nobeef: '#FFB547', halal: '#B794FF', kosher: '#6EE7F9' };
+const MCOL = { diabetes: '#FF6B8B', celiac: '#FFB547', lactose: '#5BB8FF', allergy: '#FF8A5C', salt: '#9AA8FF' };
+
 export async function renderDiet() {
   const uid = ctx.state.profile.id;
   await dx.ensure(uid);
@@ -42,11 +45,9 @@ export async function renderDiet() {
     const hasD = k => s.diets.includes(k);
     $app().innerHTML = `<div class="screen dxs-screen">
       <div class="topbar"><h1>Zdravie a diéta</h1></div>
-      <p class="muted mb">Nastav, ako sa stravuješ a čo musíš strážiť. Appka potom označuje jedlá aj recepty, stráži tvoje limity a ukáže len to, čo potrebuješ.</p>
-      <h3 class="dxh2">Ako sa stravuješ</h3>
-      <div class="dxd">${DIET_KEYS.map(k => `<button class="dxdt ${hasD(k) ? 'on' : ''}" data-d="${k}" aria-pressed="${hasD(k)}"><span class="dxdi">${DIETS[k].icon}</span><b>${DIETS[k].title}</b><small>${DIETS[k].sub}</small></button>`).join('')}</div>
-      <h3 class="dxh2">Zdravie</h3>
-      ${Object.entries(dx.MODES).map(([k, m]) => `<button class="dxm ${on(k) ? 'on' : ''}" data-m="${k}" aria-pressed="${on(k)}"><span class="dxm-i">${m.icon}</span><span class="dxm-t"><b>${m.title}</b><small>${m.sub}</small></span><span class="dxm-s"></span></button>`).join('')}
+      <div class="dxhero"><span class="dxhero-i"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5.5c0 4.3-2.9 7.9-7 9.5-4.1-1.6-7-5.2-7-9.5V6z"/><path class="dxhero-p" d="M8.6 12.2h2l1.1-2.2 1.6 4.2 1.1-2h1"/></svg></span><div><b>Appka sa prispôsobí tebe</b><small>Označí jedlá a recepty, stráži tvoje limity a ukáže len to, čo potrebuješ.</small></div></div>
+      <div class="dxsec"><h3>Zdravie</h3><small>Zapni, čo sa týka teba</small>${s.modes.length ? `<span class="dxsec-n">${s.modes.length} zapnuté</span>` : ''}</div>
+      ${Object.entries(dx.MODES).map(([k, m]) => `<button class="dxm ${on(k) ? 'on' : ''}" style="--c:${MCOL[k] || 'var(--accent)'}" data-m="${k}" aria-pressed="${on(k)}"><span class="dxm-i">${m.icon}</span><span class="dxm-t"><b>${m.title}</b><small>${m.sub}</small></span><span class="dxm-s"></span></button>`).join('')}
       ${on('diabetes') ? `<div class="card mt">
         <h3 class="mb">Cukrovka</h3>
         <label class="field"><span>Typ</span><select class="input" id="dt">${Object.entries(dx.DTYPES).map(([k, v]) => `<option value="${k}" ${s.dtype === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
@@ -63,6 +64,8 @@ export async function renderDiet() {
         ${on('diabetes') ? `<a class="btn mt" href="#/cukor">🩸 Otvoriť denník cukru</a>` : ''}
       </div>` : ''}
       ${on('allergy') ? `<div class="card mt"><h3 class="mb">Tvoje alergény</h3><div class="dxal">${dx.ALLERGENS.map(([k, l]) => `<button type="button" data-a="${k}" class="${s.allergens.includes(k) ? 'on' : ''}">${l}</button>`).join('')}</div></div>` : ''}
+      <div class="dxsec"><h3>Ako sa stravuješ</h3><small>Jedlá, ktoré nesedia, sa označia</small>${s.diets.length ? `<span class="dxsec-n">${s.diets.length} zapnuté</span>` : ''}</div>
+      <div class="dxdg">${DIET_KEYS.map(k => `<button class="dxdt ${hasD(k) ? 'on' : ''}" style="--c:${DCOL[k] || 'var(--accent)'}" data-d="${k}" aria-pressed="${hasD(k)}"><span class="dxdi">${DIETS[k].icon}</span><b>${DIETS[k].title}</b><small>${DIETS[k].sub}</small></button>`).join('')}</div>
       ${(s.diets.length || s.modes.some(m => ['celiac', 'lactose', 'allergy'].includes(m))) ? `<label class="card row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="hide" ${s.hide ? 'checked' : ''} style="margin-top:3px"><span><b>Skryť nevhodné jedlá vo vyhľadávaní</b><br><span class="muted">Jedlá a recepty, ktoré nesedia k tvojmu stravovaniu, lepku, laktóze alebo alergénom, sa nebudú zobrazovať. Vždy ich môžeš zobraziť jedným ťuknutím.</span></span></label>` : ''}
       ${s.modes.length ? `<a class="btn mb" href="#/karta">🌍 Karty do zahraničia (lepok, alergie, cukrovka)</a>` : ''}
       ${(s.modes.length || s.diets.length) ? `<div class="card"><label class="row small" style="gap:12px;align-items:flex-start"><input type="checkbox" id="cons" ${s.consent ? 'checked' : ''} style="margin-top:3px"><span>Súhlasím, aby Fuelwind ukladal údaje o mojom zdraví a stravovaní (zapnuté režimy, diéty, glykémiu) na účely týchto funkcií. Diéty môžu prezrádzať aj náboženské alebo etické presvedčenie, preto tento súhlas potrebujem. Údaje vidím len ja, nevidí ich ani kouč. Súhlas môžem kedykoľvek odvolať vypnutím režimov a diét a zmazaním meraní.</span></label></div>` : ''}
@@ -121,7 +124,7 @@ export async function renderDiet() {
 
 const CSS = `
 .dxh2{margin:18px 2px 10px;font-size:15px;font-weight:700;letter-spacing:-.01em}
-.dxd{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.dxdg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .dxdt{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;min-height:104px;padding:13px 13px 12px;border-radius:18px;border:1.5px solid var(--line);background:var(--card);color:var(--text);font:inherit;cursor:pointer;transition:border-color .18s,background .18s,transform .12s,box-shadow .18s;-webkit-tap-highlight-color:transparent}
 .dxdt:active{transform:scale(.975)}
 .dxdt .dxdi{font-size:24px;line-height:1;margin-bottom:4px}
@@ -140,5 +143,41 @@ const CSS = `
 .dxal button.on{background:rgba(255,92,122,.16);border-color:#FF5C7A;color:#FF8FA4}
 .dxi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;font-size:13.5px;line-height:1.5}
 .dxi summary{cursor:pointer;font-weight:700}.dxi p{margin:10px 0 0;color:var(--muted)}.dxi p b{color:var(--text)}
+
+.dxhero{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;margin:4px 0 6px;padding:16px;border-radius:24px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--accent) 20%,transparent),transparent 62%),radial-gradient(90% 120% at 100% 100%,color-mix(in srgb,#5BB8FF 16%,transparent),transparent 60%),var(--card);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 34px -24px var(--accent)}
+.dxhero::before{content:'';position:absolute;left:-30px;top:-30px;width:150px;height:150px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 30%,transparent),transparent 68%);animation:dxDrift 10s ease-in-out infinite alternate;will-change:transform}
+@keyframes dxDrift{to{transform:translate(120px,40px) scale(1.2)}}
+.dxhero-i{position:relative;display:grid;place-items:center;flex:0 0 auto;width:52px;height:52px;border-radius:17px;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 34%,transparent),0 10px 22px -10px var(--accent)}
+.dxhero-i svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.dxhero-p{stroke-dasharray:26;animation:dxPulse 2.8s ease-in-out infinite}
+@keyframes dxPulse{0%{stroke-dashoffset:26}45%,100%{stroke-dashoffset:0}}
+.dxhero b{position:relative;display:block;font-size:17px;letter-spacing:-.02em}
+.dxhero small{position:relative;display:block;margin-top:3px;font-size:13px;line-height:1.4;color:var(--muted)}
+.dxsec{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin:24px 2px 12px}
+.dxsec h3{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.dxsec small{flex:1;min-width:0;font-size:13px;color:var(--muted)}
+.dxsec-n{align-self:center;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;color:var(--accent-ink);background:var(--accent);box-shadow:0 6px 14px -6px var(--accent)}
+.dxm{position:relative;overflow:hidden;gap:14px;padding:15px;margin-bottom:11px;border-radius:22px;border:1px solid color-mix(in srgb,var(--c) 22%,var(--line));background:radial-gradient(110% 150% at 0% 0%,color-mix(in srgb,var(--c) 11%,transparent),transparent 62%),var(--card);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);transition:transform .15s,box-shadow .25s,border-color .25s,background .25s}
+.dxm:active{transform:scale(.982)}
+.dxm-i{position:relative;display:grid;place-items:center;flex:0 0 48px;width:48px;height:48px;border-radius:16px;font-size:25px;background:color-mix(in srgb,var(--c) 15%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 28%,transparent)}
+.dxm-t b{font-size:16px;letter-spacing:-.015em}
+.dxm-t small{margin-top:3px}
+.dxm-s{flex:0 0 52px;height:31px}
+.dxm-s::after{top:3px;left:3px;width:23px;height:23px;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.dxm.on{border-color:color-mix(in srgb,var(--c) 70%,transparent);background:radial-gradient(110% 150% at 0% 0%,color-mix(in srgb,var(--c) 24%,transparent),transparent 64%),linear-gradient(160deg,color-mix(in srgb,var(--c) 9%,var(--card)),var(--card));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 16px 30px -20px var(--c),0 0 0 3px color-mix(in srgb,var(--c) 14%,transparent)}
+.dxm.on .dxm-i{background:color-mix(in srgb,var(--c) 26%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent),0 8px 20px -8px var(--c);animation:dxFloat 3.2s ease-in-out infinite;will-change:transform}
+.dxm.on .dxm-s{background:var(--c);border-color:var(--c);box-shadow:0 0 14px -2px var(--c)}
+.dxm.on .dxm-s::after{transform:translateX(21px);background:#fff}
+@keyframes dxFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+.dxdt{overflow:hidden;min-height:116px;padding:14px 13px 13px;border-radius:22px;border:1px solid color-mix(in srgb,var(--c) 24%,var(--line));background:radial-gradient(120% 100% at 100% 0%,color-mix(in srgb,var(--c) 14%,transparent),transparent 64%),var(--card);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);transition:transform .15s,box-shadow .25s,border-color .25s,background .25s}
+.dxdt .dxdi{display:grid;place-items:center;width:42px;height:42px;margin-bottom:7px;border-radius:14px;font-size:23px;background:color-mix(in srgb,var(--c) 15%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 28%,transparent)}
+.dxdt b{font-size:15.5px}
+.dxdt.on{border-color:color-mix(in srgb,var(--c) 75%,transparent);background:radial-gradient(120% 100% at 100% 0%,color-mix(in srgb,var(--c) 28%,transparent),transparent 66%),linear-gradient(160deg,color-mix(in srgb,var(--c) 10%,var(--card)),var(--card));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 16px 28px -20px var(--c),0 0 0 3px color-mix(in srgb,var(--c) 14%,transparent)}
+.dxdt.on .dxdi{background:color-mix(in srgb,var(--c) 28%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent),0 8px 18px -8px var(--c);animation:dxFloat 3.2s ease-in-out infinite;will-change:transform}
+.dxdt.on::after{background-color:var(--c)}
+.dxi{border-radius:18px;padding:13px 15px;background:var(--card);border:1px solid var(--line)}
+.dxi summary{font-size:14.5px}
+html[data-theme=light] .dxm,html[data-theme=light] .dxdt,html[data-theme=light] .dxhero{box-shadow:0 10px 24px -18px rgba(20,40,60,.3)}
+@media (prefers-reduced-motion:reduce){.dxhero::before,.dxhero-p,.dxm.on .dxm-i,.dxdt.on .dxdi{animation:none}}
 `;
 if (!document.getElementById('dx-diet-css')) { const el = document.createElement('style'); el.id = 'dx-diet-css'; el.textContent = CSS; document.head.appendChild(el); }
