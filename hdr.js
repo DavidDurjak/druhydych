@@ -1,5 +1,6 @@
 // Týždenný pás na obrazovke Dnes: pôvodné okrúhle dni, ktoré navýše ukážu, ako ti deň vyšiel.
 // Trafený cieľ = plný zelený „kotúč“, prekročený = oranžový, tréning = malá činka, po sebe idúce trafené dni spojí reťaz.
+import './visual.js';
 import * as db from './data.js';
 import { ctx } from './app.js';
 
