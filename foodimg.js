@@ -47,6 +47,9 @@ const CSS = `
 .res.hasft .k{margin-left:auto}
 .fi.ph{width:42px!important;height:42px!important;background:#fff!important;overflow:hidden}.fi.ph img{width:100%;height:100%;object-fit:contain;padding:3px;box-sizing:border-box;display:block}
 .ft.sm{width:40px;height:40px;border-radius:11px}.ft.sm i{font-size:21px}
+.screen.td .wk-r .rg.ov{filter:drop-shadow(0 0 4px rgba(255,92,122,.6))}
+html[data-theme=light] .screen.td .wk-r .rg.ov .rg-fill{stroke:#E5446A}
+html[data-theme=light] .screen.td .wk-r .rg.ov{filter:none}
 `;
 if (!document.getElementById('ft-css')) { const el = document.createElement('style'); el.id = 'ft-css'; el.textContent = CSS; document.head.appendChild(el); }
 
@@ -137,6 +140,11 @@ function syncFill() {
 // po kliknutí na krížik riadok hneď zmizne, nečaká sa na prekreslenie
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('.ml-list .del'); const li = b && b.closest('li');
-  if (li) { li.style.transition = 'opacity .12s'; li.style.opacity = '0'; li.style.pointerEvents = 'none'; }
+  if (li) {
+    li.style.pointerEvents = 'none'; li.style.overflow = 'hidden'; li.style.boxSizing = 'border-box'; li.style.height = li.offsetHeight + 'px';
+    void li.offsetHeight;
+    li.style.transition = 'height .16s ease, opacity .12s ease, padding .16s ease, border-width .16s ease';
+    li.style.height = '0'; li.style.opacity = '0'; li.style.paddingTop = '0'; li.style.paddingBottom = '0'; li.style.borderWidth = '0';
+  }
 }, true);
 new MutationObserver(() => { syncFill(); clearTimeout(tm); tm = setTimeout(() => hydrate(document).catch(() => { }), 120); }).observe(document.documentElement, { childList: true, subtree: true });

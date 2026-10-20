@@ -187,7 +187,7 @@ export async function renderToday() {
       const dt = new Date(d + 'T00:00:00');
       return `<button class="wk-d ${d === st.date ? 'sel' : ''} ${future ? 'fut' : ''} ${d === calc.today() ? 'now' : ''}" data-d="${d}" aria-label="${longDate(d)}">
         <span class="wk-l">${['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'][dt.getDay()]}</span>
-        <span class="wk-r">${ringSvg(34, 3.5, pct, pct > 1.1 ? 'var(--danger)' : future ? 'var(--m-brunch)' : 'var(--accent)')}<b>${dt.getDate()}</b></span></button>`;
+        <span class="wk-r">${ringSvg(34, 3.5, pct, pct > 1.02 ? '#FF6B8B' : future ? 'var(--m-brunch)' : 'var(--accent)', pct > 1.02 ? 'ov' : '')}<b>${dt.getDate()}</b></span></button>`;
     }).join('')}
     <button class="wk-nav" data-wk="7" aria-label="Ďalší týždeň">›</button>
   </div>`;
