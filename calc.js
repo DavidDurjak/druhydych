@@ -1,4 +1,5 @@
-// Výpočty: kalorické ciele, makrá, trend váhy. Čistá logika bez závislostí.
+// Výpočty: kalorické ciele, makrá, trend váhy. Čistá logika (jednotky len pre texty).
+import { fmtWT, wUnit } from './units.js';
 
 export const ACTIVITY = {
   low:      { label: 'Sedavý (kancelária, škola, bez športu)', factor: 1.2 },
@@ -126,8 +127,8 @@ export function adaptTarget({ goal, sex, currentTarget, avgIntake, loggedDays, t
   if (newKcal < floor) newKcal = floor;
   newKcal = Math.round(newKcal / 10) * 10;
   const reason = adjust < 0
-    ? `Váha sa za týždeň zmenila o ${trendChange7 > 0 ? '+' : ''}${trendChange7} kg (plán ${expected > 0 ? '+' : ''}${expected}). Znižujem o ${Math.abs(newKcal - currentTarget)} kcal.`
-    : `Váha sa za týždeň zmenila o ${trendChange7 > 0 ? '+' : ''}${trendChange7} kg (plán ${expected > 0 ? '+' : ''}${expected}). Zvyšujem o ${newKcal - currentTarget} kcal.`;
+    ? `Váha sa za týždeň zmenila o ${fmtWT(trendChange7)} ${wUnit()} (plán ${fmtWT(expected)}). Znižujem o ${Math.abs(newKcal - currentTarget)} kcal.`
+    : `Váha sa za týždeň zmenila o ${fmtWT(trendChange7)} ${wUnit()} (plán ${fmtWT(expected)}). Zvyšujem o ${newKcal - currentTarget} kcal.`;
   return { newKcal, adjust: newKcal - currentTarget, reason };
 }
 
