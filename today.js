@@ -197,8 +197,7 @@ export async function renderToday() {
   const fmt = (v, dec) => dec ? String(Math.round(v * 10) / 10).replace('.', ',') : r0(v);
   const macroTile = (lbl, val, target, color) => {
     const pct = target ? Math.min(100, val / target * 100) : 0, over = target && r0(val) !== r0(target) && val > target;
-    const note = !target ? '' : over ? `+${r0(val - target)} g nad cieľom` : `ešte ${r0(Math.max(0, target - val))} g`;
-    return `<div class="mtile" style="--c:${color}"><span class="mt-l">${lbl}</span><b><i data-count="${r0(val)}">${r0(val)}</i><small>/ ${r0(target)} g</small></b><div class="mt-b"><i style="width:${pct}%"></i></div><em>${note}</em></div>`;
+    return `<div class="mtile ${over ? 'over' : ''}" style="--c:${color}"><div class="mt-h"><span class="mt-l">${lbl}</span><b><i data-count="${r0(val)}">${r0(val)}</i><small>/ ${r0(target)} g</small></b></div><div class="mt-b"><i style="width:${pct}%"></i></div></div>`;
   };
   const miniStat = (lbl, val, target, color, limit = false) => {
     const pct = target ? Math.min(100, val / target * 100) : 0, over = limit && target && val > target;
@@ -212,7 +211,7 @@ export async function renderToday() {
   const fiberGoal = Math.max(25, Math.round((p.target_kcal || 2000) / 1000 * 14));
   const fiberGap = foods.length > 0 && foods.some(f => f.fiber == null);
   // štyri sústredné krúžky: vonkajší = kalórie, vnútorné tri = bielkoviny, sacharidy, tuky
-  const RS = 252, CX = RS / 2;
+  const RS = 164, CX = RS / 2;
   const ringLayer = (r, sw, pct, stroke, cls = '') => {
     const c = 2 * Math.PI * r, k = Math.max(0, Math.min(1, pct || 0));
     return `<circle cx="${CX}" cy="${CX}" r="${r}" fill="none" stroke="var(--track)" stroke-width="${sw}" opacity=".7"/>
@@ -220,20 +219,13 @@ export async function renderToday() {
   };
   const rings = `<svg class="hk-rings" width="${RS}" height="${RS}" viewBox="0 0 ${RS} ${RS}" aria-hidden="true">
     <defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${over ? '#B6B6FF' : '#7CFFB2'}"/><stop offset="1" stop-color="${over ? '#8C8CFF' : '#2FD3C0'}"/></linearGradient></defs>
-    ${ringLayer(116, 15, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'o0')}
-    ${ringLayer(97, 8, p.target_protein ? sum.protein / p.target_protein : 0, MC.p, 'o1')}
-    ${ringLayer(86, 8, p.target_carbs ? sum.carbs / p.target_carbs : 0, MC.c, 'o2')}
-    ${ringLayer(75, 8, p.target_fat ? sum.fat / p.target_fat : 0, MC.f, 'o3')}
+    ${ringLayer(70, 16, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'o0')}
   </svg>`;
-  // pás jedál pod kruhom: päť hlavných jedál, zapísané svietia farbou jedla a ukážu kcal
-  const mealStrip = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner'].map(k => {
-    const m = MEAL_META[k], kc = kcalOf(foods.filter(f => f.meal === k)), on = foods.some(f => f.meal === k);
-    return `<a class="mbp ${on ? 'on' : ''}" style="--mc:${m.color}" href="#/jedlo?meal=${k}" aria-label="${m.label}${on ? ': zapísané' : ': pridať'}"><i>${on ? r0(kc) : '+'}</i><span>${m.label}</span></a>`;
-  }).join('');
   const goalPct = p.target_kcal ? Math.round(sum.kcal / p.target_kcal * 100) : 0;
 
   const mealRows = f => `<li><span class="fi">${foodEmoji(f.name, f.meal)}</span><div class="fn" data-edit="${f.id}" role="button" tabindex="0"><b>${h(f.name)}</b><span>${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)}, ` : ''}${r0(f.grams)} g</span></div><span class="fk">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></li>`;
-  const mealCards = Object.entries(MEAL_META).map(([k, m]) => {
+  const extraEmpty = ['late', 'snack'].filter(k => !foods.some(f => f.meal === k));
+  const mealCards = Object.entries(MEAL_META).filter(([k]) => !extraEmpty.includes(k)).map(([k, m]) => {
     const rows = foods.filter(f => f.meal === k); const s = calc.sumMacros(rows);
     const rec = m.share ? Math.round(p.target_kcal * m.share / 10) * 10 : 0;
     const menu = `<button class="ml-more" data-mm="${k}" aria-label="Viac: ${m.label}">⋯</button>`;
@@ -249,7 +241,7 @@ export async function renderToday() {
       ${rec ? `<div class="ml-bar"><i style="width:${pct}%;${s.kcal > rec * 1.15 ? 'background:var(--danger)' : ''}"></i></div>` : ''}
       <ul class="ml-list">${rows.map(mealRows).join('')}</ul>
     </section>`;
-  }).join('');
+  }).join('') + (extraEmpty.length ? `<div class="ml-x"><span>Ďalšie</span>${extraEmpty.map(k => `<button class="ml-xb" style="--mc:${MEAL_META[k].color}" data-add="${k}"><i>${MEAL_META[k].icon}</i>${MEAL_META[k].label}<b>+</b></button>`).join('')}</div>` : '');
 
   // rozbor dňa: pomer živín a rozloženie kalórií cez deň
   const eKc = { p: sum.protein * 4, c: sum.carbs * 4, f: sum.fat * 9 }, eTot = eKc.p + eKc.c + eKc.f;
@@ -278,17 +270,18 @@ export async function renderToday() {
     ${firstCard || backCard}
     <section class="hero-k ${over ? 'over' : ''}">
       <div class="hk-top"><span class="hk-t">${isFuture ? 'Plán dňa' : 'Dnešný cieľ'}</span><a class="hk-edit" href="#/ciele" aria-label="Upraviť ciele">${p.target_kcal} kcal<i>✎</i></a></div>
-      <div class="hk-ring">
-        <div class="breath"></div>
-        ${rings}
-        <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span><em class="hk-pc">${goalPct} % cieľa</em></div>
-      </div>
-      <div class="hk-eat"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'kcal naplánované' : 'kcal zjedené'}</span></div>
-      <div class="hk-meals">${mealStrip}</div>
-      <div class="hk-macros">
-        ${macroTile('Bielkoviny', sum.protein, p.target_protein, MC.p)}
-        ${macroTile('Sacharidy', sum.carbs, p.target_carbs, MC.c)}
-        ${macroTile('Tuky', sum.fat, p.target_fat, MC.f)}
+      <div class="hk-body">
+        <div class="hk-ring"><i class="hk-sw"></i><div class="breath"></div>${rings}
+          <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span></div>
+        </div>
+        <div class="hk-side">
+          <div class="hk-eat"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'kcal naplánované' : 'kcal zjedené'}</span><em class="hk-pc">${goalPct} %</em></div>
+          <div class="hk-macros">
+            ${macroTile('Bielkoviny', sum.protein, p.target_protein, MC.p)}
+            ${macroTile('Sacharidy', sum.carbs, p.target_carbs, MC.c)}
+            ${macroTile('Tuky', sum.fat, p.target_fat, MC.f)}
+          </div>
+        </div>
       </div>
       <div class="hk-minis">
         ${miniStat('Vláknina', fiber, fiberGoal, MC.fi)}
@@ -348,6 +341,7 @@ export async function renderToday() {
   </div>${nav('#/')}`;
 
   const root = $app();
+  if (!window.__tdIn && !reduceMotion()) { window.__tdIn = 1; root.querySelector('.screen.td')?.classList.add('td-in'); }
   rd.bindReadiness(root, { uid, date: st.date, ci: checkin, onSaved: renderToday });
   // animácie: krúžky sa nabehnú, čísla dobehnú
   requestAnimationFrame(() => requestAnimationFrame(() => root.querySelectorAll('.rg-fill').forEach(c => c.setAttribute('stroke-dashoffset', c.dataset.off))));
