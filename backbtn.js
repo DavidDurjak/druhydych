@@ -2,7 +2,7 @@
 import { ctx } from './app.js';
 
 const root = document.getElementById('app');
-const TABS = new Set(['#/', '#/trening', '#/pokrok', '#/kouc', '#/profil', '#/onboarding', '#/checkin']);
+const TABS = new Set(['#/', '#/jedlo', '#/trening', '#/pokrok', '#/kouc', '#/profil', '#/onboarding', '#/checkin']);
 const PARENT = { '#/jedlo': '#/', '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/report': '#/pokrok', '#/tyzden': '#/profil', '#/cukor-sprava': '#/cukor', '#/cukor': '#/profil', '#/navyky': '#/profil' };
 let moves = 0;
 addEventListener('hashchange', () => { moves++; });
