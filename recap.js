@@ -1,5 +1,5 @@
 // Týždeň v príbehu: celoobrazovkový prehľad týždňa v štýle Instagram stories / Spotify Wrapped.
-// Skóre, jedlo, tréning, séria dní, telo a jedna vec na budúci týždeň. Na konci kartička na zdieľanie.
+// Skóre, jedlo, tréning, séria dní, telo a jedna vec na budúce týždeň. Na konci kartička na zdieľanie.
 // Na Dnes sa ponúkne cez kartu týždenného reportu (nedeľa od 18:00), na obrazovke reportu cez tlačidlo "Prehrať týždeň".
 import * as db from './data.js';
 import * as calc from './calc.js';
@@ -7,6 +7,7 @@ import { ctx } from './app.js';
 import { weeklyReport, fmtSleep } from './health.js';
 import { defaultWeek } from './report.js';
 import { draw } from './sharecard.js';
+import * as U from './units.js';
 
 const h = (...a) => ctx.h(...a);
 const SLIDE_MS = 5500;
@@ -160,7 +161,7 @@ function build(D, me) {
   const pills = [];
   if (r.weight_avg != null) {
     const wd = r.prev_weight_avg != null ? Math.round((r.weight_avg - r.prev_weight_avg) * 10) / 10 : null;
-    pills.push(`<div class="rc-pill"><span>Priemerná váha</span><b>${String(r.weight_avg).replace('.', ',')} kg${wd != null ? `<em style="color:#9AA6B6">${sgn(wd).replace('.', ',')}</em>` : ''}</b></div>`);
+    pills.push(`<div class="rc-pill"><span>Priemerná váha</span><b>${U.fmtWU(r.weight_avg)}${wd != null ? `<em style="color:#9AA6B6">${U.fmtWD(wd)}</em>` : ''}</b></div>`);
   }
   if (r.steps_avg != null) pills.push(`<div class="rc-pill"><span>Kroky denne</span><b>${fmtNum(Math.round(r.steps_avg))}</b></div>`);
   if (r.sleep_avg != null) pills.push(`<div class="rc-pill"><span>Spánok za noc</span><b>${fmtSleep(Number(r.sleep_avg))}</b></div>`);
