@@ -166,4 +166,5 @@ async function inject() {
     b.after(el);
   } catch (_) { /* návrhy sú bonus, nesmú rozbiť obrazovku */ } finally { busy = false; }
 }
-if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); inject(); }
+// Karta "Čo zjesť ďalej" je vypnutá (ľuďom prekážala a zbytočne volala databázu). Kód ostáva pre prípad návratu.
+// if (root) { new MutationObserver(inject).observe(root, { childList: true, subtree: true }); inject(); }
