@@ -2,6 +2,7 @@
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
+import * as U from './units.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -101,7 +102,7 @@ export async function renderGoals() {
 
       ${mode === 'auto' ? `<section class="pg-card">
         <h3>Tvoje automatické ciele</h3>
-        <p class="muted small mt">${calc.GOAL[p.goal]?.label || ''} · ${fmt1(kg)} kg · výdaj ${auto.tdee} kcal</p>
+        <p class="muted small mt">${calc.GOAL[p.goal]?.label || ''} · ${U.fmtW(kg)} ${U.wUnit()} · výdaj ${auto.tdee} kcal</p>
         <div class="gl-auto">
           <div><b>${auto.kcal}</b><span>kcal</span></div>
           <div><b>${auto.protein}</b><span>bielkoviny g</span></div>

@@ -3,6 +3,7 @@ import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { weeklyReport, weeklyReportsAll, fmtSleep } from './health.js';
 import { checkinSummaryHtml, checkinAlert } from './checkin.js';
+import * as U from './units.js';
 
 const $app = () => ctx.$app;
 const state = () => ctx.state;
@@ -107,7 +108,7 @@ export async function renderReport() {
         ${stat('🔥', r.days_logged ? (r.kcal_avg ?? '–') : '–', 'priemer kcal', `cieľ ${r.target_kcal ?? '–'}`)}
         ${stat('💪', r.days_logged && r.protein_avg != null ? `${r.protein_avg} g` : '–', 'bielkoviny / deň', `cieľ ${r.target_protein ?? '–'} g`)}
         ${stat('🏋️', `${r.trainings ?? 0}/${r.training_goal ?? '–'}`, 'tréningy')}
-        ${stat('⚖️', r.weight_avg != null ? `${String(r.weight_avg).replace('.', ',')} kg` : '–', 'priemerná váha', wDelta != null ? `<span class="${goodW ? 'g' : 'b'}">${sgn(wDelta).replace('.', ',')} kg</span> vs. minulý` : `${r.weigh_ins ?? 0}× vážené`)}
+        ${stat('⚖️', r.weight_avg != null ? U.fmtWU(r.weight_avg) : '–', 'priemerná váha', wDelta != null ? `<span class="${goodW ? 'g' : 'b'}">${U.fmtWD(wDelta)} ${U.wUnit()}</span> vs. minulý` : `${r.weigh_ins ?? 0}× vážené`)}
         ${stat('👟', r.steps_avg != null ? Number(r.steps_avg).toLocaleString('sk-SK') : '–', 'krokov / deň')}
         ${stat('😴', r.sleep_avg != null ? fmtSleep(Number(r.sleep_avg)) : '–', 'spánok / noc')}
       </div>
