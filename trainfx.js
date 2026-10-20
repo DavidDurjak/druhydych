@@ -1,6 +1,7 @@
 // Vizuálna vrstva obrazovky Tréning: živý prstenec postupu, farebné karty podľa svalu, časovač pauzy, konfety po dokončení.
 // Beží ako doplnok nad existujúcou obrazovkou (nemení dáta ani ukladanie), preto je bezpečný.
 import { EXERCISES } from './workouts.js';
+import * as U from './units.js';
 
 const CSS = `
 .fx-hero{position:relative;overflow:hidden;border-radius:26px;padding:18px 16px 16px;margin-bottom:14px;border:1px solid rgba(124,255,178,.22);
@@ -202,7 +203,7 @@ function build(scr) {
     </div>
     <div class="fx-tiles">
       <div class="fx-tile"><div class="fx-dots">${dots}</div><span>tento týždeň ${wk[0]}/${wk[1] || wk[0]}</span></div>
-      <div class="fx-tile"><b data-r="vol">0</b><span>kg objem dnes</span></div>
+      <div class="fx-tile"><b data-r="vol">0</b><span>${U.wUnit()} objem dnes</span></div>
       <div class="fx-tile"><b data-r="min">0</b><span>min zostáva</span></div>
     </div>
     <p class="fx-msg" data-r="msg"></p>`;
