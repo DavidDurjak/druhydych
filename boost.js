@@ -7,23 +7,32 @@ import { ctx } from './app.js';
 const app = document.getElementById('app');
 const CSS = `
 .tdh-streak{position:relative}
-.tdh-streak.fx{padding:6px 13px 6px 9px;gap:3px}
-.fx-w{position:relative;display:inline-block;width:24px;height:28px;margin-top:-2px}
-.fx-f{width:24px;height:28px;display:block;overflow:visible;transform-origin:50% 92%;animation:fxFl 1.05s ease-in-out infinite alternate;filter:drop-shadow(0 0 7px var(--fx-glow,rgba(255,140,40,.75)))}
-.fx-f .o{fill:var(--fx-o,#FF8A1F)}.fx-f .i{fill:var(--fx-i,#FFD23F);transform-origin:50% 100%;animation:fxIn .62s ease-in-out infinite alternate}
-@keyframes fxFl{0%{transform:scale(1,1) rotate(-3deg)}50%{transform:scale(.95,1.08) rotate(1.5deg)}100%{transform:scale(1.05,.98) rotate(-1deg)}}
-@keyframes fxIn{from{transform:scale(.88,.82)}to{transform:scale(1.06,1.1)}}
-.fx-w .em{position:absolute;left:50%;bottom:55%;width:3px;height:3px;border-radius:50%;background:var(--fx-i,#FFD23F);opacity:0;animation:fxEm 1.9s ease-out infinite}
-.fx-w .e2{animation-delay:.6s;margin-left:5px}.fx-w .e3{animation-delay:1.2s;margin-left:-6px}
-@keyframes fxEm{0%{opacity:0;transform:translateY(0) scale(1)}15%{opacity:.95}100%{opacity:0;transform:translateY(-22px) scale(.3)}}
-.fx-t1{--fx-o:#FF7A1A;--fx-i:#FFD23F}
-.fx-t2{--fx-o:#FF4D1F;--fx-i:#FFC53A;--fx-glow:rgba(255,90,30,.85)}
-.fx-t3{--fx-o:#3D9BFF;--fx-i:#D6F4FF;--fx-glow:rgba(70,160,255,.9)}
-.fx-t0 .fx-f{animation:none;filter:grayscale(1);opacity:.45}.fx-t0 .em{display:none}
+.tdh-streak.fx{padding:6px 14px 6px 9px;gap:3px}
+.fx-w{position:relative;display:inline-block;width:26px;height:31px;margin-top:-3px}
+.fx-f{width:26px;height:31px;display:block;overflow:visible;transform-origin:50% 96%;animation:fxSway 2.6s ease-in-out infinite alternate}
+.fx-f .gl{fill:url(#none);opacity:.55;transform-box:fill-box;transform-origin:50% 60%;animation:fxGl 1.7s ease-in-out infinite alternate}
+.fx-f .p{transform-box:fill-box;transform-origin:50% 100%}
+.fx-f .a{animation:fxA 1.35s ease-in-out infinite alternate}
+.fx-f .b{animation:fxB .95s ease-in-out infinite alternate}
+.fx-f .c{animation:fxC .62s ease-in-out infinite alternate}
+.fx-f .d{animation:fxD 1.1s ease-in-out infinite alternate}
+@keyframes fxSway{from{transform:rotate(-2.2deg)}to{transform:rotate(2.2deg)}}
+@keyframes fxGl{from{opacity:.38;transform:scale(.92)}to{opacity:.7;transform:scale(1.08)}}
+@keyframes fxA{0%{transform:scale(1,.96) skewX(-3deg)}50%{transform:scale(.97,1.05) skewX(2.5deg)}100%{transform:scale(1.03,1) skewX(-1.5deg)}}
+@keyframes fxB{0%{transform:scale(.96,.94) skewX(3deg)}100%{transform:scale(1.04,1.07) skewX(-3.5deg)}}
+@keyframes fxC{0%{transform:scale(.9,.86)}100%{transform:scale(1.08,1.12)}}
+@keyframes fxD{0%{opacity:.35;transform:scale(.9,.8) translateX(-1px)}100%{opacity:.95;transform:scale(1.05,1.12) translateX(1px)}}
+.fx-w .em{position:absolute;left:50%;bottom:62%;width:3px;height:3px;border-radius:50%;background:var(--fx-e,#FFD23F);box-shadow:0 0 5px 1px var(--fx-e,#FFB02E);opacity:0;animation:fxEm 2.1s ease-out infinite}
+.fx-w .e2{animation-delay:.7s;margin-left:5px;width:2px;height:2px}.fx-w .e3{animation-delay:1.4s;margin-left:-6px;width:2px;height:2px}
+@keyframes fxEm{0%{opacity:0;transform:translate(0,0) scale(1)}12%{opacity:1}100%{opacity:0;transform:translate(3px,-26px) scale(.3)}}
+.fx-t1{--fx-a:#E8410F;--fx-b:#FF8A1F;--fx-c:#FF8A1F;--fx-d:#FFC93A;--fx-k:#FFF6BF;--fx-e:#FFC93A;--fx-g:#FF8A1F;--fx-base:#5B9BFF}
+.fx-t2{--fx-a:#C8141A;--fx-b:#FF5A1F;--fx-c:#FF6A1F;--fx-d:#FFB52E;--fx-k:#FFEFB0;--fx-e:#FFB52E;--fx-g:#FF4D1F;--fx-base:#5B9BFF}
+.fx-t3{--fx-a:#1D4FE8;--fx-b:#3D9BFF;--fx-c:#4FB0FF;--fx-d:#A8E6FF;--fx-k:#FFFFFF;--fx-e:#BDEBFF;--fx-g:#3D9BFF;--fx-base:#FFFFFF}
+.fx-t0 .fx-f{animation:none;filter:grayscale(1);opacity:.45}.fx-t0 .fx-f *{animation:none}.fx-t0 .em{display:none}
 .tdh-streak.fx b{font-weight:800}
 .fx-sv{font-style:normal;font-size:12px;margin-left:2px;opacity:.9}
 .fx-sh{text-align:center;padding:4px 0 2px}
-.fx-sh .fx-w{width:84px;height:98px;margin:6px auto 4px;display:block}.fx-sh .fx-f{width:84px;height:98px}
+.fx-sh .fx-w{width:88px;height:106px;margin:6px auto 4px;display:block}.fx-sh .fx-f{width:88px;height:106px}
 .fx-sh .fx-w .em{width:5px;height:5px}
 .fx-sh h2{font-size:34px;letter-spacing:-.03em}.fx-sh p{color:var(--muted);margin-top:4px}
 .fx-bar{height:10px;border-radius:99px;background:var(--track,rgba(255,255,255,.1));overflow:hidden;margin:16px 4px 6px}
@@ -32,7 +41,7 @@ const CSS = `
 @keyframes fxSw{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
 .fx-cel{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;color:#fff;
   background:radial-gradient(70% 50% at 50% 42%,rgba(255,120,30,.38),rgba(6,8,12,.96) 70%);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);animation:qaBg .35s ease both}
-.fx-cel .fx-w{width:130px;height:152px}.fx-cel .fx-f{width:130px;height:152px;animation-duration:.8s}.fx-cel .em{width:6px;height:6px}
+.fx-cel .fx-w{width:136px;height:163px}.fx-cel .fx-f{width:136px;height:163px}.fx-cel .em{width:6px;height:6px}
 .fx-cel .n{font-size:84px;font-weight:900;letter-spacing:-.05em;line-height:1;margin-top:6px;animation:fxPop .8s cubic-bezier(.2,1.5,.4,1) both}
 .fx-cel h2{font-size:26px;margin-top:6px}.fx-cel p{color:rgba(255,255,255,.75);margin-top:6px;max-width:300px}
 .fx-cel button{margin-top:26px;border:0;border-radius:18px;padding:15px 34px;font:inherit;font-weight:800;font-size:17px;color:#2a1200;background:linear-gradient(180deg,#FFE08A,#FFB547);cursor:pointer}
@@ -73,7 +82,7 @@ const CSS = `
 .fq .pl{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;padding:0 0 2px;font-weight:900;font-size:18px;color:#06210f;background:linear-gradient(180deg,#9dffc4,#5fe69a)}
 .fq b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}.fq small{display:block;font-size:12px;color:var(--muted);margin-top:1px}
 .fq.ok{border-color:#7CFFB2;background:rgba(124,255,178,.18)}.fq.ok .pl{background:#fff;font-size:15px}
-@media (prefers-reduced-motion:reduce){.fx-f,.fx-f .i,.fx-w .em,.fx-bar i::after,.bx-m::after,.bx-m span,.bx-m,.bx-lvn,.bx-xp i::after,.rp-card::after,.rp-card-i,.fx-cf{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.fx-f,.fx-f *,.fx-w .em,.fx-bar i::after,.bx-m::after,.bx-m span,.bx-m,.bx-lvn,.bx-xp i::after,.rp-card::after,.rp-card-i,.fx-cf{animation:none!important}}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
@@ -82,8 +91,24 @@ const MS = [[3, 'Rozbeh', 'Tri dni v rade. Takto vzniká návyk.'], [7, 'Týžde
   [60, 'Neotrasiteľný', 'Dva mesiace. Toto ťa už nezastaví.'], [100, 'Stovka v rade', 'Sto dní v rade. Legenda.'], [200, 'Dvojstovka', 'Dvesto dní. Takých ľudí je pár.'], [365, 'Celý rok', 'Rok každý deň. Mýtus.']];
 const BIG = [7, 30, 100, 365];
 const tier = n => n <= 0 ? 0 : n >= 30 ? 3 : n >= 7 ? 2 : 1;
-const FL = `<svg class="fx-f" viewBox="0 0 24 28" aria-hidden="true"><path class="o" d="M12 1.2c.7 3.6-1.8 5.5-3.8 8C6.3 11.6 5.2 14 5.2 16.6c0 5 3 9.4 6.8 9.4s6.8-4.4 6.8-9.4c0-2.7-1.1-4.7-2.3-6.4-.3 1.7-1.1 2.8-2.3 3.4.6-4.4-.4-9.7-2.2-12.4z"/><path class="i" d="M12 26c-2.4 0-4.2-2.1-4.2-4.8 0-2.3 1.4-3.6 2.5-5.2.5 1.4 1.3 2 2 2.2.1-1.6.7-2.7 1.4-3.6 1.1 1.5 2.5 3.4 2.5 6.6 0 2.7-1.8 4.8-4.2 4.8z"/></svg>`;
-const flame = n => `<span class="fx-w fx-t${tier(n)}">${FL}<i class="em e1"></i><i class="em e2"></i><i class="em e3"></i></span>`;
+let fid = 0;
+// plamen z vrstiev: vonkajsi, stredny a jadro plameňa, kazda sa hybe vlastnym tempom, dole modra zaklada
+const flame = n => {
+  const k = 'fxg' + (++fid);
+  const st = (o, c) => `<stop offset="${o}" style="stop-color:var(${c})"/>`;
+  return `<span class="fx-w fx-t${tier(n)}"><svg class="fx-f" viewBox="0 0 40 48" aria-hidden="true"><defs>
+<radialGradient id="${k}g" cx="50%" cy="50%" r="50%">${st(0, '--fx-g')}<stop offset="1" style="stop-color:var(--fx-g);stop-opacity:0"/></radialGradient>
+<linearGradient id="${k}o" x1="0" y1="1" x2="0" y2="0">${st(0, '--fx-b')}${st(1, '--fx-a')}</linearGradient>
+<linearGradient id="${k}m" x1="0" y1="1" x2="0" y2="0">${st(0, '--fx-d')}${st(1, '--fx-c')}</linearGradient>
+<linearGradient id="${k}k" x1="0" y1="1" x2="0" y2="0">${st(0, '--fx-k')}<stop offset="1" style="stop-color:var(--fx-d)"/></linearGradient>
+<radialGradient id="${k}b" cx="50%" cy="50%" r="50%">${st(0, '--fx-base')}<stop offset="1" style="stop-color:var(--fx-base);stop-opacity:0"/></radialGradient></defs>
+<ellipse class="gl" cx="20" cy="32" rx="19" ry="19" style="fill:url(#${k}g)"/>
+<path class="p a" fill="url(#${k}o)" d="M20 1.5C21 10 31.5 14 33 27c1.4 12-5 19-13 19S5.6 39 7 28c1-7.5 5-10 7-15.500 1.500 3 2.500 4.200 3.800 4.400C17 11.500 18 6.500 20 1.500z"/>
+<path class="p b" fill="url(#${k}m)" d="M20 11.500c1 7.500 8 10.500 9 19.500.9 8-3.500 13.500-9 13.500S10.200 39 11.200 31.500c.8-6 4.500-8 5.500-13 1.400 2 2.400 3 3.300 2.600-.8-3-.9-6-.0-9.600z"/>
+<path class="p d" fill="url(#${k}o)" d="M27.500 16c2.800 3.500 7 7 6.800 14-.2 5.500-3 9.500-7.500 11.500 2.500-4.500 2.200-9 0-12.500-.8-3.500-.4-9 .7-13z"/>
+<path class="p c" fill="url(#${k}k)" d="M20 24.500c1.200 5.500 5.600 7.500 5.600 13 0 4-2.500 6-5.600 6s-5.600-2-5.600-6c0-5 4.300-7 5.600-13z"/>
+<ellipse cx="20" cy="43.500" rx="6" ry="3" style="fill:url(#${k}b)" opacity=".9"/></svg><i class="em e1"></i><i class="em e2"></i><i class="em e3"></i></span>`;
+};
 const pl = (n, a, b, c) => `${n} ${n === 1 ? a : n < 5 ? b : c}`;
 const ls = { get: k => { try { return Number(localStorage.getItem(k) || 0); } catch (_) { return 0; } }, set: (k, v) => { try { localStorage.setItem(k, String(v)); } catch (_) { } } };
 
