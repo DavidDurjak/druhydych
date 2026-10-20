@@ -6,6 +6,7 @@ import { ctx } from './app.js';
 import { metrics, evaluate } from './badges.js';
 import { exportMine } from './mydata.js';
 import { APP_VERSION } from './admin.js';
+import * as U from './units.js';
 
 const root = document.getElementById('app');
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -190,7 +191,7 @@ function html(p, admin) {
   const groups = [
     ['Plán a zdravie', [
       { href: '#/ciele', i: 'target', c: 'mint', t: 'Ciele a makrá', s: kc ? `${nf(kc)} kcal, B ${nf(pr)} g, S ${nf(ca)} g, T ${nf(fa)} g` : 'Nastav si kalórie a makrá', k: 'kalorie bielkoviny sacharidy tuky' },
-      { href: '#/onboarding', i: 'user', c: 'sky', t: 'Moje údaje', s: [p.height_cm ? `${p.height_cm} cm` : '', p.training_days != null ? `${p.training_days} ${Number(p.training_days) === 1 ? 'tréning' : Number(p.training_days) < 5 ? 'tréningy' : 'tréningov'} týždenne` : act].filter(Boolean).join(', ') || 'Váha, výška, cieľ, aktivita', k: 'vaha vyska aktivita cieľ' },
+      { href: '#/onboarding', i: 'user', c: 'sky', t: 'Moje údaje', s: [p.height_cm ? U.fmtH(p.height_cm) : '', p.training_days != null ? `${p.training_days} ${Number(p.training_days) === 1 ? 'tréning' : Number(p.training_days) < 5 ? 'tréningy' : 'tréningov'} týždenne` : act].filter(Boolean).join(', ') || 'Váha, výška, cieľ, aktivita', k: 'vaha vyska aktivita cieľ' },
       { href: '#/rezim', i: 'heart', c: 'rose', t: 'Zdravie a diéta', s: 'Cukrovka, celiakia, alergie', k: 'diabetes cukor alergie celiakia', id: 'pfxDx' },
       { href: '#/navyky', i: 'shield', c: 'violet', t: 'Návyky', s: 'Nikotín a alkohol pod kontrolou', k: 'fajcenie vape alkohol' },
     ]],
@@ -231,7 +232,7 @@ function html(p, admin) {
 </section>
 <section class="pfx-plan">
   <div class="pfx-ph"><h3>Tvoj plán</h3><span class="pfx-goal">${h(goal)}</span><a href="#/ciele">Upraviť</a></div>
-  <div class="pfx-pb"><div class="pfx-kc"><b>${kc ? nf(kc) : '0'}</b><span>kcal denne</span></div><div class="pfx-wt"><b data-wt>${p.start_weight ? kg(Number(p.start_weight)) + ' kg' : '0 kg'}</b><span data-wd>${p.start_date ? 'od ' + h(calc.fmtDate(p.start_date)) : ''}</span></div></div>
+  <div class="pfx-pb"><div class="pfx-kc"><b>${kc ? nf(kc) : '0'}</b><span>kcal denne</span></div><div class="pfx-wt"><b data-wt>${p.start_weight ? U.fmtWU(p.start_weight) : '0 ' + U.wUnit()}</b><span data-wd>${p.start_date ? 'od ' + h(calc.fmtDate(p.start_date)) : ''}</span></div></div>
   <div class="pfx-mb">${[['--protein', sh[0]], ['--carbs', sh[1]], ['--fat', sh[2]]].map(([c, v]) => `<i style="flex:${Math.max(v, 1)};background:var(${c})"></i>`).join('')}</div>
   <div class="pfx-ml"><div><b>${nf(pr)} g</b><i style="background:var(--protein)"></i>Bielkoviny</div><div><b>${nf(ca)} g</b><i style="background:var(--carbs)"></i>Sacharidy</div><div><b>${nf(fa)} g</b><i style="background:var(--fat)"></i>Tuky</div></div>
 </section>
@@ -268,9 +269,9 @@ function fill(box, p, d) {
   const last = weights[weights.length - 1], sw = Number(p.start_weight) || 0;
   if (last) {
     const w = Number(last.weight_kg), dlt = sw ? w - sw : 0;
-    box.querySelector('[data-wt]').textContent = kg(w) + ' kg';
+    box.querySelector('[data-wt]').textContent = U.fmtWU(w);
     const wd = box.querySelector('[data-wd]');
-    wd.textContent = !sw || Math.abs(dlt) < 0.05 ? 'bez zmeny od štartu' : `${dlt > 0 ? '+' : '-'}${kg(Math.abs(dlt))} kg od štartu`;
+    wd.textContent = !sw || Math.abs(dlt) < 0.05 ? 'bez zmeny od štartu' : `${dlt > 0 ? '+' : '-'}${U.fmtW(Math.abs(dlt))} ${U.wUnit()} od štartu`;
     wd.className = dlt < -0.04 ? 'dn' : dlt > 0.04 ? 'up' : '';
   }
   const nb = box.querySelector('[data-nb]'), tl = nb?.closest('.pfx-t');
