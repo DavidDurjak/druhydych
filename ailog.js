@@ -132,7 +132,7 @@ function rememberPortions(list) {
 }
 if (typeof document !== 'undefined' && !document.getElementById('aimemcss')) {
   const st = document.createElement('style'); st.id = 'aimemcss';
-  st.textContent = '.ai-mem{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border:0;font-family:inherit}button.ai-mem{cursor:pointer}';
+  st.textContent = '.ai-mem{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border:0;font-family:inherit}button.ai-mem{cursor:pointer}.ai-left{display:block;margin:10px 0 2px;padding:11px 14px;border-radius:14px;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,var(--line));cursor:pointer}.ai-left b{display:block;font-size:14px}.ai-left span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}.ai-left.busy{opacity:.7;pointer-events:none}.ai-left.done{border-style:solid;font-size:13px;font-weight:600;color:var(--accent);cursor:default}';
   document.head.appendChild(st);
 }
 
@@ -169,7 +169,7 @@ export async function openAiLog(input, meal, done, onSaved) {
     bg.querySelector('[data-x]').onclick = () => bg.remove();
     return;
   }
-  let curMeal = meal;
+  let curMeal = meal, left = '';
   const dayMode = items.some(i => i.meal);
   const ORDER = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner', 'late', 'snack'].filter(k => MEALS()[k]);
   const eff = it => it.meal || curMeal;
@@ -201,6 +201,7 @@ export async function openAiLog(input, meal, done, onSaved) {
       <div class="row between"><h2>${live.length === 1 ? 'Našiel som 1 položku' : `Našiel som ${live.length} ${live.length < 5 ? 'položky' : 'položiek'}`}</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
       <p class="muted small">Skontroluj gramy, ťukni na názov pre inú položku z databázy.</p>
       ${input.preview ? `<img class="ai-thumb" src="${input.preview}" alt="">` : ''}
+      ${input.preview && !left ? `<label class="ai-left"><input type="file" accept="image/*" hidden data-left><b>Ostalo ti niečo na tanieri?</b><span>Odfoť zvyšky na tanieri a AI ich odpočíta.</span></label>` : left ? `<p class="ai-left done">↺ ${h(left)}</p>` : ''}
       <div class="ai-list">${(dayMode ? ORDER.flatMap(k => { const g = items.map((it, i) => [it, i]).filter(([it]) => !it.off && eff(it) === k); if (!g.length) return []; const kc = g.reduce((a, [it]) => a + calc.scale(current(it), it.grams).kcal, 0); return [`<div class="ai-grp"><b>${h(MEALS()[k])}</b><span>${r0(kc)} kcal</span></div>`, ...g.map(([it, i]) => itemHtml(it, i))]; }) : items.map((it, i) => itemHtml(it, i))).join('')}</div>
       <div class="ai-sum"><div><b>${r0(tot.kcal)} kcal</b><span>B ${r0(tot.p)} g · S ${r0(tot.c)} g · T ${r0(tot.f)} g</span></div></div>
       ${!dayMode || live.some(i => !i.meal) ? `${dayMode ? '<p class="muted small mt">Ostatné položky bez času dňa idú do:</p>' : ''}` : ''}
@@ -220,6 +221,27 @@ export async function openAiLog(input, meal, done, onSaved) {
     S.querySelectorAll('[data-im]').forEach(sel => sel.onchange = () => { items[Number(sel.dataset.im)].meal = sel.value; draw(); });
     S.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { curMeal = b.dataset.m; draw(); });
     S.querySelectorAll('[data-hint]').forEach(b => b.onclick = () => { const it = items[Number(b.dataset.hint)]; it.grams = it.hint; it.mem = true; it.hint = 0; draw(); });
+    const lf = S.querySelector('[data-left]');
+    if (lf) lf.onchange = async () => {
+      const f = lf.files?.[0]; lf.value = ''; if (!f) return;
+      const lab = lf.closest('.ai-left'); lab.classList.add('busy'); lab.querySelector('span').textContent = 'Pozerám sa na zvyšky…';
+      try {
+        const img = await shrinkToJpeg(f, 768, 0.7);
+        const r = await callAi({ text: 'POZOR: na fotke sú ZVYŠKY jedla, ktoré človek NEZJEDOL. Rozpoznaj len to, čo ostalo na tanieri, a odhadni gramy týchto zvyškov. Ak je tanier prázdny, nevráť nič.', image: img.b64, mime: 'image/jpeg' });
+        const words = x => new Set(pkey(x).split(' ').filter(w => w.length > 2));
+        let sub = 0, hit = 0;
+        for (const lo of (r.items || [])) {
+          const lw = words(lo.name); let best = null, bs = 0;
+          items.forEach(it => { if (it.off) return; const iw = words(it.name + ' ' + current(it).name); let sc = 0; lw.forEach(w => { if (iw.has(w)) sc++; }); if (sc > bs) { bs = sc; best = it; } });
+          if (!best && items.filter(i => !i.off).length === 1) best = items.find(i => !i.off);
+          if (!best) continue;
+          const g = Math.min(best.grams - 1, Math.max(0, Number(lo.grams) || 0)); if (!g) continue;
+          best.grams = Math.round(best.grams - g); best.touched = true; best.mem = false; sub += g; hit++;
+        }
+        left = hit ? `Odpočítané zvyšky: ${r0(sub)} g` : 'Na fotke zvyškov som nič nenašiel.';
+        draw();
+      } catch (e) { toast(e.message || 'Zvyšky sa nepodarilo rozpoznať.', true); lab.classList.remove('busy'); lab.querySelector('span').textContent = 'Odfoť zvyšky na tanieri a AI ich odpočíta.'; }
+    };
     S.querySelector('#aiSave').onclick = save;
   };
 
