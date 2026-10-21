@@ -14,7 +14,7 @@ const round10 = v => Math.round(v / 10) * 10;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 // intakeByDay: { 'YYYY-MM-DD': kcal }, weights: [{ date, weight }] (celá história, kg), formulaTdee: výdaj podľa vzorca
-export function estimateTdee({ intakeByDay, weights, formulaTdee, today, windowDays = WINDOW }) {
+export function estimateTdee({ intakeByDay, weights, formulaTdee, today, windowDays = WINDOW, exclude = [], include = [] }) {
   const end = calc.addDays(today, -1), start = calc.addDays(end, -(windowDays - 1));
   const all = calc.trend([...weights].sort((a, b) => a.date.localeCompare(b.date)).map(w => ({ date: w.date, weight: Number(w.weight) })));
   // prvé dva body klzavého priemeru sú ešte ovplyvnené štartom, nepoužijeme ich
@@ -24,7 +24,9 @@ export function estimateTdee({ intakeByDay, weights, formulaTdee, today, windowD
 
   const first = usable[0].date, last = usable[usable.length - 1].date;
   const floor = Math.max(900, 0.5 * formulaTdee);          // pod touto hranicou je deň pravdepodobne nedopísaný
-  const days = Object.keys(intakeByDay).filter(d => d >= first && d <= last && Number(intakeByDay[d]) >= floor);
+  const ex = new Set(exclude), inc = new Set(include);
+  // dni, ktoré človek v check-ine označil ako nedopísané, sa vynechajú; dni potvrdené ako celé sa počítajú aj pod hranicou
+  const days = Object.keys(intakeByDay).filter(d => d >= first && d <= last && !ex.has(d) && Number(intakeByDay[d]) > 0 && (inc.has(d) || Number(intakeByDay[d]) >= floor));
   const spanDays = have.spanDays + 1;
   have.completeDays = days.length;
   if (days.length < MIN_DAYS) return { ok: false, have, why: 'food' };
