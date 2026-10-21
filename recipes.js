@@ -122,8 +122,14 @@ export const hubTabs = active => `<div class="seg rh-seg" data-rh-seg><button da
 const catFor = meal => ({ breakfast: 'breakfast', brunch: 'breakfast', lunch: 'lunch', afternoon: 'snack', dinner: 'dinner', late: 'dinner', snack: 'snack' }[meal] || 'all');
 const mealWord = m => (MEALS()[m] || '').toLowerCase();
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const SORTS = [['rec', 'Odporúčané'], ['prot', 'Najviac bielkovín'], ['kcal', 'Najmenej kalórií']];
-const sortRows = (rows, key) => key === 'prot' ? [...rows].sort((a, b) => b.per.protein - a.per.protein) : key === 'kcal' ? [...rows].sort((a, b) => a.per.kcal - b.per.kcal) : rows;
+const SORTS = [['rec', 'Odporúčané'], ['fit', 'Sedí do môjho dňa'], ['prot', 'Najviac bielkovín'], ['kcal', 'Najmenej kalórií']];
+// "Sedí do môjho dňa": podiel zostávajúcich kalórií a bielkovín na jedno z ešte zostávajúcich jedál (raňajky = 3, obed/olovrant = 2, večera = 1)
+const mealsLeft = m => ({ breakfast: 3, brunch: 3, lunch: 2, afternoon: 2, snack: 2, dinner: 1, late: 1 }[m] || 2);
+function fitScore(r, want) {
+  const k = r.per.kcal, p = r.per.protein;
+  return Math.abs(k - want.kcal) / Math.max(want.kcal, 150) + (want.protein ? Math.max(0, want.protein - p) / want.protein * 1.2 + Math.max(0, p - want.protein * 1.6) / want.protein * 0.3 : 0);
+}
+const sortRows = (rows, key, want) => key === 'fit' && want ? [...rows].sort((a, b) => fitScore(a, want) - fitScore(b, want)) : key === 'prot' ? [...rows].sort((a, b) => b.per.protein - a.per.protein) : key === 'kcal' ? [...rows].sort((a, b) => a.per.kcal - b.per.kcal) : rows;
 const cuisName = key => (CUIS.find(c => c[0] === key) || [])[1] || '';
 const SEARCH = RECIPES.map(r => ({ r, t: norm(r.name + ' ' + cuisName(r.cuis) + ' ' + r.ing.map(i => i.name).join(' ')) }));
 const catName = key => (CATS.find(c => c[0] === key) || [])[1] || '';
@@ -157,7 +163,7 @@ const ring = (key, label, color) => `<div class="fs-r" data-r="${key}" style="--
 
 // k = { addPreset(recipe, meal, done, servings), editPreset(recipe, meal, done), openMine(meal, done) }
 export function openRecipeHub(meal, done, k) {
-  let cat = catFor(meal), cuis = 'all', q = '', sort = 'rec', io = null, hidden = 0;
+  let cat = catFor(meal), cuis = 'all', q = '', sort = 'rec', io = null, hidden = 0, want = null;
   const bg = sheet('<div class="rh fs"></div>');
   const root = bg.querySelector('.rh');
   const close = () => bg.remove();
@@ -171,7 +177,7 @@ export function openRecipeHub(meal, done, k) {
     if (!nq && cuis !== 'all') rows = rows.filter(r => r.cuis === cuis);
     hidden = 0;
     if (hasPrefs() && !showAllRec) { const keep = rows.filter(r => verdict(r).level !== 'bad'); hidden = rows.length - keep.length; rows = keep; }
-    return sortRows(rows, sort);
+    return sortRows(rows, sort, want);
   };
   const mark = r => { if (!hasPrefs()) return ''; const l = verdict(r).level; return l === 'bad' ? '<span class="rh-mk bad">✕ nevhodné</span>' : l === 'warn' ? '<span class="rh-mk warn">! over</span>' : ''; };
   const card = r => `<button class="rh-c" data-r="${r.id}"><span class="rh-ph" data-ph>${mark(r)}<img src="${photoOf(r.id, 500)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"><span class="rh-kc">${r.per.kcal} kcal</span></span><span class="rh-n"><b>${h(r.name)}</b><span>B ${r.per.protein} g · S ${r.per.carbs} g · T ${r.per.fat} g</span></span></button>`;
@@ -207,6 +213,18 @@ export function openRecipeHub(meal, done, k) {
     }
     root.querySelector('#rhCount').textContent = `${rows.length} ${rows.length === 1 ? 'recept' : rows.length < 5 && rows.length > 0 ? 'recepty' : 'receptov'}`;
   }
+
+  // zostávajúce makrá dňa (cieľ mínus zjedené) sa načítajú raz; radenie „Sedí do môjho dňa“ sa po načítaní samo prekreslí
+  (() => {
+    const p0 = ctx.state.profile || {};
+    if (!p0.id || !(Number(p0.target_kcal) > 0)) return;
+    db.listFood(p0.id, ctx.state.date).then(rows => {
+      const e = calc.sumMacros(rows), n = mealsLeft(meal);
+      const lk = Number(p0.target_kcal) - e.kcal, lp = (Number(p0.target_protein) || 0) - e.protein;
+      want = { kcal: Math.max(250, lk / n), protein: Math.max(0, lp / n) };
+      if (sort === 'fit' && root.querySelector('#rhGrid')) paintGrid();
+    }).catch(() => { });
+  })();
 
   function list() {
     root.innerHTML = `<div class="rh-hd"><h2>Recepty</h2><button class="del" data-x aria-label="Zavrieť">×</button></div>
