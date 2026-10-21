@@ -8,5 +8,4 @@ import './liftpro.js';
 import './afterlog.js';
 import './quickkcal.js';
 import './coachmem.js';
-import './streakinfo.js';
 import './underfed.js';
