@@ -45,10 +45,12 @@ function kcalSheet(meal) {
 // ponuka jedla dňa: meal sa zistí z nadpisu hlavičky
 let lastMeal = '';
 document.addEventListener('click', e => { const b = e.target.closest?.('[data-mm]'); if (b) lastMeal = b.dataset.mm; }, true);
-// jedlo dňa sa berie z nadpisu ponuky (najdlhší zhodný názov: „Druhá večera“ pred „Večera“)
+// jedlo dňa sa berie z nadpisu ponuky (.mq-hd začína názvom; najdlhší zhodný názov, aby „Druhá večera“ vyhrala nad „Večera“).
+// Celý text ponuky sa nepoužíva, lebo obsahuje aj zoznam všetkých jedál pre „Presunúť“.
 function mealOf(mm) {
-  const t = (mm.closest('.mq') || mm.parentElement || mm).textContent || '', M = ctx.MEALS || {};
-  const hit = Object.entries(M).filter(([, l]) => l && t.includes(l)).sort((a, b) => b[1].length - a[1].length)[0];
+  const hd = (mm.closest('.mq') || mm.parentElement || mm).querySelector('.mq-hd');
+  const t = (hd ? hd.textContent : '').replace(/^[^\p{L}]+/u, '').trim(), M = ctx.MEALS || {};
+  const hit = Object.entries(M).filter(([, l]) => l && t.startsWith(l)).sort((x, y) => y[1].length - x[1].length)[0];
   return hit ? hit[0] : '';
 }
 function inject() {
