@@ -2,3 +2,4 @@
 import './voice.js';
 import './menuscan.js';
 import './funnel.js';
+import './langsync.js';
