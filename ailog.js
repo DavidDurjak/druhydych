@@ -56,7 +56,7 @@ export function bindAiBox(root, getMeal, done) {
         const m = { 'not-allowed': 'Povoľ mikrofón v nastaveniach prehliadača.', 'service-not-allowed': 'Povoľ mikrofón v nastaveniach prehliadača.', 'no-speech': 'Nepočul som nič. Skús znova, alebo použi mikrofón na klávesnici.', 'language-not-supported': 'Slovenčina na diktovanie tu nie je dostupná. Použi mikrofón na klávesnici.', 'network': 'Rozpoznávanie reči potrebuje internet.' }[e.error];
         if (m && (e.error !== 'no-speech' || !gotAny)) toast(m, true);
       };
-      // prehliadač diktovanie po paузe ukončí; kým človek hovorí (a nepresiahne ~90 s), potichu ho spustíme znova a text pripíšeme
+      // prehliadač diktovanie po pauze ukončí; kým človek hovorí (a nepresiahne ~90 s), potichu ho spustíme znova a text pripíšeme
       r.onend = () => {
         if (seen) base = ((base ? base + ' ' : '') + seen).trim();
         const now = Date.now(), fresh = gotAny ? now - lastAt < 6000 : now - startedAt < 8000;
@@ -132,9 +132,21 @@ function rememberPortions(list) {
 }
 if (typeof document !== 'undefined' && !document.getElementById('aimemcss')) {
   const st = document.createElement('style'); st.id = 'aimemcss';
-  st.textContent = '.ai-mem{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border:0;font-family:inherit}button.ai-mem{cursor:pointer}.ai-left{display:block;margin:10px 0 2px;padding:11px 14px;border-radius:14px;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,var(--line));cursor:pointer}.ai-left b{display:block;font-size:14px}.ai-left span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}.ai-left.busy{opacity:.7;pointer-events:none}.ai-left.done{border-style:solid;font-size:13px;font-weight:600;color:var(--accent);cursor:default}';
+  st.textContent = '.ai-mem{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border:0;font-family:inherit}button.ai-mem{cursor:pointer}.ai-left{display:block;margin:10px 0 2px;padding:11px 14px;border-radius:14px;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,var(--line));cursor:pointer}.ai-left b{display:block;font-size:14px}.ai-left span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}.ai-left.busy{opacity:.7;pointer-events:none}.ai-left.done{border-style:solid;font-size:13px;font-weight:600;color:var(--accent);cursor:default}'
+    + '.ai-fat{margin:12px 0 2px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,#FFC857 10%,var(--card))}.ai-fat b{display:block;font-size:14px}.ai-fat p{margin:2px 0 8px;font-size:12.5px;color:var(--muted)}.ai-fat div{display:flex;flex-wrap:wrap;gap:6px}.ai-fat button{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:99px;padding:7px 12px;font:600 13px inherit;font-family:inherit;cursor:pointer}.ai-fat button:active{transform:scale(.97)}'
+    + '.ai-more{display:flex;gap:8px;margin-top:10px}.ai-more input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:12px;padding:10px 12px;font:15px inherit;font-family:inherit}.ai-more button{border:0;border-radius:12px;padding:0 14px;font-weight:700;background:color-mix(in srgb,var(--accent) 16%,var(--card));color:var(--accent);font-family:inherit;cursor:pointer}.ai-more.busy{opacity:.6;pointer-events:none}';
   document.head.appendChild(st);
 }
+
+// Skrytý tuk: foto appky podhodnocujú hlavne olej, maslo a omáčky (test NIH), preto sa po rozpoznaní varených jedál appka raz spýta
+const FAT = [
+  ['none', 'Bez tuku', null],
+  ['oil1', 'Trochu oleja', { name: 'Olej na prípravu', grams: 5, estimate: { kcal: 884, protein: 0, carbs: 0, fat: 100 } }],
+  ['oil2', 'Veľa oleja', { name: 'Olej na prípravu', grams: 15, estimate: { kcal: 884, protein: 0, carbs: 0, fat: 100 } }],
+  ['butter', 'Maslo', { name: 'Maslo na prípravu', grams: 10, estimate: { kcal: 717, protein: 0.9, carbs: 0.1, fat: 81 } }],
+  ['sauce', 'Omáčka alebo dresing', { name: 'Omáčka / dresing', grams: 40, estimate: { kcal: 180, protein: 2, carbs: 8, fat: 16 } }],
+];
+const COOKED = /vypr|sma[zž]|pra[zž]|pe[cč]en|opek|gril|restov|dusen|šal[aá]t|salat|cestovin|špaget|rizot|om[aá]č|gul[aá]š|halu[sš]k|reze[nň]|ř[ií]zek|hranol|zemiak|brambor|vaj[cí]|omelet|steak|m[aä]so|kur[ae]|brav|hov[aä]d|ryb|losos|zelenin|pizza|burger|wok|tortill|palacin|lievan/i;
 
 export async function openAiLog(input, meal, done, onSaved) {
   const bg = sheet(`<div class="ai-load">
@@ -169,7 +181,8 @@ export async function openAiLog(input, meal, done, onSaved) {
     bg.querySelector('[data-x]').onclick = () => bg.remove();
     return;
   }
-  let curMeal = meal, left = '';
+  let curMeal = meal, left = '', fatAsk = !!input.image || COOKED.test((input.text || '') + ' ' + items.map(i => i.name).join(' ')), fatPick = '';
+  const stats = { photo: !!input.image, swapped: 0, removed: 0, added: 0 };
   const dayMode = items.some(i => i.meal);
   const ORDER = ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner', 'late', 'snack'].filter(k => MEALS()[k]);
   const eff = it => it.meal || curMeal;
@@ -180,7 +193,7 @@ export async function openAiLog(input, meal, done, onSaved) {
         const low = it.confidence < 0.6;
         return `<div class="ai-it ${low ? 'low' : ''}">
           <div class="ai-it-h">
-            <button class="ai-name" data-sw="${i}"><b>${h(c.name)}</b><span class="ai-src ${c.src}">${c.src === 'db' ? (c.verified ? '✓ overené' : 'z databázy') : '≈ odhad AI'}</span>${it.matches.length || c.src === 'db' ? '<i>⇅</i>' : ''}</button>
+            <button class="ai-name" data-sw="${i}"><b>${h(c.name)}</b><span class="ai-src ${c.src}">${it.extra ? 'príprava' : c.src === 'db' ? (c.verified ? '✓ overené' : 'z databázy') : '≈ odhad AI'}</span>${it.matches.length || c.src === 'db' ? '<i>⇅</i>' : ''}</button>
             <button class="ai-rm" data-rm="${i}" aria-label="Odstrániť">×</button>
           </div>
           ${it.open ? `<div class="ai-alts">${it.matches.map((m, j) => `<button data-pick="${i}:${j}" class="${it.sel === j ? 'on' : ''}"><b>${h(m.name)}${m.verified ? ' ✓' : ''}</b><span>${m.brand ? h(m.brand) + ' · ' : ''}${r0(m.kcal)} kcal/100 g</span></button>`).join('')}<button data-pick="${i}:-1" class="${it.sel === -1 ? 'on' : ''}"><b>${h(it.name)}</b><span>odhad AI · ${r0(it.estimate.kcal)} kcal/100 g</span></button></div>` : ''}
@@ -203,6 +216,8 @@ export async function openAiLog(input, meal, done, onSaved) {
       ${input.preview ? `<img class="ai-thumb" src="${input.preview}" alt="">` : ''}
       ${input.preview && !left ? `<label class="ai-left"><input type="file" accept="image/*" hidden data-left><b>Ostalo ti niečo na tanieri?</b><span>Odfoť zvyšky na tanieri a AI ich odpočíta.</span></label>` : left ? `<p class="ai-left done">↺ ${h(left)}</p>` : ''}
       <div class="ai-list">${(dayMode ? ORDER.flatMap(k => { const g = items.map((it, i) => [it, i]).filter(([it]) => !it.off && eff(it) === k); if (!g.length) return []; const kc = g.reduce((a, [it]) => a + calc.scale(current(it), it.grams).kcal, 0); return [`<div class="ai-grp"><b>${h(MEALS()[k])}</b><span>${r0(kc)} kcal</span></div>`, ...g.map(([it, i]) => itemHtml(it, i))]; }) : items.map((it, i) => itemHtml(it, i))).join('')}</div>
+      ${fatAsk && !fatPick ? `<div class="ai-fat"><b>Bolo to robené na oleji alebo s omáčkou?</b><p>Tuk z prípravy na fotke nevidno a appky ho najčastejšie podcenia.</p><div>${FAT.map(([k, l]) => `<button type="button" data-fat="${k}">${l}</button>`).join('')}</div></div>` : ''}
+      <form class="ai-more" data-more><input placeholder="Pridať ďalšiu vec, napr. „k tomu kofola“" maxlength="120" enterkeyhint="done"><button type="submit">+ Pridať</button></form>
       <div class="ai-sum"><div><b>${r0(tot.kcal)} kcal</b><span>B ${r0(tot.p)} g · S ${r0(tot.c)} g · T ${r0(tot.f)} g</span></div></div>
       ${!dayMode || live.some(i => !i.meal) ? `${dayMode ? '<p class="muted small mt">Ostatné položky bez času dňa idú do:</p>' : ''}` : ''}
       ${!dayMode || live.some(i => !i.meal) ? `<div class="seg mt" id="aiMeal">${Object.entries(MEALS()).map(([k, l]) => `<button data-m="${k}" class="${k === curMeal ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
@@ -214,13 +229,29 @@ export async function openAiLog(input, meal, done, onSaved) {
     const S = bg.querySelector('.sheet');
     S.querySelector('[data-x]').onclick = () => bg.remove();
     S.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { const it = items[Number(b.dataset.sw)]; if (!it.matches.length) return; it.open = !it.open; draw(); });
-    S.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { const [i, j] = b.dataset.pick.split(':').map(Number); items[i].sel = j; items[i].open = false; draw(); });
-    S.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { items[Number(b.dataset.rm)].off = true; draw(); });
+    S.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { const [i, j] = b.dataset.pick.split(':').map(Number); items[i].sel = j; items[i].open = false; stats.swapped++; draw(); });
+    S.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { items[Number(b.dataset.rm)].off = true; stats.removed++; draw(); });
     S.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { const [i, d] = b.dataset.g.split(':').map(Number); const it = items[i]; it.mem = false; it.touched = true; const step = it.grams >= 100 ? 10 : 5; it.grams = Math.max(step, Math.round((it.grams + d * step) / step) * step); draw(); });
     S.querySelectorAll('[data-gi]').forEach(inp => inp.onchange = () => { const it = items[Number(inp.dataset.gi)]; it.mem = false; it.touched = true; it.grams = Math.max(1, Math.min(3000, Number(inp.value) || it.grams)); draw(); });
     S.querySelectorAll('[data-im]').forEach(sel => sel.onchange = () => { items[Number(sel.dataset.im)].meal = sel.value; draw(); });
     S.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { curMeal = b.dataset.m; draw(); });
     S.querySelectorAll('[data-hint]').forEach(b => b.onclick = () => { const it = items[Number(b.dataset.hint)]; it.grams = it.hint; it.mem = true; it.hint = 0; draw(); });
+    S.querySelectorAll('[data-fat]').forEach(b => b.onclick = () => {
+      fatPick = b.dataset.fat; const f = FAT.find(x => x[0] === fatPick)?.[2];
+      if (f) items.push({ name: f.name, grams: f.grams, aiGrams: 0, estimate: { ...f.estimate }, matches: [], sel: -1, confidence: 1, meal: '', open: false, off: false, extra: true });
+      draw();
+    });
+    const mf = S.querySelector('[data-more]');
+    if (mf) mf.onsubmit = async ev => {
+      ev.preventDefault(); const t = mf.querySelector('input').value.trim(); if (!t) return;
+      mf.classList.add('busy');
+      try {
+        const r = await callAi({ text: t, image: '', mime: 'image/jpeg' });
+        const add = (r.items || []).map(it => ({ ...it, meal: '', sel: it.useEstimate || !it.matches?.length ? -1 : 0, open: false, off: false, aiGrams: Number(it.grams) || 0 }));
+        if (!add.length) { toast('To som nespoznal, skús to napísať inak.', true); mf.classList.remove('busy'); return; }
+        items.push(...add); stats.added += add.length; draw();
+      } catch (e) { toast(e.message, true); mf.classList.remove('busy'); }
+    };
     const lf = S.querySelector('[data-left]');
     if (lf) lf.onchange = async () => {
       const f = lf.files?.[0]; lf.value = ''; if (!f) return;
@@ -249,6 +280,7 @@ export async function openAiLog(input, meal, done, onSaved) {
     const btn = bg.querySelector('#aiSave'); btn.disabled = true; btn.textContent = 'Ukladám…';
     try {
       const live = items.filter(i => !i.off);
+      try { window.fwSrcHint && window.fwSrcHint(input.image ? 'ai_photo' : input.voice ? 'ai_voice' : 'ai_text'); } catch (_) { }
       for (const it of live) {
         const c = current(it), s = calc.scale(c, it.grams);
         await db.addFood({ user_id: state().profile.id, date: state().date, meal: eff(it), name: c.name, brand: c.brand || null, grams: r1(it.grams), ...s,
@@ -256,6 +288,10 @@ export async function openAiLog(input, meal, done, onSaved) {
         if (c.food_id) db.foodUsed(c.food_id);
       }
       rememberPortions(live);
+      try {
+        const edited = live.some(it => it.touched && !it.extra) || stats.swapped > 0 || stats.removed > 0;
+        window.fwTrack && window.fwTrack('ai_log', { photo: stats.photo, items: live.length, edited, swapped: stats.swapped, removed: stats.removed, added: stats.added, fat: fatPick || (fatAsk ? 'skip' : ''), mem: live.some(it => it.mem) });
+      } catch (_) { }
       bg.remove(); onSaved && onSaved();
       toast(`Zapísané: ${cnt(live.length)}`);
       done && done(curMeal);
