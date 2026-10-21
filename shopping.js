@@ -1,5 +1,5 @@
 // Nákupný zoznam z naplánovaných jedál: sčíta suroviny z denníka na najbližšie dni, zoradí ich podľa oddelení v obchode,
-// dá sa odškrtávať, skopírovať alebo poslať. Funguje aj pre jedlá, ktoré si naplánoval sam.
+// dá sa odškrtávať, skopírovať alebo poslať. Funguje aj pre jedlá, ktoré si naplánoval sám.
 import { sb } from './data.js';
 import { ctx } from './app.js';
 import { foodEmoji } from './foodimg.js';
@@ -89,7 +89,7 @@ export async function openShopping(initialDays = 7) {
     const to = calc.addDays(calc.today(), days);
     const src = mode === 'recent' ? (recent || []).map(r => ({ ...r, grams: Number(r.grams) * days / 14 })) : rows.filter(r => r.date <= to);
     const cats = build(src);
-    const subTxt = (l, n) => mode === 'recent' ? `Odhad podľa toho, čo máš zapísané za posledných 14 dní, na ${days} ${days < 5 ? 'dni' : 'dní'}. Zostáva kúpiť: ${l} z ${n}.` : `Z tvojho plánovavača od zajtra. Zostáva kúpiť: ${l} z ${n}.`;
+    const subTxt = (l, n) => mode === 'recent' ? `Odhad podľa toho, čo máš zapísané za posledných 14 dní, na ${days} ${days < 5 ? 'dni' : 'dní'}. Zostáva kúpiť: ${l} z ${n}.` : `Z tvojho plánovača od zajtra. Zostáva kúpiť: ${l} z ${n}.`;
     const chk = ls.get();
     const all = cats.flatMap(c => c.items), left = all.filter(i => !chk[i.key]).length;
     body.innerHTML = `<div class="shop-h"><h3>🛒 Nákupný zoznam</h3><button class="del" data-x aria-label="Zavrieť">×</button></div>
@@ -105,7 +105,7 @@ export async function openShopping(initialDays = 7) {
       el.classList.toggle('done', !!c[k]); if (navigator.vibrate) navigator.vibrate(8);
       const l = all.filter(i => !c[i.key]).length; const sub = body.querySelector('.shop-sub'); if (sub) sub.textContent = subTxt(l, all.length);
     });
-    body.querySelector('#shopPlan')?.addEventListener('click', async () => { try { const m = await import('./meals.js'); bg.remove(); m.openPlans(); } catch (_) { ctx.toast('Jedálček sa nepodarilo otvoriť', true); } });
+    body.querySelector('#shopPlan')?.addEventListener('click', async () => { try { const m = await import('./meals.js'); bg.remove(); m.openPlans(); } catch (_) { ctx.toast('Jedálniček sa nepodarilo otvoriť', true); } });
     body.querySelector('#shopRecent')?.addEventListener('click', async e => {
       e.target.disabled = true;
       try { recent = await fetchRecent(); mode = 'recent'; draw(); try { window.fwTrack && window.fwTrack('shop_recent', { n: recent.length }); } catch (_) { } }
