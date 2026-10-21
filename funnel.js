@@ -28,6 +28,9 @@ const CSS = `
 .fnq::before{content:"";position:absolute;inset:-20% -30% auto;height:70%;pointer-events:none;
   background:radial-gradient(50% 50% at 50% 30%,color-mix(in srgb,var(--accent,#7CFFB2) 14%,transparent),transparent 70%)}
 .fnq.out{animation:fnqOut .35s ease both}
+.fnq,.fnq-cover{--fnq-s1:#dcffee;--fnq-s2:#7CFFB2;--fnq-s3:#1fbfa0;--fnq-dot:#fff}
+html[data-theme=light] .fnq,html[data-theme=light] .fnq-cover{--fnq-s1:#3ddc97;--fnq-s2:#14b37d;--fnq-s3:#0b8a66;--fnq-dot:#0b8a66}
+html[data-theme=light] .fnq-seal{filter:none}
 @keyframes fnqIn{from{opacity:0}}@keyframes fnqOut{to{opacity:0;transform:scale(1.02)}}
 .fnq-top{position:relative;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 12px) 16px 6px;max-width:520px;width:100%;margin:0 auto;box-sizing:border-box;min-height:56px}
 .fnq-back{width:40px;height:40px;border-radius:12px;border:0;background:transparent;color:var(--muted,#8a94a3);display:grid;place-items:center;cursor:pointer;padding:0}
@@ -149,22 +152,22 @@ const st = document.createElement('style'); st.textContent = CSS; document.head.
 const BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
 // pečať z ikony appky (prstenec + tep s vidličkou), bez pozadia
 const SEAL = `<svg class="fnq-seal" viewBox="0 0 1024 1024" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <defs><linearGradient id="fqg" x1="150" y1="150" x2="880" y2="880" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#dcffee"/><stop offset=".45" stop-color="#7CFFB2"/><stop offset="1" stop-color="#1fbfa0"/></linearGradient></defs>
+  <defs><linearGradient id="fqg" x1="150" y1="150" x2="880" y2="880" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:var(--fnq-s1)"/><stop offset=".45" style="stop-color:var(--fnq-s2)"/><stop offset="1" style="stop-color:var(--fnq-s3)"/></linearGradient></defs>
   <path class="rg" pathLength="100" d="M128.6 583.5 A 390 390 0 1 1 264.3 813.2" stroke="url(#fqg)" stroke-width="34"/>
   <path class="rg" pathLength="100" d="M128.6 583.5 H 334.1" stroke="url(#fqg)" stroke-width="34"/>
   <g transform="translate(500 545) scale(0.7) translate(-517 -545)" stroke="url(#fqg)" stroke-width="46">
     <path class="mk" pathLength="100" d="M280 600 L 336 508 L 390 648 L 474 300 L 580 800 L 642 548 L 690 624 C 712 652 752 650 780 600"/>
     <g transform="translate(790 562) rotate(10)"><path class="mk" pathLength="100" d="M-80 -250 V -78 C -80 -26 -44 0 0 0 C 44 0 80 -26 80 -78 V -250"/><path class="mk" pathLength="100" d="M-27 -250 V -40 M27 -250 V -40 M0 0 V 42"/></g>
   </g>
-  <circle class="dot" cx="264.3" cy="813.2" r="22" fill="#fff" stroke="none"/>
+  <circle class="dot" cx="264.3" cy="813.2" r="22" style="fill:var(--fnq-dot)" stroke="none"/>
 </svg>`;
 // prstenec z loga ako ukazovateľ postupu (p 0..1) s bodkou na konci
 function ringSvg(p, cls = 'fnq-mini', w = 9) {
   const a = A0 + SPAN * Math.max(0.001, p), [dx, dy] = pt(a);
   return `<svg class="${cls}" viewBox="0 0 100 100" fill="none" stroke-linecap="round" aria-hidden="true">
-    <path d="${ARC}" stroke="var(--line,#232a33)" stroke-width="${w}"/>
-    <path class="p" d="${ARC}" pathLength="100" stroke="var(--accent,#7CFFB2)" stroke-width="${w}" stroke-dasharray="100" stroke-dashoffset="${100 - p * 100}"/>
-    <circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="${w * 0.62}" fill="#fff"/></svg>`;
+    <path d="${ARC}" style="stroke:var(--line,#232a33)" stroke-width="${w}"/>
+    <path class="p" d="${ARC}" pathLength="100" style="stroke:var(--accent,#7CFFB2)" stroke-width="${w}" stroke-dasharray="100" stroke-dashoffset="${100 - p * 100}"/>
+    <circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="${w * 0.62}" style="fill:var(--fnq-dot)"/></svg>`;
 }
 
 const GOALS = [['lose', '🔥', 'Schudnúť', 'zhodiť tuk, udržať svaly'], ['maintain', '⚖️', 'Udržať váhu', 'jesť vyvážene, cítiť sa lepšie'], ['gain', '💪', 'Nabrať svaly', 'rásť bez zbytočného tuku']];
