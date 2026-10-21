@@ -17,6 +17,7 @@ import './overload.js';
 import './adherence.js';
 import './kcalinfo.js';
 import './voice.js';
+import './menuscan.js';
 import './pokrok2.js'; import './kouc2.js';
 import './polish.js';
 import './ailang.js';
