@@ -9,3 +9,4 @@ import './afterlog.js';
 import './quickkcal.js';
 import './coachmem.js';
 import './underfed.js';
+import './supers.js';
