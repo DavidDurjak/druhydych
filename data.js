@@ -84,7 +84,9 @@ export async function listFood(userId, date) {
   if (!cached && !pend.length) throw new Error('Failed to fetch');
   return (cached || []).concat(pend);
 }
+const noteAdd = row => { try { window.fwNoteAdd && window.fwNoteAdd(row.source || 'manual'); } catch (_) { } };
 export async function addFood(row) {
+  noteAdd(row);
   if (!isOff()) {
     try { return must(await sb.from('food_logs').insert(row).select().single()); }
     catch (e) { if (!isNetErr(e)) throw e; }
