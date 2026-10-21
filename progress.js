@@ -44,7 +44,7 @@ function paceVerdict(goal, weekly, weight) {
     return { cls: 'warn', text: 'Váha ide hore. Uber 150 až 200 kcal alebo pridaj kroky.' };
   }
   if (goal === 'gain') {
-    if (pct >= 0.75) return { cls: 'warn', text: 'Pribéraš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
+    if (pct >= 0.75) return { cls: 'warn', text: 'Priberáš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
     if (pct >= 0.15) return { cls: 'ok', text: 'Ideálne tempo naberania svalov.' };
     return { cls: 'mid', text: 'Váha sa nehýbe. Pridaj 150 až 200 kcal, najlepšie zo sacharidov.' };
   }
@@ -249,7 +249,7 @@ export async function renderProgress() {
     return `<div class="pgx-chips"><div class="${good ? 'good' : ''}"><b>${sign(dlt)}<small> ${U.wUnit()}</small></b><span>v tomto období</span></div><div><b>${fmt1(Math.min(...ts))}<small> ${U.wUnit()}</small></b><span>najnižšia</span></div><div><b>${fmt1(Math.max(...ts))}<small> ${U.wUnit()}</small></b><span>najvyššia</span></div></div>`;
   })() : '';
 
-  // séria zapisovania: dni v rade (dnes sa ešte neráta ako prerušená), rekord, najbližší mírňik
+  // séria zapisovania: dni v rade (dnes sa ešte nerátá ako prerušená), rekord, najbližší míľnik
   // rovnaká séria ako na Dnes a v Profile (zápis jedla, váhy, tréningu aj check-inu, s ochranou série), nie len jedlo
   const logSet = new Set(actDates || allLoggedDates);
   const cur = actDates ? calc.streakSafe([...logSet]).n : (() => { let n = 0, d = logSet.has(today) ? today : calc.addDays(today, -1); while (logSet.has(d)) { n++; d = calc.addDays(d, -1); } return n; })();
@@ -265,13 +265,13 @@ export async function renderProgress() {
       </div>
       <div class="st-dots">${last14.map((d, i) => `<div class="${logSet.has(d) ? 'on' : ''}${d === today ? ' now' : ''}" style="--i:${i}"><i></i><span>${dayName(d)}</span></div>`).join('')}</div>
       <div class="st-next"><div class="st-bar"><i style="--w:${Math.round((cur - prevMs) / (nextMs - prevMs) * 100)}%"></i></div>
-        <p>${cur ? `Ešte <b>${left} ${pl(left)}</b> do mírňika ${nextMs} dní.` : 'Zapíš dnes jedlo, váhu alebo tréning a spustíš novú sériu.'}</p></div>
+        <p>${cur ? `Ešte <b>${left} ${pl(left)}</b> do míľnika ${nextMs} dní.` : 'Zapíš dnes jedlo, váhu alebo tréning a spustíš novú sériu.'}</p></div>
     </section>`;
 
   $app().innerHTML = `<div class="screen pg">
     <h1 class="pg-h1">Pokrok</h1>
     ${progressTabs('pokrok')}
-    <a class="rp-card" href="#/report?w=${defaultWeek()}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre týždha, porovnanie a na čo sa zamerať.</p></div><span class="rp-card-go">›</span></a>
+    <a class="rp-card" href="#/report?w=${defaultWeek()}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre týždňa, porovnanie a na čo sa zamerať.</p></div><span class="rp-card-go">›</span></a>
     <div class="pg-per pgx-per" style="--i:${prevPer}" data-to="${perIdx}">${[[7, '7 dní'], [30, '30 dní'], ['all', 'Celý program']].map(([v, l]) => `<button data-per="${v}" class="${period === v ? 'on' : ''}">${l}</button>`).join('')}</div>
 
     <section class="pg-card pgx-hero pgx-anim">
@@ -280,7 +280,7 @@ export async function renderProgress() {
         <div class="pgx-hl">
           <span class="pg-lbl">Od štartu</span>
           <b class="pgx-big ${goodDir ? 'good' : change ? 'bad' : ''}"><span ${last ? `data-to="${U.toW(change)}" data-dec="1" data-sign="1"` : ''}>${last ? sign(change) : '–'}</span><small> ${U.wUnit()}</small></b>
-          <p class="pgx-sub">${last ? `Trendová váha <b>${fmt1(last.trend)} ${U.wUnit()}</b>` : 'Zatiaľ bez váženia'}${weekly != null ? `<br>${sign(weekly)} ${U.wUnit()} za týždeň` : ''}</p>
+          <p class="pgx-sub">${last ? `Trendová váha <b>${fmt1(last.trend)} ${U.wUnit()}</b>` : 'Zatiaľ bez vážení'}${weekly != null ? `<br>${sign(weekly)} ${U.wUnit()} za týždeň` : ''}</p>
         </div>
         <div class="pgx-rw">${rings(R)}<div class="pgx-rc"><b data-to="${elapsed}">${elapsed}</b><span>z ${PROGRAM_DAYS} dní</span></div></div>
       </div>
@@ -332,7 +332,7 @@ export async function renderProgress() {
   enhance($app());
 }
 
-// ---------- animácie a interakcia (spustí sa, keď karta príde do obrazu) ----------
+// ---------- animácie a interakcia (spustia sa, keď karta príde do obrazu) ----------
 const RM = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 function countUp(el) {
   const to = Number(el.dataset.to), dec = Number(el.dataset.dec || 0), sg = el.dataset.sign === '1';
