@@ -1,6 +1,6 @@
 // Podjedanie: keď človek aspoň 4 z posledných 7 dní zapíše výrazne menej, než je jeho cieľ, ukáže sa na Dnes jedna pokojná karta.
-// Appky na chudnutie takto samy tlačia ľudí do prílišného deficitu, tak tu robíme opak: ukážeme číslo a ponúkneme dve možné vysvetlenia.
-// Nechváli to a neřádi jesť ešte menej. Zavrieť sa dá na 7 dní.
+// Appky na chudnutie takto samy tlačia ľudí do prílišného deficitu, tak tu robíme opak: ukážeme číslo a ponúknem dve možné vysvetlenia.
+// Nechváli to a nenabáda ješť ešte menej. Zavrieť sa dá na 7 dní.
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
@@ -43,7 +43,7 @@ async function run() {
     const gap = r.T - r.avg;
     const card = document.createElement('section'); card.className = 'uf'; card.setAttribute('role', 'note');
     card.innerHTML = `<b>Posledný týždeň ješ v priemere ${nf(r.avg)} kcal</b>
-      <p>Tvoj cieľ je ${nf(r.T)} kcal, to je o ${nf(gap)} menej. Buď si nezapisuješ všetko (oleje, nápoje, večere), alebo ješ naozaj málo. Pri veľmi nízkom príjme ubúda svalov a trpí energia, spánok aj tréning.</p>
+      <p>Tvoj cieľ je ${nf(r.T)} kcal, to je o ${nf(gap)} menej. Buď si nezapisuješ všetko (oleje, nápoje, večere), alebo ješ naozaj málo. Pri veľmi nízkom príjme ubuda svalov a trpí energia, spánok aj tréning.</p>
       <p class="m">Ak niečo chýba v zápise, doplň to. Ak nie, skús ísť bližšie k cieľu. Nemusíš ho trafiť naraz, stačí +200 kcal denne.</p>
       <div><button data-uf="ok">Chápem</button><button data-uf="mute">Neukázať týždeň</button></div>`;
     const anchor = root.querySelector('.wk-avg') || root.querySelector('.ml');

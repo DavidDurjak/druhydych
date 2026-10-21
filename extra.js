@@ -1,4 +1,4 @@
-// Nové moduly (načítava ich searchux.js). Ďalšie funkcie pribúdajú sem, aby sa nemuselo meniť starší súbory.
+// Nové moduly (načítava ich searchux.js). Ďalšie funkcie pribudajú sem, aby sa nemuselo meniť starší súbory.
 import './voice.js';
 import './menuscan.js';
 import './funnel.js';
@@ -11,3 +11,4 @@ import './coachmem.js';
 import './underfed.js';
 import './supers.js';
 import './recipeimport.js';
+import('./a11y.js').catch(() => { });
