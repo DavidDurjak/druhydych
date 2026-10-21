@@ -45,10 +45,16 @@ function kcalSheet(meal) {
 // ponuka jedla dňa: meal sa zistí z nadpisu hlavičky
 let lastMeal = '';
 document.addEventListener('click', e => { const b = e.target.closest?.('[data-mm]'); if (b) lastMeal = b.dataset.mm; }, true);
+// jedlo dňa sa berie z nadpisu ponuky (najdlhší zhodný názov: „Druhá večera“ pred „Večera“)
+function mealOf(mm) {
+  const t = (mm.closest('.mq') || mm.parentElement || mm).textContent || '', M = ctx.MEALS || {};
+  const hit = Object.entries(M).filter(([, l]) => l && t.includes(l)).sort((a, b) => b[1].length - a[1].length)[0];
+  return hit ? hit[0] : '';
+}
 function inject() {
   document.querySelectorAll('.sheet .mm').forEach(mm => {
     if (mm.querySelector('[data-kq]') || !mm.querySelector('[data-a=prev]')) return;
-    const b = document.createElement('button'); b.className = 'mm-b'; b.dataset.kq = lastMeal || 'snack';
+    const b = document.createElement('button'); b.className = 'mm-b'; b.dataset.kq = mealOf(mm) || lastMeal || 'snack';
     b.innerHTML = '<span>🔢</span>Zapísať len kalórie';
     mm.querySelector('[data-a=prev]').after(b);
   });
