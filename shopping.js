@@ -1,5 +1,5 @@
 // Nákupný zoznam z naplánovaných jedál: sčíta suroviny z denníka na najbližšie dni, zoradí ich podľa oddelení v obchode,
-// dá sa odškrtávať, skopírovať alebo poslať. Funguje aj pre jedlá, ktoré si naplánoval sám.
+// dá sa odškrtávať, skopírovať alebo poslať. Funguje aj pre jedlá, ktoré si naplánoval sam.
 import { sb } from './data.js';
 import { ctx } from './app.js';
 import { foodEmoji } from './foodimg.js';
@@ -50,6 +50,14 @@ async function fetchRows(days = 14) {
   return r.data || [];
 }
 
+// záloha, keď nemá nič naplánované: čo človek reálne jedol za posledných 14 dní, prepočítané na zvolený počet dní
+async function fetchRecent() {
+  const uid = ctx.state.profile.id, to = calc.today(), from = calc.addDays(to, -13);
+  const r = await sb.from('food_logs').select('name,grams,date').eq('user_id', uid).gte('date', from).lte('date', to).limit(1000);
+  if (r.error) throw r.error;
+  return r.data || [];
+}
+
 const CSS = `
 .shop-card{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 14px;padding:13px 14px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(255,200,87,.12),var(--card) 62%);color:var(--text);font:inherit;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none}
 .shop-card:active{transform:scale(.985)}
@@ -67,23 +75,27 @@ const CSS = `
 .shop-i.done .bx{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .shop-i.done .nm,.shop-i.done .q{color:var(--muted);text-decoration:line-through}
 .shop-a{display:flex;gap:8px;margin-top:16px}.shop-a .btn{flex:1}
+.shop-e{display:grid;gap:8px;margin:6px 0 4px}.shop-e .btn{width:100%}
 `;
 
 export async function openShopping(initialDays = 7) {
   const h = (...a) => ctx.h(...a);
   let rows;
   try { rows = await fetchRows(14); } catch (e) { return ctx.toast(e.message || 'Zoznam sa nepodarilo načítať', true); }
-  let days = initialDays;
+  let days = initialDays, mode = 'plan', recent = null;
   const bg = ctx.sheet('<div id="shopBody"></div>');
   const body = bg.querySelector('#shopBody');
   const draw = () => {
     const to = calc.addDays(calc.today(), days);
-    const cats = build(rows.filter(r => r.date <= to));
+    const src = mode === 'recent' ? (recent || []).map(r => ({ ...r, grams: Number(r.grams) * days / 14 })) : rows.filter(r => r.date <= to);
+    const cats = build(src);
+    const subTxt = (l, n) => mode === 'recent' ? `Odhad podľa toho, čo máš zapísané za posledných 14 dní, na ${days} ${days < 5 ? 'dni' : 'dní'}. Zostáva kúpiť: ${l} z ${n}.` : `Z tvojho plánovavača od zajtra. Zostáva kúpiť: ${l} z ${n}.`;
     const chk = ls.get();
     const all = cats.flatMap(c => c.items), left = all.filter(i => !chk[i.key]).length;
     body.innerHTML = `<div class="shop-h"><h3>🛒 Nákupný zoznam</h3><button class="del" data-x aria-label="Zavrieť">×</button></div>
-      <p class="shop-sub">${all.length ? `Z tvojho plánovača od zajtra. Zostáva kúpiť: ${left} z ${all.length}.` : 'Na tieto dni nemáš naplánované jedlá. Naplánuj si ich cez Hotový jedálniček alebo ich pridaj na budúce dni.'}</p>
+      <p class="shop-sub">${all.length ? subTxt(left, all.length) : mode === 'recent' ? 'Za posledných 14 dní nemáš zapísané žiadne jedlá, takže nemám z čoho zoznam zložiť.' : 'Na tieto dni nemáš naplánované jedlá, preto je zoznam prázdny. Zoznam sa skladá z jedál, ktoré si naplánuješ dopredu.'}</p>
       <div class="shop-r">${[3, 7, 14].map(n => `<button data-n="${n}" class="${n === days ? 'on' : ''}">${n} ${n === 1 ? 'deň' : n < 5 ? 'dni' : 'dní'}</button>`).join('')}</div>
+      ${!all.length ? `<div class="shop-e"><button class="btn primary" id="shopPlan">Naplánovať jedlá na týždeň</button>${mode === 'plan' ? '<button class="btn" id="shopRecent">Zoznam podľa toho, čo som jedol(a)</button>' : ''}</div>` : ''}
       ${cats.map(c => `<p class="shop-c">${c.ic} ${c.label}</p>` + c.items.map(i => `<div class="shop-i ${chk[i.key] ? 'done' : ''}" data-k="${h(i.key)}"><span class="bx">✓</span><span class="nm">${h(i.name)}</span><span class="q">${qty(i.g, i.name)}</span></div>`).join('')).join('')}
       ${all.length ? `<div class="shop-a"><button class="btn" id="shopClr">Všetko kúpené</button><button class="btn primary" id="shopSend">${navigator.share ? 'Poslať' : 'Kopírovať'}</button></div>` : ''}`;
     body.querySelector('[data-x]').onclick = () => bg.remove();
@@ -91,7 +103,13 @@ export async function openShopping(initialDays = 7) {
     body.querySelectorAll('.shop-i').forEach(el => el.onclick = () => {
       const c = ls.get(), k = el.dataset.k; if (c[k]) delete c[k]; else c[k] = 1; ls.set(c);
       el.classList.toggle('done', !!c[k]); if (navigator.vibrate) navigator.vibrate(8);
-      const l = all.filter(i => !c[i.key]).length; const sub = body.querySelector('.shop-sub'); if (sub) sub.textContent = `Z tvojho plánovača od zajtra. Zostáva kúpiť: ${l} z ${all.length}.`;
+      const l = all.filter(i => !c[i.key]).length; const sub = body.querySelector('.shop-sub'); if (sub) sub.textContent = subTxt(l, all.length);
+    });
+    body.querySelector('#shopPlan')?.addEventListener('click', async () => { try { const m = await import('./meals.js'); bg.remove(); m.openPlans(); } catch (_) { ctx.toast('Jedálček sa nepodarilo otvoriť', true); } });
+    body.querySelector('#shopRecent')?.addEventListener('click', async e => {
+      e.target.disabled = true;
+      try { recent = await fetchRecent(); mode = 'recent'; draw(); try { window.fwTrack && window.fwTrack('shop_recent', { n: recent.length }); } catch (_) { } }
+      catch (_) { ctx.toast('Zoznam sa nepodarilo načítať', true); e.target.disabled = false; }
     });
     body.querySelector('#shopClr')?.addEventListener('click', () => { const c = {}; all.forEach(i => { c[i.key] = 1; }); ls.set({ ...ls.get(), ...c }); draw(); });
     body.querySelector('#shopSend')?.addEventListener('click', async () => {
