@@ -110,6 +110,32 @@ function current(it) {
   return { name: it.name, kcal: it.estimate.kcal, protein: it.estimate.protein, carbs: it.estimate.carbs, fat: it.estimate.fat, food_id: null, src: 'ai' };
 }
 
+// Pamäť porcií: keď človek opraví gramy po AI zápise, appka si to zapamätá a nabudúce dá rovno jeho porciu
+// (pri texte bez čísla automaticky, pri fotke ako návrh jedným ťuknutím). Tabuľka food_portions, len vlastné riadky.
+const pkey = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+let PM = null, PMuid = '';
+async function portions() {
+  const uid = state().profile?.id;
+  if (PM && PMuid === uid) return PM;
+  try { const { data } = await db.sb.from('food_portions').select('key,grams,n').eq('user_id', uid).limit(1000); PM = new Map((data || []).map(r => [r.key, r])); PMuid = uid; }
+  catch (_) { PM = new Map(); }
+  return PM;
+}
+function rememberPortions(list) {
+  const uid = state().profile?.id; if (!uid) return;
+  const rows = list.filter(it => it.aiGrams && (it.mem || it.touched || Math.abs(it.grams - it.aiGrams) / it.aiGrams > 0.08)).map(it => {
+    const key = pkey(it.name), prev = PM?.get(key);
+    const row = { user_id: uid, key, grams: r1(it.grams), n: (prev?.n || 0) + 1, updated_at: new Date().toISOString() };
+    PM?.set(key, row); return row;
+  }).filter(r => r.key);
+  if (rows.length) db.sb.from('food_portions').upsert(rows, { onConflict: 'user_id,key' }).then(() => { }, () => { });
+}
+if (typeof document !== 'undefined' && !document.getElementById('aimemcss')) {
+  const st = document.createElement('style'); st.id = 'aimemcss';
+  st.textContent = '.ai-mem{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border:0;font-family:inherit}button.ai-mem{cursor:pointer}';
+  document.head.appendChild(st);
+}
+
 export async function openAiLog(input, meal, done, onSaved) {
   const bg = sheet(`<div class="ai-load">
       ${input.preview ? `<div class="ai-ph"><img src="${input.preview}" alt=""><i class="ai-scan"></i></div>` : `<div class="ai-q">„${h(input.text)}“</div>`}
@@ -128,6 +154,16 @@ export async function openAiLog(input, meal, done, onSaved) {
     return;
   }
   const items = (res.items || []).map(it => ({ ...it, meal: MEALS()[it.meal] ? it.meal : '', sel: it.useEstimate || !it.matches?.length ? -1 : 0, open: false, off: false }));
+  try {
+    const mem = await portions(), typed = /\d/.test(input.text || '');
+    items.forEach(it => {
+      it.aiGrams = Number(it.grams) || 0;
+      const m = mem.get(pkey(it.name)); if (!m || !it.aiGrams) return;
+      const g = Number(m.grams), differs = Math.abs(g - it.aiGrams) / it.aiGrams > 0.08;
+      if (!differs) return;
+      if (!typed && !input.image) { it.grams = g; it.mem = true; } else if (input.image) it.hint = g;
+    });
+  } catch (_) { /* pamäť porcií je bonus */ }
   if (!items.length) {
     bg.querySelector('.sheet').innerHTML = `<div class="ai-err"><b>Nenašiel som žiadne jedlo</b><p class="muted small mt">${h(res.note || 'Skús to napísať inak, napríklad „2 vajcia a chlieb“.')}</p><button class="btn mt" data-x>Zavrieť</button></div>`;
     bg.querySelector('[data-x]').onclick = () => bg.remove();
@@ -153,7 +189,8 @@ export async function openAiLog(input, meal, done, onSaved) {
             <div class="ai-k"><b>${r0(s.kcal)}</b><span>kcal</span></div>
           </div>
           ${dayMode ? `<div class="ai-ms"><select data-im="${i}" aria-label="Jedlo dňa">${ORDER.map(k => `<option value="${k}"${eff(it) === k ? ' selected' : ''}>${h(MEALS()[k])}</option>`).join('')}</select></div>` : ''}
-          <p class="ai-m">${it.portion ? h(it.portion) + ' · ' : ''}B ${r1(s.protein)} · S ${r1(s.carbs)} · T ${r1(s.fat)}${low ? ' · <em>over množstvo</em>' : ''}</p>
+          <p class="ai-m">${it.portion && !it.mem && !it.touched ? h(it.portion) + ' · ' : ''}B ${r1(s.protein)} · S ${r1(s.carbs)} · T ${r1(s.fat)}${low ? ' · <em>over množstvo</em>' : ''}</p>
+          ${it.mem ? '<span class="ai-mem">↺ tvoja zvyčajná porcia</span>' : it.hint ? `<button type="button" class="ai-mem" data-hint="${i}">↺ Zvyčajne si dávaš ${r0(it.hint)} g</button>` : ''}
         </div>`;
   };
 
@@ -178,10 +215,11 @@ export async function openAiLog(input, meal, done, onSaved) {
     S.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { const it = items[Number(b.dataset.sw)]; if (!it.matches.length) return; it.open = !it.open; draw(); });
     S.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { const [i, j] = b.dataset.pick.split(':').map(Number); items[i].sel = j; items[i].open = false; draw(); });
     S.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { items[Number(b.dataset.rm)].off = true; draw(); });
-    S.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { const [i, d] = b.dataset.g.split(':').map(Number); const it = items[i]; const step = it.grams >= 100 ? 10 : 5; it.grams = Math.max(step, Math.round((it.grams + d * step) / step) * step); draw(); });
-    S.querySelectorAll('[data-gi]').forEach(inp => inp.onchange = () => { const it = items[Number(inp.dataset.gi)]; it.grams = Math.max(1, Math.min(3000, Number(inp.value) || it.grams)); draw(); });
+    S.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { const [i, d] = b.dataset.g.split(':').map(Number); const it = items[i]; it.mem = false; it.touched = true; const step = it.grams >= 100 ? 10 : 5; it.grams = Math.max(step, Math.round((it.grams + d * step) / step) * step); draw(); });
+    S.querySelectorAll('[data-gi]').forEach(inp => inp.onchange = () => { const it = items[Number(inp.dataset.gi)]; it.mem = false; it.touched = true; it.grams = Math.max(1, Math.min(3000, Number(inp.value) || it.grams)); draw(); });
     S.querySelectorAll('[data-im]').forEach(sel => sel.onchange = () => { items[Number(sel.dataset.im)].meal = sel.value; draw(); });
     S.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { curMeal = b.dataset.m; draw(); });
+    S.querySelectorAll('[data-hint]').forEach(b => b.onclick = () => { const it = items[Number(b.dataset.hint)]; it.grams = it.hint; it.mem = true; it.hint = 0; draw(); });
     S.querySelector('#aiSave').onclick = save;
   };
 
@@ -195,6 +233,7 @@ export async function openAiLog(input, meal, done, onSaved) {
           source: c.src === 'db' ? 'db' : 'ai', barcode: null, food_id: c.food_id, portion: null, qty: null });
         if (c.food_id) db.foodUsed(c.food_id);
       }
+      rememberPortions(live);
       bg.remove(); onSaved && onSaved();
       toast(`Zapísané: ${cnt(live.length)}`);
       done && done(curMeal);
