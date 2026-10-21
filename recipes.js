@@ -125,6 +125,8 @@ const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLow
 const SORTS = [['rec', 'Odporúčané'], ['fit', 'Sedí do môjho dňa'], ['prot', 'Najviac bielkovín'], ['kcal', 'Najmenej kalórií']];
 // "Sedí do môjho dňa": podiel zostávajúcich kalórií a bielkovín na jedno z ešte zostávajúcich jedál (raňajky = 3, obed/olovrant = 2, večera = 1)
 const mealsLeft = m => ({ breakfast: 3, brunch: 3, lunch: 2, afternoon: 2, snack: 2, dinner: 1, late: 1 }[m] || 2);
+// jedno jedlo nikdy nemá byť väčšie než jeho obvyklý podiel dňa (aj keď je ešte celý deň pred tebou)
+const mealCap = m => ({ breakfast: 0.3, brunch: 0.2, lunch: 0.35, afternoon: 0.15, snack: 0.15, dinner: 0.35, late: 0.1 }[m] || 0.25);
 function fitScore(r, want) {
   const k = r.per.kcal, p = r.per.protein;
   return Math.abs(k - want.kcal) / Math.max(want.kcal, 150) + (want.protein ? Math.max(0, want.protein - p) / want.protein * 1.2 + Math.max(0, p - want.protein * 1.6) / want.protein * 0.3 : 0);
@@ -221,7 +223,8 @@ export function openRecipeHub(meal, done, k) {
     db.listFood(p0.id, ctx.state.date).then(rows => {
       const e = calc.sumMacros(rows), n = mealsLeft(meal);
       const lk = Number(p0.target_kcal) - e.kcal, lp = (Number(p0.target_protein) || 0) - e.protein;
-      want = { kcal: Math.max(250, lk / n), protein: Math.max(0, lp / n) };
+      const cap = mealCap(meal), tk = Number(p0.target_kcal), tp = Number(p0.target_protein) || 0;
+      want = { kcal: Math.max(150, Math.min(lk / n, tk * cap)), protein: Math.max(0, Math.min(lp / n, tp * cap)) };
       if (sort === 'fit' && root.querySelector('#rhGrid')) paintGrid();
     }).catch(() => { });
   })();
