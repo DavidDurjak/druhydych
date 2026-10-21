@@ -1,28 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
-    <radialGradient id="bg" cx="62%" cy="30%" r="95%"><stop offset="0" stop-color="#16222b"/><stop offset=".55" stop-color="#0d131a"/><stop offset="1" stop-color="#080b10"/></radialGradient>
-    <linearGradient id="mint" x1="0" y1="1" x2="0.35" y2="0"><stop offset="0" stop-color="#27d9b0"/><stop offset=".55" stop-color="#7CFFB2"/><stop offset="1" stop-color="#dcffee"/></linearGradient>
-    <linearGradient id="wind" gradientUnits="userSpaceOnUse" x1="40" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#7CFFB2" stop-opacity="0"/><stop offset=".45" stop-color="#7CFFB2" stop-opacity=".6"/><stop offset="1" stop-color="#c8ffe2" stop-opacity="1"/></linearGradient>
-    <radialGradient id="halo" cx="60%" cy="55%" r="50%"><stop offset="0" stop-color="#7CFFB2" stop-opacity=".32"/><stop offset="1" stop-color="#7CFFB2" stop-opacity="0"/></radialGradient>
-    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16"/></filter>
-    <clipPath id="r"><rect width="512" height="512" rx="112"/></clipPath>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121a19"/><stop offset=".45" stop-color="#070b0b"/><stop offset="1" stop-color="#030505"/></linearGradient>
+    <linearGradient id="ln" gradientUnits="userSpaceOnUse" x1="0" y1="200" x2="0" y2="820"><stop offset="0" stop-color="#9dffc6"/><stop offset=".55" stop-color="#7CFFB2"/><stop offset="1" stop-color="#27D9B0"/></linearGradient>
+    <radialGradient id="pool" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#7CFFB2" stop-opacity=".45"/><stop offset="1" stop-color="#7CFFB2" stop-opacity="0"/></radialGradient>
+    <linearGradient id="hl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".10"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <filter id="g1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="26"/></filter>
+    <filter id="g2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+    <g id="mk" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M130 600 H 280 L 336 508 L 390 648 L 474 300 L 580 800 L 642 548 L 690 624 C 712 652 752 650 780 600"/>
+      <g transform="translate(790 562) rotate(10)">
+        <path d="M-80 -250 V -78 C -80 -26 -44 0 0 0 C 44 0 80 -26 80 -78 V -250"/>
+        <path d="M-27 -250 V -40 M27 -250 V -40 M0 0 V 42"/>
+      </g>
+    </g>
   </defs>
-  <g clip-path="url(#r)">
-    <rect width="512" height="512" fill="url(#bg)"/>
-    <circle cx="310" cy="285" r="235" fill="url(#halo)"/>
-    <!-- plameň sklonený vetrom -->
-    <g id="flame">
-      <path d="M346 90c-34 64 2 108 30 154 28 48 18 116-36 150-48 30-110 24-146-18 50 12 92-18 100-62 4-26-6-48-22-68-18 42-58 54-92 40 44-28 54-78 30-132 50 12 76 54 76 100 10-44 26-110 60-164z"/>
-    </g>
-    <use href="#flame" fill="#7CFFB2" opacity=".6" filter="url(#blur)"/>
-    <use href="#flame" fill="url(#mint)"/>
-    <!-- jadro -->
-    <path d="M318 258c-14 30 4 50 14 72 12 26 4 58-24 74-22 12-48 10-66-6 24 4 44-10 48-32 2-16-4-28-14-40-10 22-30 30-48 26 24-14 30-40 20-66 26 8 40 28 42 50 10-24 14-52 28-78z" fill="#0b1a16" opacity=".93"/>
-    <!-- vietor -->
-    <g fill="none" stroke="url(#wind)" stroke-linecap="round" stroke-width="30">
-      <path d="M52 184H196"/>
-      <path d="M88 252H166"/>
-      <path d="M52 320H148"/>
-    </g>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="420" fill="url(#hl)"/>
+  <ellipse cx="512" cy="880" rx="330" ry="34" fill="url(#pool)"/>
+  <g transform="translate(512 540) scale(.9) translate(-525 -548)">
+  <use href="#mk" stroke="#27D9B0" stroke-width="64" opacity=".55" filter="url(#g1)"/>
+  <use href="#mk" stroke="#7CFFB2" stroke-width="50" opacity=".7" filter="url(#g2)"/>
+  <use href="#mk" stroke="url(#ln)" stroke-width="40"/>
+  <use href="#mk" stroke="#eafff4" stroke-width="12" opacity=".55"/>
   </g>
 </svg>
