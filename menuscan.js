@@ -91,8 +91,9 @@ async function budget() {
   const tk = Number(p.target_kcal) || 2000, tp = Number(p.target_protein) || 120;
   const left = tk - eaten.kcal, leftP = Math.max(0, tp - eaten.protein);
   const hr = new Date().getHours(), meals = hr < 11 ? 3 : hr < 15 ? 2.2 : hr < 19 ? 1.5 : 1;
-  const meal = Math.max(Math.min(left, 350), Math.min(left * 1.0, (left / meals) * 1.3));
-  return { left, leftP, meal: Math.max(250, meal), mealP: Math.max(20, leftP / meals) };
+  // jedno jedlo v reštaurácii: rozumne okolo 38 % denného cieľa, nikdy viac než zvyšok dňa
+  const meal = Math.max(250, Math.min(Math.max(left, 250), tk * 0.38, Math.max(350, (left / meals) * 1.3)));
+  return { left, leftP, meal, mealP: Math.min(60, Math.max(25, leftP / meals)) };
 }
 
 function rank(dishes, b) {
@@ -100,10 +101,10 @@ function rank(dishes, b) {
   const maxP = Math.max(1, ...dishes.filter(main).map(d => d.protein));
   dishes.forEach(d => {
     const diff = d.kcal - b.meal, kS = diff > 0 ? Math.max(0, 1 - diff / b.meal) : Math.max(0, 1 - (-diff / b.meal) * 0.5);
-    const pS = Math.min(1, d.protein / b.mealP), dens = Math.min(1, (d.protein * 4 / Math.max(1, d.kcal)) * 3);
-    d.fit = 0.5 * kS + 0.32 * pS + 0.18 * dens;
+    const ratio = d.protein * 4 / Math.max(1, d.kcal), pS = Math.min(1, d.protein / b.mealP), dens = Math.min(1, ratio * 3);
+    d.fit = 0.4 * kS + 0.3 * pS + 0.3 * dens;
     d.over = b.left - d.kcal;
-    d.color = d.kcal > b.left + 50 ? OVER : d.fit >= 0.62 ? GOOD : MID;
+    d.color = d.kcal > b.left + 50 ? OVER : d.fit >= 0.62 && ratio >= 0.18 ? GOOD : MID;
     d.topP = main(d) && d.protein >= maxP;
   });
   const mains = dishes.filter(main).sort((a, z) => z.fit - a.fit);
