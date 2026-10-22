@@ -12,7 +12,8 @@ const CSS = `.gs-wrap{margin:14px 0 4px}
 .gs-or::before,.gs-or::after{content:"";flex:1;height:1px;background:var(--line,rgba(255,255,255,.12))}
 .gs-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:52px;border-radius:16px;border:1px solid var(--line,rgba(255,255,255,.16));background:var(--bg-2,rgba(255,255,255,.06));color:var(--text,#fff);font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .gs-btn:active{transform:scale(.985)}.gs-btn[disabled]{opacity:.6}
-.gs-err{margin:8px 0 0;font-size:13px;color:#FF6B6B;text-align:center}`;
+.gs-err{margin:8px 0 0;font-size:13px;color:#FF6B6B;text-align:center}
+.gs-legal{margin:10px 2px 0;font-size:12px;line-height:1.45;color:var(--muted,#8a94a3);text-align:center}.gs-legal a{color:inherit;text-decoration:underline}`;
 if (!document.getElementById('gs-css')) { const s = document.createElement('style'); s.id = 'gs-css'; s.textContent = CSS; document.head.appendChild(s); }
 
 function track(where, act) { try { window.fwTrack && window.fwTrack('google_signin', { where, act }); } catch (_) { } }
@@ -34,7 +35,7 @@ async function start(btn, err, where, gate) {
 
 function make(where, gate) {
   const w = document.createElement('div'); w.className = 'gs-wrap'; w.dataset.gs = where;
-  w.innerHTML = `<div class="gs-or">${T('alebo')}</div><button type="button" class="gs-btn">${G}<span>${T('Pokračovať cez Google')}</span></button><p class="gs-err" role="alert" hidden></p>`;
+  w.innerHTML = `<div class="gs-or">${T('alebo')}</div><button type="button" class="gs-btn">${G}<span>${T('Pokračovať cez Google')}</span></button><p class="gs-err" role="alert" hidden></p>${where === 'login' ? '<p class="gs-legal">Pokračovaním súhlasíš s <a href="podmienky.html" target="_blank" rel="noopener">Podmienkami používania</a> a <a href="zasady.html" target="_blank" rel="noopener">Zásadami ochrany súkromia</a> a potvrdzuješ, že máš aspoň 18 rokov.</p>' : ''}`;
   const btn = w.querySelector('button'), err = w.querySelector('.gs-err');
   btn.onclick = () => start(btn, err, where, gate);
   return w;
