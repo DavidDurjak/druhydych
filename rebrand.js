@@ -1,9 +1,11 @@
-// Gain Train: nový názov a logo bez prepisovania starších súborov.
-// Vymení text „Fuelwind" za „Gain Train" všade, kde sa zobrazí v appke, a na prihlasovacej obrazovke ukáže nové logo (nápis).
+// GainTrain: nový názov a logo bez prepisovania starších súborov.
+// Vymení text „Fuelwind" za „GainTrain" všade, kde sa zobrazí v appke, a na prihlasovacej obrazovke ukáže nové logo (nápis).
 // Je to dočasná vrstva: keď sa názov prepíše priamo v súboroch, tento modul sa dá zmazať.
 import { WORDMARK } from './brand.js';
 
-const OLD = 'Fuelwind', NEW = 'Gain Train';
+const OLD = 'Fuelwind', NEW = 'GainTrain';
+// ikona (SVG aj PNG) sa generuje z tabulky app_assets cez funkciu app-icon
+const ICON = 'https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon';
 const CSS = `.ah-brand .gt-word{height:24px;width:auto;display:block;color:var(--text)}
 .ah-brand img{box-shadow:0 6px 18px rgba(255,90,31,.25)!important}`;
 if (!document.getElementById('gt-css')) { const s = document.createElement('style'); s.id = 'gt-css'; s.textContent = CSS; document.head.appendChild(s); }
@@ -12,6 +14,11 @@ function head() {
   if (document.title.includes(OLD)) document.title = document.title.split(OLD).join(NEW);
   const m = document.querySelector('meta[name="apple-mobile-web-app-title"]');
   if (m && m.content !== NEW) m.content = NEW;
+  const fav = document.querySelector('link[rel="icon"]');
+  if (fav && !fav.href.includes('app-icon')) { fav.href = ICON + '?svg=1&v=3'; fav.type = 'image/svg+xml'; }
+  const ati = document.querySelector('link[rel="apple-touch-icon"]');
+  if (ati && !ati.href.includes('v=3')) ati.href = ICON + '?v=3';
+  document.querySelectorAll('img[src="icon.svg"]').forEach(i => { i.src = ICON + '?size=192&v=3'; });
 }
 
 function fixText(root) {
