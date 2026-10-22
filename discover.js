@@ -11,8 +11,8 @@ const ls = {
   get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
   set(k) { try { localStorage.setItem(k, '1'); } catch (_) { /* súkromný režim */ } },
 };
-// kľúče zavretia (tie isté ako pri starších veľkých kartách, aby sa zavreté nevracalo)
-const KEY = { plan: 'fw_dc_plan', habits: 'fw_hb_ask', diet: 'dd_dx_ask' };
+// kľúče zavretia: nové (v2), aby sa pás ukázal aj tým, čo kedysi zavreli staré veľké karty Návyky a Zdravie
+const KEY = { plan: 'fw_dc2_plan', habits: 'fw_dc2_habits', diet: 'fw_dc2_diet' };
 
 const CSS = `
 .dc{margin:2px 0 14px}
