@@ -1,7 +1,7 @@
 {
-  "name": "Fuelwind",
-  "short_name": "Fuelwind",
-  "description": "Fuelwind: jedlo, váha, tréning a kouč v jednej appke.",
+  "name": "Gain Train",
+  "short_name": "Gain Train",
+  "description": "Gain Train: jedlo, váha, tréning a kouč v jednej appke.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -10,25 +10,25 @@
   "lang": "sk",
   "icons": [
     {
-      "src": "https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon?size=192",
+      "src": "https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon?size=192&v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon?size=512",
+      "src": "https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon?size=512&v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon?size=192&maskable=1",
+      "src": "https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon?size=192&maskable=1&v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon?size=512&maskable=1",
+      "src": "https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon?size=512&maskable=1&v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
