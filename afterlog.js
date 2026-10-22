@@ -56,6 +56,8 @@ function show(html) {
 }
 
 const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// čísla s jednotkou zvýrazníme rovnako ako vo vete z pravidiel (ide až po escapovaní, takže HTML od AI sa nikdy nevykoná)
+const boldNums = t => t.replace(/((?:\d{1,3}(?:[\s ]\d{3})+|\d+)(?:[.,]\d+)?\s?(?:kcal|kg|g|%))(?![\p{L}\d])/giu, '<b>$1</b>');
 
 // Osobná veta od kouča (AI): reaguje na to, čo človek práve zapísal. Čaká najviac chvíľu, potom sa ukáže veta z pravidiel hore.
 // Pri chybe, limite alebo bez internetu sa nestane nič viditeľné. Najviac raz za 30 sekúnd.
@@ -82,7 +84,7 @@ addEventListener('fw-logged', async e => {
     const sum = calc.sumMacros(foods);
     const rule = sentence(sum, p, foods.length);
     const ai = Number(p.target_kcal) > 0 && foods.length ? await aiSentence(p, foods, sum, e?.detail?.n) : '';
-    const html = ai ? esc(ai) : rule;
+    const html = ai ? boldNums(esc(ai)) : rule;
     if (!html) return;
     if (ai) { try { window.fwTrack && window.fwTrack('afterlog_shown', { ai: 1 }); } catch (_) { } }
     setTimeout(() => show(html), Math.max(0, 700 - (Date.now() - t0)));
