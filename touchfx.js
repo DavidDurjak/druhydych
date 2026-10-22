@@ -141,3 +141,16 @@ addEventListener('load', kick);
 new MutationObserver(ms => { for (const m of ms) if (m.oldValue && /fw-loading/.test(m.oldValue) && !document.documentElement.classList.contains('fw-loading')) { repaint(); break; } })
   .observe(document.documentElement, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
 kick();
+
+// ---------- dočasná diagnostika čiernej obrazovky (iPhone): čo je nad obsahom, odošle sa do app_events ----------
+function diag(tag) {
+  try {
+    const W = innerWidth, H = innerHeight, d = el => { if (!el || el.nodeType !== 1) return null; const s = getComputedStyle(el), r = el.getBoundingClientRect(); return [el.tagName, el.id, String(el.className || '').slice(0, 60), s.position, s.zIndex, s.backgroundColor, s.opacity, s.visibility, s.display, Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)].join('|'); };
+    const pts = [[W / 2, H / 2], [W / 2, 120], [20, 40], [W / 2, H - 60]].map(([x, y]) => (document.elementsFromPoint(x, y) || []).slice(0, 6).map(d));
+    const fixed = [...document.querySelectorAll('body *')].filter(e => { const p = getComputedStyle(e).position; return p === 'fixed' || p === 'sticky'; }).slice(0, 25).map(d);
+    const neg = [...document.querySelectorAll('body *')].filter(e => e.childElementCount === 0 && /[−-]\s?0,1/.test(e.textContent || '')).slice(0, 3).map(e => [d(e), d(e.parentElement), d(e.parentElement?.parentElement)]);
+    window.fwTrack && window.fwTrack('diag', { tag, W, H, sy: scrollY, cls: document.documentElement.className, bcls: document.body.className, pts, fixed, neg, ua: navigator.userAgent.slice(0, 120) });
+  } catch (e) { window.fwTrack && window.fwTrack('diag', { tag, err: String(e).slice(0, 200) }); }
+}
+setTimeout(() => diag('t3'), 3000);
+setTimeout(() => diag('t8'), 8000);
