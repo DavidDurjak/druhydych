@@ -17,3 +17,4 @@ import('./googlesignin.js').catch(() => { });
 import('./logoutfix.js').catch(() => { });
 import('./rebrand.js').catch(() => { });
 import('./onebar.js').catch(() => { });
+import('./sleep.js').catch(() => { });
