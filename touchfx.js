@@ -2,10 +2,14 @@
 // 1) Zvuk vody pri pridaní pohára (+150, +250, +500 v Pitnom režime): bublinky a šplechnutie, čím viac vody, tým dlhšie.
 //    Zvuk sa vytvára v telefóne (Web Audio), nič sa nesťahuje. Keď má človek zapnutý tichý režim, telefón ho stíši ako každá appka.
 // 2) Krížik na zavretie každého spodného okna (sheet), ktoré ho nemá. Napr. Hotový jedálniček sa inak nedal zavrieť.
+// 3) Na obrazovke Nastav si štart je šípka Späť vedľa loga, neprekrýva nadpis.
 const CSS = `
 .sx-close{position:sticky;top:0;float:right;z-index:3;width:36px;height:36px;margin:-6px -4px 4px 10px;border-radius:50%;border:1px solid var(--line);
   background:var(--bg-2);color:var(--text);font:inherit;font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .sx-close:active{transform:scale(.92)}
+/* Nastav si štart (úprava údajov): šípka Späť v riadku s logom, nie cez nadpis */
+#app .screen.bk:has(#onb) > .bk-b{top:calc(env(safe-area-inset-top) + 14px)}
+#app .screen.bk:has(#onb) > .brand{margin-left:52px;min-height:24px;display:flex;align-items:center}
 `;
 if (!document.getElementById('sx-css')) { const s = document.createElement('style'); s.id = 'sx-css'; s.textContent = CSS; document.head.appendChild(s); }
 

@@ -12,32 +12,32 @@ const CSS = `
 .ob-box.ob-meal #aiGo{display:grid;width:auto;padding:0 14px;font-size:14px;font-weight:800;color:#0B0E12;background:linear-gradient(135deg,#7CFFB2,#5BB8FF);gap:4px;grid-auto-flow:column;align-items:center}
 .ob-box .ai-spark{font-size:0}
 .ob-box .ai-spark::before{content:'';width:15px;height:15px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/contain no-repeat}
-.ob-act{display:flex;gap:8px;margin:12px 0 0}
-.ob-act>*{flex:1 1 0;min-width:0;width:auto!important;height:44px!important;display:flex;align-items:center;justify-content:center;gap:7px;border-radius:14px;border:1px solid color-mix(in srgb,var(--text) 14%,transparent);
+.obx-act{display:flex;gap:8px;margin:12px 0 0}
+.obx-act>*{flex:1 1 0;min-width:0;width:auto!important;height:44px!important;display:flex;align-items:center;justify-content:center;gap:7px;border-radius:14px;border:1px solid color-mix(in srgb,var(--text) 14%,transparent);
   background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--text);font:inherit;font-size:13px;font-weight:700;cursor:pointer;-webkit-appearance:none;appearance:none;padding:0 8px;white-space:nowrap;position:relative;overflow:hidden;isolation:isolate}
-.ob-act>*:active{transform:scale(.95)}
-.ob-act>*::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 30%,color-mix(in srgb,var(--c) 26%,transparent) 50%,transparent 70%);transform:translateX(-120%);animation:obSh 4.5s ease-in-out infinite;animation-delay:var(--d)}
+.obx-act>*:active{transform:scale(.95)}
+.obx-act>*::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 30%,color-mix(in srgb,var(--c) 26%,transparent) 50%,transparent 70%);transform:translateX(-120%);animation:obSh 4.5s ease-in-out infinite;animation-delay:var(--d)}
 @keyframes obSh{0%,60%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
-.ob-act .ob-i{position:relative;width:22px;height:22px;flex:none;display:grid;place-items:center;color:var(--c)}
-.ob-act .ob-i svg{width:20px;height:20px}
+.obx-act .ob-i{position:relative;width:22px;height:22px;flex:none;display:grid;place-items:center;color:var(--c)}
+.obx-act .ob-i svg{width:20px;height:20px}
 .ob-mic .ob-i::before,.ob-mic .ob-i::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--c);opacity:0;animation:obWave 2.4s ease-out infinite}
 .ob-mic .ob-i::after{animation-delay:1.2s}
 @keyframes obWave{0%{transform:scale(.6);opacity:.7}100%{transform:scale(1.5);opacity:0}}
-.ob-act .ai-mic.rec{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.ob-act .ai-mic.rec .ob-i{color:var(--accent-ink)}
+.obx-act .ai-mic.rec{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.obx-act .ai-mic.rec .ob-i{color:var(--accent-ink)}
 .ob-cam .ob-i::after{content:'';position:absolute;inset:-4px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--c) 70%,#fff) 0,transparent 65%);opacity:0;animation:obFlash 3.6s ease-in-out infinite}
 @keyframes obFlash{0%,82%,100%{opacity:0;transform:scale(.5)}88%{opacity:.9;transform:scale(1.1)}}
 .ob-bar .ob-i::after{content:'';position:absolute;left:1px;right:1px;height:2px;border-radius:2px;background:var(--c);box-shadow:0 0 8px var(--c);top:3px;animation:obScan 1.8s ease-in-out infinite}
 @keyframes obScan{0%,100%{top:3px}50%{top:17px}}
-.ob-act .ob-ai-tag{position:absolute;top:3px;right:4px;font-size:8px;line-height:1.2;font-weight:900;padding:1px 4px;border-radius:6px;background:linear-gradient(135deg,#7CFFB2,#5BB8FF);color:#0B0E12;letter-spacing:.02em}
-.ob-act #scan::after{display:none}
+.obx-act .ob-ai-tag{position:absolute;top:3px;right:4px;font-size:8px;line-height:1.2;font-weight:900;padding:1px 4px;border-radius:6px;background:linear-gradient(135deg,#7CFFB2,#5BB8FF);color:#0B0E12;letter-spacing:.02em}
+.obx-act #scan::after{display:none}
 .ob-hide{display:none!important}
 .ob-ai{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;margin:8px 0 4px;border-radius:16px;border:1px dashed color-mix(in srgb,var(--accent) 55%,transparent);
   background:color-mix(in srgb,var(--accent) 7%,transparent);color:var(--text);font:inherit;cursor:pointer;-webkit-appearance:none;appearance:none}
 .ob-ai i{font-style:normal;width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,#7CFFB2,#5BB8FF);color:#0B0E12;font-weight:900}
 .ob-ai b{display:block;font-size:14px}.ob-ai span{display:block;font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ob-ai div{min-width:0;flex:1}
-@media (prefers-reduced-motion:reduce){.ob-act *,.ob-act>*::before{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.obx-act *,.obx-act>*::before{animation:none!important}}
 `;
 if (!document.getElementById('ob-css')) { const s = document.createElement('style'); s.id = 'ob-css'; s.textContent = CSS; document.head.appendChild(s); }
 
@@ -78,7 +78,7 @@ function setup(box, q) {
   go.innerHTML = '✦ AI'; go.setAttribute('aria-label', 'Zapísať celé cez AI');
   typeLoop(ta);
   // tlačidlá pod poľom: diktovanie a fotka (AI), čiarový kód (bez AI)
-  const act = document.createElement('div'); act.className = 'ob-act';
+  const act = document.createElement('div'); act.className = 'obx-act';
   const mic = box.querySelector('#aiMic'), cam = box.querySelector('label.ai-cam');
   const tag = '<span class="ob-ai-tag">AI</span>';
   if (mic) { mic.classList.add('ob-mic'); mic.style.cssText = '--c:#FF8FB1;--d:0s'; mic.innerHTML = `<span class="ob-i">${MIC}</span><span>Nadiktovať</span>${tag}`; act.appendChild(mic); }
