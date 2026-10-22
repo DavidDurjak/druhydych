@@ -3,6 +3,7 @@
 //    Zvuk sa vytvára v telefóne (Web Audio), nič sa nesťahuje. Keď má človek zapnutý tichý režim, telefón ho stíši ako každá appka.
 // 2) Krížik na zavretie každého spodného okna (sheet), ktoré ho nemá. Napr. Hotový jedálniček sa inak nedal zavrieť.
 // 3) Na obrazovke Nastav si štart je šípka Späť vedľa loga, neprekrýva nadpis.
+// 4) Dlaždica Hotový jedálniček v Profile a karta Nákupný zoznam omylom otvárali Karty do zahraničia; teraz otvoria výber jedálničku.
 const CSS = `
 .sx-close{position:sticky;top:0;float:right;z-index:3;width:36px;height:36px;margin:-6px -4px 4px 10px;border-radius:50%;border:1px solid var(--line);
   background:var(--bg-2);color:var(--text);font:inherit;font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none;box-shadow:0 4px 14px rgba(0,0,0,.25)}
@@ -79,3 +80,12 @@ new MutationObserver(ms => {
     if (n.classList?.contains('sheet-bg')) setTimeout(() => addClose(n), 0);
   }
 }).observe(document.body, { childList: true });
+
+// ---------- Hotový jedálniček: správny cieľ ----------
+document.addEventListener('click', e => {
+  const a = e.target.closest?.('a[href="#/karta"]');
+  const shop = e.target.closest?.('#fw-shop');
+  if (!shop && !(a && /Hotový jedálniček/.test(a.textContent || ''))) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  import('./meals.js').then(m => m.openPlans()).catch(() => { });
+}, true);
