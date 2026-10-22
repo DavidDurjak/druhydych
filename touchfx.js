@@ -81,8 +81,6 @@ export function waterSound(ml) {
     if (navigator.vibrate) navigator.vibrate(12);
   } catch (_) { /* bez zvuku */ }
 }
-// iPhone povolí zvuk až po prvom dotyku: zvukový kanál pripravíme hneď pri prvom ťuknutí kdekoľvek
-addEventListener('touchend', () => audio(), { once: true, capture: true, passive: true });
 // Pitný režim na Dnes (+150, +250, +500) aj Voda v plusovom menu (+250, +500)
 document.addEventListener('click', e => {
   const b = e.target.closest?.('#wx [data-wx], [data-qa^="w:"]');
