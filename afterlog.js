@@ -1,8 +1,10 @@
-// Jedna veta po zápise jedla (ako Simple Avo): čo zápis znamená pre zvyšok dňa. Počíta sa v telefóne z dnešných zápisov a cieľov,
-// bez AI a bez čakania. Ukáže sa na pár sekúnd nad spodnou lištou; ťuknutie otvorí chat s pomocníkom.
+// Jedna veta po zápise jedla: čo zápis znamená pre zvyšok dňa. Základ sa počíta v telefóne z dnešných zápisov a cieľov (bez čakania),
+// a ak stihne odpovedať AI kouč (funkcia coach-afterlog), ukáže sa jeho osobná veta o tom, čo človek práve zapísal.
+// Ukáže sa na pár sekúnd nad spodnou lištou; ťuknutie otvorí chat s pomocníkom.
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
+import { currentLang } from './i18n.js';
 
 const CSS = `
 .al-pill{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);z-index:900;transform:translate(-50%,24px);opacity:0;display:flex;gap:10px;align-items:flex-start;
@@ -53,13 +55,36 @@ function show(html) {
   clearTimeout(tmr); tmr = setTimeout(() => el.classList.remove('on'), 6500);
 }
 
-addEventListener('fw-logged', async () => {
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Osobná veta od kouča (AI): reaguje na to, čo človek práve zapísal. Čaká najviac chvíľu, potom sa ukáže veta z pravidiel hore.
+// Pri chybe, limite alebo bez internetu sa nestane nič viditeľné. Najviac raz za 30 sekúnd.
+let aiAt = 0;
+async function aiSentence(p, foods, sum, n) {
+  if (!navigator.onLine || Date.now() - aiAt < 30000) return '';
+  aiAt = Date.now();
+  const last = foods.slice(-Math.min(3, Math.max(1, n || 1))).map(f => ({ name: f.name, meal: f.meal, grams: f.grams, kcal: f.kcal, protein: f.protein }));
+  const body = {
+    lang: currentLang(), name: String(p.name || '').trim().split(/\s+/)[0], goal: p.goal, hour: new Date().getHours(), n_today: foods.length,
+    target: { kcal: p.target_kcal, protein: p.target_protein }, eaten: { kcal: sum.kcal, protein: sum.protein, carbs: sum.carbs, fat: sum.fat }, last,
+  };
+  const call = db.sb.functions.invoke('coach-afterlog', { body }).then(r => (!r.error && r.data?.s ? String(r.data.s) : '')).catch(() => '');
+  return Promise.race([call, new Promise(res => setTimeout(() => res(''), 2600))]);
+}
+
+addEventListener('fw-logged', async e => {
   try {
     if (localStorage.getItem(OFF) === '1') return;
     const st = ctx.state || {}, p = st.profile; if (!p?.id) return;
     const date = st.date || calc.today(); if (date !== calc.today()) return;
+    const t0 = Date.now();
     const foods = await db.listFood(p.id, date);
-    const s = sentence(calc.sumMacros(foods), p, foods.length);
-    if (s) setTimeout(() => show(s), 700);
+    const sum = calc.sumMacros(foods);
+    const rule = sentence(sum, p, foods.length);
+    const ai = Number(p.target_kcal) > 0 && foods.length ? await aiSentence(p, foods, sum, e?.detail?.n) : '';
+    const html = ai ? esc(ai) : rule;
+    if (!html) return;
+    if (ai) { try { window.fwTrack && window.fwTrack('afterlog_shown', { ai: 1 }); } catch (_) { } }
+    setTimeout(() => show(html), Math.max(0, 700 - (Date.now() - t0)));
   } catch (_) { /* veta po zápise je bonus */ }
 });
