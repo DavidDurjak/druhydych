@@ -13,6 +13,9 @@ const CSS = `.gs-wrap{margin:14px 0 4px}
 .gs-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:52px;border-radius:16px;border:1px solid var(--line,rgba(255,255,255,.16));background:var(--bg-2,rgba(255,255,255,.06));color:var(--text,#fff);font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .gs-btn:active{transform:scale(.985)}.gs-btn[disabled]{opacity:.6}
 .gs-err{margin:8px 0 0;font-size:13px;color:#FF6B6B;text-align:center}
+.gs-wrap[data-gs=login]{margin:2px 0 16px}.gs-wrap[data-gs=login] .gs-or{margin:16px 0 0}
+.gs-wrap[data-gs=login] .gs-btn{height:54px;background:#fff;color:#1F1F1F;border-color:#747775;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+html[data-theme=light] .gs-wrap[data-gs=login] .gs-btn{background:#131314;color:#E3E3E3;border-color:#8E918F}
 .gs-legal{margin:10px 2px 0;font-size:12px;line-height:1.45;color:var(--muted,#8a94a3);text-align:center}.gs-legal a{color:inherit;text-decoration:underline}`;
 if (!document.getElementById('gs-css')) { const s = document.createElement('style'); s.id = 'gs-css'; s.textContent = CSS; document.head.appendChild(s); }
 
@@ -33,9 +36,12 @@ async function start(btn, err, where, gate) {
   }
 }
 
+const LEGAL = '<p class="gs-legal">Pokračovaním súhlasíš s <a href="podmienky.html" target="_blank" rel="noopener">Podmienkami používania</a> a <a href="zasady.html" target="_blank" rel="noopener">Zásadami ochrany súkromia</a> a potvrdzuješ, že máš aspoň 18 rokov.</p>';
 function make(where, gate) {
   const w = document.createElement('div'); w.className = 'gs-wrap'; w.dataset.gs = where;
-  w.innerHTML = `<div class="gs-or">${T('alebo')}</div><button type="button" class="gs-btn">${G}<span>${T('Pokračovať cez Google')}</span></button><p class="gs-err" role="alert" hidden></p>${where === 'login' ? '<p class="gs-legal">Pokračovaním súhlasíš s <a href="podmienky.html" target="_blank" rel="noopener">Podmienkami používania</a> a <a href="zasady.html" target="_blank" rel="noopener">Zásadami ochrany súkromia</a> a potvrdzuješ, že máš aspoň 18 rokov.</p>' : ''}`;
+  const btnHtml = `<button type="button" class="gs-btn">${G}<span>${T('Pokračovať cez Google')}</span></button><p class="gs-err" role="alert" hidden></p>`;
+  // prihlásenie: Google je hore (jedno ťuknutie, bez hesla), e-mail pod ním
+  w.innerHTML = where === 'login' ? `${btnHtml}<div class="gs-or">${T('alebo e-mailom')}</div>` : `<div class="gs-or">${T('alebo')}</div>${btnHtml}`;
   const btn = w.querySelector('button'), err = w.querySelector('.gs-err');
   btn.onclick = () => start(btn, err, where, gate);
   return w;
@@ -43,7 +49,11 @@ function make(where, gate) {
 
 function scan() {
   const f = document.querySelector('#authf');
-  if (f && !document.querySelector('[data-gs=login]')) f.after(make('login'));
+  if (f && !document.querySelector('[data-gs=login]')) {
+    const seg = f.previousElementSibling?.classList.contains('seg') ? f.previousElementSibling : f;
+    seg.before(make('login'));
+    f.insertAdjacentHTML('afterend', LEGAL);
+  }
   const a = document.querySelector('#fnqAcc');
   if (a && !document.querySelector('[data-gs=quiz]')) {
     a.after(make('quiz', () => (a.querySelector('[name=ok]')?.checked ? '' : T('Potvrď, že máš aspoň 18 rokov a súhlasíš s podmienkami.'))));
