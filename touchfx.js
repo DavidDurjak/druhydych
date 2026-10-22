@@ -83,10 +83,15 @@ export function waterSound(ml) {
     }
     plink(c, out, t + len + 0.1, ml >= 500 ? 1568 : ml >= 250 ? 1760 : 1976);
     if (navigator.vibrate) navigator.vibrate(12);
+    clearTimeout(closeT); closeT = setTimeout(release, (len + 1.6) * 1000);
   } catch (_) { /* bez zvuku */ }
 }
-// iPhone povolí zvuk až po prvom dotyku: zvukový kanál pripravíme hneď pri prvom ťuknutí kdekoľvek
-addEventListener('touchend', () => audio(), { once: true, capture: true, passive: true });
+// Zvukový kanál je otvorený len počas zvuku: 2,5 s po poslednom zvuku a pri odchode z appky sa zavrie.
+// Otvorený zvukový kanál v appke z plochy na iPhone vie spôsobiť čiernu obrazovku po návrate do appky.
+let closeT = 0;
+function release() { clearTimeout(closeT); const c = ac; ac = null; if (c) c.close().catch(() => { }); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') release(); });
+addEventListener('pagehide', release);
 // Pitný režim na Dnes (+150, +250, +500) aj Voda v plusovom menu (+250, +500)
 document.addEventListener('click', e => {
   const b = e.target.closest?.('#wx [data-wx], [data-qa^="w:"]');
@@ -126,8 +131,6 @@ function repaint() {
   requestAnimationFrame(() => {
     const y = window.scrollY;
     window.scrollTo(0, y + 1); window.scrollTo(0, y);
-    const app = document.getElementById('app');
-    if (app) { app.style.opacity = '0.999'; requestAnimationFrame(() => { app.style.opacity = ''; }); }
   });
 }
 const kick = () => { repaint(); setTimeout(repaint, 350); setTimeout(repaint, 1200); };
