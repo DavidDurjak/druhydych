@@ -4,6 +4,8 @@
 // 2) Krížik na zavretie každého spodného okna (sheet), ktoré ho nemá. Napr. Hotový jedálniček sa inak nedal zavrieť.
 // 3) Na obrazovke Nastav si štart je šípka Späť vedľa loga, neprekrýva nadpis.
 // 4) Dlaždica Hotový jedálniček v Profile a karta Nákupný zoznam omylom otvárali Karty do zahraničia; teraz otvoria výber jedálničku.
+// 5) iPhone niekedy po otvorení appky z plochy nevykreslí obrazovku (čierna, kým sa nedotkneš). Appka si ju sama prekreslí:
+//    po spustení, po návrate z pozadia a po načítaní obrazovky, rovnako ako keby si sa jej dotkol.
 const CSS = `
 .sx-close{position:sticky;top:0;float:right;z-index:3;width:36px;height:36px;margin:-6px -4px 4px 10px;border-radius:50%;border:1px solid var(--line);
   background:var(--bg-2);color:var(--text);font:inherit;font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer;-webkit-appearance:none;appearance:none;box-shadow:0 4px 14px rgba(0,0,0,.25)}
@@ -11,9 +13,8 @@ const CSS = `
 /* Nastav si štart (úprava údajov): šípka Späť v riadku s logom, nie cez nadpis */
 #app .screen.bk:has(#onb) > .bk-b{top:calc(env(safe-area-inset-top) + 14px)}
 #app .screen.bk:has(#onb) > .brand{margin-left:52px;min-height:24px;display:flex;align-items:center}
-/* menej vrstiev na vykreslenie pre iPhone: bez nekonečných animácií na karte Spánok, Denník bez posúvania pri otvorení */
-.sp-moon,.sp-stars i{animation:none!important}.sp-stars i{opacity:.5}
-.dn{animation:none!important;-webkit-overflow-scrolling:auto!important}
+/* karta Spánok vykresľuje svoje animácie sama v sebe (iPhone nemusí kvôli nim prekresľovať zvyšok obrazovky) */
+.sp{contain:paint;isolation:isolate}
 `;
 if (!document.getElementById('sx-css')) { const s = document.createElement('style'); s.id = 'sx-css'; s.textContent = CSS; document.head.appendChild(s); }
 
@@ -84,6 +85,8 @@ export function waterSound(ml) {
     if (navigator.vibrate) navigator.vibrate(12);
   } catch (_) { /* bez zvuku */ }
 }
+// iPhone povolí zvuk až po prvom dotyku: zvukový kanál pripravíme hneď pri prvom ťuknutí kdekoľvek
+addEventListener('touchend', () => audio(), { once: true, capture: true, passive: true });
 // Pitný režim na Dnes (+150, +250, +500) aj Voda v plusovom menu (+250, +500)
 document.addEventListener('click', e => {
   const b = e.target.closest?.('#wx [data-wx], [data-qa^="w:"]');
@@ -117,3 +120,21 @@ document.addEventListener('click', e => {
   e.preventDefault(); e.stopImmediatePropagation();
   import('./meals.js').then(m => m.openPlans()).catch(() => { });
 }, true);
+
+// ---------- prekreslenie obrazovky (iPhone: čierna obrazovka, kým sa nedotkneš) ----------
+function repaint() {
+  requestAnimationFrame(() => {
+    const y = window.scrollY;
+    window.scrollTo(0, y + 1); window.scrollTo(0, y);
+    const app = document.getElementById('app');
+    if (app) { app.style.opacity = '0.999'; requestAnimationFrame(() => { app.style.opacity = ''; }); }
+  });
+}
+const kick = () => { repaint(); setTimeout(repaint, 350); setTimeout(repaint, 1200); };
+addEventListener('pageshow', kick);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') kick(); });
+addEventListener('load', kick);
+// keď appka dokončí načítanie obrazovky (zmizne fw-loading), prekreslí sa ešte raz
+new MutationObserver(ms => { for (const m of ms) if (m.oldValue && /fw-loading/.test(m.oldValue) && !document.documentElement.classList.contains('fw-loading')) { repaint(); break; } })
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+kick();
