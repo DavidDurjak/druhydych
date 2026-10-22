@@ -11,6 +11,9 @@ const CSS = `
 /* Nastav si štart (úprava údajov): šípka Späť v riadku s logom, nie cez nadpis */
 #app .screen.bk:has(#onb) > .bk-b{top:calc(env(safe-area-inset-top) + 14px)}
 #app .screen.bk:has(#onb) > .brand{margin-left:52px;min-height:24px;display:flex;align-items:center}
+/* menej vrstiev na vykreslenie pre iPhone: bez nekonečných animácií na karte Spánok, Denník bez posúvania pri otvorení */
+.sp-moon,.sp-stars i{animation:none!important}.sp-stars i{opacity:.5}
+.dn{animation:none!important;-webkit-overflow-scrolling:auto!important}
 `;
 if (!document.getElementById('sx-css')) { const s = document.createElement('style'); s.id = 'sx-css'; s.textContent = CSS; document.head.appendChild(s); }
 
