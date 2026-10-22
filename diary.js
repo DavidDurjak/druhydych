@@ -2,6 +2,7 @@
 // Hore týždeň (bodka = ako sedeli kalórie), rovnica Cieľ − Jedlo = Zostáva, makrá, potom jedlá po častiach dňa
 // s časom zápisu (ťuk = úprava, + = pridať do tej časti), voda, spánok, tréning a poznámka dňa.
 // Starší deň sa dá jedným ťuknutím skopírovať na dnešok.
+// Hlavný prvok má triedu gt-diary (nie dn: tú už v appke používa šípka poklesu váhy).
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
@@ -15,7 +16,7 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 const hm = iso => { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
 const CSS = `
-.dn{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;animation:dnIn .22s cubic-bezier(.2,.9,.3,1)}
+.gt-diary{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;animation:dnIn .22s cubic-bezier(.2,.9,.3,1)}
 @keyframes dnIn{from{opacity:0;transform:translateY(24px)}}
 .dn-in{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 40px)}
 .dn-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -58,8 +59,8 @@ const CSS = `
 .dn-copy{width:100%;margin-top:16px}
 .dn-none{text-align:center;padding:26px 10px;color:var(--muted);font-size:14px}
 .dn-none b{display:block;font-size:30px;margin-bottom:6px}
-body:has(.dn) .sheet-bg{z-index:50}
-body:has(.dn) .qa-fab,body:has(.dn) .bd-fab,body:has(.dn) .nav{display:none!important}
+body:has(.gt-diary) .sheet-bg{z-index:50}
+body:has(.gt-diary) .qa-fab,body:has(.gt-diary) .bd-fab,body:has(.gt-diary) .nav{display:none!important}
 `;
 if (!document.getElementById('dn-css')) { const s = document.createElement('style'); s.id = 'dn-css'; s.textContent = CSS; document.head.appendChild(s); }
 
@@ -176,7 +177,7 @@ function close() {
 export function openDiary(d) {
   const uid = ctx.state?.profile?.id; if (!uid) return;
   el?.remove();
-  el = document.createElement('div'); el.className = 'dn'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Denník');
+  el = document.createElement('div'); el.className = 'gt-diary'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Denník');
   el.innerHTML = '<div class="dn-in"><div class="spinner" style="margin:120px auto"></div></div>';
   document.body.appendChild(el);
   show(uid, d || ctx.state.date || calc.today());
