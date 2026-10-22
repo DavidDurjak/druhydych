@@ -2,6 +2,8 @@
 // na ktorej svietia svaly z dnešného tréningu: čím viac sérií, tým jasnejšie. Tri štýly:
 // 'dark' (hotová karta), 'foto' (tvoja fotka v pozadí), 'clear' (priehľadné PNG ako nálepka do story).
 import { VB, BB, BORDER, PARTS } from './bodymap.js';
+import { drawLogo, logoImg } from './brandmark.js';
+const LOGO = await logoImg('#fff'); // karta sa otvára až po načítaní loga
 
 export const W = 1080, H = 1920;
 const FONT = (w, s) => `${w} ${s}px Sora, "SF Pro Display", system-ui, -apple-system, "Segoe UI", sans-serif`;
@@ -84,11 +86,6 @@ export function bodies(c, sex, load, x, y, w, h, opt = {}) {
 const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
 function fitFont(c, text, weight, size, min, maxW) { let s = size; c.font = FONT(weight, s); while (c.measureText(text).width > maxW && s > min) { s -= 4; c.font = FONT(weight, s); } return s; }
 function ell(c, text, maxW) { if (c.measureText(text).width <= maxW) return text; let t = text; while (t.length > 3 && c.measureText(t + '…').width > maxW) t = t.slice(0, -1); return t.trimEnd() + '…'; }
-function logo(c, x, y, size, color) {
-  c.save(); c.translate(x, y - size * .82); const k = size / 22; c.scale(k, k);
-  const p = new Path2D(FLAME); c.fillStyle = color; c.fill(p); c.restore();
-  c.font = FONT(800, size); c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText('Fuelwind', x + size * 1.02, y);
-}
 let grain = null;
 function noise(c) {
   if (!grain) {
@@ -128,7 +125,7 @@ export function drawCard(d, mode = 'dark', photo = null, T = s => s) {
   const L = 84, R = W - 84;
   sh(true);
   // hlavička: logo a dátum
-  logo(c, L, 150, 46, MINT);
+  drawLogo(c, L, 150, 46, '#fff', LOGO);
   c.textAlign = 'right'; c.font = FONT(600, 32); c.fillStyle = 'rgba(255,255,255,.62)'; c.fillText(d.dateLabel, R, 148);
   // názov tréningu
   c.textAlign = 'left'; c.fillStyle = '#fff';

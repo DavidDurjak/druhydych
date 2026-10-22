@@ -1,11 +1,12 @@
-// Kartička týždňa na zdieľanie: z obrazovky Týždenný report vyrobí peknú fotku (4:5) so skóre, sériou čísel a značkou Fuelwind.
+// Kartička týždňa na zdieľanie: z obrazovky Týždenný report vyrobí peknú fotku (4:5) so skóre, sériou čísel a značkou GainTrain.
 // Pošle sa cez zdieľanie systému (Instagram, WhatsApp, správy) alebo sa uloží ako obrázok.
 import { ctx } from './app.js';
+import { drawLogo, logoImg } from './brandmark.js';
+let LOGO = null; logoImg('#F4F7FA').then(i => { LOGO = i; });
 
 const W = 1080, H = 1350;
 const BG = '#0B0E12', MINT = '#7CFFB2', TEAL = '#3FD5C4', INK = '#F4F7FA', MUTED = '#8C97A6';
 const FONT = (w, s) => `${w} ${s}px Sora, "SF Pro Display", system-ui, -apple-system, "Segoe UI", sans-serif`;
-const FLAME = 'M13.4 2.6c.3 2.6 2.1 3.9 3.5 5.9 1.5 2.1 2.1 4.2 1.6 6.4-.7 3.1-3.4 5.2-6.5 5.2-3.3 0-5.9-2.4-5.9-5.6 0-2 .9-3.5 2.2-4.8.2 1.1.8 1.9 1.7 2.3-.4-2.9.5-5.9 3.4-11.4z';
 
 const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
 
@@ -22,12 +23,9 @@ export function draw(d) {
     c.strokeStyle = `rgba(124,255,178,${a})`; c.lineWidth = 5; c.beginPath(); c.moveTo(x, y); c.lineTo(x + l, y); c.stroke();
   });
 
-  // hlavička: plameň, názov, obdobie
-  c.save(); c.translate(72, 74); c.scale(3.2, 3.2);
-  c.fillStyle = 'rgba(124,255,178,.2)'; c.strokeStyle = MINT; c.lineWidth = 1.9; c.lineJoin = 'round';
-  const p = new Path2D(FLAME); c.fill(p); c.stroke(p); c.restore();
-  c.fillStyle = INK; c.font = FONT(800, 46); c.textBaseline = 'alphabetic'; c.textAlign = 'left';
-  c.fillText('Fuelwind', 160, 120);
+  // hlavička: logo GainTrain so sušienkou, obdobie
+  drawLogo(c, 72, 120, 46, INK, LOGO);
+  c.textBaseline = 'alphabetic';
   c.fillStyle = MUTED; c.font = FONT(500, 30); c.textAlign = 'right';
   c.fillText(d.period, W - 72, 118);
 
