@@ -13,3 +13,4 @@ import './supers.js';
 import './recipeimport.js';
 import('./a11y.js').catch(() => { });
 import('./googlesignin.js').catch(() => { });
+import('./logoutfix.js').catch(() => { });
