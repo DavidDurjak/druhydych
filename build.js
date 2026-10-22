@@ -68,9 +68,25 @@ fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT);
 for (const f of fs.readdirSync('.')) {
   if (SKIP.has(f) || f.startsWith('.') || !fs.statSync(f).isFile()) continue;
-  fs.copyFileSync(f, `${OUT}/${f}`);
+  // GainTrain: starý názov Fuelwind sa pri nasadení prepíše vo všetkých textoch appky.
+  // Výnimky: health.js (Skratka v iPhone sa stále volá Fuelwind) a rebrand.js (ten sám prepisuje starý názov).
+  if (/\.(js|html|json|css)$/.test(f) && !['health.js', 'rebrand.js'].includes(f)) {
+    let s = fs.readFileSync(f, 'utf8');
+    s = s.split('vo Fuelwind').join('v GainTrain').split('Vo Fuelwind').join('V GainTrain').split('Fuelwind').join('GainTrain').split('FUELWIND').join('GAINTRAIN').split('href="icon.svg"').join('href="icon.svg?v=3"');
+    fs.writeFileSync(`${OUT}/${f}`, s);
+  } else fs.copyFileSync(f, `${OUT}/${f}`);
 }
 for (const n of [192, 512]) fs.writeFileSync(`${OUT}/icon-${n}.png`, png(n));
+// Nová ikona (sušienka) z funkcie app-icon prepíše staré súbory ikon. Keď sa nepodarí stiahnuť, ostanú staré a nasadenie pokračuje.
+const ICON = 'https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon';
+const iconJob = Promise.all([['icon.svg', '?svg=1&v=3'], ['icon-maskable.svg', '?svg=1&maskable=1&v=3'], ['icon-192.png', '?size=192&v=3'], ['icon-512.png', '?size=512&v=3']].map(async ([file, q]) => {
+  try {
+    const r = await fetch(ICON + q);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    fs.writeFileSync(`${OUT}/${file}`, Buffer.from(await r.arrayBuffer()));
+    console.log('ikona ok:', file);
+  } catch (e) { console.warn('ikona preskočená:', file, e.message); }
+}));
 // Supabase knižnica ako jeden ES modul z našej domény (rýchly štart, offline cache). Keď sa niečo nepodarí,
 // appka si ju sama stiahne z CDN (data.js), takže nasadenie nikdy nespadne kvôli tomuto kroku.
 try {
@@ -80,4 +96,4 @@ try {
   fs.writeFileSync(`${OUT}/vendor/supabase.mjs`, umd + '\nexport const createClient = supabase.createClient;\nexport default supabase;\n');
   console.log('vendor ok: supabase-js', require('@supabase/supabase-js/package.json').version);
 } catch (e) { console.warn('vendor preskočené:', e.message); }
-console.log('build ok:', fs.readdirSync(OUT).join(', '));
+iconJob.then(() => console.log('build ok:', fs.readdirSync(OUT).join(', ')));

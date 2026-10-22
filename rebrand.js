@@ -55,13 +55,15 @@ function head() {
   document.querySelectorAll('img[src="icon.svg"]').forEach(i => { i.src = ICON + '?size=192&v=3'; });
 }
 
+// návod na Skratku pre Zdravie: Skratka v iPhone sa stále volá Fuelwind, tam názov nemeníme
+const keep = n => /Skratk|krokov/.test(n.parentElement?.closest('p,a,li')?.textContent || '');
 function fixText(root) {
   if (!root) return;
-  if (root.nodeType === 3) { if (root.nodeValue.includes(OLD)) root.nodeValue = fix(root.nodeValue); return; }
+  if (root.nodeType === 3) { if (root.nodeValue.includes(OLD) && !keep(root)) root.nodeValue = fix(root.nodeValue); return; }
   if (root.nodeType !== 1 || root.closest?.('input,textarea,[contenteditable]')) return;
   if (!(root.textContent || '').includes(OLD)) return;
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let n; while ((n = w.nextNode())) if (n.nodeValue.includes(OLD)) n.nodeValue = fix(n.nodeValue);
+  let n; while ((n = w.nextNode())) if (n.nodeValue.includes(OLD) && !keep(n)) n.nodeValue = fix(n.nodeValue);
 }
 
 let uid = 0;
