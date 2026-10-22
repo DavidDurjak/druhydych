@@ -1,6 +1,6 @@
 // Poistka odhlásenia: ak odhlásenie zlyhá na slabom signáli, prihlásenie by v telefóne ostalo uložené a appka by po otvorení znova bežala prihlásená.
 // Po ťuknutí na "Odhlásiť sa" počkáme na normálne odhlásenie. Ak po pár sekundách zostane uložené prihlásenie, zmažeme ho a appku načítame znova.
-const KEY = /^sb-.*-auth-token/;
+const KEY = /^sb-.*-auth-token$/;
 
 function left() {
   try { return Object.keys(localStorage).filter(k => KEY.test(k)); } catch (_) { return []; }
