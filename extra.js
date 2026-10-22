@@ -1,11 +1,12 @@
-// Nové moduly (načítava ich searchux.js). Ďalšie funkcie pribudajú sem, aby sa nemuselo meniť starší súbory.
+// Nové moduly (načítava ich searchux.js). Ďalšie funkcie pribúdajú sem, aby sa nemuselo meniť staršie súbory.
 import './voice.js';
 import './menuscan.js';
 import './funnel.js';
 import './langsync.js';
 import './track.js';
 import './liftpro.js';
-import './afterlog.js';
+// afterlog vypnuty na prianie Davida (veta po zapise jedla sa nezobrazuje); subor afterlog.js ostava, staci vratit import
+// import './afterlog.js';
 import './quickkcal.js';
 import './coachmem.js';
 import './underfed.js';
