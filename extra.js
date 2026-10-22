@@ -19,3 +19,4 @@ import('./rebrand.js').catch(() => { });
 import('./onebar.js').catch(() => { });
 import('./sleep.js').catch(() => { });
 import('./touchfx.js').catch(() => { });
+import('./diary.js').catch(() => { });

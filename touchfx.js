@@ -1,5 +1,5 @@
 // Drobnosti, ktoré robia appku príjemnejšou:
-// 1) Zvuk vody pri pridaní pohára (+150, +250, +500 v Pitnom režime): bublinky a šplechnutie, čím viac vody, tým dlhšie.
+// 1) Zvuk vody pri pridaní pohára (Pitný režim aj Voda v plusovom menu): kvapka, tečenie s bublinkami, ktoré stúpajú, ako sa pohár plní, a cinknutie.
 //    Zvuk sa vytvára v telefóne (Web Audio), nič sa nesťahuje. Keď má človek zapnutý tichý režim, telefón ho stíši ako každá appka.
 // 2) Krížik na zavretie každého spodného okna (sheet), ktoré ho nemá. Napr. Hotový jedálniček sa inak nedal zavrieť.
 // 3) Na obrazovke Nastav si štart je šípka Späť vedľa loga, neprekrýva nadpis.
@@ -23,44 +23,71 @@ function audio() {
   return ac;
 }
 // jedna bublinka: krátky tón, ktorý rýchlo stúpa (typické „blub“)
-function bubble(c, t, f, vol) {
+function bubble(c, out, t, f, vol, len = 0.11) {
   const o = c.createOscillator(), g = c.createGain();
   o.type = 'sine';
   o.frequency.setValueAtTime(f, t);
-  o.frequency.exponentialRampToValueAtTime(f * 2.6, t + 0.07);
+  o.frequency.exponentialRampToValueAtTime(f * 2.4, t + len * 0.65);
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
-  o.connect(g).connect(c.destination);
-  o.start(t); o.stop(t + 0.13);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(g).connect(out);
+  o.start(t); o.stop(t + len + 0.02);
 }
-// jemný šum tečúcej vody pod bublinkami
-function pour(c, t, len) {
-  const n = Math.floor(c.sampleRate * len), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
-  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+// tečúca voda: šum, ktorého tón stúpa, ako sa pohár plní
+function pour(c, out, t, len) {
+  const n = Math.floor(c.sampleRate * (len + 0.1)), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < n; i++) { last = last * 0.55 + (Math.random() * 2 - 1) * 0.45; d[i] = last; }
   const src = c.createBufferSource(); src.buffer = buf;
-  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(900, t); bp.frequency.linearRampToValueAtTime(1500, t + len); bp.Q.value = 0.9;
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
+  bp.frequency.setValueAtTime(520, t); bp.frequency.exponentialRampToValueAtTime(2300, t + len);
   const g = c.createGain();
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.05, t + 0.05);
-  g.gain.setValueAtTime(0.05, t + len * 0.7);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-  src.connect(bp).connect(g).connect(c.destination);
-  src.start(t); src.stop(t + len + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.22, t + 0.06);
+  g.gain.setValueAtTime(0.22, t + len * 0.75);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.08);
+  src.connect(bp).connect(g).connect(out);
+  src.start(t); src.stop(t + len + 0.1);
+}
+// cinknutie pohára na konci: tri čisté tóny, ktoré doznievajú
+function plink(c, out, t, root) {
+  [[1, 0.16], [2.01, 0.07], [3.02, 0.035]].forEach(([k, v]) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(root * k, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    o.connect(g).connect(out); o.start(t); o.stop(t + 0.75);
+  });
 }
 export function waterSound(ml) {
   try {
     const c = audio(); if (!c) return;
-    const t = c.currentTime + 0.01;
-    const count = ml >= 500 ? 7 : ml >= 250 ? 4 : 2, len = 0.18 + count * 0.075;
-    pour(c, t, len);
-    for (let i = 0; i < count; i++) bubble(c, t + i * 0.075 + Math.random() * 0.03, 260 + Math.random() * 260 + i * 25, 0.16);
+    const t = c.currentTime + 0.02;
+    const out = c.createGain(); out.gain.value = 1;
+    const comp = c.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 4;
+    out.connect(comp).connect(c.destination);
+    const len = ml >= 500 ? 0.95 : ml >= 250 ? 0.65 : 0.42;
+    // prvá veľká kvapka, potom tečenie s bublinkami, ktoré stúpajú, a nakoniec cinknutie
+    bubble(c, out, t, 170, 0.32, 0.16);
+    pour(c, out, t + 0.05, len);
+    const n = Math.round(len / 0.065);
+    for (let i = 0; i < n; i++) {
+      const k = i / n;
+      bubble(c, out, t + 0.06 + k * len + Math.random() * 0.02, 260 + k * 520 + Math.random() * 90, 0.09 + Math.random() * 0.07);
+    }
+    plink(c, out, t + len + 0.1, ml >= 500 ? 1568 : ml >= 250 ? 1760 : 1976);
     if (navigator.vibrate) navigator.vibrate(12);
   } catch (_) { /* bez zvuku */ }
 }
+// iPhone povolí zvuk až po prvom dotyku: zvukový kanál pripravíme hneď pri prvom ťuknutí kdekoľvek
+addEventListener('touchend', () => audio(), { once: true, capture: true, passive: true });
+// Pitný režim na Dnes (+150, +250, +500) aj Voda v plusovom menu (+250, +500)
 document.addEventListener('click', e => {
-  const b = e.target.closest?.('#wx [data-wx]');
-  if (b) waterSound(Number(b.dataset.wx) || 250);
+  const b = e.target.closest?.('#wx [data-wx], [data-qa^="w:"]');
+  if (!b) return;
+  waterSound(Number(b.dataset.wx || String(b.dataset.qa).split(':')[1]) || 250);
 }, true);
 
 // ---------- krížik na zavretie okien ----------
