@@ -1,6 +1,6 @@
-// Čo uvarím z chladničky: odfotíš chladničku (aj mrazák a špajzu, max 3 fotky), AI nájde suroviny, ty ich jedným ťuknutím opravíš
+// Čo uvarím z chladničky: odfotíš chladničku (aj mrazák a špajzu, max 3 fotky), AI nájde suroviny, ty ich jedným ťukom opravíš
 // a dostaneš recepty presne na svoj cieľ a na to, čo ti dnes ešte zostáva (porcia je prepočítaná na tvoje kalórie).
-// Recept zapíšeš jedným ťuknutím, naplánuješ na zajtra, chýbajúce suroviny pošleš do nákupného zoznamu a obľúbené si uložíš.
+// Recept zapíšeš jedným ťukom, naplánuješ na zajtra, chýbajúce suroviny pošleš do nákupného zoznamu a obľúbené si uložíš.
 // Navyše: čo treba minúť skôr (recepty ich použijú prednostne), čo mám doma vždy (soľ, olej, ryža...), tip čo dokúpiť pre cieľ.
 // Vstupy: karta na obrazovke Jedlo, riadok v plusovom menu, odkaz #/chladnicka. Fotky sa nikam neukladajú.
 import * as db from './data.js';
@@ -204,7 +204,7 @@ const ls = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { } },
 };
 const K_STAPLES = 'fw_frg_staples', K_LAST = 'fw_frg_last', K_SAVED = 'fw_frg_saved', K_OPTS = 'fw_frg_opts';
-const STAPLES = ['soľ', 'korenie', 'olej', 'cesnak', 'cibuľa', 'ryža', 'cestoviny', 'múkа'.replace('а', 'a'), 'ovsené vločky', 'med', 'sójová omáčka', 'paradajkový pretlak', 'strukoviny v konzerve', 'koreniny a bylinky'];
+const STAPLES = ['soľ', 'korenie', 'olej', 'cesnak', 'cibuľa', 'ryža', 'cestoviny', 'múka', 'ovsené vločky', 'med', 'sójová omáčka', 'paradajkový pretlak', 'strukoviny v konzerve', 'koreniny a bylinky'];
 const STAPLES_ON = ['soľ', 'korenie', 'olej'];
 const CATS = [['protein', '🥩', 'Mäso, ryby a vajcia'], ['dairy', '🥛', 'Mliečne'], ['veg', '🥬', 'Zelenina'], ['fruit', '🍎', 'Ovocie'], ['carb', '🍞', 'Prílohy a pečivo'], ['fat', '🥑', 'Tuky a orechy'], ['sauce', '🫙', 'Omáčky a dochucovadlá'], ['snack', '🍫', 'Sladké a slané'], ['drink', '🧃', 'Nápoje'], ['other', '🛒', 'Ostatné']];
 const MEALS = [['breakfast', 'Raňajky'], ['lunch', 'Obed'], ['dinner', 'Večera'], ['snack', 'Snack']];
@@ -368,7 +368,7 @@ async function detect() {
     stop();
     if (!root) return;
     if (!res.items?.length) return fail('Na fotke som nenašiel jedlo', res.note || 'Skús to odfotiť znova, s otvorenými dverami a zapnutým svetlom. Alebo suroviny napíš sám.', vStart, true);
-    // nápoje (voda, džÃºsy) sú predvolene vypnuté, do receptov sa väčšinou nehodia
+    // nápoje (voda, džúsy) sú predvolene vypnuté, do receptov sa väčšinou nehodia
     S.items = res.items.map(i => ({ ...i, name: cap(i.name), on: i.cat !== 'drink', first: false }));
     S.shop = res.shop || [];
     ls.set(K_LAST, { at: Date.now(), items: res.items.map(i => ({ ...i, name: cap(i.name) })), shop: S.shop });
@@ -396,7 +396,7 @@ function vItems(fromScan) {
   const o = S.opts;
   W(`${topbar('Suroviny', vStart)}
     <h2>${S.items.length ? `Našiel som ${S.items.length} ${S.items.length === 1 ? 'surovinu' : S.items.length < 5 ? 'suroviny' : 'surovín'}` : 'Čo máš doma?'}</h2>
-    <p class="frg-lead" style="margin-bottom:12px">${S.items.length ? 'Ťukni na to, čo už nemáš. Chýba niečo? Dopíš to dole.' : 'Napíš suroviny, ktoré máš v chladničke, a ja vymýšľam recepty.'}</p>
+    <p class="frg-lead" style="margin-bottom:12px">${S.items.length ? 'Ťukni na to, čo už nemáš. Chýba niečo? Dopíš to dole.' : 'Napíš suroviny, ktoré máš v chladničke, a ja vymyslím recepty.'}</p>
     ${S.items.length ? `<div class="frg-mode"><button data-m="edit" class="${S.mode === 'edit' ? 'on' : ''}">Upraviť zoznam</button><button data-m="first" class="${S.mode === 'first' ? 'on' : ''}">⏳ Treba minúť</button></div>
       <p class="frg-hint">${S.mode === 'first' ? 'Ťukni na to, čo sa čoskoro pokazí. Recepty to použijú ako prvé.' : nLow ? `Pri ${nLow} ${nLow === 1 ? 'veci' : 'veciach'} (prerušovaný okraj a ?) si nie som istý, čo to je alebo koľko toho je. Ak to nesedí, ťukni a vyraď to, správnu surovinu dopíš dole.` : ''}</p>` : ''}
     ${groups.map(g => `<div class="frg-g">${g.ic} ${g.lbl}</div><div class="frg-chips">${g.items.map(x => chip(x, k++)).join('')}</div>`).join('')}
@@ -412,7 +412,7 @@ function vItems(fromScan) {
     <div class="frg-sec">Pre koľkých</div>
     <div class="frg-seg" data-g="servings">${[[1, 'Len pre mňa'], [2, '2 porcie'], [4, '4 porcie']].map(([v, l]) => `<button data-v="${v}" class="${o.servings === v ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div class="frg-sec">Na čo máš chuť (nepovinné)</div>
-    <input class="frg-in" id="frgWish" style="width:100%" maxlength="80" placeholder="napr. niečo pikantné, ázijské, bez rúrы".replace('ы', 'y') value="${h(o.wish || '')}">`,
+    <input class="frg-in" id="frgWish" style="width:100%" maxlength="80" placeholder="napr. niečo pikantné, ázijské, bez rúry" value="${h(o.wish || '')}">`,
     `<div class="frg-foot"><button class="frg-btn" data-recipes ${on.length ? '' : 'disabled'}>${on.length ? 'Navrhnúť recepty' : 'Pridaj aspoň jednu surovinu'}</button></div>`);
   bindTop(vStart);
   const keepY = fn => () => { const y = root.scrollTop; fn(); root.scrollTop = y; };
@@ -451,3 +451,207 @@ function vItems(fromScan) {
   root.querySelector('#frgWish').oninput = e => { S.opts.wish = e.target.value; rePre(); };
   root.querySelector('[data-recipes]').onclick = () => { S.seen = []; recipes(); };
 }
+
+// ---------- 4) recepty ----------
+const COOK_TXT = [['Vymýšľam recepty…', 'Z toho, čo máš doma'], ['Rátam makrá…', 'Surovinu po surovine'], ['Prepočítavam porcie…', 'Presne na tvoj cieľ'], ['Vyberám to najlepšie…', 'Podľa toho, čo ti dnes zostáva']];
+// požiadavka na recepty z aktuálneho stavu (rovnaká pre predpočítanie aj pre ťuknutie na tlačidlo)
+async function recipeReq() {
+  const { minutes, servings, wish, meal } = S.opts;
+  const b = await budget(meal);
+  const on = S.items.filter(i => i.on);
+  const body = {
+    mode: 'recipes', items: on.map(i => ({ name: i.name, qty: i.qty })), staples: staples(), useFirst: on.filter(i => i.first).map(i => i.name),
+    meal: { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', snack: 'snack' }[meal], minutes, servings, kcal: b.kcal, protein: b.protein,
+    diet: dietText(), wish: (wish || '').trim(),
+  };
+  return { b, body, sig: JSON.stringify(body) };
+}
+// recepty sa začnú počítať hneď po nájdení surovín, kým si ich človek prezerá; keď nič nezmení, po ťuknutí sú hotové okamžite
+async function prefetch() {
+  try {
+    const q = await recipeReq();
+    const p = api({ ...q.body, exclude: [] });
+    p.catch(() => { });
+    S.pre = { sig: q.sig, p };
+  } catch (_) { S.pre = null; }
+}
+// po úprave surovín alebo možností sa recepty prepočítajú vopred znova (až keď človek 2 s nič nemení, najviac 3× za sken)
+let preT = 0;
+function rePre() {
+  clearTimeout(preT);
+  if ((S.preN || 0) >= 3) return;
+  preT = setTimeout(async () => {
+    if (!root || S.view !== 'items' || !S.items.some(i => i.on)) return;
+    const q = await recipeReq().catch(() => null);
+    if (!q || S.pre?.sig === q.sig) return;
+    S.preN = (S.preN || 0) + 1; prefetch();
+  }, 2000);
+}
+async function recipes(more) {
+  clearTimeout(preT);
+  const { minutes, servings, wish } = S.opts;
+  ls.set(K_OPTS, { minutes, servings, wish });
+  scanning([], ...COOK_TXT[0]);
+  const stop = cycle(COOK_TXT);
+  try {
+    const q = await recipeReq();
+    S.b = q.b;
+    const pre = !more && S.pre && S.pre.sig === q.sig ? S.pre.p : null;
+    S.pre = null;
+    const res = pre ? await pre.catch(() => api({ ...q.body, exclude: S.seen })) : await api({ ...q.body, exclude: S.seen });
+    track('frg_pre', { hit: !!pre });
+    stop();
+    if (!root) return;
+    S.recipes = rank(res.recipes || []);
+    S.seen = [...new Set([...S.seen, ...S.recipes.map(r => r.name)])].slice(-12);
+    track('frg_recipes', { n: S.recipes.length, more: !!more, via: res.via || '' });
+    vResults();
+  } catch (e) { stop(); if (root) fail('Recepty sa nepodarilo vymyslieť', e.message, () => recipes(more)); }
+}
+// poradie počíta appka: kalórie blízko cieľa porcie, bielkoviny, nič nechýba, použije čo treba minúť
+function rank(list) {
+  const b = S.b, first = new Set(S.items.filter(i => i.first).map(i => key(i.name)));
+  list.forEach(r => {
+    const d = Math.abs(r.per.kcal - b.kcal) / b.kcal;
+    const kS = Math.max(0, 1 - d * 2.2), pS = Math.min(1, r.per.protein / Math.max(1, b.protein));
+    const missS = r.missing.length ? Math.max(0, 1 - r.missing.length * 0.35) : 1;
+    const firstS = first.size ? Math.min(1, r.ingredients.filter(x => first.has(key(x.name)) || [...first].some(f => key(x.name).includes(f))).length / Math.min(2, first.size)) : 0;
+    r.fit = 0.34 * kS + 0.34 * pS + 0.2 * missS + 0.12 * firstS;
+    r.color = r.per.kcal > Math.max(b.left, 0) + 80 && ctx.state?.date === calc.today() ? OVER : r.fit >= 0.7 ? GOOD : MID;
+    r.usesFirst = firstS > 0;
+  });
+  return list.sort((a, z) => z.fit - a.fit);
+}
+function badges(r) {
+  const out = [`<span>⏱ ${r.minutes} min</span>`];
+  out.push(r.missing.length ? `<span class="miss">Chýba: ${h(r.missing.slice(0, 2).join(', '))}${r.missing.length > 2 ? '…' : ''}</span>` : '<span class="ok">✓ Máš všetko</span>');
+  if (r.usesFirst) out.push('<span class="ok">⏳ Minie, čo treba</span>');
+  (r.tags || []).slice(0, 2).forEach(t => TAGS[t] && out.push(`<span>${TAGS[t]}</span>`));
+  return `<div class="frg-bd">${out.join('')}</div>`;
+}
+function vResults() {
+  S.view = 'results';
+  const b = S.b, [best, ...rest] = S.recipes;
+  const mealL = (MEALS.find(m => m[0] === S.opts.meal) || [, 'jedlo'])[1].toLowerCase();
+  const card = (r, i, isBest) => `<button class="frg-rc ${isBest ? 'best' : ''}" data-r="${i}" style="animation-delay:${i * 70}ms">
+    ${isBest ? '<div class="frg-tag">★ Najlepšie na tvoj cieľ</div>' : ''}
+    <div class="frg-rh"><span class="frg-em">${h(r.emoji)}</span><div><h3>${h(r.name)}</h3>${r.desc ? `<p>${h(r.desc)}</p>` : ''}</div></div>
+    <div class="frg-nums"><b>${nf(r.per.kcal)}<small>kcal</small></b><span><i>B ${r0(r.per.protein)} g</i> · S ${r0(r.per.carbs)} · T ${r0(r.per.fat)} g${r.servings > 1 ? ' · na porciu' : ''}</span></div>
+    <div class="frg-fit"><i style="width:${Math.round(Math.max(.08, r.fit) * 100)}%;background:${r.color}"></i></div>
+    ${badges(r)}</button>`;
+  W(`${topbar('Recepty', vItems)}
+    <h2>${S.recipes.length} ${S.recipes.length < 5 ? 'recepty' : 'receptov'} z tvojej chladničky</h2>
+    <div class="frg-bud"><span>Porcia na ${h(mealL)} <b>~${nf(b.kcal)} kcal</b></span><span>bielkoviny <b>${b.protein} g</b></span>${ctx.state?.date === calc.today() ? `<span>dnes ti ostáva <b>${nf(Math.max(0, b.left))} kcal</b></span>` : ''}</div>
+    ${best ? card(best, 0, true) : ''}
+    ${rest.length ? `<div class="frg-sec">Ďalšie možnosti</div>${rest.map((r, i) => card(r, i + 1)).join('')}` : ''}
+    <div class="frg-row"><button class="frg-btn gh" data-more>↻ Iné recepty</button><button class="frg-btn gh" data-edit>Upraviť suroviny</button></div>
+    <p class="frg-note">Porcie sú prepočítané na tvoj cieľ a hodnoty sú zo súčtu surovín. Sú to odhady, po zapísaní ich vieš upraviť ťuknutím na jedlo v Dnes.</p>`);
+  bindTop(vItems);
+  root.querySelectorAll('[data-r]').forEach(el => el.onclick = () => vDetail(S.recipes[Number(el.dataset.r)]));
+  root.querySelector('[data-more]').onclick = () => recipes(true);
+  root.querySelector('[data-edit]').onclick = () => vItems();
+}
+
+// ---------- 5) detail receptu ----------
+function vDetail(r, fromSaved) {
+  const base = r.servings || 1;
+  let sv = base;
+  const savedList = () => ls.get(K_SAVED, []);
+  const isSaved = () => savedList().some(x => key(x.name) === key(r.name));
+  const back = fromSaved ? vStart : vResults;
+  const draw = () => {
+    const k = sv / base;
+    const b = S.b;
+    const after = b && ctx.state?.date === calc.today() ? { kcal: b.left - r.per.kcal, p: b.leftP - r.per.protein } : null;
+    const mealL = (MEALS.find(m => m[0] === S.opts.meal) || [, 'Obed'])[1];
+    const miss = r.ingredients.filter(x => !x.have);
+    W(`${topbar('Recept', back)}
+      <div class="frg-dh"><span class="frg-em">${h(r.emoji)}</span><div><h2>${h(r.name)}</h2><p class="frg-lead" style="margin:2px 0 0;font-size:14px">⏱ ${r.minutes} min${r.desc ? ` · ${h(r.desc)}` : ''}</p></div></div>
+      <div class="frg-mac"><div><b>${nf(r.per.kcal)}</b><small>kcal</small></div><div><b>${r0(r.per.protein)}</b><small>bielkoviny g</small></div><div><b>${r0(r.per.carbs)}</b><small>sacharidy g</small></div><div><b>${r0(r.per.fat)}</b><small>tuky g</small></div></div>
+      ${after ? `<p class="frg-after">${after.kcal >= 0 ? `Po tejto porcii ti dnes ostane <b>${nf(after.kcal)} kcal</b>` : `Táto porcia je o <b>${nf(-after.kcal)} kcal</b> nad tvojím zvyškom na dnes`}${after.p > 0 ? ` a ešte <b>${r0(after.p)} g bielkovín</b>.` : after.kcal >= 0 ? ' a bielkoviny máš na dnes splnené. 💪' : '.'}</p>` : ''}
+      <div class="frg-serv"><span>Porcie</span><div><button data-sv="-1" aria-label="Menej">−</button><b>${sv}</b><button data-sv="1" aria-label="Viac">＋</button></div></div>
+      <div class="frg-sec">Suroviny${sv > 1 ? ` na ${sv} porcie` : ''}</div>
+      <ul class="frg-ing">${r.ingredients.map(x => `<li><i class="${x.have ? 'y' : 'n'}">${x.have ? '✓' : '＋'}</i><span>${h(cap(x.name))}</span><em>${fmtG(x.g * k, x.name)}</em></li>`).join('')}</ul>
+      ${miss.length ? `<button class="frg-btn gh" data-shop style="margin-top:12px">🛒 Chýbajúce do nákupného zoznamu (${miss.length})</button>` : ''}
+      <div class="frg-sec">Postup <span style="font-weight:500">· ťukni na hotový krok</span></div>
+      <ol class="frg-steps">${r.steps.map(s => `<li>${h(s)}</li>`).join('')}</ol>
+      ${r.tip ? `<div class="frg-tipc"><span>💡</span><span>${h(r.tip)}</span></div>` : ''}
+      <div class="frg-row" style="margin-top:16px"><button class="frg-btn gh" data-plan>📅 Na zajtra</button><button class="frg-btn gh" data-save>${isSaved() ? '♥ Uložené' : '♡ Uložiť'}</button></div>
+      <p class="frg-note">Zapíše sa 1 porcia: ${nf(r.per.kcal)} kcal, B ${r0(r.per.protein)} g, S ${r0(r.per.carbs)} g, T ${r0(r.per.fat)} g.</p>`,
+      `<div class="frg-dfoot"><div><button class="frg-btn" data-log>Zapísať do: ${h(mealL)} · ${nf(r.per.kcal)} kcal</button></div></div>`);
+    bindTop(back);
+    root.querySelectorAll('[data-sv]').forEach(bt => bt.onclick = () => { const y = root.scrollTop; sv = Math.max(1, Math.min(8, sv + Number(bt.dataset.sv))); draw(); root.scrollTop = y; });
+    root.querySelectorAll('.frg-steps li').forEach(li => li.onclick = () => li.classList.toggle('done'));
+    root.querySelector('[data-shop]')?.addEventListener('click', e => {
+      addExtras(miss.map(x => ({ name: cap(x.name), g: x.g * k, from: r.name })));
+      e.target.textContent = '✓ Pridané do nákupného zoznamu'; e.target.disabled = true;
+      track('frg_shop', { n: miss.length, src: 'recipe' }); ctx.toast('Pridané do nákupného zoznamu');
+    });
+    root.querySelector('[data-save]').onclick = e => {
+      const list = savedList(), i = list.findIndex(x => key(x.name) === key(r.name));
+      if (i >= 0) list.splice(i, 1); else { list.unshift({ ...r, fit: undefined, color: undefined }); track('frg_save'); }
+      ls.set(K_SAVED, list.slice(0, 30)); e.target.textContent = i >= 0 ? '♡ Uložiť' : '♥ Uložené';
+    };
+    root.querySelector('[data-log]').onclick = () => logIt(r, ctx.state?.date || calc.today(), S.opts.meal, root.querySelector('[data-log]'));
+    root.querySelector('[data-plan]').onclick = () => logIt(r, calc.addDays(calc.today(), 1), S.opts.meal, root.querySelector('[data-plan]'), true);
+  };
+  draw();
+}
+const fmtG = (g, name) => {
+  const liq = /mlieko|smotan|vod|olej|jogurt|kefir|vývar|vyvar|omáčk|omack|víno|vino/i.test(name || '');
+  const v = g >= 100 ? Math.round(g / 5) * 5 : Math.round(g);
+  return v >= 1000 ? (Math.round(v / 100) / 10).toString().replace('.', ',') + (liq ? ' l' : ' kg') : v + (liq ? ' ml' : ' g');
+};
+// zapíše 1 porciu ako jedno jedlo (v denníku ako jeden riadok s názvom receptu); na zajtra pošle chýbajúce suroviny aj do nákupu
+async function logIt(r, date, meal, btn, plan) {
+  const old = btn.textContent; btn.disabled = true; btn.textContent = 'Zapisujem…';
+  try {
+    await db.addFood({ user_id: ctx.state.profile.id, date, meal, name: r.name, brand: null, grams: r.per.g || 300,
+      kcal: r.per.kcal, protein: r.per.protein, carbs: r.per.carbs, fat: r.per.fat, source: 'fridge', barcode: null, food_id: null, portion: null, qty: null });
+    if (plan) {
+      const miss = r.ingredients.filter(x => !x.have);
+      if (miss.length) addExtras(miss.map(x => ({ name: cap(x.name), g: x.g, from: r.name })));
+      track('frg_plan', { miss: miss.length });
+      ctx.toast(miss.length ? `Naplánované na zajtra. Chýbajúce suroviny sú v nákupnom zozname.` : 'Naplánované na zajtra');
+      btn.textContent = '✓ Na zajtra';
+      return;
+    }
+    track('frg_log', { kcal: r.per.kcal });
+    close();
+    ctx.toast(`Zapísané: ${r.name}`);
+    if ((location.hash || '#/').split('?')[0] === '#/') window.dispatchEvent(new HashChangeEvent('hashchange')); else location.hash = '#/';
+  } catch (e) { ctx.toast(e.message, true); btn.disabled = false; btn.textContent = old; }
+}
+
+// ---------- vstupy ----------
+function injectJedlo() {
+  const anchor = document.querySelector('.screen:has(#mealseg) .ms-entry') || document.querySelector('.screen:has(#mealseg) #aiBox');
+  if (!anchor || anchor.parentNode.querySelector('.frg-entry')) return;
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'frg-entry';
+  b.innerHTML = '<i>🧊</i><div><b>Čo uvarím z chladničky?</b><span>Odfoť chladničku a dostaneš recepty presne na tvoj cieľ</span></div><em>Nové</em>';
+  b.onclick = () => openFridge({ from: 'jedlo' });
+  anchor.after(b);
+}
+function injectQuick() {
+  const w = document.querySelector('.qa-w');
+  if (!w || w.parentNode.querySelector('.frg-qa')) return;
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'frg-qa';
+  b.innerHTML = '<i>🧊</i><div><b>Čo uvarím z chladničky?</b><small>Odfoť chladničku, recepty na tvoj cieľ</small></div>';
+  b.onclick = () => { document.querySelector('.qa-fab')?.click(); setTimeout(() => openFridge({ from: 'plus' }), 140); };
+  w.after(b);
+}
+let raf = 0;
+new MutationObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { injectJedlo(); injectQuick(); }); }).observe(document.body, { childList: true, subtree: true });
+injectJedlo(); injectQuick();
+// odkaz #/chladnicka (napr. z videa alebo notifikácie) otvorí sken rovno
+function deep() {
+  if ((location.hash || '').split('?')[0] !== '#/chladnicka') return;
+  location.replace('#/jedlo');
+  let n = 0; const t = setInterval(() => { if (ctx.state?.profile?.onboarded) { clearInterval(t); openFridge({ from: 'link' }); } else if (++n > 40) clearInterval(t); }, 150);
+}
+addEventListener('hashchange', deep);
+deep();
+// systémové Späť (gesto, tlačidlo) zatvorí sken namiesto odchodu z obrazovky
+addEventListener('popstate', () => { if (root) close(); });
