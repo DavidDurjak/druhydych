@@ -4,6 +4,7 @@
 // Makrá receptu sa počítajú tu zo súčtu surovín (nie z odhadu AI pre celé jedlo) a kalórie sa kontrolujú cez 4/4/9.
 // Poradie receptov podľa toho, čo človeku dnes zostáva, robí appka. Fotky sa NEUKLADAJÚ.
 // AI: rozpoznávanie fotky Claude Sonnet (presnejší na obraz), recepty Claude Haiku; záloha Gemini.
+// Spotreba tokenov sa zapisuje do tabuľky fridge_usage (na výpočet ceny na používateľa).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -101,13 +102,13 @@ async function claude(images: string[], prompt: string, maxTokens: number, valid
       const j = await r.json().catch(() => null);
       if (!r.ok) { console.error("fridge claude", m, r.status, String(j?.error?.message || "").slice(0, 140)); continue; }
       const out = parse((j?.content || []).map((p: any) => p.text || "").join(""));
-      if (out && valid(out)) return { ...out, __model: m };
+      if (out && valid(out)) return { ...out, __model: m, __u: [Number(j?.usage?.input_tokens) || 0, Number(j?.usage?.output_tokens) || 0] };
       console.error("fridge claude", m, "neplatná odpoveď");
     } catch (e) { console.error("fridge claude", m, String(e).slice(0, 100)); }
   }
   return null;
 }
-async function gemini(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean): Promise<{ j: any; quota: boolean }> {
+async function gemini(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean): Promise<{ j: any; quota: boolean; u?: number[]; m?: string }> {
   let quota = 0;
   if (!GKEY) return { j: null, quota: false };
   const GM = [...GMODELS], retried = new Set<string>();
@@ -128,7 +129,7 @@ async function gemini(images: string[], prompt: string, maxTokens: number, valid
         continue;
       }
       const out = parse((resp?.candidates?.[0]?.content?.parts || []).filter((p: any) => !p.thought).map((p: any) => p.text || "").join(""));
-      if (out && valid(out)) return { j: out, quota: false };
+      if (out && valid(out)) return { j: out, quota: false, m, u: [Number(resp?.usageMetadata?.promptTokenCount) || 0, Number(resp?.usageMetadata?.candidatesTokenCount) || 0] };
       console.error("fridge gemini", m, "neplatná odpoveď", resp?.candidates?.[0]?.finishReason || "", JSON.stringify(out || "").slice(0, 160));
     } catch (e) { console.error("fridge gemini", m, String(e).slice(0, 100)); }
   }
@@ -136,10 +137,18 @@ async function gemini(images: string[], prompt: string, maxTokens: number, valid
 }
 async function ask(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean, models: string[] = AMODELS) {
   const c = await claude(images, prompt, maxTokens, valid, models);
-  if (c) return { j: c, via: "claude:" + (c.__model || ""), quota: false };
+  if (c) return { j: c, via: "claude:" + (c.__model || ""), quota: false, u: c.__u as number[], model: String(c.__model || "") };
   const g = await gemini(images, prompt, maxTokens, valid);
-  if (g.j) return { j: g.j, via: "gemini", quota: false };
-  return { j: null, via: "", quota: g.quota };
+  if (g.j) return { j: g.j, via: "gemini", quota: false, u: g.u, model: g.m || "gemini" };
+  return { j: null, via: "", quota: g.quota, u: undefined as number[] | undefined, model: "" };
+}
+
+// záznam spotreby tokenov (na výpočet ceny na používateľa); chyba zápisu nikdy neovplyvní odpoveď
+const ADMIN = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!) : null;
+function logUse(uid: string, mode: string, r: { u?: number[]; model?: string }, photos = 0) {
+  if (!ADMIN || !r?.u) return;
+  const p = ADMIN.from("fridge_usage").insert({ user_id: uid, mode, model: r.model || "?", in_tok: r.u[0] || 0, out_tok: r.u[1] || 0, photos }).then(() => {}, () => {});
+  try { (globalThis as any).EdgeRuntime?.waitUntil(p); } catch { /* nič */ }
 }
 
 const sha = async (t: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -241,6 +250,7 @@ Deno.serve(async (req) => {
     if (!images.length) return json({ error: "Fotka chýba alebo je príliš veľká." }, 400);
     const res = await ask(images, DETECT(lang, goal), 6144, (j) => Array.isArray(j?.items) || j?.ok === false, DMODELS);
     if (!res.j) return json({ error: res.quota ? "AI je dočasne preťažená. Skús to o chvíľu." : "Fotku sa nepodarilo prečítať. Skús ju odfotiť znova, s otvorenými dverami a zapnutým svetlom." }, 502);
+    logUse(u.user.id, "detect", res, images.length);
     const { items, shop } = cleanItems(res.j);
     console.log("fridge detect", res.via, items.length);
     return json({ ok: items.length > 0, note: str(res.j?.note, 160), items, shop, via: res.via });
@@ -263,10 +273,12 @@ Deno.serve(async (req) => {
     const uniq = (x: any) => { const k = fold(x.name); if (seen.has(k)) return false; seen.add(k); return true; };
     const mains = mainsFor(items);
     const runs = await Promise.all(ANGLES.map((a, i) => ask([], RECIPES(lang, r, a, mains.length ? mains[i % mains.length] : ""), 4096, ok)));
+    runs.forEach((x) => logUse(u.user.id, "recipes", x));
     let recipes = runs.flatMap((x) => x.j ? cleanRecipes(x.j, servings, r.kcal, avail).slice(0, 1) : []).filter(uniq);
     // keď väčšina paralelných pokusov zlyhá (napr. preťaženie), doplní sa jedným spoločným
     if (recipes.length < 2) {
       const res = await ask([], RECIPES(lang, r), 16384, ok);
+      logUse(u.user.id, "recipes", res);
       if (res.j) recipes = [...recipes, ...cleanRecipes(res.j, servings, r.kcal, avail).filter(uniq)];
       else if (!recipes.length) return json({ error: res.quota || runs.some((x) => x.quota) ? "AI je dočasne preťažená. Skús to o chvíľu." : "Recepty sa nepodarilo vymyslieť. Skús to znova." }, 502);
     }
