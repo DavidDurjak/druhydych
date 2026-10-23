@@ -20,10 +20,28 @@ const CSS = `
 .nav.drag .nav-lens{transition:none;transform-origin:50% 50%}
 .nav.drag .nav-lens::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 1px rgba(124,255,178,.25)}
 @media (prefers-reduced-motion:reduce){.nav-lens{transition:none}}
+.nav .tdi-top{opacity:.32;transition:opacity .2s}
+.nav a.on .tdi-top{opacity:1}
+.nav .tdi-n{font-weight:800;font-size:9.6px;font-family:inherit;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.nav .tdi.tdi-go .tdi-top{transform-box:fill-box;transform-origin:50% 0;animation:tdiFlip .55s cubic-bezier(.3,1.4,.5,1)}
+.nav .tdi.tdi-go .tdi-n{transform-box:fill-box;transform-origin:50% 60%;animation:tdiPop .5s cubic-bezier(.3,1.6,.5,1) .08s both}
+@keyframes tdiFlip{0%{transform:scaleY(1)}35%{transform:scaleY(-.6)}100%{transform:scaleY(1)}}
+@keyframes tdiPop{0%{transform:scale(.6);opacity:.2}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.nav .tdi.tdi-go *{animation:none!important}}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
-const RING = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path class="fl" d="M13.4 2.6c.3 2.6 2.1 3.9 3.5 5.9 1.5 2.1 2.1 4.2 1.6 6.4-.7 3.1-3.4 5.2-6.5 5.2-3.3 0-5.9-2.4-5.9-5.6 0-2 .9-3.5 2.2-4.8.2 1.1.8 1.9 1.7 2.3-.4-2.9.5-5.9 3.4-11.4z"/><path d="M10.6 19.6c-1.4-.4-2.2-1.5-2.2-2.9 0-1.1.6-2 1.5-2.8.3.8.8 1.3 1.5 1.5.8.7 1.3 1.6 1.3 2.5 0 .8-.6 1.4-2.1 1.7z" stroke-width="1.5"/></svg>';
+// Ikonka záložky Dnes: kalendárový lístok s dnešným dátumom (dnes 23, zajtra 24). Plamienok patrí sérii, nie záložke Dnes.
+// Dátum sa prepíše sám o polnoci aj po návrate do appky. Keď prejdeš na Dnes, lístok sa jemne pretočí ako trhací kalendár.
+const dayNum = () => new Date().getDate();
+const todayIcon = () => `<svg class="tdi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<rect x="3.6" y="4.6" width="16.8" height="16.4" rx="4.4"/>
+<path class="tdi-top" d="M3.6 9.6V9a4.4 4.4 0 0 1 4.4-4.4h8A4.4 4.4 0 0 1 20.4 9v.6z" fill="currentColor" stroke="none"/>
+<path d="M8.2 2.9v3.2M15.8 2.9v3.2"/>
+<text class="tdi-n" x="12" y="18.3" text-anchor="middle" fill="currentColor" stroke="none">${dayNum()}</text></svg>`;
+const syncDay = () => document.querySelectorAll('.nav .tdi-n').forEach(t => { const d = String(dayNum()); if (t.textContent !== d) t.textContent = d; });
+setInterval(syncDay, 60000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncDay(); });
 let lastIdx = null, drag = null, dragEnd = 0;
 
 const items = nav => [...nav.querySelectorAll('a')];
@@ -45,12 +63,14 @@ function place(nav, idx, anim = true) {
 function setup(nav) {
   if (nav.__g) return; nav.__g = 1;
   const as = items(nav); if (!as.length) return;
-  const home = nav.querySelector('a[href="#/"] .ic'); if (home) home.innerHTML = RING;
+  const home = nav.querySelector('a[href="#/"] .ic'); if (home) home.innerHTML = todayIcon();
   const lens = document.createElement('i'); lens.className = 'nav-lens'; nav.prepend(lens);
   const idx = Math.max(0, as.findIndex(a => a.classList.contains('on')));
   // lišta sa pri prepnutí obrazovky vykreslí nanovo: bublina vyjde z predošlej záložky a plynulo sa presunie
   place(nav, lastIdx == null ? idx : lastIdx, false);
   requestAnimationFrame(() => requestAnimationFrame(() => place(nav, idx, true)));
+  // príchod na Dnes z inej záložky: lístok kalendára sa pretočí
+  if (idx === 0 && lastIdx != null && lastIdx !== 0) { const svg = nav.querySelector('.tdi'); if (svg) requestAnimationFrame(() => svg.classList.add('tdi-go')); }
   lastIdx = idx;
 }
 const scan = n => { if (n.nodeType !== 1) return; if (n.matches?.('.nav')) setup(n); n.querySelectorAll?.('.nav').forEach(setup); };
