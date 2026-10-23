@@ -216,11 +216,11 @@ function shrink(file) {
   return new Promise((res, rej) => {
     const url = URL.createObjectURL(file), img = new Image();
     img.onload = () => {
-      const k = Math.min(1, 1400 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      const k = Math.min(1, 1100 / Math.max(img.width, img.height)), c = document.createElement('canvas');
       c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
-      const d = c.toDataURL('image/jpeg', 0.8);
+      const d = c.toDataURL('image/jpeg', 0.74);
       res({ b64: d.split(',')[1], url: d });
     };
     img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Fotku sa nepodarilo načítať.')); };
@@ -268,7 +268,7 @@ async function api(body) {
 
 // ---------- stav ----------
 let S = null, root = null;
-const fresh = () => ({ photos: [], items: [], shop: [], mode: 'edit', opts: { meal: autoMeal(), minutes: 30, servings: 1, wish: '', ...ls.get(K_OPTS, {}), meal: autoMeal() }, recipes: [], seen: [], b: null, view: 'start' });
+const fresh = () => ({ pre: null, det: null, photos: [], items: [], shop: [], mode: 'edit', opts: { meal: autoMeal(), minutes: 30, servings: 1, wish: '', ...ls.get(K_OPTS, {}), meal: autoMeal() }, recipes: [], seen: [], b: null, view: 'start' });
 const staples = () => ls.get(K_STAPLES, STAPLES_ON);
 
 export function openFridge(opts = {}) {
@@ -321,12 +321,12 @@ function vStart() {
   root.querySelectorAll('[data-pick]').forEach(inp => inp.onchange = async () => {
     const files = [...(inp.files || [])].slice(0, 3 - S.photos.length); inp.value = '';
     for (const f of files) { try { S.photos.push(await shrink(f)); } catch (e) { ctx.toast(e.message, true); } }
-    if (S.photos.length) vStart();
+    if (S.photos.length) { preDetect(); vStart(); }
   });
-  root.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { S.photos.splice(Number(b.dataset.rm), 1); vStart(); });
+  root.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { S.photos.splice(Number(b.dataset.rm), 1); if (S.photos.length) preDetect(); vStart(); });
   root.querySelector('[data-go]')?.addEventListener('click', detect);
   root.querySelector('[data-manual]')?.addEventListener('click', () => vItems());
-  root.querySelector('[data-last]')?.addEventListener('click', () => { S.items = last.items.map(i => ({ ...i, on: true, first: false })); S.shop = last.shop || []; track('frg_last'); vItems(); });
+  root.querySelector('[data-last]')?.addEventListener('click', () => { S.items = last.items.map(i => ({ ...i, on: true, first: false })); S.shop = last.shop || []; track('frg_last'); vItems(); prefetch(); });
   root.querySelectorAll('[data-saved]').forEach(b => b.onclick = () => { const r = saved[Number(b.dataset.saved)]; if (r) { S.b = S.b || null; vDetail(r, true); } });
 }
 
@@ -342,11 +342,23 @@ function cycle(list) {
   const t = setInterval(() => { i = (i + 1) % list.length; const a = root?.querySelector('.frg-st'), b = root?.querySelector('.frg-st2'); if (!a) return clearInterval(t); a.textContent = list[i][0]; b.textContent = list[i][1]; }, 2600);
   return () => clearInterval(t);
 }
+// suroviny sa začnú hľadať hneď po odfotení (kým človek rozmýšľa, či pridá mrazák); po ťuknutí na „Nájsť suroviny“ s tými istými fotkami už výsledok beží alebo je hotový
+const photoSig = () => S.photos.map(p => p.b64.length + ':' + p.b64.slice(-24)).join('|');
+function preDetect() {
+  const sig = photoSig();
+  if (S.det?.sig === sig) return S.det.p;
+  const p = api({ mode: 'detect', images: S.photos.map(x => x.b64) });
+  p.catch(() => { });
+  S.det = { sig, p };
+  return p;
+}
 async function detect() {
   scanning(S.photos.slice().reverse(), ...SCAN_TXT[0]);
   const stop = cycle(SCAN_TXT);
   try {
-    const res = await api({ mode: 'detect', images: S.photos.map(p => p.b64) });
+    const pend = preDetect();
+    const res = await pend.catch(() => { S.det = null; return preDetect(); });
+    S.det = null;
     stop();
     if (!root) return;
     if (!res.items?.length) return fail('Na fotke som nenašiel jedlo', res.note || 'Skús to odfotiť znova, s otvorenými dverami a zapnutým svetlom. Alebo suroviny napíš sám.', vStart, true);
@@ -356,6 +368,7 @@ async function detect() {
     ls.set(K_LAST, { at: Date.now(), items: res.items.map(i => ({ ...i, name: cap(i.name) })), shop: S.shop });
     track('frg_scan', { n: res.items.length, photos: S.photos.length, via: res.via || '' });
     vItems(true);
+    prefetch();
   } catch (e) { stop(); if (root) fail('Fotku sa nepodarilo prečítať', e.message, vStart, true); }
 }
 function fail(title, msg, back, manual) {
@@ -401,7 +414,7 @@ function vItems(fromScan) {
     const it = S.items[Number(b.dataset.i)];
     if (S.mode === 'first') { it.first = !it.first; if (it.first) it.on = true; } else { it.on = !it.on; if (!it.on) it.first = false; }
     try { navigator.vibrate?.(6); } catch (_) { }
-    vItems();
+    vItems(); rePre();
   }));
   const add = keepY(() => {
     const inp = root.querySelector('#frgAdd'), v = inp.value.trim(); if (!v) return;
@@ -409,7 +422,7 @@ function vItems(fromScan) {
       const ex = S.items.find(i => key(i.name) === key(name));
       if (ex) ex.on = true; else S.items.push({ name, qty: '', g: 0, cat: 'other', emoji: '•', health: 'ok', conf: 'high', on: true, first: false, mine: true });
     });
-    vItems();
+    vItems(); rePre();
     setTimeout(() => root?.querySelector('#frgAdd')?.focus(), 30);
   });
   root.querySelector('[data-add]').onclick = add;
@@ -417,7 +430,7 @@ function vItems(fromScan) {
   root.querySelectorAll('[data-st]').forEach(b => b.onclick = () => {
     const cur = staples(), kk = key(b.dataset.st), i = cur.findIndex(x => key(x) === kk);
     if (i >= 0) cur.splice(i, 1); else cur.push(b.dataset.st);
-    ls.set(K_STAPLES, cur); b.classList.toggle('on', i < 0); b.classList.toggle('off', i >= 0);
+    ls.set(K_STAPLES, cur); b.classList.toggle('on', i < 0); b.classList.toggle('off', i >= 0); rePre();
   });
   root.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
     const s = S.shop[Number(b.dataset.buy)]; if (!s || s.added) return;
@@ -426,27 +439,60 @@ function vItems(fromScan) {
   });
   root.querySelectorAll('[data-g] [data-v]').forEach(b => b.onclick = () => {
     const g = b.parentElement.dataset.g; S.opts[g] = g === 'meal' ? b.dataset.v : Number(b.dataset.v);
-    b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); rePre();
   });
-  root.querySelector('#frgWish').oninput = e => { S.opts.wish = e.target.value; };
+  root.querySelector('#frgWish').oninput = e => { S.opts.wish = e.target.value; rePre(); };
   root.querySelector('[data-recipes]').onclick = () => { S.seen = []; recipes(); };
 }
 
 // ---------- 4) recepty ----------
 const COOK_TXT = [['Vymýšľam recepty…', 'Z toho, čo máš doma'], ['Rátam makrá…', 'Surovinu po surovine'], ['Prepočítavam porcie…', 'Presne na tvoj cieľ'], ['Vyberám to najlepšie…', 'Podľa toho, čo ti dnes zostáva']];
-async function recipes(more) {
+// požiadavka na recepty z aktuálneho stavu (rovnaká pre predpočítanie aj pre ťuknutie na tlačidlo)
+async function recipeReq() {
   const { minutes, servings, wish, meal } = S.opts;
+  const b = await budget(meal);
+  const on = S.items.filter(i => i.on);
+  const body = {
+    mode: 'recipes', items: on.map(i => ({ name: i.name, qty: i.qty })), staples: staples(), useFirst: on.filter(i => i.first).map(i => i.name),
+    meal: { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', snack: 'snack' }[meal], minutes, servings, kcal: b.kcal, protein: b.protein,
+    diet: dietText(), wish: (wish || '').trim(),
+  };
+  return { b, body, sig: JSON.stringify(body) };
+}
+// recepty sa začnú počítať hneď po nájdení surovín, kým si ich človek prezerá; keď nič nezmení, po ťuknutí sú hotové okamžite
+async function prefetch() {
+  try {
+    const q = await recipeReq();
+    const p = api({ ...q.body, exclude: [] });
+    p.catch(() => { });
+    S.pre = { sig: q.sig, p };
+  } catch (_) { S.pre = null; }
+}
+// po úprave surovín alebo možností sa recepty prepočítajú vopred znova (až keď človek 2 s nič nemení, najviac 3× za sken)
+let preT = 0;
+function rePre() {
+  clearTimeout(preT);
+  if ((S.preN || 0) >= 3) return;
+  preT = setTimeout(async () => {
+    if (!root || S.view !== 'items' || !S.items.some(i => i.on)) return;
+    const q = await recipeReq().catch(() => null);
+    if (!q || S.pre?.sig === q.sig) return;
+    S.preN = (S.preN || 0) + 1; prefetch();
+  }, 2000);
+}
+async function recipes(more) {
+  clearTimeout(preT);
+  const { minutes, servings, wish } = S.opts;
   ls.set(K_OPTS, { minutes, servings, wish });
   scanning([], ...COOK_TXT[0]);
   const stop = cycle(COOK_TXT);
   try {
-    S.b = await budget(meal);
-    const on = S.items.filter(i => i.on);
-    const res = await api({
-      mode: 'recipes', items: on.map(i => ({ name: i.name, qty: i.qty })), staples: staples(), useFirst: on.filter(i => i.first).map(i => i.name),
-      meal: { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', snack: 'snack' }[meal], minutes, servings, kcal: S.b.kcal, protein: S.b.protein,
-      diet: dietText(), exclude: S.seen, wish,
-    });
+    const q = await recipeReq();
+    S.b = q.b;
+    const pre = !more && S.pre && S.pre.sig === q.sig ? S.pre.p : null;
+    S.pre = null;
+    const res = pre ? await pre.catch(() => api({ ...q.body, exclude: S.seen })) : await api({ ...q.body, exclude: S.seen });
+    track('frg_pre', { hit: !!pre });
     stop();
     if (!root) return;
     S.recipes = rank(res.recipes || []);
