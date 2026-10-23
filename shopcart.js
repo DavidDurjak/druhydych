@@ -1,4 +1,4 @@
-// Nákupný zoznam na Dnes: vždy hneď pod posledným jedlom (ostatné karty sa vkladajú asynchrónne, poradie bolo náhodné)
+// Nákupný zoznam na Dnes: miesto karty určuje todayorder.js (poradie kariet na Dnes)
 // a živý košík: pri zobrazení sa vkotúľa, každých pár sekúnd doň spadnú tri suroviny a košík sa trochu zahojdá.
 // Bez plánu na ďalších 7 dní ukáže kartu s pozvánkou na Hotový jedálniček, aby nový človek košík vôbec objavil.
 import { sb } from './data.js';
@@ -40,7 +40,8 @@ const run = () => {
   const b = root.querySelector('#fw-shop');
   if (!b) return;
   const meals = root.querySelector('.screen.td .meals');
-  if (meals && meals.nextElementSibling !== b) meals.after(b);
+  // prvé umiestnenie pod jedlá; potom miesto karty určuje todayorder.js (poradie kariet na Dnes)
+  if (meals && !b.dataset.pl) { b.dataset.pl = '1'; if (meals.nextElementSibling !== b) meals.after(b); }
   const tile = b.firstElementChild;
   if (tile && !tile.dataset.sc) { tile.dataset.sc = '1'; tile.className = 'sc-t'; tile.innerHTML = CART; }
 };
