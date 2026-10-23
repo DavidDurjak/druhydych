@@ -13,7 +13,12 @@ function setMark(uid, d, v) {
   try { localStorage.setItem(MK(uid), JSON.stringify(out)); } catch (_) { }
 }
 
+// posledný výsledok pre kartu Týždenné vyhodnotenie (weekly.js dopĺňa čísla týždňa)
+let last = null;
+export const lastAdapt = () => last;
+
 export async function check(p, weights) {
+  last = null;
   try {
     if (p.role === 'coach' && !p.onboarded) return null;
     const ws = calc.weekStart();
@@ -33,16 +38,20 @@ export async function check(p, weights) {
       const lowLine = Math.max(1000, 0.6 * (p.target_kcal || f.tdee));
       const suspect = Object.keys(intakeByDay).filter(d => d >= calc.addDays(calc.today(), -14) && intakeByDay[d] > 0 && intakeByDay[d] < lowLine && !marks[d])
         .sort().slice(-5).map(d => ({ d, kcal: Math.round(intakeByDay[d]) }));
+      const d7 = Object.keys(intakeByDay).filter(d => d >= calc.addDays(calc.today(), -7) && d < calc.today() && intakeByDay[d] > 0);
+      const avg7 = d7.length ? Math.round(d7.reduce((a, d) => a + intakeByDay[d], 0) / d7.length) : est.avgIntake;
       if (est.ok && est.w >= 0.25) {
         const tgt = T.targetFromTdee({ tdee: est.tdee, goal: p.goal, sex: p.sex, currentTarget: p.target_kcal });
         const tr = calc.trend(wl);
-        return { newKcal: tgt.newKcal, adjust: tgt.adjust, reason: T.describe(est, tgt), avg: est.avgIntake, ch: calc.trendChange(tr, 7), days: est.days,
+        return last = { newKcal: tgt.newKcal, adjust: tgt.adjust, reason: T.describe(est, tgt), avg: est.avgIntake, ch: calc.trendChange(tr, 7), days: est.days,
           tdee: est.tdee, formula: est.formula, conf: est.conf, confText: T.confText(est.conf), spanDays: est.spanDays, clamped: est.clamped, measured: true,
-          suspect, uid: p.id, rawLast: wl[wl.length - 1].weight, trendLast: tr.length ? tr[tr.length - 1].trend : null };
+          avg7: avg7, days7: d7.length, suspect, uid: p.id, rawLast: wl[wl.length - 1].weight, trendLast: tr.length ? tr[tr.length - 1].trend : null };
       }
     }
   } catch (_) { /* padne späť na jednoduché pravidlo */ }
-  return v2.checkAdaptive(p, weights);
+  const r = await v2.checkAdaptive(p, weights);
+  if (r) { const k = Math.min(7, r.days || 0); last = { ...r, avg7: r.avg, days7: k }; }
+  return r;
 }
 
 // Karta: porovnanie vzorca a skutočného výdaja (len keď ide o odhad z dát)
