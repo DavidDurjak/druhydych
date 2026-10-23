@@ -26,15 +26,19 @@ const num = (v: unknown, max: number, dec = 0) => { const n = Number(v); if (!Nu
 const str = (v: unknown, max: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 
 const DETECT = (lang: string, goal: string) => `You look at 1 to 3 photos of a fridge, freezer or pantry for a nutrition app. List every food item you can actually see.
-Read labels on packages when visible (brand-less generic name is enough). Estimate the quantity. Do not invent items that are not visible; if you are not sure what something is, still list it with "conf":"low".
-Group duplicates into one item. Ignore non-food things.
+Scan systematically: every shelf from top to bottom, the drawers, the door shelves and anything half hidden behind other items. Fridges are crowded, so do not stop at the obvious items; small jars, tubs, bottles and packages count too.
+Read labels on packages when visible (brand-less generic name is enough, e.g. "ajvar", "pesto", "salad dressing", "butter", "cottage cheese"). Estimate the quantity: use the weight or volume printed on the package when you can read it (e.g. butter 250 g); count items that can be counted (eggs, yogurt cups, bottles) and give the exact count you see.
+Do not invent items that are not visible; if you are not sure what something is, still list it with "conf":"low".
+The photos may show the same fridge from different angles: never count one item twice. Group duplicates into one item. Ignore non-food things.
+Bowls, pots and boxes covered with cling film or a lid are leftovers or prepared meals: if the content is not clearly recognizable, list one item named "prepared meal (leftovers)" or the dish if you can tell what it is, with "conf":"low" and a rough "g". Never guess a specific dish you cannot see.
+Raw meat, fish, vegetables, eggs and dairy matter most for cooking, so be careful and precise with those. Beer, wine and other alcohol are drinks (cat "drink", health "limit"), listed once with the bottle count.
 The user's goal: ${goal}.
 Return ONLY JSON:
 {"ok":true,"note":"","items":[{"name":"short generic food name in ${lang}, e.g. chicken breast, eggs, Greek yogurt","qty":"human quantity in ${lang}, e.g. ~6 ks, ~300 g, 1 fľaša, pol hlávky","g":300,"cat":"protein|dairy|veg|fruit|carb|fat|sauce|drink|snack|other","emoji":"one emoji","health":"good|ok|limit","conf":"high|low"}],
 "shop":[{"name":"food to buy, in ${lang}","why":"max 7 words in ${lang}, positive, why it helps the goal"}]}
 Rules: "health":"limit" only for fried, ultra-processed, sugary or very fatty foods (sweets, chips, sausages, sugary drinks, fried leftovers). "g" is the estimated total edible grams (or ml) of that item, integer.
 "shop": 3 to 5 healthy, cheap, common foods that are MISSING and would let the user cook better meals for the goal (e.g. a lean protein if none is visible, vegetables, a whole-grain side). Never shame the user.
-If the photos show no food at all, return {"ok":false,"note":"short reason in ${lang}","items":[],"shop":[]}. Max 40 items.`;
+If the photos show no food at all, return {"ok":false,"note":"short reason in ${lang}","items":[],"shop":[]}. Max 60 items.`;
 
 type RIn = { items: { name: string; qty?: string; g?: number }[]; staples: string[]; useFirst: string[]; meal: string; minutes: number; servings: number; goal: string; kcal: number; protein: number; diet: string; exclude: string[]; wish: string };
 const ANGLES = [
@@ -140,7 +144,7 @@ function cleanItems(j: any) {
   const items = (Array.isArray(j?.items) ? j.items : []).map((i: any) => ({
     name: str(i?.name, 40), qty: str(i?.qty, 24), g: num(i?.g, 5000), cat: CATS.includes(i?.cat) ? i.cat : "other",
     emoji: str(i?.emoji, 4), health: ["good", "ok", "limit"].includes(i?.health) ? i.health : "ok", conf: i?.conf === "low" ? "low" : "high",
-  })).filter((i: any) => { const k = i.name.toLowerCase(); if (!i.name || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 40);
+  })).filter((i: any) => { const k = i.name.toLowerCase(); if (!i.name || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 60);
   const shop = (Array.isArray(j?.shop) ? j.shop : []).map((s: any) => ({ name: str(s?.name, 40), why: str(s?.why, 60) })).filter((s: any) => s.name).slice(0, 5);
   return { items, shop };
 }
@@ -229,7 +233,7 @@ Deno.serve(async (req) => {
   if (b.mode === "detect") {
     const images = (Array.isArray(b.images) ? b.images : []).map(String).filter((x: string) => x && x.length <= MAX_B64).slice(0, 3);
     if (!images.length) return json({ error: "Fotka chýba alebo je príliš veľká." }, 400);
-    const res = await ask(images, DETECT(lang, goal), 4096, (j) => Array.isArray(j?.items) || j?.ok === false);
+    const res = await ask(images, DETECT(lang, goal), 6144, (j) => Array.isArray(j?.items) || j?.ok === false);
     if (!res.j) return json({ error: res.quota ? "AI je dočasne preťažená. Skús to o chvíľu." : "Fotku sa nepodarilo prečítať. Skús ju odfotiť znova, s otvorenými dverami a zapnutým svetlom." }, 502);
     const { items, shop } = cleanItems(res.j);
     return json({ ok: items.length > 0, note: str(res.j?.note, 160), items, shop, via: res.via });
