@@ -10,7 +10,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 const GKEY = Deno.env.get("GEMINI_API_KEY") || "";
 const AKEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
-const GMODELS = [Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash", Deno.env.get("GEMINI_MODEL_LITE") || "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-flash-lite-latest"];
+// najprv rýchly Flash-Lite (suroviny ~2 s, 4 recepty ~6 s); Flash je pomalší a často preťažený, ostáva ako záloha
+const GMODELS = [Deno.env.get("GEMINI_MODEL_LITE") || "gemini-3.5-flash-lite", "gemini-flash-lite-latest", Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash", "gemini-flash-latest"];
 const AMODELS = [Deno.env.get("ANTHROPIC_MODEL") || "claude-haiku-5-5", "claude-haiku-4-5"];
 const MAX_B64 = 4_000_000;
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
@@ -36,7 +37,21 @@ Rules: "health":"limit" only for fried, ultra-processed, sugary or very fatty fo
 If the photos show no food at all, return {"ok":false,"note":"short reason in ${lang}","items":[],"shop":[]}. Max 40 items.`;
 
 type RIn = { items: { name: string; qty?: string; g?: number }[]; staples: string[]; useFirst: string[]; meal: string; minutes: number; servings: number; goal: string; kcal: number; protein: number; diet: string; exclude: string[]; wish: string };
-const RECIPES = (lang: string, r: RIn) => `You are a sports nutritionist and a great home cook. Create 4 DIFFERENT recipes for this person, mainly from the food they have at home.
+const ANGLES = [
+  "the quickest and simplest one, using ONLY the available food and staples",
+  "the one with the most protein, using ONLY the available food and staples",
+  "a really tasty, popular home-style dish; it may need at most 2 missing cheap common ingredients",
+  "something different from a typical dish (another cuisine, a bowl, wrap, bake or salad); it may need at most 2 missing cheap common ingredients",
+];
+// rôznorodosť: 4 recepty vznikajú naraz a o sebe nevedia, preto každý dostane inú hlavnú surovinu (najprv bielkovinové)
+const MAIN_RE = /kurac|kura\b|morc|maso|masa|hovad|brav|mlet|ryb|losos|tuniak|treska|krev|vajc|vajic|tvaroh|jogurt|skyr|syr|mozzarel|cottage|tofu|tempeh|sunk|slanin|cicer|sosovic|fazul|strukov/;
+function mainsFor(items: { name: string }[]): string[] {
+  const names = items.map((i) => i.name);
+  const prot = names.filter((n) => MAIN_RE.test(fold(n)));
+  const rest = names.filter((n) => !prot.includes(n));
+  return [...prot, ...rest].slice(0, 6);
+}
+const RECIPES = (lang: string, r: RIn, angle = "", main = "") => `You are a sports nutritionist and a great home cook. Create ${angle ? `exactly 1 recipe for this person: ${angle}.${main ? ` Build it around: ${main}.` : ""} Base it` : "4 DIFFERENT recipes for this person,"} mainly on the food they have at home.
 Available at home (with rough quantity): ${r.items.map((i) => i.name + (i.qty ? ` (${i.qty})` : "")).join(", ")}.
 Pantry staples they always have (free to use): ${r.staples.join(", ") || "salt, pepper"}.
 ${r.useFirst.length ? `Use these first, they will spoil soon: ${r.useFirst.join(", ")}.` : ""}
@@ -46,8 +61,7 @@ ${r.diet ? `Dietary restrictions, never break them: ${r.diet}.` : ""}
 ${r.wish ? `The user's wish: ${r.wish}.` : ""}
 ${r.exclude.length ? `Do not repeat these recipes: ${r.exclude.join(", ")}.` : ""}
 Rules:
-- At least 2 recipes must use ONLY available food and staples. The others may need at most 2 missing ingredients, only cheap common ones.
-- Never use more of an ingredient than the person has.
+${angle ? "" : "- At least 2 recipes must use ONLY available food and staples. The others may need at most 2 missing ingredients, only cheap common ones.\n"}- Never use more of an ingredient than the person has.
 - Per serving stay within about 15 % of the kcal target and reach the protein target when the ingredients allow it.
 - Real, tasty food people actually cook. Concise steps (3 to 7), each max 20 words, with heat and times.
 - "g" is grams (or ml) for ALL servings together, raw/uncooked weight. Give nutrition for exactly that amount from standard food tables. Count cooking oil.
@@ -99,7 +113,7 @@ async function gemini(images: string[], prompt: string, maxTokens: number, valid
         const msg = resp?.error?.message || "chyba " + r.status;
         console.error("fridge gemini", m, r.status, String(msg).slice(0, 140));
         // preťažený model: ešte jeden pokus o chvíľu
-        if (r.status === 503 && !retried.has(m)) { retried.add(m); await new Promise((ok) => setTimeout(ok, 1200)); GM.splice(gi + 1, 0, m); }
+        if (r.status === 503 && !retried.has(m)) { retried.add(m); await new Promise((ok) => setTimeout(ok, 600)); GM.splice(gi + 1, 0, m); }
         if (r.status === 429 || /quota/i.test(msg)) quota++;
         continue;
       }
@@ -178,8 +192,12 @@ Deno.serve(async (req) => {
   if (typeof tb?.selftest === "string" && tb.selftest.length === 32 && await sha(tb.selftest) === "b81cf5c822263d4606f6f0a312f8afc82817bebd8f2a29340cf7865d64ab22fd") {
     if (Array.isArray(tb.items)) {
       const t0 = Date.now();
-      const rr = await ask([], RECIPES("Slovak", { items: tb.items.map((x: any) => ({ name: str(x, 40) })), staples: ["soľ", "korenie", "olej"], useFirst: [], meal: String(tb.meal || "dinner"), minutes: 30, servings: 1, goal: GOALS[tb.goal] || GOALS.lose, kcal: Number(tb.kcal) || 600, protein: 40, diet: str(tb.diet, 200), exclude: [], wish: "" }), 16384, (j) => Array.isArray(j?.recipes) && j.recipes.length > 0);
-      return json({ ms: Date.now() - t0, via: rr.via, recipes: rr.j ? cleanRecipes(rr.j, 1, Number(tb.kcal) || 600, [...tb.items.map(String), "soľ", "korenie", "olej"]) : null });
+      const rin: RIn = { items: tb.items.map((x: any) => ({ name: str(x, 40) })), staples: ["soľ", "korenie", "olej"], useFirst: [], meal: String(tb.meal || "dinner"), minutes: 30, servings: 1, goal: GOALS[tb.goal] || GOALS.lose, kcal: Number(tb.kcal) || 600, protein: 40, diet: str(tb.diet, 200), exclude: [], wish: "" };
+      const ok = (j: any) => Array.isArray(j?.recipes) && j.recipes.length > 0;
+      const mains = mainsFor(rin.items);
+      const runs = await Promise.all(ANGLES.map(async (a, i) => { const t = Date.now(); const x = await ask([], RECIPES("Slovak", rin, a, mains.length ? mains[i % mains.length] : ""), 4096, ok); return { ...x, ms: Date.now() - t }; }));
+      const avail = [...tb.items.map(String), "soľ", "korenie", "olej"];
+      return json({ ms: Date.now() - t0, each: runs.map((x) => x.ms), via: runs.map((x) => x.via), recipes: runs.flatMap((x) => x.j ? cleanRecipes(x.j, 1, rin.kcal, avail).slice(0, 1) : []) });
     }
     const api = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=8&gsrsearch=${encodeURIComponent(String(tb.q || "open refrigerator food"))}&prop=imageinfo&iiprop=url&iiurlwidth=1100&format=json`, { headers: { "User-Agent": "GainTrainTest/1.0" } }).then((r) => r.json()).catch(() => null);
     const urls = (Object.values(api?.query?.pages || {}) as any[]).map((p) => p?.imageinfo?.[0]?.thumburl).filter((x: string) => x && /\.(jpe?g|png)/i.test(x));
@@ -227,11 +245,22 @@ Deno.serve(async (req) => {
       servings, goal, kcal: Math.max(150, Math.min(1500, Math.round(Number(b.kcal) || 600))), protein: Math.max(5, Math.min(90, Math.round(Number(b.protein) || 35))),
       diet: str(b.diet, 200), exclude: list(b.exclude, 12, 70), wish: str(b.wish, 120),
     };
-    const res = await ask([], RECIPES(lang, r), 16384, (j) => Array.isArray(j?.recipes) && j.recipes.length > 0);
-    if (!res.j) return json({ error: res.quota ? "AI je dočasne preťažená. Skús to o chvíľu." : "Recepty sa nepodarilo vymyslieť. Skús to znova." }, 502);
-    const recipes = cleanRecipes(res.j, servings, r.kcal, [...items.map((i: any) => i.name), ...r.staples]);
+    // rýchlosť: 4 recepty naraz, každý zvlášť a s iným zameraním (čaká sa len na najpomalší jeden recept, nie na všetky štyri za sebou)
+    const ok = (j: any) => Array.isArray(j?.recipes) && j.recipes.length > 0;
+    const avail = [...items.map((i: any) => i.name), ...r.staples];
+    const seen = new Set<string>();
+    const uniq = (x: any) => { const k = fold(x.name); if (seen.has(k)) return false; seen.add(k); return true; };
+    const mains = mainsFor(items);
+    const runs = await Promise.all(ANGLES.map((a, i) => ask([], RECIPES(lang, r, a, mains.length ? mains[i % mains.length] : ""), 4096, ok)));
+    let recipes = runs.flatMap((x) => x.j ? cleanRecipes(x.j, servings, r.kcal, avail).slice(0, 1) : []).filter(uniq);
+    // keď väčšina paralelných pokusov zlyhá (napr. preťaženie), doplní sa jedným spoločným
+    if (recipes.length < 2) {
+      const res = await ask([], RECIPES(lang, r), 16384, ok);
+      if (res.j) recipes = [...recipes, ...cleanRecipes(res.j, servings, r.kcal, avail).filter(uniq)];
+      else if (!recipes.length) return json({ error: res.quota || runs.some((x) => x.quota) ? "AI je dočasne preťažená. Skús to o chvíľu." : "Recepty sa nepodarilo vymyslieť. Skús to znova." }, 502);
+    }
     if (!recipes.length) return json({ error: "Recepty sa nepodarilo vymyslieť. Skús to znova." }, 502);
-    return json({ ok: true, recipes, via: res.via });
+    return json({ ok: true, recipes: recipes.slice(0, 4), via: runs.find((x) => x.via)?.via || "" });
   }
   return json({ error: "Neznámy režim." }, 400);
 });
