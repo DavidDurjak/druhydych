@@ -1,4 +1,4 @@
-// Pokrok: hero s tromi kruhmi, interaktívny graf váhy s predpoveďou, kalórie po dňoch, makrá v krúžkoch, mriežka 84 dní, zistenia, odznaky.
+// Pokrok: hero s tromi kruhmi, interaktívny graf váhy s predpoveďou, kalórie po dňoch, makrá v krúžkoch, kalendár po mesiacoch z krúžkov (s listovaním, bez konca), zistenia, odznaky.
 // Čísla nabehnú, krivka sa nakreslí, stĺpce vyrastú, keď karta príde do obrazu. Po grafe aj stĺpcoch sa dá ťukať a ťahať prstom.
 import * as db from './data.js';
 import * as calc from './calc.js';
@@ -9,7 +9,27 @@ import * as U from './units.js';
 const $app = () => ctx.$app;
 const state = () => ctx.state;
 const h = (...a) => ctx.h(...a), r0 = (...a) => ctx.r0(...a), nav = (...a) => ctx.nav(...a);
-const PROGRAM_DAYS = 84;
+const FORECAST_DAYS = 56; // predpoveď váhy 8 týždňov dopredu (appka nemá koniec, žiadny 84-dňový program)
+const MONF = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún', 'Júl', 'August', 'September', 'Október', 'November', 'December'];
+let calMonth = null; const calLoaded = new Set(); // zvolený mesiac v kalendári (RRRR-MM) a mesiace už načítané pri listovaní
+// kalendár ako v Apple Fitness: každý deň je krúžok s dátumom, naplnený podľa toho, koľko z cieľa kcal si zjedol
+function calHtml(ym, daily, T, start, today) {
+  const [y, m] = ym.split('-').map(Number), dim = new Date(y, m, 0).getDate(), lead = (new Date(y, m - 1, 1).getDay() + 6) % 7, C = 2 * Math.PI * 15;
+  let cells = Array.from({ length: lead }, () => '<span class="cl-e"></span>').join(''), logged = 0, ok = 0, past = 0;
+  for (let i = 1; i <= dim; i++) {
+    const d = `${ym}-${String(i).padStart(2, '0')}`; let cls = 'miss', pct = 0;
+    if (d > today) cls = 'fut'; else if (d < start) cls = 'pre';
+    else { past++; const x = daily[d]; if (x?.n) { logged++; const k = x.kcal; pct = T ? k / T : 0; cls = Math.abs(k - T) <= T * 0.1 ? 'ok' : k > T ? 'over' : 'under'; if (cls === 'ok') ok++; } }
+    const fill = pct > 0 ? `<circle class="cl-f" cx="18" cy="18" r="15" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}" style="--off:${(C * (1 - Math.min(1, pct))).toFixed(2)}" transform="rotate(-90 18 18)"/>` : '';
+    cells += `<div class="cl-d ${cls}${d === today ? ' now' : ''}" style="--i:${lead + i}" title="${calc.fmtDate(d)}"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="cl-t" cx="18" cy="18" r="15"/>${fill}</svg><b>${i}</b></div>`;
+  }
+  const sYm = start.slice(0, 7), cYm = today.slice(0, 7);
+  return `<div class="pg-row cl-top"><h3>Kalendár</h3><div class="cl-nav"><button type="button" data-cal="-1" ${ym <= sYm ? 'disabled' : ''} aria-label="Predchádzajúci mesiac">‹</button><span>${MONF[m - 1]} ${y}</span><button type="button" data-cal="1" ${ym >= cYm ? 'disabled' : ''} aria-label="Ďalší mesiac">›</button></div></div>
+      <div class="cl-stats"><span><i class="s-log"></i><b>${logged}</b> z ${past} dní zapísaných</span><span><i class="s-ok"></i><b>${ok}</b> v cieli</span></div>
+      <div class="cl-wd">${['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne'].map(x => `<span>${x}</span>`).join('')}</div>
+      <div class="cl-g">${cells}</div>
+      <div class="pg-legend cl-lg"><span><i class="ok"></i>v cieli</span><span><i class="over"></i>nad</span><span><i class="under"></i>pod</span><span><i class="miss"></i>nezapísané</span></div>`;
+}
 // štýly Pokroku v2 (kruhy, interaktívny graf, animácie)
 if (!document.getElementById('pgx-css')) { const l = document.createElement('link'); l.id = 'pgx-css'; l.rel = 'stylesheet'; l.href = './progressx.css'; document.head.appendChild(l); }
 let period = 30; // 7 | 30 | 'all'
@@ -44,7 +64,7 @@ function paceVerdict(goal, weekly, weight) {
     return { cls: 'warn', text: 'Váha ide hore. Uber 150 až 200 kcal alebo pridaj kroky.' };
   }
   if (goal === 'gain') {
-    if (pct >= 0.75) return { cls: 'warn', text: 'Priberáš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
+    if (pct >= 0.75) return { cls: 'warn', text: 'Pribéraš rýchlo, časť bude tuk. Uber 100 až 150 kcal.' };
     if (pct >= 0.15) return { cls: 'ok', text: 'Ideálne tempo naberania svalov.' };
     return { cls: 'mid', text: 'Váha sa nehýbe. Pridaj 150 až 200 kcal, najlepšie zo sacharidov.' };
   }
@@ -122,7 +142,7 @@ function kcalBars(days, daily, target) {
   </svg></div>`;
 }
 
-// tri kruhy ako v Apple Fitness: program, zapisovanie, kalórie v cieli
+// tri kruhy ako v Apple Fitness: zapisovanie, bielkoviny v cieli, kalórie v cieli
 function rings(list) {
   const S = 132, c = S / 2, sw = 10, gapR = 13;
   return `<svg class="pgx-rings" viewBox="0 0 ${S} ${S}">${list.map((r, i) => {
@@ -145,8 +165,8 @@ const BADGES = [
   { id: 'protein', icon: '💪', name: 'Bielkovinový týždeň', test: s => s.proteinWeek },
   { id: 'kg2', icon: '🎯', name: s => `${s.goal === 'gain' ? '+' : '−'}${U.imp() ? 5 : 2} ${U.wUnit()}`, test: s => { const n = U.fromW(U.imp() ? 5 : 2); return s.goal === 'gain' ? s.change >= n : s.change <= -n; } },
   { id: 'kg5', icon: '🏆', name: s => `${s.goal === 'gain' ? '+' : '−'}${U.imp() ? 10 : 5} ${U.wUnit()}`, test: s => { const n = U.fromW(U.imp() ? 10 : 5); return s.goal === 'gain' ? s.change >= n : s.change <= -n; } },
-  { id: 'half', icon: '⛰️', name: 'Polovica programu', test: s => s.programDay >= 42 },
-  { id: 'done', icon: '🥇', name: 'Celý program', test: s => s.programDay >= 84 },
+  { id: 'half', icon: '⛰️', name: 'Mesiac s GainTrain', test: s => s.programDay >= 30 },
+  { id: 'done', icon: '🥇', name: '100 dní s GainTrain', test: s => s.programDay >= 100 },
   { id: 'comeback', icon: '🌬️', name: 'Druhý dych', test: s => s.comebacks >= 1 },
 ];
 
@@ -165,7 +185,8 @@ export async function renderProgress() {
   const start = p.start_date || today;
   const programDay = Math.max(1, diffDays(start, today) + 1);
   const from = period === 'all' ? start : calc.addDays(today, -(period - 1));
-  const gridFrom = calc.weekStart(start);
+  // kalendár: mesiac po krúžkoch; aktuálny mesiac sa načíta vždy, staršie mesiace pri listovaní
+  const gridFrom = today.slice(0, 7) + '-01';
   const [weights, daily, totalItems, actDates] = await Promise.all([
     db.listWeights(uid), db.dailyTotals(uid, calc.addDays(from < gridFrom ? from : gridFrom, -7), today), db.foodCount(uid).catch(() => 0),
     db.activityDates(uid, calc.addDays(today, -400)).catch(() => null),
@@ -175,7 +196,7 @@ export async function renderProgress() {
   const startW = Number(p.start_weight || tr[0]?.weight || 0);
   const change = last && startW ? last.trend - startW : 0;
   const sl = slope(tr, 14), weekly = sl == null ? null : sl * 7;
-  const endDate = calc.addDays(start, PROGRAM_DAYS - 1);
+  const endDate = calc.addDays(today, FORECAST_DAYS);
   const projection = last && sl != null && endDate > last.date ? { date: endDate, w: last.trend + sl * diffDays(last.date, endDate) } : null;
   const pace = paceVerdict(p.goal, weekly, last?.trend);
   const trPeriod = tr.filter(t => t.date >= from);
@@ -206,17 +227,6 @@ export async function renderProgress() {
   if (bStreak >= 3) insights.push({ i: '🔥', t: `Najdlhšia séria zapisovania: ${bStreak} dní v rade.` });
   if (!insights.length) insights.push({ i: '🌱', t: 'Zapisuj aspoň 4 dni a appka ti tu ukáže, čo z tvojich dát vyplýva.' });
 
-  // mriežka programu 12 × 7
-  const grid = Array.from({ length: 12 }, (_, w) => Array.from({ length: 7 }, (_, d) => calc.addDays(gridFrom, w * 7 + d)));
-  const cell = (d, n) => {
-    if (d < start || d > endDate) return '<i class="g-out"></i>';
-    const st = ` style="--i:${n}"`;
-    if (d > today) return `<i class="g-fut"${st}></i>`;
-    const k = daily[d]?.kcal || 0;
-    const cls = !daily[d]?.n ? 'g-miss' : Math.abs(k - T) <= T * 0.1 ? 'g-ok' : k > T ? 'g-over' : 'g-under';
-    return `<i class="${cls}${d === today ? ' g-now' : ''}" title="${calc.fmtDate(d)}"${st}></i>`;
-  };
-
   // návrat po pauze aspoň 3 dni = odznak Druhý dych
   const sortedLog = [...allLoggedDates].sort();
   const comebacks = sortedLog.filter((d, i) => i > 0 && diffDays(sortedLog[i - 1], d) >= 4).length;
@@ -224,12 +234,12 @@ export async function renderProgress() {
   const macroTot = avgP * 4 + avgC * 4 + avgF * 9 || 1;
   const goodDir = p.goal === 'gain' ? change > 0 : p.goal === 'lose' ? change < 0 : Math.abs(change) < 1;
 
-  // kruhy: program, zapisovanie (zapísané dni v programe), kalórie v cieli (v zvolenom období)
-  const elapsed = Math.min(programDay, PROGRAM_DAYS);
-  const progLogged = allLoggedDates.filter(d => d >= start && d <= today).length;
+  // kruhy (v zvolenom období): zapisovanie, bielkoviny v cieli, kalórie v cieli; v strede celkový počet zapísaných dní, bez konca
+  const perDays = days.filter(d => d >= start).length || 1;
+  const totalLogged = new Set((actDates || allLoggedDates).filter(d => d <= today)).size; // celkový počet dní so zápisom, rastie bez konca
   const R = [
-    { l: 'Program', v: elapsed / PROGRAM_DAYS, c: 'var(--accent)' },
-    { l: 'Zapisovanie', v: elapsed ? progLogged / elapsed : 0, c: '#5BB8FF' },
+    { l: 'Zapisovanie', v: Math.min(1, logged.length / perDays), c: 'var(--accent)' },
+    { l: 'Bielkoviny v cieli', v: logged.length ? protDays / logged.length : 0, c: '#5BB8FF' },
     { l: 'Kalórie v cieli', v: logged.length ? inGoal / logged.length : 0, c: '#FFB547' },
   ];
   const fibDays = logged.filter(d => daily[d].fiberN), avgFib = fibDays.length ? fibDays.reduce((a, d) => a + daily[d].fiber, 0) / fibDays.length : null;
@@ -249,7 +259,7 @@ export async function renderProgress() {
     return `<div class="pgx-chips"><div class="${good ? 'good' : ''}"><b>${sign(dlt)}<small> ${U.wUnit()}</small></b><span>v tomto období</span></div><div><b>${fmt1(Math.min(...ts))}<small> ${U.wUnit()}</small></b><span>najnižšia</span></div><div><b>${fmt1(Math.max(...ts))}<small> ${U.wUnit()}</small></b><span>najvyššia</span></div></div>`;
   })() : '';
 
-  // séria zapisovania: dni v rade (dnes sa ešte nerátá ako prerušená), rekord, najbližší míľnik
+  // séria zapisovania: dni v rade (dnes sa ešte neráta ako prerušená), rekord, najbližší míľnik
   // rovnaká séria ako na Dnes a v Profile (zápis jedla, váhy, tréningu aj check-inu, s ochranou série), nie len jedlo
   const logSet = new Set(actDates || allLoggedDates);
   const cur = actDates ? calc.streakSafe([...logSet]).n : (() => { let n = 0, d = logSet.has(today) ? today : calc.addDays(today, -1); while (logSet.has(d)) { n++; d = calc.addDays(d, -1); } return n; })();
@@ -272,7 +282,7 @@ export async function renderProgress() {
     <h1 class="pg-h1">Pokrok</h1>
     ${progressTabs('pokrok')}
     <a class="rp-card" href="#/report?w=${defaultWeek()}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre týždňa, porovnanie a na čo sa zamerať.</p></div><span class="rp-card-go">›</span></a>
-    <div class="pg-per pgx-per" style="--i:${prevPer}" data-to="${perIdx}">${[[7, '7 dní'], [30, '30 dní'], ['all', 'Celý program']].map(([v, l]) => `<button data-per="${v}" class="${period === v ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="pg-per pgx-per" style="--i:${prevPer}" data-to="${perIdx}">${[[7, '7 dní'], [30, '30 dní'], ['all', 'Všetko']].map(([v, l]) => `<button data-per="${v}" class="${period === v ? 'on' : ''}">${l}</button>`).join('')}</div>
 
     <section class="pg-card pgx-hero pgx-anim">
       <i class="pgx-aur" aria-hidden="true"></i>
@@ -282,11 +292,11 @@ export async function renderProgress() {
           <b class="pgx-big ${goodDir ? 'good' : change ? 'bad' : ''}"><span ${last ? `data-to="${U.toW(change)}" data-dec="1" data-sign="1"` : ''}>${last ? sign(change) : '–'}</span><small> ${U.wUnit()}</small></b>
           <p class="pgx-sub">${last ? `Trendová váha <b>${fmt1(last.trend)} ${U.wUnit()}</b>` : 'Zatiaľ bez vážení'}${weekly != null ? `<br>${sign(weekly)} ${U.wUnit()} za týždeň` : ''}</p>
         </div>
-        <div class="pgx-rw">${rings(R)}<div class="pgx-rc"><b data-to="${elapsed}">${elapsed}</b><span>z ${PROGRAM_DAYS} dní</span></div></div>
+        <div class="pgx-rw">${rings(R)}<div class="pgx-rc"><b data-to="${totalLogged}">${totalLogged}</b><span>${totalLogged === 1 ? 'zapísaný<br>deň' : totalLogged > 1 && totalLogged < 5 ? 'zapísané<br>dni' : 'zapísaných<br>dní'}</span></div></div>
       </div>
       <div class="pgx-rl">${R.map(r => `<span><i style="background:${r.c}"></i>${r.l}<b>${Math.round(Math.min(1, r.v) * 100)} %</b></span>`).join('')}</div>
       ${weightChart(period === 'all' ? tr : (trPeriod.length >= 2 ? trPeriod : tr.slice(-2)), startW, period === 'all' ? projection : null)}
-      ${period === 'all' && projection ? `<div class="pgx-fc"><span>🏁</span><p>Pri tomto tempe budeš ${calc.fmtDate(endDate)} vážiť približne <b>${fmt1(projection.w)} ${U.wUnit()}</b>.</p></div>` : projection ? `<p class="pgx-hint">Predpoveď do konca programu uvidíš v zobrazení Celý program.</p>` : ''}
+      ${period === 'all' && projection ? `<div class="pgx-fc"><span>🏁</span><p>Pri tomto tempe budeš o 8 týždňov (${calc.fmtDate(endDate)}) vážiť približne <b>${fmt1(projection.w)} ${U.wUnit()}</b>.</p></div>` : projection ? `<p class="pgx-hint">Predpoveď na 8 týždňov dopredu uvidíš v zobrazení Všetko.</p>` : ''}
       ${chips}
       <p class="pg-pace ${pace.cls}">${pace.text}</p>
     </section>
@@ -306,13 +316,7 @@ export async function renderProgress() {
       <div class="pgx-mac">${M.map(m => `<div><div class="pgx-mrw">${miniRing(m.v, m.t, m.c)}<b>${m.v == null ? '–' : `<span data-to="${Math.round(m.v)}">0</span>`}<small>g</small></b></div><span>${m.l}</span><small>${m.v == null ? `cieľ ${m.t} g` : `${Math.round(m.v / m.t * 100)} % z ${m.t} g`}</small></div>`).join('')}</div>
     </section>
 
-    <section class="pg-card pgx-anim pgx-hmc">
-      <div class="pg-row"><h3>12 týždňov programu</h3><span class="pg-chip">deň ${Math.min(programDay, PROGRAM_DAYS)} z ${PROGRAM_DAYS}</span></div>
-      <div class="hm"><div class="hm-l">${['Po', '', 'St', '', 'Pi', '', 'Ne'].map(x => `<span>${x}</span>`).join('')}</div>
-        <div class="hm-g">${grid.map((wk, i) => `<div class="hm-w"><b>${i + 1}</b>${wk.map((d, j) => cell(d, i * 7 + j)).join('')}</div>`).join('')}</div></div>
-      <p class="hm-sum">Zapísané <b>${progLogged}</b> z <b>${elapsed}</b> dní, v cieli <b>${logged.length && period === 'all' ? inGoal : allLoggedDates.filter(d => d >= start && d <= today && daily[d] && Math.abs(daily[d].kcal - T) <= T * 0.1).length}</b>.</p>
-      <div class="pg-legend"><span><i class="g-ok"></i>v cieli</span><span><i class="g-over"></i>nad</span><span><i class="g-under"></i>pod</span><span><i class="g-miss"></i>nezapísané</span></div>
-    </section>
+    <section class="pg-card pgx-anim pgx-hmc" id="pgCal">${calHtml(calMonth && calMonth <= today.slice(0, 7) ? calMonth : today.slice(0, 7), daily, T, start, today)}</section>
 
     <section class="pg-card">
       <h3 class="mb">Čo hovoria tvoje dáta</h3>
@@ -325,6 +329,17 @@ export async function renderProgress() {
     </section>
   </div>${nav('#/pokrok')}`;
 
+  const calSec = $app().querySelector('#pgCal');
+  if (calSec) calSec.addEventListener('click', async e => {
+    const b = e.target.closest('[data-cal]'); if (!b || b.disabled) return;
+    const cur = calMonth && calMonth <= today.slice(0, 7) ? calMonth : today.slice(0, 7);
+    const [y, m] = cur.split('-').map(Number), nd = new Date(y, m - 1 + Number(b.dataset.cal), 1);
+    calMonth = `${nd.getFullYear()}-${String(nd.getMonth() + 1).padStart(2, '0')}`;
+    const mFrom = calMonth + '-01', mTo = calMonth + '-' + String(new Date(nd.getFullYear(), nd.getMonth() + 1, 0).getDate()).padStart(2, '0');
+    if (!calLoaded.has(calMonth) && mFrom < gridFrom) { try { Object.assign(daily, await db.dailyTotals(uid, mFrom, mTo)); calLoaded.add(calMonth); } catch { /* bez siete ukáž, čo je */ } }
+    calSec.innerHTML = calHtml(calMonth, daily, T, start, today);
+    calSec.classList.remove('in'); requestAnimationFrame(() => requestAnimationFrame(() => calSec.classList.add('in')));
+  });
   $app().querySelectorAll('[data-per]').forEach(b => b.onclick = () => { prevPer = perIdx; period = b.dataset.per === 'all' ? 'all' : Number(b.dataset.per); renderProgress(); });
   const per = $app().querySelector('.pgx-per');
   if (per) requestAnimationFrame(() => requestAnimationFrame(() => per.style.setProperty('--i', per.dataset.to)));
