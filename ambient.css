@@ -28,3 +28,5 @@ body::before { content: ''; position: fixed; inset: -12% -20%; z-index: -1; poin
 html[data-theme=light]::before, html[data-theme=light] body::before { display: none; }
 /* Jedlo malo vlastný glow len v hornej časti, nahrádza ho celoobrazovkový */
 html .screen:has(#mealseg)::before { display: none; }
+/* DOČASNÁ DIAGNOSTIKA (zmaže sa): purpurový pruh od úplného vrchu obrazovky, 70 px */
+body::after { content: ''; position: fixed; left: 0; right: 0; top: 0; height: 70px; background: rgba(255,0,255,.85); z-index: 2147483000; pointer-events: none; }
