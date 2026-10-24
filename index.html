@@ -68,7 +68,7 @@
         var W = function (cb) {
           var self = this; this._buf = [];
           this._o = new O(function (recs) {
-            // zmena samotného textu (napr. číslo, ktoré sa rozbieha na kalórie) nepridáva žiadny prvok, takže na ňu nikto nemusí reagovať
+            // zmena samotného textu (napr. číslo, ktoré sa rozbieha na kalórie) neppridáva žiadny prvok, takže na ňu nikto nemusí reagovať
             var keep = recs.filter(function (r) {
               if (r.type !== 'childList') return true;
               var i, a = r.addedNodes, d = r.removedNodes;
@@ -87,7 +87,7 @@
         W.__fw = true; window.MutationObserver = W;
       }
       var F = window.fetch, inflight = {}, memo = {}, ver = 0, TTL = 20000;
-      // krátka pamäť na odpovede databázy: pri preklikávaní kariet sa tie isté dopyty nesťahujú znova. Každý zápis ju hneď vymaže.
+      // krátka pamäť na odpovede databázy: pri preklikuávaní kariet sa tie isté dopyty nesťahujú znova. Každý zápis ju hneď vymaže.
       window.__fwFlush = function () { memo = {}; ver++; };
       var lastHash = location.hash;
       window.addEventListener('hashchange', function () { if (location.hash === lastHash) window.__fwFlush(); lastHash = location.hash; });
@@ -170,6 +170,7 @@
   <link rel="stylesheet" href="suggest.css">
   <link rel="stylesheet" href="buddy.css">
   <link rel="stylesheet" href="perf.css">
+  <link rel="stylesheet" href="ambient.css">
 </head>
 <body>
   <div id="app"><div class="sk" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><i class="e"></i></div></div>
