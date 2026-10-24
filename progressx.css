@@ -156,25 +156,41 @@
 .pgx-anim.in .pgx-ma { stroke-dashoffset: 0; transition: stroke-dashoffset 1.6s cubic-bezier(.4,.1,.2,1) .5s; }
 .pgx-bars .b-ok { fill: url(#pgxb-ok); } .pgx-bars .b-over { fill: url(#pgxb-over); } .pgx-bars .b-under { fill: url(#pgxb-under); }
 
-/* mriežka programu: týždne ako stĺpce, 7 riadkov */
-.pgx-hmc .hm { display: flex; gap: 8px; align-items: stretch; }
-.hm-l { display: grid; grid-template-rows: auto repeat(7, 1fr); gap: 4px; padding-top: 0; }
-.hm-l::before { content: ''; height: 14px; }
-.hm-l span { font-size: 10px; color: var(--muted); display: flex; align-items: center; min-height: 0; }
-.hm-g { flex: 1; display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; min-width: 0; }
-.hm-w { display: grid; grid-template-rows: 14px repeat(7, auto); gap: 4px; min-width: 0; }
-.hm-w b { font-size: 10px; font-weight: 700; color: var(--muted); text-align: center; line-height: 14px; }
-.hm-w i { display: block; aspect-ratio: 1; border-radius: 7px; background: var(--track, #2a2f3a); opacity: 0; transform: scale(.4); }
-.pgx-hmc.in .hm-w i { opacity: 1; transform: none; transition: opacity .35s ease calc(var(--i, 0) * 9ms), transform .45s cubic-bezier(.2,1.4,.4,1) calc(var(--i, 0) * 9ms); }
-.hm-w i.g-ok { background: var(--accent); } .hm-w i.g-over { background: var(--accent-2); } .hm-w i.g-under { background: #5BB8FF; }
-.hm-w i.g-miss { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent-2) 55%, transparent); }
-.hm-w i.g-fut { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
-.hm-w i.g-out { background: transparent; }
-.pgx-hmc.in .hm-w i.g-fut, .pgx-hmc.in .hm-w i.g-out { opacity: .8; }
-.hm-w i.g-now { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--text); animation: pgxNow 2.4s ease-in-out infinite 1.5s; }
-.hm-sum { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
-.hm-sum b { color: var(--text); }
-.pgx-hmc .pg-legend i.g-miss { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent-2) 55%, transparent); }
+/* kalendár: mesiac po krúžkoch (ako v Apple Fitness); krúžok sa naplní podľa podielu z cieľa kcal */
+.pg-card.pgx-hmc { background: radial-gradient(120% 60% at 0% 0%, rgba(124,255,178,.10), transparent 60%), radial-gradient(100% 60% at 100% 100%, rgba(91,184,255,.08), transparent 62%), var(--card); }
+.pgx-hmc .cl-top { align-items: center; }
+.pgx-hmc .cl-nav { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 99px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.06); }
+.pgx-hmc .cl-nav span { min-width: 104px; text-align: center; font-size: 13px; font-weight: 700; }
+.pgx-hmc .cl-nav button { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; border-radius: 50%; border: 0; background: none; color: var(--text); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
+.pgx-hmc .cl-nav button:disabled { opacity: .25; cursor: default; }
+.pgx-hmc .cl-stats { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0 14px; font-size: 13px; color: var(--muted); }
+.pgx-hmc .cl-stats b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.pgx-hmc .cl-stats i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.pgx-hmc .cl-stats i.s-log { background: #6FBEFF; box-shadow: 0 0 8px rgba(111,190,255,.7); }
+.pgx-hmc .cl-stats i.s-ok { background: var(--accent); box-shadow: 0 0 8px rgba(124,255,178,.7); }
+.pgx-hmc .cl-wd, .pgx-hmc .cl-g { display: grid; grid-template-columns: repeat(7, 1fr); }
+.pgx-hmc .cl-wd { margin-bottom: 6px; }
+.pgx-hmc .cl-wd span { text-align: center; font-size: 11px; font-weight: 600; color: var(--muted); }
+.pgx-hmc .cl-g { gap: 6px 4px; }
+.pgx-hmc .cl-d { position: relative; aspect-ratio: 1; max-width: 46px; width: 100%; justify-self: center; display: grid; place-items: center; }
+.pgx-hmc .cl-d svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pgx-hmc .cl-d b { position: relative; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+.pgx-hmc .cl-t { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 3.4; }
+.pgx-hmc .cl-f { fill: none; stroke-width: 3.4; stroke-linecap: round; }
+.pgx-hmc.in .cl-f { stroke-dashoffset: var(--off); transition: stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1) calc(var(--i, 0) * 16ms); }
+.pgx-hmc .cl-d.ok .cl-f { stroke: #7CFFB2; } .pgx-hmc .cl-d.ok svg { filter: drop-shadow(0 0 3px rgba(124,255,178,.55)); }
+.pgx-hmc .cl-d.over .cl-f { stroke: #FFB35C; } .pgx-hmc .cl-d.over svg { filter: drop-shadow(0 0 3px rgba(255,170,80,.5)); }
+.pgx-hmc .cl-d.under .cl-f { stroke: #6FBEFF; } .pgx-hmc .cl-d.under svg { filter: drop-shadow(0 0 3px rgba(111,190,255,.5)); }
+.pgx-hmc .cl-d.miss .cl-t { stroke: rgba(255,255,255,.16); stroke-dasharray: 2.2 4.1; }
+.pgx-hmc .cl-d.miss b { color: var(--muted); font-weight: 600; }
+.pgx-hmc .cl-d.fut b, .pgx-hmc .cl-d.pre b { color: rgba(255,255,255,.28); font-weight: 600; }
+.pgx-hmc .cl-d.fut .cl-t, .pgx-hmc .cl-d.pre .cl-t { stroke: rgba(255,255,255,.035); }
+.pgx-hmc .cl-d.now::before { content: ''; position: absolute; inset: 6px; border-radius: 50%; background: radial-gradient(circle, rgba(124,255,178,.30), rgba(124,255,178,0) 70%); }
+.pgx-hmc .cl-d.now b { color: var(--accent); font-weight: 800; }
+.pgx-hmc .cl-lg { margin-top: 14px; gap: 14px; }
+.pgx-hmc .cl-lg i { width: 11px; height: 11px; border-radius: 50%; background: none; box-shadow: inset 0 0 0 2.5px var(--k); }
+.pgx-hmc .cl-lg i.ok { --k: #7CFFB2; } .pgx-hmc .cl-lg i.over { --k: #FFB35C; } .pgx-hmc .cl-lg i.under { --k: #6FBEFF; } .pgx-hmc .cl-lg i.miss { --k: rgba(255,255,255,.22); }
+@media (prefers-reduced-motion: reduce) { .pgx-hmc .cl-f { transition: none !important; stroke-dashoffset: var(--off); } }
 
 /* zistenia: karty na potiahnutie */
 .pgx-ins { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 2px 16px 6px; scrollbar-width: none; }
