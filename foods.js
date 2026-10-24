@@ -82,7 +82,8 @@ export async function renderFood() {
   </div>${nav('#/jedlo')}`;
 
   const $res = $app().querySelector('#results'), $q = $app().querySelector('#q'), $tabs = $app().querySelector('#tabs');
-  const done = m => { toast('Pridané do: ' + MEALS()[typeof m === 'string' && MEALS()[m] ? m : meal].toLowerCase()); location.hash = '#/'; };
+  // tanier (plate.js): na obrazovke Jedlo ostaneš a pridáš ďalšie jedlo; bez plate.js po pridaní skočí na Dnes ako predtým
+  const done = m => { if (window.__gtPlate && window.__gtPlate(m)) return; toast('Pridané do: ' + MEALS()[typeof m === 'string' && MEALS()[m] ? m : meal].toLowerCase()); location.hash = '#/'; };
   const pick = async k => { const f = pool.get(k); if (!f) return; openAdd(f.log ? await fromLog(f.log) : f, meal, done); };
   const bind = () => $res.querySelectorAll('[data-k]').forEach(el => el.onclick = () => pick(el.dataset.k));
 
