@@ -7,7 +7,7 @@
   <meta name="description" content="Fuelwind: jedlo, váha, tréning a kouč v jednej appke. 12-t&yacute;&#382;d&#328;ov&aacute; premena.">
   <meta name="theme-color" content="#0B0E12">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Fuelwind">
   <link rel="manifest" href="manifest.json">
   <script>
@@ -18,8 +18,8 @@
     html[data-theme=light] { --bg: #F3F5F8; --bg-2: #E9EDF2; --card: #FFFFFF; --card-2: #F1F3F7; --line: #E1E6ED; --text: #121821; --muted: #667085; --accent: #0E9F62; --accent-ink: #FFFFFF; --accent-2: #E8590C; --protein: #0E9F62; --carbs: #1E7FD8; --fat: #C98A00; --danger: #E0344F; color-scheme: light; }
     html[data-theme=light], html[data-theme=light] body { background: #F3F5F8; }
     html[data-theme=light] .sk i { background: #E4E8EE; }
-    /* stavový riadok iPhonu má v appke na ploche biele písmo, preto pod ním v svetlom režime ostáva tmavý pásik */
-    @media (display-mode: standalone) { html[data-theme=light] body::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: env(safe-area-inset-top); background: #101814; z-index: 2147483000; pointer-events: none; } }
+    /* stavový riadok iPhonu má v appke na ploche biele písmo (obsah ide pod hodiny), preto v svetlom režime je pod ním jemný tmavý prechod, aby písmo ostalo čitateľné */
+    @media (display-mode: standalone) { html[data-theme=light] body::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: calc(env(safe-area-inset-top) * 1.45); background: linear-gradient(180deg, #101814 0%, #101814 62%, rgba(16,24,20,0) 100%); z-index: 2147483000; pointer-events: none; } }
   </style>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/app-icon">
@@ -68,7 +68,7 @@
         var W = function (cb) {
           var self = this; this._buf = [];
           this._o = new O(function (recs) {
-            // zmena samotného textu (napr. číslo, ktoré sa rozbieha na kalórie) neppridáva žiadny prvok, takže na ňu nikto nemusí reagovať
+            // zmena samotného textu (napr. číslo, ktoré sa rozbieha na kalórie) nepridáva žiadny prvok, takže na ňu nikto nemusí reagovať
             var keep = recs.filter(function (r) {
               if (r.type !== 'childList') return true;
               var i, a = r.addedNodes, d = r.removedNodes;
@@ -87,7 +87,7 @@
         W.__fw = true; window.MutationObserver = W;
       }
       var F = window.fetch, inflight = {}, memo = {}, ver = 0, TTL = 20000;
-      // krátka pamäť na odpovede databázy: pri preklikuávaní kariet sa tie isté dopyty nesťahujú znova. Každý zápis ju hneď vymaže.
+      // krátka pamäť na odpovede databázy: pri preklikyávaní kariet sa tie isté dopyty nesťahujú znova. Každý zápis ju hneď vymaže.
       window.__fwFlush = function () { memo = {}; ver++; };
       var lastHash = location.hash;
       window.addEventListener('hashchange', function () { if (location.hash === lastHash) window.__fwFlush(); lastHash = location.hash; });
