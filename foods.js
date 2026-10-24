@@ -56,6 +56,7 @@ function row(f, key) {
 // ---------- obrazovka ----------
 export async function renderFood() {
   const params = new URLSearchParams((location.hash.split('?')[1]) || '');
+  const fromTab = !params.has('meal'); // otvorené cez kartu Jedlo (nie cez + pri jedle na Dnes): po pridaní ostaň tu
   let meal = params.get('meal') || defaultMeal();
   const uid = state().profile.id;
   dx.ensure(uid).then(() => { if ($app().querySelector('#results') && dx.anyMode()) $app().querySelector('#q')?.dispatchEvent(new Event('input')); }).catch(() => { });
@@ -82,8 +83,8 @@ export async function renderFood() {
   </div>${nav('#/jedlo')}`;
 
   const $res = $app().querySelector('#results'), $q = $app().querySelector('#q'), $tabs = $app().querySelector('#tabs');
-  // tanier (plate.js): na obrazovke Jedlo ostaneš a pridáš ďalšie jedlo; bez plate.js po pridaní skočí na Dnes ako predtým
-  const done = m => { if (window.__gtPlate && window.__gtPlate(m)) return; toast('Pridané do: ' + MEALS()[typeof m === 'string' && MEALS()[m] ? m : meal].toLowerCase()); location.hash = '#/'; };
+  // otvorené cez kartu Jedlo: po pridaní ostaneš na Jedlo; otvorené cez + pri jedle na Dnes: vrátiš sa na Dnes
+  const done = m => { toast('Pridané do: ' + MEALS()[typeof m === 'string' && MEALS()[m] ? m : meal].toLowerCase()); if (!fromTab) location.hash = '#/'; };
   const pick = async k => { const f = pool.get(k); if (!f) return; openAdd(f.log ? await fromLog(f.log) : f, meal, done); };
   const bind = () => $res.querySelectorAll('[data-k]').forEach(el => el.onclick = () => pick(el.dataset.k));
 
