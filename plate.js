@@ -41,8 +41,13 @@ const CSS = `
 .gtp-sum{display:flex;gap:6px;margin:2px 12px 12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}
 .gtp-sum span{flex:1;padding:8px 6px;border-radius:12px;background:rgba(255,255,255,.04);text-align:center;font-size:11px;color:var(--muted)}
 .gtp-sum span b{display:block;font-size:15px;font-weight:800;color:var(--c,var(--text));font-variant-numeric:tabular-nums}
+.gtp{transition:transform .35s cubic-bezier(.2,1.2,.3,1),opacity .25s,background .25s,left .3s,right .3s}
+.gtp.mini{right:auto;width:auto;border-radius:99px}
+.gtp.mini .gtp-t,.gtp.mini .gtp-done{display:none}
+.gtp.mini .gtp-row{padding:8px}
+.gtp.mini .gtp-main{gap:0}
 body.gtp-on .al-pill{display:none!important}
-body.gtp-on #app .screen{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 110px)}
+body.gtp-on #app .screen{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 90px)}
 @media (prefers-reduced-motion:reduce){.gtp,.gtp-list,.gtp-ic b.pop{transition:none;animation:none}}
 html[data-theme=light] .gtp{background:rgba(255,255,255,.86);border-color:rgba(14,159,98,.25)}
 html[data-theme=light] .gtp-ic{background:#E8F7EF}
@@ -59,7 +64,8 @@ const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&
 const cnt = n => `${n} ${n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'}`;
 
 let sess = null; // { date, ready: Promise<Set>, rows: [] }
-let el = null;
+let el = null, miniT = 0;
+const arm = () => { clearTimeout(miniT); miniT = setTimeout(() => { if (el && !el.classList.contains('open')) el.classList.add('mini'); }, 4500); };
 
 // afterAdd: tanier vznikol až po prvom pridaní (appka sa ešte načítavala alebo sa zmenil deň), takže posledný zápis dňa
 // (zoznam je zoradený podľa času) je práve pridané jedlo a do základu sa nepočíta
@@ -70,7 +76,7 @@ function start(afterAdd = false) {
   return sess;
 }
 function end() {
-  sess = null;
+  sess = null; clearTimeout(miniT);
   if (el) { const e = el; el = null; e.classList.remove('on'); setTimeout(() => e.remove(), 300); }
   document.body.classList.remove('gtp-on');
 }
@@ -98,21 +104,24 @@ function draw(pop) {
   el.innerHTML = `<div class="gtp-list"><div>${sess.rows.map(r => `<div class="gtp-it"><div><strong>${h(r.name)}</strong><small>${r.portion && r.qty ? `${String(Math.round(r.qty * 10) / 10).replace('.', ',')}× ${h(r.portion)}, ` : ''}${fmt(r.grams)} g</small></div><em>${fmt(r.kcal)}</em><button type="button" data-undo="${h(r.id)}" aria-label="Vrátiť ${h(r.name)}">×</button></div>`).join('')}
       <div class="gtp-sum"><span style="--c:#9DFFC8"><b>${fmt(t.p)} g</b>bielkoviny</span><span style="--c:#7CC4FF"><b>${fmt(t.c)} g</b>sacharidy</span><span style="--c:#FFD27A"><b>${fmt(t.f)} g</b>tuky</span></div></div></div>
     <div class="gtp-row"><button type="button" class="gtp-main" aria-expanded="${open ? 'true' : 'false'}"><span class="gtp-ic">${PLATE}<b class="${pop ? 'pop' : ''}">${sess.rows.length}</b></span>
-      <span class="gtp-t"><b>Na tanieri ${cnt(sess.rows.length)}</b><span><i>+${fmt(t.k)} kcal</i> · ${left >= 0 ? `zostáva ${fmt(left)}` : `${fmt(-left)} nad cieľ`}</span></span></button>
-      <button type="button" class="gtp-done">Hotovo</button></div>`;
+      <span class="gtp-t"><b>Uložené ✓ ${cnt(sess.rows.length)}</b><span><i>+${fmt(t.k)} kcal</i> · ${left >= 0 ? `zostáva ${fmt(left)}` : `${fmt(-left)} nad cieľ`}</span></span></button>
+      <button type="button" class="gtp-done">Dnes</button></div>`;
   if (open) el.classList.add('open');
+  if (pop) el.classList.remove('mini');
+  arm();
   document.body.classList.add('gtp-on');
   requestAnimationFrame(() => el && el.classList.add('on'));
 }
 
 async function onClick(e) {
+  if (el.classList.contains('mini')) { el.classList.remove('mini'); arm(); return; }
   if (e.target.closest('.gtp-done')) { end(); location.hash = '#/'; return; }
   const u = e.target.closest('[data-undo]');
   if (u) {
     u.disabled = true;
     const id = sess?.rows.find(r => String(r.id) === u.dataset.undo)?.id;
     try { if (id != null) await db.deleteFood(id); ctx.toast?.('Vrátené'); } catch (err) { ctx.toast?.(err.message || 'Nepodarilo sa vrátiť', true); }
-    await refresh(); if (sess && !sess.rows.length) el?.classList.remove('open');
+    arm(); await refresh(); if (sess && !sess.rows.length) el?.classList.remove('open');
     return;
   }
   if (e.target.closest('.gtp-main')) { el.classList.toggle('open'); el.querySelector('.gtp-main')?.setAttribute('aria-expanded', el.classList.contains('open')); }
