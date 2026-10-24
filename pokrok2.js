@@ -1,5 +1,5 @@
 // Pokrok: krásne prázdne stavy pre nového používateľa a karta "Tvoj štart".
-// Keď ešte nie sú dáta, karty neukazujú pomĺčky a prázdne grafy, ale náznak toho, čo sa tu objaví, a jedno jasné tlačidlo, čo urobiť.
+// Keď ešte nie sú dáta, karty neukazujú pomlčky a prázdne grafy, ale náznak toho, čo sa tu objaví, a jedno jasné tlačidlo, čo urobiť.
 // Modul sa len pozerá na vykreslenú kartu Pokrok (nič nepočíta znova), takže výpočty ostávajú v progress.js.
 const CSS = `
 .pe-quest{position:relative;overflow:hidden;margin-bottom:12px;padding:16px;border-radius:22px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));

@@ -3,7 +3,7 @@
    html::after a body::after nechávame voľné: používa ich pásik načítania a stavový riadok v svetlom režime (index.html). */
 html { background: var(--bg); }
 html body { background: transparent; }
-/* mesh + zrno + stmavené okraje (prvá vrstva je navrchu). Úplné hore pozadie plynulo stmavne: iOS tam cez hodiny kreslí vlastný tmavý závoj a bez toho by na jeho spodnej hrane bola ostrá hrana */
+/* mesh + zrno + stmavené okraje (prvá vrstva je navrchu). Úplne hore pozadie plynulo stmavne: iOS tam cez hodiny kreslí vlastný tmavý závoj a bez toho by na jeho spodnej hrane bola ostrá hrana */
 html::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background:
     linear-gradient(180deg, #0B0E12 0, #0B0E12 64px, rgba(11,14,18,.6) 104px, rgba(11,14,18,.2) 150px, rgba(11,14,18,0) 200px),
@@ -27,5 +27,5 @@ body::before { content: ''; position: fixed; inset: -12% -20%; z-index: -1; poin
 @media (prefers-reduced-motion: reduce) { body::before { animation: none; } }
 /* svetlý režim ostáva čistý (biele karty na svetlom podklade) */
 html[data-theme=light]::before, html[data-theme=light] body::before { display: none; }
-/* Jedlo malo vlastný glow len v hornej časti, nahrádza ho celóobrazovkový */
+/* Jedlo malo vlastný glow len v hornej časti, nahrádza ho celoobrazovkový */
 html .screen:has(#mealseg)::before { display: none; }

@@ -13,6 +13,8 @@ const AKEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 // najprv rýchly Flash-Lite (suroviny ~2 s, 4 recepty ~6 s); Flash je pomalší a často preťažený, ostáva ako záloha
 const GMODELS = [Deno.env.get("GEMINI_MODEL_LITE") || "gemini-3.5-flash-lite", "gemini-flash-lite-latest", Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash", "gemini-flash-latest"];
 const AMODELS = [Deno.env.get("ANTHROPIC_MODEL") || "claude-haiku-5-5", "claude-haiku-4-5"];
+// rozpoznávanie fotky: silnejší model, pri zlyhaní padá na Haiku
+const DMODELS = [Deno.env.get("ANTHROPIC_DETECT_MODEL") || "claude-sonnet-5-5", ...AMODELS];
 const MAX_B64 = 4_000_000;
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -26,15 +28,20 @@ const num = (v: unknown, max: number, dec = 0) => { const n = Number(v); if (!Nu
 const str = (v: unknown, max: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 
 const DETECT = (lang: string, goal: string) => `You look at 1 to 3 photos of a fridge, freezer or pantry for a nutrition app. List every food item you can actually see.
-Read labels on packages when visible (brand-less generic name is enough). Estimate the quantity. Do not invent items that are not visible; if you are not sure what something is, still list it with "conf":"low".
-Group duplicates into one item. Ignore non-food things.
+Work in this order and do not skip any area: (1) every shelf from top to bottom, left to right, including the very top shelf where packs are piled up; (2) drawers; (3) the door shelves: list every bottle, jar and sauce separately (dressings, ketchup, mustard, soy and Asian sauces, pesto, jam, pickles). Fridges are crowded, so do not stop at the obvious items; small jars, tubs, bottles, packs of sliced meat or cheese, spreads and bakery items in bags all count.
+Read the printed text on every package and copy the product name as printed (a brand-less generic name is enough, e.g. "ajvar", "pesto", "salad dressing", "butter", "cottage cheese", "cocoa drink"). Never rename a product into something else: if a carton says cocoa, it is cocoa, not a caramel drink. If you cannot read it, describe what it most likely is and set "conf":"low".
+Estimate the quantity: use the weight or volume printed on the package when you can read it (e.g. butter 250 g); count items that can be counted (eggs, yogurt cups, bottles) and give the exact count you see; if eggs are in a tray, count the visible eggs.
+Do not invent items that are not visible; if you are not sure what something is, still list it with "conf":"low".
+The photos may show the same fridge from different angles: never count one item twice. Group duplicates into one item, but keep different products separate (two different yogurts are two items). Ignore non-food things.
+Bowls, pots and boxes covered with cling film or a lid are leftovers or prepared meals: list EACH container separately; if the content is not clearly recognizable, name it "prepared meal (leftovers)" or the dish if you can tell what it is, with "conf":"low" and a rough "g". Never guess a specific dish you cannot see.
+Raw meat, fish, vegetables, eggs and dairy matter most for cooking, so be careful and precise with those. Beer, wine and other alcohol are drinks (cat "drink", health "limit"), listed once with the bottle count.
 The user's goal: ${goal}.
 Return ONLY JSON:
 {"ok":true,"note":"","items":[{"name":"short generic food name in ${lang}, e.g. chicken breast, eggs, Greek yogurt","qty":"human quantity in ${lang}, e.g. ~6 ks, ~300 g, 1 fľaša, pol hlávky","g":300,"cat":"protein|dairy|veg|fruit|carb|fat|sauce|drink|snack|other","emoji":"one emoji","health":"good|ok|limit","conf":"high|low"}],
 "shop":[{"name":"food to buy, in ${lang}","why":"max 7 words in ${lang}, positive, why it helps the goal"}]}
 Rules: "health":"limit" only for fried, ultra-processed, sugary or very fatty foods (sweets, chips, sausages, sugary drinks, fried leftovers). "g" is the estimated total edible grams (or ml) of that item, integer.
 "shop": 3 to 5 healthy, cheap, common foods that are MISSING and would let the user cook better meals for the goal (e.g. a lean protein if none is visible, vegetables, a whole-grain side). Never shame the user.
-If the photos show no food at all, return {"ok":false,"note":"short reason in ${lang}","items":[],"shop":[]}. Max 40 items.`;
+If the photos show no food at all, return {"ok":false,"note":"short reason in ${lang}","items":[],"shop":[]}. Max 60 items.`;
 
 type RIn = { items: { name: string; qty?: string; g?: number }[]; staples: string[]; useFirst: string[]; meal: string; minutes: number; servings: number; goal: string; kcal: number; protein: number; diet: string; exclude: string[]; wish: string };
 const ANGLES = [
@@ -79,25 +86,27 @@ const parse = (t: string | null): any => {
   if (a2 >= 0 && (a < 0 || a2 < a) && z2 > a2) { try { return wrap(JSON.parse(s.slice(a2, z2 + 1))); } catch { /* ďalej */ } }
   try { return a >= 0 && z > a ? wrap(JSON.parse(s.slice(a, z + 1))) : null; } catch { return null; }
 };
-async function claude(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean): Promise<any> {
+async function claude(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean, models: string[] = AMODELS): Promise<any> {
   if (!AKEY) return null;
-  for (const m of AMODELS) {
+  for (const m of models) {
     try {
+      const body: any = { model: m, max_tokens: maxTokens, messages: [{ role: "user", content: [...images.map((d) => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: d } })), { type: "text", text: prompt }] }] };
+      if (m.includes("haiku")) body.temperature = 0.4;
       const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", signal: AbortSignal.timeout(45000),
+        method: "POST", signal: AbortSignal.timeout(55000),
         headers: { "x-api-key": AKEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-        body: JSON.stringify({ model: m, max_tokens: maxTokens, temperature: 0.4, messages: [{ role: "user", content: [...images.map((d) => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: d } })), { type: "text", text: prompt }] }] }),
+        body: JSON.stringify(body),
       });
       const j = await r.json().catch(() => null);
       if (!r.ok) { console.error("fridge claude", m, r.status, String(j?.error?.message || "").slice(0, 140)); continue; }
       const out = parse((j?.content || []).map((p: any) => p.text || "").join(""));
-      if (out && valid(out)) return out;
+      if (out && valid(out)) return { ...out, __model: m, __u: [Number(j?.usage?.input_tokens) || 0, Number(j?.usage?.output_tokens) || 0] };
       console.error("fridge claude", m, "neplatná odpoveď");
     } catch (e) { console.error("fridge claude", m, String(e).slice(0, 100)); }
   }
   return null;
 }
-async function gemini(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean): Promise<{ j: any; quota: boolean }> {
+async function gemini(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean): Promise<{ j: any; quota: boolean; u?: number[]; m?: string }> {
   let quota = 0;
   if (!GKEY) return { j: null, quota: false };
   const GM = [...GMODELS], retried = new Set<string>();
@@ -118,18 +127,26 @@ async function gemini(images: string[], prompt: string, maxTokens: number, valid
         continue;
       }
       const out = parse((resp?.candidates?.[0]?.content?.parts || []).filter((p: any) => !p.thought).map((p: any) => p.text || "").join(""));
-      if (out && valid(out)) return { j: out, quota: false };
+      if (out && valid(out)) return { j: out, quota: false, m, u: [Number(resp?.usageMetadata?.promptTokenCount) || 0, Number(resp?.usageMetadata?.candidatesTokenCount) || 0] };
       console.error("fridge gemini", m, "neplatná odpoveď", resp?.candidates?.[0]?.finishReason || "", JSON.stringify(out || "").slice(0, 160));
     } catch (e) { console.error("fridge gemini", m, String(e).slice(0, 100)); }
   }
   return { j: null, quota: quota >= GM.length };
 }
-async function ask(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean) {
-  const c = await claude(images, prompt, maxTokens, valid);
-  if (c) return { j: c, via: "claude", quota: false };
+async function ask(images: string[], prompt: string, maxTokens: number, valid: (j: any) => boolean, models: string[] = AMODELS) {
+  const c = await claude(images, prompt, maxTokens, valid, models);
+  if (c) return { j: c, via: "claude:" + (c.__model || ""), quota: false, u: c.__u as number[], model: String(c.__model || "") };
   const g = await gemini(images, prompt, maxTokens, valid);
-  if (g.j) return { j: g.j, via: "gemini", quota: false };
-  return { j: null, via: "", quota: g.quota };
+  if (g.j) return { j: g.j, via: "gemini", quota: false, u: g.u, model: g.m || "gemini" };
+  return { j: null, via: "", quota: g.quota, u: undefined as number[] | undefined, model: "" };
+}
+
+// záznam spotreby tokenov (na výpočet ceny na používateľa); chyba zápisu nikdy neovplyvní odpoveď
+const ADMIN = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ? createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!) : null;
+function logUse(uid: string, mode: string, r: { u?: number[]; model?: string }, photos = 0) {
+  if (!ADMIN || !r?.u) return;
+  const p = ADMIN.from("fridge_usage").insert({ user_id: uid, mode, model: r.model || "?", in_tok: r.u[0] || 0, out_tok: r.u[1] || 0, photos }).then(() => {}, () => {});
+  try { (globalThis as any).EdgeRuntime?.waitUntil(p); } catch { /* nič */ }
 }
 
 const sha = async (t: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -140,7 +157,7 @@ function cleanItems(j: any) {
   const items = (Array.isArray(j?.items) ? j.items : []).map((i: any) => ({
     name: str(i?.name, 40), qty: str(i?.qty, 24), g: num(i?.g, 5000), cat: CATS.includes(i?.cat) ? i.cat : "other",
     emoji: str(i?.emoji, 4), health: ["good", "ok", "limit"].includes(i?.health) ? i.health : "ok", conf: i?.conf === "low" ? "low" : "high",
-  })).filter((i: any) => { const k = i.name.toLowerCase(); if (!i.name || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 40);
+  })).filter((i: any) => { const k = i.name.toLowerCase(); if (!i.name || seen.has(k)) return false; seen.add(k); return true; }).slice(0, 60);
   const shop = (Array.isArray(j?.shop) ? j.shop : []).map((s: any) => ({ name: str(s?.name, 40), why: str(s?.why, 60) })).filter((s: any) => s.name).slice(0, 5);
   return { items, shop };
 }
@@ -204,7 +221,7 @@ Deno.serve(async (req) => {
     const buf = new Uint8Array(await (await fetch(urls[Number(tb.i || 0)], { headers: { "User-Agent": "GainTrainTest/1.0" } })).arrayBuffer());
     let bin = ""; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
     const t0 = Date.now();
-    const d = await ask([btoa(bin)], DETECT("Slovak", GOALS[tb.goal] || GOALS.lose), 4096, (j) => Array.isArray(j?.items) || j?.ok === false);
+    const d = await ask([btoa(bin)], DETECT("Slovak", GOALS[tb.goal] || GOALS.lose), 6144, (j) => Array.isArray(j?.items) || j?.ok === false, DMODELS);
     const det = d.j ? cleanItems(d.j) : null; const t1 = Date.now();
     let rec: any = null;
     if (det?.items?.length) {
@@ -229,9 +246,11 @@ Deno.serve(async (req) => {
   if (b.mode === "detect") {
     const images = (Array.isArray(b.images) ? b.images : []).map(String).filter((x: string) => x && x.length <= MAX_B64).slice(0, 3);
     if (!images.length) return json({ error: "Fotka chýba alebo je príliš veľká." }, 400);
-    const res = await ask(images, DETECT(lang, goal), 4096, (j) => Array.isArray(j?.items) || j?.ok === false);
+    const res = await ask(images, DETECT(lang, goal), 6144, (j) => Array.isArray(j?.items) || j?.ok === false, DMODELS);
     if (!res.j) return json({ error: res.quota ? "AI je dočasne preťažená. Skús to o chvíľu." : "Fotku sa nepodarilo prečítať. Skús ju odfotiť znova, s otvorenými dverami a zapnutým svetlom." }, 502);
+    logUse(u.user.id, "detect", res, images.length);
     const { items, shop } = cleanItems(res.j);
+    console.log("fridge detect", res.via, items.length);
     return json({ ok: items.length > 0, note: str(res.j?.note, 160), items, shop, via: res.via });
   }
 
@@ -252,10 +271,12 @@ Deno.serve(async (req) => {
     const uniq = (x: any) => { const k = fold(x.name); if (seen.has(k)) return false; seen.add(k); return true; };
     const mains = mainsFor(items);
     const runs = await Promise.all(ANGLES.map((a, i) => ask([], RECIPES(lang, r, a, mains.length ? mains[i % mains.length] : ""), 4096, ok)));
+    runs.forEach((x) => logUse(u.user.id, "recipes", x));
     let recipes = runs.flatMap((x) => x.j ? cleanRecipes(x.j, servings, r.kcal, avail).slice(0, 1) : []).filter(uniq);
     // keď väčšina paralelných pokusov zlyhá (napr. preťaženie), doplní sa jedným spoločným
     if (recipes.length < 2) {
       const res = await ask([], RECIPES(lang, r), 16384, ok);
+      logUse(u.user.id, "recipes", res);
       if (res.j) recipes = [...recipes, ...cleanRecipes(res.j, servings, r.kcal, avail).filter(uniq)];
       else if (!recipes.length) return json({ error: res.quota || runs.some((x) => x.quota) ? "AI je dočasne preťažená. Skús to o chvíľu." : "Recepty sa nepodarilo vymyslieť. Skús to znova." }, 502);
     }

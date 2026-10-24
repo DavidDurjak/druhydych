@@ -87,7 +87,7 @@
         W.__fw = true; window.MutationObserver = W;
       }
       var F = window.fetch, inflight = {}, memo = {}, ver = 0, TTL = 20000;
-      // krátka pamäť na odpovede databázy: pri preklikyávaní kariet sa tie isté dopyty nesťahujú znova. Každý zápis ju hneď vymaže.
+      // krátka pamäť na odpovede databázy: pri preklikávaní kariet sa tie isté dopyty nesťahujú znova. Každý zápis ju hneď vymaže.
       window.__fwFlush = function () { memo = {}; ver++; };
       var lastHash = location.hash;
       window.addEventListener('hashchange', function () { if (location.hash === lastHash) window.__fwFlush(); lastHash = location.hash; });
