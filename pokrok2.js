@@ -1,5 +1,5 @@
 // Pokrok: krásne prázdne stavy pre nového používateľa a karta "Tvoj štart".
-// Keď ešte nie sú dáta, karty neukazujú pomlčky a prázdne grafy, ale náznak toho, čo sa tu objaví, a jedno jasné tlačidlo, čo urobiť.
+// Keď ešte nie sú dáta, karty neukazujú pomĺčky a prázdne grafy, ale náznak toho, čo sa tu objaví, a jedno jasné tlačidlo, čo urobiť.
 // Modul sa len pozerá na vykreslenú kartu Pokrok (nič nepočíta znova), takže výpočty ostávajú v progress.js.
 const CSS = `
 .pe-quest{position:relative;overflow:hidden;margin-bottom:12px;padding:16px;border-radius:22px;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));
@@ -91,7 +91,7 @@ function emptyWeight(pg) {
     ${[28, 56, 84].map(y => `<line class="pe-gg" x1="6" x2="334" y1="${y}" y2="${y}"/>`).join('')}
     <path class="pe-ga" d="M6,14 C70,18 100,44 150,50 C200,56 240,72 334,82 L334,96 L6,96 Z"/>
     <path class="pe-gl" d="M6,14 C70,18 100,44 150,50 C200,56 240,72 334,82"/></svg>
-    <div class="pe-ov"><b>${one ? 'Máš prvé vážené' : 'Tvoja krivka začína tu'}</b><p>${one ? 'Zapíš druhé a krivka sa nakreslí aj s predpoveďou do konca programu.' : 'Váž sa ráno, nalačno. Po druhom vážení sa nakreslí krivka s predpoveďou.'}</p>${btn('#/vaha', 'Zapísať váhu')}</div>`;
+    <div class="pe-ov"><b>${one ? 'Máš prvé vážené' : 'Tvoja krivka začína tu'}</b><p>${one ? 'Zapíš druhé a krivka sa nakreslí aj s predpoveďou na 8 týždňov dopredu.' : 'Váž sa ráno, nalačno. Po druhom vážení sa nakreslí krivka s predpoveďou.'}</p>${btn('#/vaha', 'Zapísať váhu')}</div>`;
 }
 
 function emptyKcal(pg) {
@@ -117,7 +117,7 @@ function emptyMacros(pg) {
 function emptyGrid(pg) {
   const sum = pg.querySelector('.hm-sum'); if (!sum) return;
   if ((sum.querySelector('b')?.textContent || '') !== '0') return;
-  sum.innerHTML = 'Dnes začína tvojich 84 dní. Každý zapísaný deň rozsvieti jedno políčko, takže dnešné je prvé v rade.';
+  sum.innerHTML = 'Každý zapísaný deň tu rozsvieti jedno políčko. Dnešné bude prvé v rade.';
 }
 
 function emptyStreak(pg) {
