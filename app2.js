@@ -479,7 +479,6 @@ export async function renderCoach() {
       </div>
     </a>`).join('') : `<div class="card"><p class="muted">${isTr ? 'Zatiaľ nemáš klientov. Pošli im svoj kód z trénerského profilu alebo počkaj na žiadosti z katalógu.' : 'Zatiaľ žiadni účastníci.'}</p></div>`}
   </div>${nav('#/kouc')}`;
-  if (isTr) import('./trainers.js').then(m => m.bindRequests($app(), () => renderCoach()));
   $app().querySelector('#csv').onclick = async () => {
     const csv = await db.exportCsv();
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
@@ -499,7 +498,7 @@ export async function renderCoachDetail(userId) {
   const notes = checkins.filter(c => c.note);
   const urls = await db.photoUrls(photos.slice(-3).map(x => x.path));
   $app().innerHTML = `<div class="screen">
-    <div class="topbar"><div><h1>${h(p.name)}</h1><p class="muted small">${calc.GOAL[p.goal]?.label || ''} · cieľ ${p.target_kcal} kcal · ${p.training_days}× tréning</p></div><span style="display:flex;gap:8px">${state.profile.role !== 'coach' ? `<a class="btn sm" href="#/chat/${userId}">Správy</a>` : ''}<a class="btn sm ghost" href="#/kouc">←</a></span></div>
+    <div class="topbar"><div><h1>${h(p.name)}</h1><p class="muted small">${calc.GOAL[p.goal]?.label || ''} · cieľ ${p.target_kcal} kcal · ${p.training_days}× tréning</p></div><a class="btn sm ghost" href="#/kouc">←</a></div>
     <div class="grid3 mb">
       <div class="stat"><b class="mono">${last ? last.trend.toFixed(1) : '–'}</b><span>kg trend</span></div>
       <div class="stat"><b class="mono ${last && last.trend < startW ? 'pos' : ''}">${last ? ((last.trend - startW) > 0 ? '+' : '') + (last.trend - startW).toFixed(1) : '–'}</b><span>od štartu (${startW.toFixed(1)})</span></div>

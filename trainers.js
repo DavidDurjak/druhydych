@@ -268,12 +268,13 @@ export async function requestsHtml() {
   if (!req.length) return '';
   return req.map(l => `<div class="tr-req" data-l="${l.id}"><div><b>${h(l.client_name || 'Nový klient')}</b><small>${h(l.message || 'Žiada o koučing')}</small></div><div class="row2"><button class="btn sm primary" data-act="active">Prijať</button><button class="btn sm ghost" data-act="declined">Odmietnuť</button></div></div>`).join('');
 }
-export function bindRequests(root, refresh) {
-  root.querySelectorAll('.tr-req [data-act]').forEach(b => b.onclick = async () => {
-    b.disabled = true;
-    try { await api().setLink(b.closest('.tr-req').dataset.l, b.dataset.act); toast(b.dataset.act === 'active' ? 'Klient pridaný' : 'Žiadosť odmietnutá'); refresh(); } catch (err) { toast(err.message, true); b.disabled = false; }
-  });
-}
+// delegované, lebo kouc2.js po vykreslení prestavia obrazovku (priame onclick by sa stratili)
+if (typeof document !== 'undefined') document.addEventListener('click', async e => {
+  const b = e.target.closest('.tr-req [data-act]'); if (!b || b.disabled) return;
+  b.disabled = true;
+  try { await api().setLink(b.closest('.tr-req').dataset.l, b.dataset.act); toast(b.dataset.act === 'active' ? 'Klient pridaný' : 'Žiadosť odmietnutá'); window.dispatchEvent(new HashChangeEvent('hashchange')); }
+  catch (err) { toast(err.message || 'Nepodarilo sa', true); b.disabled = false; }
+});
 export async function trainerCodeHtml() {
   const t = ctx.state.trainer; if (!t) return '';
   return `<div class="tr-code" style="margin-bottom:12px"><div><small class="muted">Tvoj kód pre klientov</small><br><b>${h(t.invite_code)}</b></div><a class="btn sm" href="#/trener-profil">Môj profil</a></div>`;

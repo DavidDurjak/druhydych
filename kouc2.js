@@ -128,6 +128,8 @@ function card(x, n) {
 
 function overview(scr) {
   const csv = scr.querySelector('#csv');
+  const title = scr.querySelector('.topbar h1')?.textContent.trim() || 'Kouč';
+  const extras = [...scr.children].filter(e => e.matches('.tr-code,.tr-req')).map(e => e.outerHTML).join(''); // tréner: kód a žiadosti o koučing (trainers.js)
   const cards = [...scr.querySelectorAll('a.card.link[href^="#/kouc/"]')];
   const xs = cards.map(parseCard);
   const reports = [...scr.children].filter(e => e.matches('section.card'));
@@ -146,7 +148,8 @@ function overview(scr) {
   const date = new Date().toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long' });
   const tail = reports.map(r => r.outerHTML).join('');
   const node = document.createElement('div'); node.className = 'ko-root';
-  node.innerHTML = `<div class="ko-h"><div><h1>Kouč</h1><p>${esc(date)}</p></div><span id="ko-csv"></span></div>
+  node.innerHTML = `<div class="ko-h"><div><h1>${esc(title)}</h1><p>${esc(date)}</p></div><span id="ko-csv"></span></div>
+    ${extras}
     ${xs.length ? `<section class="ko-sum"><div class="ko-ring"><svg viewBox="0 0 120 120"><circle class="t" cx="60" cy="60" r="48"/>${arcs}</svg><div><b>${ok.length}/${xs.length}</b><small>v pohode</small></div></div>
       <div class="ko-leg"><div><i style="background:var(--danger,#FF5C7A)"></i>Potrebuje zásah<b>${bad.length}</b></div><div><i style="background:var(--fat,#FFB547)"></i>Pozor<b>${warn.length}</b></div><div><i style="background:var(--accent)"></i>V pohode<b>${ok.length}</b></div></div></section>
       <div class="ko-kp"><div><b>${adh} %</b><span>zapisovanie jedla</span></div><div><b>${trp} %</b><span>splnené tréningy</span></div><div><b class="${Number(totalLoss) > 0 ? 'pos' : ''}">${esc(comma(totalLoss))}</b><span>kg dole spolu</span></div></div>
@@ -155,7 +158,7 @@ function overview(scr) {
       ${att.length ? `<div class="ko-sec" data-sec="att">Potrebujú pozornosť <b>${att.length}</b></div>${att.map((x, i) => card(x, i)).join('')}` : ''}
       ${ok.length ? `<div class="ko-sec" data-sec="ok">V pohode <b>${ok.length}</b></div>${ok.map((x, i) => card(x, i + att.length)).join('')}` : ''}
       <div class="ko-none">Nikto nevyhovuje filtru.</div>`
-      : '<div class="ko-empty"><b>Zatiaľ žiadni klienti</b>Keď sa niekto zaregistruje a dokončí úvodné nastavenie, objaví sa tu aj s označením, či ide podľa plánu.</div>'}
+      : `<div class="ko-empty"><b>Zatiaľ žiadni klienti</b>${title === 'Klienti' ? 'Pošli klientom svoj kód z trénerského profilu alebo počkaj na žiadosti z katalógu. Keď ich prijmeš, uvidíš tu ich jedlo, tréningy a váhu.' : 'Keď sa niekto zaregistruje a dokončí úvodné nastavenie, objaví sa tu aj s označením, či ide podľa plánu.'}</div>`}
     ${tail ? `<div class="ko-sec">Týždenné reporty</div>${tail}` : ''}`;
   scr.innerHTML = '';
   scr.appendChild(node);
@@ -199,7 +202,7 @@ function detail(scr) {
 function run() {
   const scr = document.querySelector('#app .screen');
   if (!scr || scr.dataset.ko) return;
-  if (scr.querySelector('#csv') && scr.querySelector('.topbar h1')?.textContent.trim() === 'Kouč') { scr.dataset.ko = '1'; overview(scr); return; }
+  if (scr.querySelector('#csv') && /^(Kouč|Klienti)$/.test(scr.querySelector('.topbar h1')?.textContent.trim() || '')) { scr.dataset.ko = '1'; overview(scr); return; }
   if (scr.querySelector('form#mf') && scr.querySelector('.topbar a[href="#/kouc"]')) { scr.dataset.ko = '1'; detail(scr); }
 }
 let q = 0;
