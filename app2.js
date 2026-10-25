@@ -425,12 +425,14 @@ export async function renderMessages() {
 }
 
 // ---------- KOUČ 2.0 ----------
+const coachy = () => state.profile.role === 'coach' || !!ctx.state.trainer; // kouč (vlastník) alebo tréner s profilom
 export async function renderCoach() {
-  if (state.profile.role !== 'coach') { location.hash = '#/'; return; }
+  if (!coachy()) { location.hash = '#/'; return; }
+  const isTr = state.profile.role !== 'coach';
   const from = calc.addDays(calc.today(), -6);
   $app().innerHTML = `<div class="screen"><h1>Kouč</h1><div class="spinner"></div></div>${nav('#/kouc')}`;
   const { profiles, weights, foods, checkins, wlogs, photos } = await db.coachOverview2(from);
-  const people = profiles.filter(p => p.role !== 'coach' && p.onboarded).map(p => {
+  const people = profiles.filter(p => p.role !== 'coach' && p.onboarded && p.id !== state.profile.id).map(p => {
     const w = weights.filter(x => x.user_id === p.id);
     const tr = calc.trend(w.map(x => ({ date: x.date, weight: Number(x.weight_kg) })));
     const last = tr[tr.length - 1];
@@ -457,16 +459,17 @@ export async function renderCoach() {
   });
   const order = { bad: 0, warn: 1, ok: 2 };
   people.sort((a, b) => order[a.flag] - order[b.flag]);
-  const reportsHtml = await rp.coachReportsHtml().catch(() => '');
+  const reportsHtml = isTr ? '' : await rp.coachReportsHtml().catch(() => '');
+  const trTop = isTr ? (await import('./trainers.js').then(m => Promise.all([m.trainerCodeHtml(), m.requestsHtml()]).then(x => x.join(''))).catch(() => '')) : '';
   const totalLoss = people.reduce((a, x) => a + (x.last ? x.startW - x.last.trend : 0), 0);
   $app().innerHTML = `<div class="screen">
-    <div class="topbar"><h1>Kouč</h1><button class="btn sm ghost" id="csv">Export CSV</button></div>
+    <div class="topbar"><h1>${isTr ? 'Klienti' : 'Kouč'}</h1><button class="btn sm ghost" id="csv">Export CSV</button></div>
     <div class="grid3 mb">
       <div class="stat"><b class="mono">${people.length}</b><span>účastníkov</span></div>
       <div class="stat"><b class="mono">${people.filter(x => x.flag === 'ok').length}</b><span>v pohode</span></div>
       <div class="stat"><b class="mono ${totalLoss > 0 ? 'pos' : ''}">${totalLoss.toFixed(1)}</b><span>kg dole spolu</span></div>
     </div>
-    ${reportsHtml}
+    ${trTop}${reportsHtml}
     ${people.length ? people.map(x => `<a class="card link" href="#/kouc/${x.p.id}">
       <div class="row between"><div><h3><span class="flag ${x.flag}"></span>${h(x.p.name)}</h3><p class="muted small">${x.why}</p></div><div style="text-align:right"><b class="mono">${x.last ? x.last.trend.toFixed(1) : '–'} kg</b><p class="muted small mono">${x.last ? ((x.last.trend - x.startW) > 0 ? '+' : '') + (x.last.trend - x.startW).toFixed(1) + ' od štartu' : 'bez váženia'}</p></div></div>
       <div class="grid3 mt" style="gap:6px">
@@ -474,8 +477,9 @@ export async function renderCoach() {
         <div class="stat" style="padding:8px"><b class="mono" style="font-size:15px">${x.trainings}/${x.p.training_days || '-'}</b><span>tréningy</span></div>
         <div class="stat" style="padding:8px"><b class="mono" style="font-size:15px">${x.avg ? r0(x.avg) : '–'}</b><span>Ø kcal / ${x.p.target_kcal}</span></div>
       </div>
-    </a>`).join('') : '<div class="card"><p class="muted">Zatiaľ žiadni účastníci.</p></div>'}
+    </a>`).join('') : `<div class="card"><p class="muted">${isTr ? 'Zatiaľ nemáš klientov. Pošli im svoj kód z trénerského profilu alebo počkaj na žiadosti z katalógu.' : 'Zatiaľ žiadni účastníci.'}</p></div>`}
   </div>${nav('#/kouc')}`;
+  if (isTr) import('./trainers.js').then(m => m.bindRequests($app(), () => renderCoach()));
   $app().querySelector('#csv').onclick = async () => {
     const csv = await db.exportCsv();
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
@@ -483,7 +487,7 @@ export async function renderCoach() {
   };
 }
 export async function renderCoachDetail(userId) {
-  if (state.profile.role !== 'coach') { location.hash = '#/'; return; }
+  if (!coachy()) { location.hash = '#/'; return; }
   $app().innerHTML = `<div class="screen"><div class="spinner"></div></div>${nav('#/kouc')}`;
   const from = calc.addDays(calc.today(), -13);
   const { profile: p, weights, foods, checkins, photos, wlogs, targets } = await db.participantDetail(userId, from);
@@ -495,7 +499,7 @@ export async function renderCoachDetail(userId) {
   const notes = checkins.filter(c => c.note);
   const urls = await db.photoUrls(photos.slice(-3).map(x => x.path));
   $app().innerHTML = `<div class="screen">
-    <div class="topbar"><div><h1>${h(p.name)}</h1><p class="muted small">${calc.GOAL[p.goal]?.label || ''} · cieľ ${p.target_kcal} kcal · ${p.training_days}× tréning</p></div><a class="btn sm ghost" href="#/kouc">←</a></div>
+    <div class="topbar"><div><h1>${h(p.name)}</h1><p class="muted small">${calc.GOAL[p.goal]?.label || ''} · cieľ ${p.target_kcal} kcal · ${p.training_days}× tréning</p></div><span style="display:flex;gap:8px">${state.profile.role !== 'coach' ? `<a class="btn sm" href="#/chat/${userId}">Správy</a>` : ''}<a class="btn sm ghost" href="#/kouc">←</a></span></div>
     <div class="grid3 mb">
       <div class="stat"><b class="mono">${last ? last.trend.toFixed(1) : '–'}</b><span>kg trend</span></div>
       <div class="stat"><b class="mono ${last && last.trend < startW ? 'pos' : ''}">${last ? ((last.trend - startW) > 0 ? '+' : '') + (last.trend - startW).toFixed(1) : '–'}</b><span>od štartu (${startW.toFixed(1)})</span></div>

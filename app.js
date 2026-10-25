@@ -16,6 +16,7 @@ import * as dtm from './diet.js';
 import * as gls from './glucose.js';
 import * as crd from './cards.js';
 import * as hb from './habits.js';
+import * as tr from './trainers.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -59,6 +60,8 @@ const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#
 function nav(active) {
   const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
+  else if (state.trainer) items.push(['#/kouc', 'coach', 'Klienti']);
+  else items.push(['#/treneri', 'coach', 'Tréneri']);
   items.push(['#/profil', 'user', 'Profil']);
   const cur = groupOf(active);
   return `<nav class="nav" data-for="${active}">${items.map(([href, ic, lbl]) => `<a href="${href}" class="${cur === href ? 'on' : ''}"${items.length > 5 ? ' style="font-size:10px"' : ''}><span class="ic">${ICONS[ic]}</span><span class="lb">${lbl}</span></a>`).join('')}</nav>`;
@@ -67,6 +70,8 @@ function nav(active) {
 function groupOf(path) {
   const p = String(path || '#/').split('?')[0] || '#/';
   if (p.startsWith('#/kouc/')) return '#/kouc';
+  if (p.startsWith('#/trener/')) return state.trainer && state.profile?.role !== 'coach' ? '#/profil' : '#/treneri';
+  if (p === '#/trener-profil' || p.startsWith('#/chat/')) return '#/profil';
   return NAV_GROUP[p] || p;
 }
 const curPath = () => (location.hash || '#/').split('?')[0];
@@ -179,11 +184,14 @@ async function routeInner(my) {
   if (path !== state.curPath) { state.prevPath = state.curPath; state.curPath = path; }
   if (!state.session) return renderAuth();
   if (!state.profile) { const p = await loadProfile(state.session.user.id); if (my !== routeSeq) return; state.profile = p; U.adopt(p); }
+  if (state.trainer === undefined && state.profile) { try { state.trainer = await tr.loadMine(state.profile.id); } catch (_) { state.trainer = null; } if (my !== routeSeq) return; }
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
     '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals,
-    '#/rezim': dtm.renderDiet, '#/cukor': gls.renderGlucose, '#/cukor-sprava': gls.renderGlucoseReport, '#/karta': crd.renderCards, '#/navyky': hb.renderHabits };
+    '#/rezim': dtm.renderDiet, '#/cukor': gls.renderGlucose, '#/cukor-sprava': gls.renderGlucoseReport, '#/karta': crd.renderCards, '#/navyky': hb.renderHabits, '#/treneri': tr.renderCatalog, '#/trener-profil': tr.renderTrainerEdit };
   let fn = views[path];
+  const tm = path.match(/^#\/(trener|chat)\/([^/]+)$/);
+  if (tm) fn = tm[1] === 'chat' ? () => tr.renderChat(tm[2]) : () => tr.renderTrainer(tm[2]);
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
   if (!fn) { fn = td.renderToday; if (path !== '#/') { history.replaceState(null, '', '#/'); path = '#/'; state.curPath = path; } }
@@ -413,7 +421,7 @@ async function renderProfile() {
   </div>${nav('#/profil')}`;
   $app.querySelector('#out').onclick = async () => {
     try { localStorage.removeItem('fw_snap'); localStorage.removeItem(PROF(p.id)); } catch (_) { /* nič */ }
-    await db.signOut(); state.profile = null; ad.resetAdmin();
+    await db.signOut(); state.profile = null; state.trainer = undefined; ad.resetAdmin();
   };
 }
 
@@ -426,7 +434,7 @@ async function boot() {
   state.session = await db.getSession();
   db.onAuthChange(s => {
     const was = !!state.session; state.session = s;
-    if (!s) { state.profile = null; try { localStorage.removeItem('fw_snap'); } catch (_) { /* nič */ } }
+    if (!s) { state.profile = null; state.trainer = undefined; try { localStorage.removeItem('fw_snap'); } catch (_) { /* nič */ } }
     if (!!s !== was) { if (s) location.hash = '#/'; route(); }
   });
   route();
