@@ -141,6 +141,9 @@ const CSS = `
 .tr-stats span{font-size:11.5px;color:var(--muted)}
 .tr-sec{margin-bottom:12px}
 .tr-sec h3{margin:0 0 8px;font-size:15px}
+.tr-call{position:fixed;inset:0;z-index:99999;background:#06090F;display:flex;flex-direction:column}
+.tr-call-top{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 10px}
+.tr-call iframe{flex:1;border:0;width:100%;background:#000}
 .tr-li{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid rgba(255,255,255,.07);font-size:14px}
 .tr-li:first-of-type{border-top:0}
 .tr-li i{font-style:normal;color:var(--muted);font-size:12.5px;margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -152,6 +155,7 @@ const CSS = `
 .tr-req b{display:block;font-size:15px}
 .tr-req small{color:var(--muted);font-size:12.5px}
 .tr-req .row2{display:flex;gap:8px;margin-left:auto}
+.tr-top .row2{display:flex;gap:8px;align-items:center}
 .tr-form label{display:block;margin-bottom:12px}
 .tr-form label>span{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
 .tr-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -523,15 +527,32 @@ export async function trainerCodeHtml() {
 }
 
 // ---------- správy tréner a klient ----------
+// videohovor (Daily): súkromná miestnosť pre dvojicu tréner a klient, otvorí sa priamo v appke
+async function startCall(otherId, uid) {
+  const { data, error } = await db.sb.functions.invoke('daily-room', { body: { other: otherId } });
+  let msg = data?.error; if (!msg && error?.context?.json) msg = (await error.context.json().catch(() => null))?.error;
+  if (error || !data?.url) throw new Error(msg || 'Videohovor sa nepodarilo spustiť');
+  document.getElementById('trCallBox')?.remove();
+  const box = document.createElement('div'); box.id = 'trCallBox'; box.className = 'tr-call';
+  box.innerHTML = `<div class="tr-call-top"><b>Videohovor</b><button type="button" class="btn sm ghost" id="trCallEnd">Ukončiť</button></div><iframe allow="camera; microphone; fullscreen; display-capture; autoplay" src="${h(data.url)}?t=${encodeURIComponent(data.token)}"></iframe>`;
+  document.body.appendChild(box);
+  box.querySelector('#trCallEnd').onclick = () => box.remove();
+  db.sendMessage(uid, otherId, '📹 Videohovor začal. Pripoj sa cez tlačidlo Videohovor hore.').catch(() => { });
+}
 export async function renderChat(otherId) {
   const uid = me().id;
   $app().innerHTML = `<div class="screen"><div class="spinner"></div></div>${nav('#/profil')}`;
   const [msgs, names] = await Promise.all([api().thread(uid, otherId), api().names([otherId])]);
   const title = names[otherId]?.display_name || (await db.sb.from('trainer_clients').select('client_name').eq('client_id', otherId).eq('trainer_id', uid).maybeSingle().then(r => r.data?.client_name).catch(() => null)) || 'Správy';
   await db.markRead(msgs.filter(m => m.to_user === uid && !m.read_at).map(m => m.id)).catch(() => { });
-  $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>${h(title)}</h1><a class="btn sm ghost" href="${ctx.state.trainer && ctx.state.trainer.user_id === uid ? '#/kouc' : '#/profil'}">←</a></div>
+  $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>${h(title)}</h1><div class="row2"><button class="btn sm primary" id="trCall" type="button">Videohovor</button><a class="btn sm ghost" href="${ctx.state.trainer && ctx.state.trainer.user_id === uid ? '#/kouc' : '#/profil'}">←</a></div></div>
     <div class="tr-chat">${msgs.length ? msgs.map(m => `<div class="tr-bub${m.from_user === uid ? ' me' : ''}">${h(m.body)}<small>${fmtDate(m.created_at)}</small></div>`).join('') : '<div class="tr-empty"><b>Zatiaľ nič</b>Napíš prvú správu.</div>'}</div>
     <form id="trF" class="card"><textarea class="input" name="b" rows="2" maxlength="1000" placeholder="Napíš správu"></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form></div>${nav('#/profil')}`;
+  $app().querySelector('#trCall').onclick = async e => {
+    const btn = e.currentTarget; btn.disabled = true; const t0 = btn.textContent; btn.textContent = 'Pripájam…';
+    try { await startCall(otherId, uid); } catch (err) { toast(err.message || 'Videohovor sa nepodarilo spustiť', true); }
+    btn.disabled = false; btn.textContent = t0;
+  };
   $app().querySelector('#trF').addEventListener('submit', async e => {
     e.preventDefault(); const body = new FormData(e.target).get('b').trim(); if (!body) return;
     try { await db.sendMessage(uid, otherId, body); renderChat(otherId); } catch (err) { toast(err.message || 'Nepodarilo sa odoslať', true); }
