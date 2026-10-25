@@ -41,6 +41,12 @@ const real = {
     const { error } = await sbq().storage.from('trainer-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true }); if (error) throw error;
     return sbq().storage.from('trainer-photos').getPublicUrl(path).data.publicUrl;
   },
+  async checkPhoto(blob) {
+    const image = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(blob); });
+    const { data, error } = await sbq().functions.invoke('trainer-photo-check', { body: { image } });
+    if (error || !data) return { ok: true };
+    return data;
+  },
   async uploadProof(uid, blob) { const path = `${uid}/proof-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`; const { error } = await sbq().storage.from('trainer-proofs').upload(path, blob, { contentType: 'image/jpeg' }); if (error) throw error; return path; },
   async signed(paths) { const out = []; for (const p of paths || []) { const { data } = await sbq().storage.from('trainer-proofs').createSignedUrl(p, 3600); if (data?.signedUrl) out.push(data.signedUrl); } return out; },
   async pending() { const { data, error } = await sbq().from('trainer_profiles').select('*').eq('status', 'pending').order('updated_at', { ascending: true }); if (error) throw error; const ids = (data || []).map(x => x.user_id); const ap = ids.length ? (await sbq().from('trainer_applications').select('*').in('user_id', ids)).data || [] : []; const m = Object.fromEntries(ap.map(a => [a.user_id, a])); return (data || []).map(t => ({ ...t, application_note: m[t.user_id]?.note || null, proof_paths: m[t.user_id]?.proof_paths || [] })); },
@@ -361,8 +367,23 @@ export async function renderTrainerEdit() {
   root.querySelector('#f_inp').onclick = e => e.target.classList.toggle('on');
   root.querySelector('#trCopy')?.addEventListener('click', () => { navigator.clipboard?.writeText(cur.invite_code); toast('Kód skopírovaný'); });
   root.querySelector('#trFile').onchange = async e => {
-    const f = e.target.files?.[0]; if (!f) return;
-    try { blob = await shrink(f, 720); root.querySelector('#trPh').closest('.card').classList.remove('tr-bad', 'tr-shake'); const fe = root.querySelector('#trPh').closest('.card').nextElementSibling; if (fe?.classList.contains('tr-ferr')) fe.remove(); const u = URL.createObjectURL(blob); root.querySelector('#trPh').innerHTML = `<div class="tr-av lg" style="background-image:url('${u}')"></div>`; } catch { toast('Fotku sa nepodarilo načítať', true); }
+    const f = e.target.files?.[0]; e.target.value = ''; if (!f) return;
+    const card = root.querySelector('#trPh').closest('.card'), lab = card.querySelector('label'), lt = lab.firstChild;
+    const clearE = () => { card.classList.remove('tr-bad', 'tr-shake'); const fe = card.nextElementSibling; if (fe?.classList.contains('tr-ferr')) fe.remove(); };
+    const fail = msg => { clearE(); card.classList.add('tr-bad'); card.insertAdjacentHTML('afterend', `<div class="tr-ferr">${h(msg)}</div>`); void card.offsetWidth; card.classList.add('tr-shake'); };
+    const oldTxt = lt.textContent; lt.textContent = 'Kontrolujem fotku…'; lab.style.pointerEvents = 'none'; lab.style.opacity = '.6';
+    try {
+      const b = await shrink(f, 720);
+      const w = await photoWeak(b);
+      if (w) { fail(w); return; }
+      let ai = { ok: true };
+      try { ai = await api().checkPhoto(b); } catch { ai = { ok: true }; }
+      if (!ai.ok) { fail(ai.reason || 'Nahraj fotku, na ktorej je dobre vidieť tvoju tvár (môže byť aj celá postava).'); return; }
+      blob = b; clearE(); const u = URL.createObjectURL(b);
+      root.querySelector('#trPh').innerHTML = `<div class="tr-av lg" style="background-image:url('${u}')"></div>`;
+      toast('Fotka je v poriadku');
+    } catch { fail('Fotku sa nepodarilo načítať. Skús inú.'); }
+    finally { lt.textContent = oldTxt.includes('Nahrať') ? 'Zmeniť fotku' : oldTxt; lab.style.pointerEvents = ''; lab.style.opacity = ''; if (blob || photo) lt.textContent = 'Zmeniť fotku'; }
   };
   const rows = id => [...root.querySelectorAll(`#${id} [data-row]`)].map(r => ({ title: r.querySelector('[data-f=title]').value.trim(), year: r.querySelector('[data-f=year]').value.trim() })).filter(x => x.title);
   const clearErr = g => root.querySelectorAll('.tr-bad').forEach(el => { if (g && el.dataset.g !== g) return; el.classList.remove('tr-bad', 'tr-shake'); const n = el.nextElementSibling; if (n?.classList.contains('tr-ferr')) n.remove(); });
@@ -439,6 +460,20 @@ export async function renderTrainerApps() {
     } catch (err) { toast(err.message || 'Nepodarilo sa', true); }
   };
   rootEl.addEventListener('click', rootEl._trApps);
+}
+// lokálna kontrola: čierna/prázdna/jednofarebná alebo príliš malá fotka
+async function photoWeak(blob) {
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
+    if (Math.min(img.width, img.height) < 240) return 'Fotka je príliš malá. Nahraj väčšiu fotku, na ktorej je vidieť tvoju tvár.';
+    const c = document.createElement('canvas'); c.width = 48; c.height = 48; const x = c.getContext('2d'); x.drawImage(img, 0, 0, 48, 48);
+    const d = x.getImageData(0, 0, 48, 48).data; let s = 0, s2 = 0, n = d.length / 4;
+    for (let i = 0; i < d.length; i += 4) { const l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; s += l; s2 += l * l; }
+    const m = s / n, sd = Math.sqrt(Math.max(0, s2 / n - m * m));
+    if (m < 22 || sd < 12) return 'Táto fotka je čierna alebo prázdna. Nahraj fotku, na ktorej je vidieť tvoju tvár (môže byť aj celá postava).';
+    return '';
+  } catch { return ''; } finally { URL.revokeObjectURL(url); }
 }
 async function shrink(file, max) {
   const url = URL.createObjectURL(file); const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
