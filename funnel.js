@@ -367,8 +367,13 @@ function go(d) {
 function fitScroll() {
   const b = el?.querySelector('.fnq-body'); if (!b) return;
   b.style.overflowY = 'hidden';
-  requestAnimationFrame(() => { if (b.isConnected) b.style.overflowY = b.scrollHeight > b.clientHeight + 2 ? 'auto' : 'hidden'; });
+  const chk = () => { if (b.isConnected) b.style.overflowY = b.scrollHeight > b.clientHeight + 2 ? 'auto' : 'hidden'; };
+  requestAnimationFrame(chk);
+  // obsah sa môže zmeniť aj po vykreslení (napr. tlačidlo Google, rozbalené sekcie), vtedy znova overíme, či treba scroll
+  fitRO?.disconnect(); fitRO = typeof ResizeObserver === 'function' ? new ResizeObserver(() => requestAnimationFrame(chk)) : null;
+  if (fitRO) [...b.children].forEach(c => fitRO.observe(c));
 }
+let fitRO = null;
 addEventListener('resize', () => fitScroll());
 function draw() {
   if (!el) return;
@@ -437,7 +442,7 @@ const VIEWS = {
     <p class="fnq-cap" id="fnqCap">${daysCap()}</p>
     ${foot('Pokračovať', q.days == null)}`,
   block: () => `<h1>Čo ti doteraz najviac bránilo?</h1><p class="fnq-sub">Vyber všetko, čo sedí.</p>
-    <div class="fnq-opts tight">${BLOCK.map(([v, ic, l]) => opt2(v, ic, '#7CFFB2', l, '', q.block.includes(v), { multi: true })).join('')}</div>${foot('Pokračovať', false)}`,
+    <div class="fnq-opts tight">${BLOCK.map(([v, ic, l]) => opt2(v, ic, '#7CFFB2', l, '', q.block.includes(v), { multi: true })).join('')}</div>${foot('Pokračovať', !q.block.length)}`,
   diet: () => {
     const d = q.diet, any = d.diets.length || d.modes.length, n1 = d.modes.length, n2 = d.diets.length;
     const chip = (attr, k, label, on) => `<button type="button" ${attr}="${k}" aria-pressed="${on}"><i>${ICON.check}</i>${h(label)}</button>`;
@@ -544,8 +549,9 @@ const BIND = {
     r.querySelectorAll('.fnq-o').forEach(b => b.onclick = () => {
       const v = b.dataset.v; q.block = q.block.includes(v) ? q.block.filter(x => x !== v) : [...q.block, v]; save(); buzz();
       b.setAttribute('aria-checked', String(q.block.includes(v)));
+      r.querySelector('.fnq-cta').disabled = !q.block.length;
     });
-    r.querySelector('.fnq-cta').onclick = () => go(1);
+    r.querySelector('.fnq-cta').onclick = () => { if (q.block.length) go(1); };
   },
   diet: r => {
     const d = q.diet, FG = ['vegetarian', 'vegan', 'pescatarian'], re = () => { save(); const y = r.parentElement.scrollTop; draw(); const b = el.querySelector('.fnq-body'); b.scrollTop = y; };
