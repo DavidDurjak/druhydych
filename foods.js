@@ -84,7 +84,7 @@ export async function renderFood() {
 
   const $res = $app().querySelector('#results'), $q = $app().querySelector('#q'), $tabs = $app().querySelector('#tabs');
   // otvorené cez kartu Jedlo: po pridaní ostaneš na Jedlo; otvorené cez + pri jedle na Dnes: vrátiš sa na Dnes
-  const done = m => { toast('Pridané do: ' + MEALS()[typeof m === 'string' && MEALS()[m] ? m : meal].toLowerCase()); if (!fromTab) location.hash = '#/'; };
+  const done = m => { toast('Pridané do: ' + MEALS()[typeof m === 'string' && MEALS()[m] ? m : meal].toLowerCase()); if (!fromTab) location.hash = '#/'; else renderFood(); };
   const pick = async k => { const f = pool.get(k); if (!f) return; openAdd(f.log ? await fromLog(f.log) : f, meal, done); };
   const bind = () => $res.querySelectorAll('[data-k]').forEach(el => el.onclick = () => pick(el.dataset.k));
 
@@ -102,7 +102,7 @@ export async function renderFood() {
       bar.innerHTML = `<div><b>${n} ${n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'}</b><span>${r0(kc)} kcal</span></div><button class="btn primary sm" id="fbGo">Pridať do: ${MEALS()[meal].toLowerCase()}</button>`;
       bar.querySelector('#fbGo').onclick = async () => {
         const btn = bar.querySelector('#fbGo'); btn.disabled = true;
-        try { for (const k of chosen) { const l = pool.get(k).log; await db.addFood(logRow(l)); if (l.food_id) db.foodUsed(l.food_id); } bar.remove(); toast(`Pridané: ${n} ${n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'}`); location.hash = '#/'; }
+        try { for (const k of chosen) { const l = pool.get(k).log; await db.addFood(logRow(l)); if (l.food_id) db.foodUsed(l.food_id); } bar.remove(); toast(`Pridané: ${n} ${n === 1 ? 'položka' : n < 5 ? 'položky' : 'položiek'}`); if (!fromTab) location.hash = '#/'; else renderFood(); }
         catch (e) { toast(e.message, true); btn.disabled = false; }
       };
     } else {
@@ -148,7 +148,7 @@ export async function renderFood() {
 
   $tabs.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; $tabs.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); showTab(); });
   ctx.bindDatePicker($app(), renderFood);
-  bindAiBox($app(), () => meal, m => { location.hash = '#/'; });
+  bindAiBox($app(), () => meal, m => { if (!fromTab) location.hash = '#/'; else renderFood(); });
   if (params.get('scan')) setTimeout(() => $app().querySelector('#scan')?.click(), 80);
   if (params.get('q')) setTimeout(() => $q.focus(), 50);
   if (params.get('ai')) setTimeout(() => $app().querySelector('#aiText')?.focus(), 50);

@@ -112,7 +112,8 @@ body:has(.fast-bar) .bd-fab{opacity:0!important;pointer-events:none!important;tr
 .fast-bar{z-index:70}
 @media (prefers-reduced-motion:reduce){.screen:has(#mealseg) *,.screen:has(#mealseg)::before,.jh,.jh::after{animation:none!important;transition:none!important}}
 `;
-const st = document.createElement('style'); st.id = 'jedlo2css'; st.textContent = CSS; document.head.appendChild(st);
+/* karta s kcal a makrami hore je zbytočná (to isté je na Dnes); skrytá, súhrny jedál na lište ostávajú */
+const st = document.createElement('style'); st.id = 'jedlo2css'; st.textContent = CSS + '#jh,.jh{display:none!important}'; document.head.appendChild(st);
 
 const META = {
   breakfast: ['🍳', '#FFB547'], brunch: ['🥪', '#FFD36E'], lunch: ['🍲', '#FF7A59'], afternoon: ['🥨', '#5CD6C0'],

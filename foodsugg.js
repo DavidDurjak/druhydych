@@ -4,6 +4,8 @@ import * as db from './data.js';
 import { ctx } from './app.js';
 import { openAdd } from './foods.js';
 import { thumb, fillThumbs } from './foodimg.js';
+const stayHere = () => (location.hash || '').split('?')[0] === '#/jedlo' && !/[?&]meal=/.test(location.hash); // Jedlo otvorené cez kartu: po pridaní ostaň a obnov
+const after = () => { if (stayHere()) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.hash = '#/'; };
 
 // overené základné potraviny z databázy (id), zoradené podľa toho, čo sa na dané jedlo jedáva najčastejšie
 const IDS = {
@@ -63,7 +65,7 @@ async function render() {
       }).join('') + '</div>';
     res.querySelectorAll('.fsg-r').forEach(el => el.onclick = () => {
       const m = curMeal();
-      openAdd(list[Number(el.dataset.i)], m, () => { ctx.toast?.('Pridané do: ' + String(ctx.MEALS?.[m] || '').toLowerCase()); location.hash = '#/'; });
+      openAdd(list[Number(el.dataset.i)], m, () => { ctx.toast?.('Pridané do: ' + String(ctx.MEALS?.[m] || '').toLowerCase()); after(); });
     });
     db.foodImages(list.map(f => f.id)).then(map => fillThumbs(res, map)).catch(() => { });
   } catch (_) { /* bez siete ostane pôvodný text */ } finally { busy = false; if (curMeal() !== meal) setTimeout(render, 0); }

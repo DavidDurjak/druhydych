@@ -5,6 +5,8 @@ import { ctx } from './app.js';
 import { openAdd } from './foods.js';
 import { thumb, fillThumbs } from './foodimg.js';
 import * as dx from './dxcore.js';
+const stayHere = () => (location.hash || '').split('?')[0] === '#/jedlo' && !/[?&]meal=/.test(location.hash); // Jedlo otvorené cez kartu: po pridaní ostaň a obnov
+const after = () => { if (stayHere()) window.dispatchEvent(new HashChangeEvent('hashchange')); else location.hash = '#/'; };
 
 let ids = null, loading = null;
 const load = () => loading || (loading = sb.from('food_favs').select('food_id').then(r => {
@@ -82,7 +84,7 @@ if (typeof document !== 'undefined') {
       }).join('') : '<p class="empty">Zatiaľ nič. Otvor ľubovoľné jedlo a ťukni na hviezdičku ★, aby si ho mal vždy po ruke.</p>';
       res.querySelectorAll('[data-fav]').forEach(el => el.onclick = () => {
         last = { id: foods[el.dataset.fav].id, t: Date.now() };
-        openAdd(foods[el.dataset.fav], meal(), () => { toast('Pridané'); location.hash = '#/'; });
+        openAdd(foods[el.dataset.fav], meal(), () => { toast('Pridané'); after(); });
       });
       fillThumbs(res, new Map(foods.filter(f => f.img).map(f => [f.id, f.img])));
     } catch (e) { res.innerHTML = `<p class="empty">${h(e.message)}</p>`; }
