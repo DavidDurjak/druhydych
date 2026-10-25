@@ -565,4 +565,6 @@ function scan() {
 }
 const app = document.getElementById('app');
 if (app) new MutationObserver(scan).observe(app, { childList: true, subtree: true });
+// nový človek: úvod sa otvorí hneď, nečaká sa na prihlasovaciu obrazovku (tá čaká na server)
+if (!jget(SKIP, sessionStorage) && !known() && !document.querySelector('#app #onb')) open(0);
 scan();
