@@ -364,8 +364,8 @@ export async function renderTrainerEdit() {
       <label><span>Viac o tebe</span><small class="muted" style="display:block;margin:-2px 0 6px">Zobrazí sa na tvojom profile. Napíš, ako trénuješ a s kým pracuješ najradšej.</small><textarea class="input" id="f_bio" rows="5" maxlength="1200" placeholder="Ako pracuješ, s kým pracuješ najradšej, čo klient dostane.">${h(t.bio || '')}</textarea></label>
     </div>
     <div class="card mt"><h3 style="margin-top:0">Špecializácia</h3><div class="tr-meta" id="f_specs" style="margin:0">${SPECS.map(s => `<button type="button" class="tr-chip${(t.specialties || []).includes(s) ? ' on' : ''}" data-s="${h(s)}">${h(s)}</button>`).join('')}</div></div>
-    <div class="card mt"><h3 style="margin-top:0">Vzdelanie a certifikáty</h3><p class="tr-note" style="margin:0 0 10px">Ku každému riadku môžeš pridať fotku dokladu. Klienti ju neuvidia, len my, a riadok dostane značku overenia.</p><div id="f_cred">${(t.credentials || []).map(r => rowHtml('cred', r)).join('')}</div><button type="button" class="btn sm ghost" id="addCred">+ Pridať</button></div>
-    <div class="card mt"><h3 style="margin-top:0">Súťaže a úspechy</h3><div id="f_ach">${(t.achievements || []).map(r => rowHtml('ach', r)).join('')}</div><button type="button" class="btn sm ghost" id="addAch">+ Pridať</button></div>
+    <div class="card mt"><h3 style="margin-top:0">Vzdelanie a certifikáty</h3><p class="tr-note" style="margin:0 0 10px">Uveď len to, čo vieš doložiť. Ku každému riadku nahraj fotku diplomu, certifikátu alebo výsledkovej listiny. Klienti ju neuvidia, len my, a riadok dostane značku overenia. Nemáš certifikát? Nechaj to prázdne a pridaj Instagram.</p><div id="f_cred">${(t.credentials || []).map(r => rowHtml('cred', r)).join('')}</div><button type="button" class="btn sm ghost" id="addCred">+ Pridať</button></div>
+    <div class="card mt"><h3 style="margin-top:0">Súťaže a úspechy</h3><p class="tr-note" style="margin:0 0 10px">Aj tu platí: každý riadok potrebuje doklad, napríklad fotku diplomu alebo výsledkovej listiny.</p><div id="f_ach">${(t.achievements || []).map(r => rowHtml('ach', r)).join('')}</div><button type="button" class="btn sm ghost" id="addAch">+ Pridať</button></div>
     <div class="card mt">
       <div class="tr-two"><label><span>Cena od (€ / mesiac)</span><input class="input" id="f_price" inputmode="decimal" value="${t.price_from ?? ''}"></label><label><span>Poznámka k cene</span><input class="input" id="f_pn" maxlength="120" placeholder="Napr. plán + týždenné check-iny" value="${h(t.price_note || '')}"></label></div>
       <div class="tr-row"><button type="button" class="tr-chip${t.online ? ' on' : ''}" id="f_online">Online</button><button type="button" class="tr-chip${t.in_person ? ' on' : ''}" id="f_inp">Aj osobne</button></div>
@@ -424,6 +424,8 @@ export async function renderTrainerEdit() {
     const bad = [];
     const need = status === 'published';
     const soc = normSocial(socRaw());
+    // každé uvedené vzdelanie či úspech musí mať doklad, inak ho treba zmazať
+    root.querySelectorAll('#f_cred [data-row],#f_ach [data-row]').forEach(r => { if (r.querySelector('[data-f=title]').value.trim() && !r.dataset.proof) bad.push([r.querySelector('[data-pf]'), 'Pridaj fotku dokladu k tomuto riadku, alebo ho odstráň (×). Bez dokladu ho neprijmeme.']); });
     if (!cur?.approved && soc.err) bad.push([root.querySelector('#f_soc'), soc.err, 'proof']);
     if (!photo && !blob && need) bad.push([root.querySelector('#trPh').closest('.card'), 'Nahraj svoju fotku. Klienti si vyberajú podľa tváre.']);
     if (fn.length < 2) bad.push([root.querySelector('#f_fn'), 'Dopíš meno.']);
