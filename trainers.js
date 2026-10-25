@@ -38,7 +38,7 @@ const real = {
   async byCode(code) { const { data, error } = await sbq().rpc('link_trainer_by_code', { code }); if (error) throw error; return data; },
   async upload(uid, blob) {
     const path = `${uid}/avatar-${Date.now()}.jpg`;
-    const { error } = await sbq().storage.from('trainer-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true }); if (error) throw error;
+    const { error } = await sbq().storage.from('trainer-photos').upload(path, blob, { contentType: 'image/jpeg' }); if (error) throw error;
     return sbq().storage.from('trainer-photos').getPublicUrl(path).data.publicUrl;
   },
   async checkPhoto(blob) {
