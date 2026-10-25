@@ -144,6 +144,7 @@ const CSS = `
 .tr-call{position:fixed;inset:0;z-index:99999;background:#06090F;display:flex;flex-direction:column}
 .tr-call-top{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 10px}
 .tr-call iframe{flex:1;border:0;width:100%;background:#000}
+.tr-danger{background:#E5484D!important;color:#fff!important;border-color:#E5484D!important;font-weight:800}
 .tr-rev{overflow:hidden}
 .tr-rev *{overflow-wrap:anywhere;word-break:break-word;min-width:0}
 .tr-checks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
@@ -489,7 +490,7 @@ export async function renderTrainerApps() {
       ${(t.credentials || []).length ? kv('Vzdelanie a certifikáty', rowsHtml(t.credentials, url, '')) : ''}
       ${(t.achievements || []).length ? kv('Súťaže a úspechy', rowsHtml(t.achievements, url, '🏆 ')) : ''}
       ${loose.length ? kv('Ďalšie doklady', `<div class="tr-row">${loose.map(p => ph(url[p])).join('')}</div>`) : ''}
-      <div class="tr-row mt"><button class="btn primary" data-ok style="flex:1">Schváliť</button><button class="btn" data-no>Zamietnuť</button></div></div>`; }).join('') : '<div class="tr-empty"><b>Žiadne žiadosti</b>Keď sa niekto prihlási za trénera, uvidíš ho tu.</div>'}</div>${nav('#/profil')}`;
+      <div class="tr-row mt"><button class="btn primary" data-ok style="flex:1">Schváliť</button><button class="btn tr-danger" data-no>Zamietnuť</button></div></div>`; }).join('') : '<div class="tr-empty"><b>Žiadne žiadosti</b>Keď sa niekto prihlási za trénera, uvidíš ho tu.</div>'}</div>${nav('#/profil')}`;
   const rootEl = $app(); if (rootEl._trApps) rootEl.removeEventListener('click', rootEl._trApps);
   rootEl._trApps = async e => {
     const card = e.target.closest('[data-u]'); const ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]'); if (!card || (!ok && !no)) return;
@@ -497,7 +498,7 @@ export async function renderTrainerApps() {
     try {
       if (ok) await api().decide(uid, true);
       else {
-        const bg = ctx.sheet(`<h2 style="margin-top:0">Dôvod zamietnutia</h2><p class="tr-note" style="margin:0 0 10px">Uvidí ho tréner.</p><textarea class="input" id="trWhy" rows="3" maxlength="300">Chýba dôkaz, že trénuješ. Pridaj certifikát, výsledky alebo odkaz na svoju prácu.</textarea><button class="btn primary mt" id="trWhyGo" style="width:100%">Zamietnuť</button>`);
+        const bg = ctx.sheet(`<h2 style="margin-top:0">Dôvod zamietnutia</h2><p class="tr-note" style="margin:0 0 10px">Uvidí ho tréner.</p><textarea class="input" id="trWhy" rows="3" maxlength="300">Chýba dôkaz, že trénuješ. Pridaj certifikát, výsledky alebo odkaz na svoju prácu.</textarea><button class="btn tr-danger mt" id="trWhyGo" style="width:100%">Zamietnuť</button>`);
         bg.querySelector('#trWhyGo').onclick = async () => { try { await api().decide(uid, false, bg.querySelector('#trWhy').value.trim()); bg.remove(); toast('Žiadosť zamietnutá'); renderTrainerApps(); } catch (err) { toast(err.message || 'Nepodarilo sa', true); } };
         return;
       }
