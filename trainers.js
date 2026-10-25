@@ -82,6 +82,7 @@ const CSS = `
 .tr-join.card{padding:14px 16px;margin-top:6px;border-radius:20px;background:rgba(255,255,255,.035);border:1px solid var(--line)}
 .tr-join.row{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.09)}
 .tr-join:active{opacity:.7}
+.tr-pill{flex:none;padding:8px 13px;border-radius:99px;border:1px solid rgba(124,255,178,.4);background:rgba(124,255,178,.1);color:#9DFFC8!important;font-size:12.5px;font-weight:800;text-decoration:none;white-space:nowrap;text-transform:none!important;letter-spacing:normal!important}
 .tr-perks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 14px}
 .tr-perks div{padding:10px 8px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);text-align:center;font-size:12px;line-height:1.3;color:var(--muted)}
 .tr-perks b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
@@ -162,6 +163,13 @@ function joinBanner(kind) {
   return `<a class="${cl}" href="#/trener-profil"><div class="tx"><b>Si tréner?</b><small>Získaj klientov online cez GainTrain.</small></div><span class="go">Stať sa trénerom ›</span></a>`;
 }
 
+function joinPill() {
+  const own = ctx.state.trainer;
+  if (own?.approved) return '';
+  const t = own?.status === 'pending' ? 'Žiadosť sa kontroluje' : own?.status === 'rejected' ? 'Žiadosť zamietnutá' : 'Si tréner?';
+  return `<a class="tr-pill" href="#/trener-profil">${t}</a>`;
+}
+
 // ---------- katalóg ----------
 export async function renderCatalog() {
   $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>Tréneri</h1></div><div class="spinner"></div></div>${nav('#/treneri')}`;
@@ -177,12 +185,12 @@ export async function renderCatalog() {
       : `<div class="tr-empty"><b>${list.length ? 'Nič sme nenašli' : 'Tréneri sa práve pridávajú'}</b>${list.length ? 'Skús zmeniť filter alebo hľadaný text.' : 'Prvých overených trénerov pridávame práve teraz. Pozri sa o chvíľu znova.'}</div>`;
   };
   $app().innerHTML = `<div class="screen">
-    <div class="tr-top"><h1>Tréneri</h1></div>
+    <div class="tr-top"><h1>Tréneri</h1>${joinPill()}</div>
     <p class="tr-sub">${mine ? 'Už máš trénera. Tu nájdeš ďalších.' : 'Vyber si trénera podľa cieľa. Koučovať ťa môže online odkiaľkoľvek.'}</p>
     <div class="tr-perks"><div><b>Plán na mieru</b>tréning aj jedlo</div><div><b>Check-iny</b>každý týždeň</div><div><b>Priamy chat</b>s tvojím trénerom</div></div>
     <div class="tr-search"><input class="input" id="trQ" placeholder="Meno, mesto alebo cieľ" autocomplete="off"></div>
     <div class="tr-chips" id="trChips"><button class="tr-chip" data-o="1">Online</button>${SPECS.map(s => `<button class="tr-chip" data-s="${h(s)}">${h(s)}</button>`).join('')}</div>
-    <div id="trList"></div>${joinBanner('card')}</div>${nav('#/treneri')}`;
+    <div id="trList"></div></div>${nav('#/treneri')}`;
   draw();
   const root = $app();
   root.querySelector('#trQ').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); draw(); });
