@@ -5,6 +5,7 @@
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
+import { cookie } from './brandmark.js';
 
 const KEY = 'fw_quiz', SKIP = 'fw_fq_skip';
 const jget = (k, s = localStorage) => { try { return JSON.parse(s.getItem(k) || 'null'); } catch (_) { return null; } };
@@ -38,7 +39,7 @@ html[data-theme=light] .fnq-seal{filter:none}
 .fnq-back[hidden]{visibility:hidden;display:grid}
 .fnq-bar{flex:1;height:4px;border-radius:99px;background:var(--line,#232a33);overflow:hidden}
 .fnq-bar i{display:block;height:100%;width:0;border-radius:inherit;background:var(--accent,#7CFFB2);transition:width .45s cubic-bezier(.3,1,.4,1)}
-.fnq-mini{flex:none;width:34px;height:34px}
+.fnq-mini{flex:none;width:42px;height:42px}
 .fnq-body{position:relative;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .fnq-step{max-width:520px;margin:0 auto;padding:14px 20px 24px;box-sizing:border-box;min-height:100%;display:flex;flex-direction:column;animation:fnqStep .38s cubic-bezier(.3,1,.4,1) both}
 .fnq-step.back{animation-name:fnqStepB}
@@ -123,10 +124,10 @@ html[data-theme=light] .fnq-seal{filter:none}
 .fnq-proj b{display:block;font-size:17px;letter-spacing:-.01em}
 .fnq-proj span{display:block;font-size:13.5px;color:var(--muted,#8a94a3);margin-top:3px;line-height:1.4}
 .fnq-why{width:100%;list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px;text-align:left}
-.fnq-why li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:18px;background:var(--card,#151a21);border:1px solid var(--line,#232a33);font-size:14px;line-height:1.4}
+.fnq-why li{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:20px;background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--accent,#7CFFB2) 14%,transparent),transparent 60%),var(--card,#151a21);border:1px solid color-mix(in srgb,var(--accent,#7CFFB2) 30%,var(--line,#232a33));font-size:14px;line-height:1.4}
 .fnq-why li i{flex:none;font-style:normal;font-size:19px;line-height:1.2}
-.fnq-why li b{display:block;font-size:14.5px}
-.fnq-why li span{color:var(--muted,#8a94a3)}
+.fnq-why li b{display:block;font-size:17px;letter-spacing:-.01em}
+.fnq-why li span{display:block;color:var(--muted,#8a94a3);font-size:13.5px;margin-top:3px;line-height:1.4}
 /* účet */
 .fnq-form{display:grid;gap:10px}
 .fnq-in{display:block;padding:10px 16px 12px;border-radius:18px;background:var(--card,#151a21);border:1.5px solid var(--line,#232a33);transition:border-color .18s}
@@ -140,12 +141,17 @@ html[data-theme=light] .fnq-seal{filter:none}
 .fnq-mini-plan b{font-size:20px;font-weight:800;letter-spacing:-.02em}
 .fnq-mini-plan span{display:block;font-size:13px;color:var(--muted,#8a94a3);margin-top:2px}
 .fnq-mini-plan b{display:block}
-.fnq-mini-plan svg{flex:none;width:40px;height:40px}
+.fnq-mini-plan svg{flex:none;width:48px;height:48px}
 .fnq-cover{position:fixed;inset:0;z-index:61;display:grid;place-content:center;justify-items:center;gap:16px;background:var(--bg,#0B0E12);color:var(--text,#fff);text-align:center;font-size:16px}
-.fnq-cover svg{width:96px;height:96px;animation:fnqSpin 1.4s linear infinite}
+.fnq-cover svg,.fnq-calc svg{overflow:visible}
+.fnq-cover svg{width:112px;height:112px}
+.fnq-cover .rgp{animation:fnqSpinC 1.4s linear infinite}
+@keyframes fnqSpinC{from{transform:translate(50px,50px) rotate(0) translate(-50px,-50px)}to{transform:translate(50px,50px) rotate(360deg) translate(-50px,-50px)}}
+.fnq-cover .gt-ck,.fnq-calc .gt-ck{animation:fnqWob 2.2s ease-in-out infinite}
+@keyframes fnqWob{0%,100%{transform:translate(50px,50px) rotate(-9deg) scale(1) translate(-50px,-50px)}50%{transform:translate(50px,50px) rotate(9deg) scale(1.05) translate(-50px,-50px)}}
 @keyframes fnqSpin{to{transform:rotate(360deg)}}
 @media (min-width:700px){.fnq h1{font-size:36px}.fnq-hero h1{font-size:48px}}
-@media (prefers-reduced-motion:reduce){.fnq,.fnq-step,.fnq-seal *{animation:none!important}.fnq-seal .rg,.fnq-seal .mk{stroke-dashoffset:0}.fnq-seal .dot{opacity:1}.fnq-cover svg{animation:none}}
+@media (prefers-reduced-motion:reduce){.fnq,.fnq-step,.fnq-seal *{animation:none!important}.fnq-cover .rgp,.fnq-cover .gt-ck,.fnq-calc .gt-ck{animation:none}.fnq-seal .rg,.fnq-seal .mk{stroke-dashoffset:0}.fnq-seal .dot{opacity:1}}
 `;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
@@ -162,19 +168,23 @@ const SEAL = `<svg class="fnq-seal" viewBox="0 0 1024 1024" fill="none" stroke-l
   <circle class="dot" cx="264.3" cy="813.2" r="22" style="fill:var(--fnq-dot)" stroke="none"/>
 </svg>`;
 // prstenec z loga ako ukazovateľ postupu (p 0..1) s bodkou na konci
-function ringSvg(p, cls = 'fnq-mini', w = 9) {
+let ckN = 0;
+function ringSvg(p, cls = 'fnq-mini', w = 9, ck = true) {
   const a = A0 + SPAN * Math.max(0.001, p), [dx, dy] = pt(a);
+  // sušienka v strede prstenca (znak appky); prstenec sa točí, sušienka sa jemne kolíše
+  const inner = ck ? cookie('fq' + (++ckN), 15).replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '') : '';
+  const c = ck ? `<g class="gt-ck"><g transform="translate(50 50) scale(0.2235)">${inner}</g></g>` : '';
   return `<svg class="${cls}" viewBox="0 0 100 100" fill="none" stroke-linecap="round" aria-hidden="true">
-    <path d="${ARC}" style="stroke:var(--line,#232a33)" stroke-width="${w}"/>
+    <g class="rgp"><path d="${ARC}" style="stroke:var(--line,#232a33)" stroke-width="${w}"/>
     <path class="p" d="${ARC}" pathLength="100" style="stroke:var(--accent,#7CFFB2)" stroke-width="${w}" stroke-dasharray="100" stroke-dashoffset="${100 - p * 100}"/>
-    <circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="${w * 0.62}" style="fill:var(--fnq-dot)"/></svg>`;
+    <circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="${w * 0.62}" style="fill:var(--fnq-dot)"/></g>${c}</svg>`;
 }
 
 const GOALS = [['lose', '🔥', 'Schudnúť', 'zhodiť tuk, udržať svaly'], ['maintain', '⚖️', 'Udržať váhu', 'jesť vyvážene, cítiť sa lepšie'], ['gain', '💪', 'Nabrať svaly', 'rásť bez zbytočného tuku']];
 const SEX = [['m', '👨', 'Muž'], ['f', '👩', 'Žena']];
 const JOBS = [['desk', '💻', 'Sedím väčšinu dňa', 'škola, kancelária'], ['stand', '🚶', 'Som veľa na nohách', 'obchod, gastro, učenie'], ['phys', '🏗️', 'Fyzická práca', 'stavba, sklad, záhrada']];
 const BLOCK = [['time', '⏱️', 'Zapisovanie ma zdržiava'], ['what', '🤷', 'Neviem, čo mám jesť'], ['out', '🍽️', 'Často jem vonku alebo v jedálni'], ['sweet', '🍫', 'Chute na sladké a večerné jedenie'], ['motiv', '📉', 'Vydržím pár dní a prestanem'], ['train', '🏋️', 'Neviem, ako trénovať']];
-const SRC = [['instagram', '📸', 'Instagram'], ['tiktok', '🎵', 'TikTok'], ['gym', '🏋️', 'Fitko alebo tréner'], ['friend', '🤝', 'Kamarát'], ['store', '🔎', 'Google alebo obchod s appkami'], ['other', '✨', 'Iné']];
+const SRC = [['instagram', '📸', 'Instagram'], ['tiktok', '🎵', 'TikTok'], ['facebook', '👍', 'Facebook'], ['youtube', '▶️', 'YouTube'], ['gym', '🏋️', 'Fitko alebo tréner'], ['friend', '🤝', 'Kamarát'], ['store', '🔎', 'Google alebo obchod s appkami'], ['other', '✨', 'Iné']];
 const FIX = {
   time: ['⚡', 'Zápis za 3 sekundy', 'napíš, nadiktuj alebo odfoť, čo máš na tanieri. AI spočíta zvyšok.'],
   what: ['🧭', 'Vždy vieš, čo zjesť ďalej', 'návrhy jedál podľa zvyšných kalórií a bielkovín.'],
@@ -280,7 +290,7 @@ const VIEWS = {
       : [`${pw > 0 ? '+' : '−'}${nf(Math.round(Math.abs(pw) * 20) / 20, 2).replace(/0$/, '')} kg týždenne`, end ? `Cieľ ${nf(Number(q.tw), 1)} kg približne ${end.toLocaleDateString('sk-SK', { day: 'numeric', month: 'long' })}${t.weeks > 52 ? ' budúceho roka' : ''}. Bezpečné tempo, bez hladovania.` : 'Bezpečné tempo, ktoré sa dá vydržať. Appka ho každý týždeň doladí podľa tvojej váhy.'];
     const fixes = (q.block.length ? q.block : ['time', 'what']).slice(0, 3).map(k => FIX[k]).filter(Boolean);
     return `<div class="fnq-plan"><div class="tag">✦ Tvoj plán je hotový</div><h1>${h(GOALS.find(g => g[0] === q.goal)?.[2] || 'Tvoj plán')}</h1>
-      <div class="fnq-ring">${ringSvg(0, '', 8).replace('class=""', 'class="pr"')}<div><b data-kc="${t.kcal}">0</b><small>kcal denne</small></div></div>
+      <div class="fnq-ring">${ringSvg(0, '', 8, false).replace('class=""', 'class="pr"')}<div><b data-kc="${t.kcal}">0</b><small>kcal denne</small></div></div>
       <div class="fnq-mac"><div><b>${t.protein} g</b><span><i style="background:#7CFFB2"></i>bielkoviny</span></div><div><b>${t.carbs} g</b><span><i style="background:#5BB8FF"></i>sacharidy</span></div><div><b>${t.fat} g</b><span><i style="background:#FFC857"></i>tuky</span></div></div>
       <div class="fnq-proj"><b>${proj[0]}</b><span>${proj[1]}</span></div>
       <ul class="fnq-why">${fixes.map(([ic, b, s]) => `<li><i>${ic}</i><div><b>${b}</b><span>${s}</span></div></li>`).join('')}</ul></div>
