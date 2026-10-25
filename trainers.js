@@ -206,30 +206,18 @@ function joinPill() {
   return `<a class="tr-pill" href="#/trener-profil">${t}</a>`;
 }
 
-// písací efekt v hľadaní (rovnako ako v Jedle)
-function typeHints(q, hints) {
-  let i = 0, j = 0, dir = 1, wait = 0;
-  const tm = setInterval(() => {
-    if (!q.isConnected) { clearInterval(tm); return; }
-    if (document.activeElement === q || q.value) return;
-    if (wait > 0) { wait--; return; }
-    const w = hints[i]; j += dir; q.placeholder = 'Hľadaj: ' + w.slice(0, Math.max(0, j)) + (j > 0 ? '|' : '');
-    if (dir === 1 && j >= w.length) { dir = -1; wait = 18; }
-    else if (dir === -1 && j <= 0) { dir = 1; i = (i + 1) % hints.length; wait = 4; }
-  }, 70);
-}
-
 // ---------- katalóg ----------
 export async function renderCatalog() {
   $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>Tréneri</h1></div><div class="spinner"></div></div>${nav('#/treneri')}`;
   const [list0, links] = await Promise.all([api().list(), api().links(me().id).catch(() => [])]);
   const list = list0.map(t => ({ reviews: 0, avg: 0, ...t })).sort((a, b) => score(b) - score(a));
   const mine = links.find(l => l.client_id === me().id && l.status === 'active');
-  let q = '', spec = '', online = false;
+  let q = '', spec = '', online = false, city = '';
+  const cities = Object.entries(list.reduce((m, t) => { const c = (t.city || '').trim(); if (c) m[c] = (m[c] || 0) + 1; return m; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]);
   const draw = () => {
     const f = list.filter(t => t.user_id !== me().id
       && (!q || `${t.display_name} ${t.headline || ''} ${t.city || ''} ${(t.specialties || []).join(' ')}`.toLowerCase().includes(q))
-      && (!spec || (t.specialties || []).includes(spec)) && (!online || t.online));
+      && (!spec || (t.specialties || []).includes(spec)) && (!online || t.online) && (!city || (t.city || '').trim() === city));
     $app().querySelector('#trList').innerHTML = f.length ? f.map(card).join('')
       : `<div class="tr-emp"><div class="ic"><svg viewBox="0 0 24 24">${list.length ? '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>' : '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 5.5a3 3 0 010 5.5M19 14.5c1.5.8 2.5 2.4 2.5 4.5"/>'}</svg></div><b>${list.length ? 'Nič sme nenašli' : 'Prví tréneri už čoskoro'}</b><span>${list.length ? 'Skús zmeniť filter alebo hľadaný text.' : 'Práve pridávame prvých trénerov. Pozri sa o chvíľu znova.'}</span></div>`;
   };
@@ -242,15 +230,15 @@ export async function renderCatalog() {
       <div><svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/></svg><b>Priamy chat</b><span>s tvojím trénerom</span></div>
     </div>
     <div class="tr-search"><input class="input" id="trQ" placeholder="Meno, mesto alebo cieľ" autocomplete="off"></div>
-    <div class="tr-chips" id="trChips"><button class="tr-chip" data-o="1">Online</button>${SPECS.map(s => `<button class="tr-chip" data-s="${h(s)}">${h(s)}</button>`).join('')}</div>
+    <div class="tr-chips" id="trChips"><button class="tr-chip" data-o="1">Online</button>${cities.map(c => `<button class="tr-chip notranslate" translate="no" data-c="${h(c)}">📍 ${h(c)}</button>`).join('')}${SPECS.map(s => `<button class="tr-chip" data-s="${h(s)}">${h(s)}</button>`).join('')}</div>
     <div id="trList"></div></div>${nav('#/treneri')}`;
   draw();
   const root = $app();
-  typeHints(root.querySelector('#trQ'), ['naberanie svalov', 'chudnutie', 'Košice', 'powerlifting', 'výživa', 'po pôrode', 'meno trénera']);
   root.querySelector('#trQ').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); draw(); });
   root.querySelector('#trChips').addEventListener('click', e => {
     const b = e.target.closest('.tr-chip'); if (!b) return;
     if (b.dataset.o) { online = !online; b.classList.toggle('on', online); return draw(); }
+    if (b.dataset.c) { const on = !b.classList.contains('on'); root.querySelectorAll('.tr-chip[data-c]').forEach(x => x.classList.remove('on')); b.classList.toggle('on', on); city = on ? b.dataset.c : ''; return draw(); }
     const on = !b.classList.contains('on'); root.querySelectorAll('.tr-chip[data-s]').forEach(x => x.classList.remove('on'));
     b.classList.toggle('on', on); spec = on ? b.dataset.s : ''; draw();
   });
