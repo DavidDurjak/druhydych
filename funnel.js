@@ -389,11 +389,12 @@ function draw() {
 const opt = (v, ic, label, sub, on, multi) => `<button class="fnq-o" type="button" role="${multi ? 'checkbox' : 'radio'}" data-v="${v}" aria-checked="${!!on}">${ic ? `<span class="ic">${ic}</span>` : ''}<div><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}</div>${multi || !ic || sub ? '<span class="ck">✓</span>' : ''}</button>`;
 const opt2 = (v, ic, color, label, sub, on, o = {}) => `<button class="fnq-o v2 ${o.cls || ''}" type="button" role="${o.multi ? 'checkbox' : 'radio'}" data-v="${v}" aria-checked="${!!on}" style="--c:${color}"><span class="tl">${ic}</span><div><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}${o.pill ? `<em class="pl">${o.pill}</em>` : ''}</div>${o.bars ? `<span class="bars">${[1, 2, 3].map(n => `<i class="${n <= o.bars ? 'on' : ''}"></i>`).join('')}</span>` : ''}<span class="ck">✓</span></button>`;
 const foot = (label = 'Pokračovať', dis = false, extra = '') => `<div class="fnq-foot"><button class="fnq-cta" type="button" ${dis ? 'disabled' : ''}>${label}</button>${extra}</div>`;
-const pickOne = (root, key, after) => root.querySelectorAll('.fnq-o').forEach(b => b.onclick = () => {
+const pickOne = (root, key, after) => { const c0 = root.querySelector('.fnq-cta'); if (c0) c0.onclick = () => go(1); root.querySelectorAll('.fnq-o').forEach(b => b.onclick = () => {
   q[key] = key === 'days' ? Number(b.dataset.v) : b.dataset.v; save();
   root.querySelectorAll('.fnq-o').forEach(x => x.setAttribute('aria-checked', String(x === b))); buzz();
-  after ? after(b) : setTimeout(() => go(1), 230);
-});
+  const cta = root.querySelector('.fnq-cta'); if (cta) cta.disabled = false;
+  after && after(b);
+}); };
 
 const daysCap = () => q.days == null ? '' : q.days === 0 ? 'Začneme jedlom a krokmi. Tréning pridáš, keď budeš chcieť.' : `${q.days} ${q.days === 1 ? 'tréning' : q.days < 5 ? 'tréningy' : 'tréningov'} a ${7 - q.days} ${7 - q.days === 1 ? 'deň' : 7 - q.days < 5 ? 'dni' : 'dní'} voľna. ${q.days <= 3 ? 'Na celé telo to stačí na viditeľný rast.' : 'Rozdelíme to na hornú a dolnú časť alebo push, pull, nohy.'} Konkrétne dni si vyberieš v tréningovom pláne.`;
 const VIEWS = {
@@ -410,9 +411,9 @@ const VIEWS = {
       </div></div>
     ${foot('Poďme na to', false, '<button class="fnq-link" data-login type="button">Už mám účet. <b>Prihlásiť sa</b></button>')}`,
   goal: () => `<h1>Čo chceš dosiahnuť?</h1><p class="fnq-sub">Podľa toho nastavíme kalórie aj tréning.</p>
-    <div class="fnq-opts">${GOALS.map(([v, ic, l, sb, c, pill]) => opt2(v, ic, c, l, sb, q.goal === v, { pill, cls: 'big' })).join('')}</div>`,
+    <div class="fnq-opts">${GOALS.map(([v, ic, l, sb, c, pill]) => opt2(v, ic, c, l, sb, q.goal === v, { pill, cls: 'big' })).join('')}</div>${foot('Pokračovať', !q.goal)}`,
   sex: () => `<h1>Pohlavie</h1><p class="fnq-sub">Muži a ženy majú iný výdaj energie aj odporúčané minimá.</p>
-    <div class="fnq-opts two">${SEX.map(([v, ic, l, c]) => opt2(v, ic, c, l, '', q.sex === v, { cls: 'tall' })).join('')}</div>`,
+    <div class="fnq-opts two">${SEX.map(([v, ic, l, c]) => opt2(v, ic, c, l, '', q.sex === v, { cls: 'tall' })).join('')}</div>${foot('Pokračovať', !q.sex)}`,
   age: () => `<h1>V ktorom roku si sa ${q.sex === 'f' ? 'narodila' : 'narodil'}?</h1><p class="fnq-sub">Vek mení bazálny metabolizmus. Fuelwind je pre ľudí od 18 rokov.</p>
     <div class="fnq-bigin"><label><span>Rok narodenia</span><input id="fnqBy" type="number" inputmode="numeric" placeholder="2000" min="1930" max="${YEAR - 18}" value="${h(q.by)}"></label><div class="fnq-age" id="fnqCap"></div></div>
     <div class="fnq-yrs">${[YEAR - 18, YEAR - 21, YEAR - 25, YEAR - 30, YEAR - 35, YEAR - 40, YEAR - 50].map(y => `<button type="button" data-y="${y}">${y}</button>`).join('')}</div>
@@ -429,7 +430,7 @@ const VIEWS = {
     <p class="fnq-cap" id="fnqCap"></p>${foot('Pokračovať', false, '<button class="fnq-link" data-skip type="button">Zatiaľ neviem, preskočiť</button>')}`,
   job: () => `<h1>Ako vyzerá tvoj bežný deň?</h1><p class="fnq-sub">Pohyb mimo tréningu robí viac, než si väčšina ľudí myslí.</p>
     <div class="fnq-opts">${JOBS.map(([v, ic, l, sb, c, bars]) => opt2(v, ic, c, l, sb, q.job === v, { bars, cls: 'big' })).join('')}</div>
-    <p class="fnq-cap">Čím viac pohybu cez deň, tým viac môžeš zjesť.</p>`,
+    <p class="fnq-cap">Čím viac pohybu cez deň, tým viac môžeš zjesť.</p>${foot('Pokračovať', !q.job)}`,
   days: () => `<h1>Koľkokrát týždenne chceš trénovať?</h1><p class="fnq-sub">Aj nula je v poriadku. Plán sa prispôsobí.</p>
     <div class="fnq-opts days">${[0, 1, 2, 3, 4, 5, 6, 7].map(n => opt(n, '', String(n), n === 0 ? 'zatiaľ nie' : n === 1 ? 'raz' : 'krát', q.days === n)).join('')}</div>
     <div class="fnq-week" id="fnqWeek">${[0, 1, 2, 3, 4, 5, 6].map(i => `<i class="${q.days > i ? 'on' : ''}">${q.days > i ? ICON.dumbbell : ''}</i>`).join('')}</div>
@@ -452,7 +453,7 @@ const VIEWS = {
     ${foot(any ? 'Pokračovať' : 'Preskočiť', false)}`;
   },
   src: () => `<h1>Kde si o nás ${q.sex === 'f' ? 'počula' : 'počul'}?</h1><p class="fnq-sub">Pomôže nám to dostať appku k ďalším ľuďom ako ty.</p>
-    <div class="fnq-opts src">${SRC.map(([v, ic, l]) => opt(v, ic, l, '', q.src === v)).join('')}</div>`,
+    <div class="fnq-opts src">${SRC.map(([v, ic, l]) => opt(v, ic, l, '', q.src === v)).join('')}</div>${foot('Pokračovať', !q.src)}`,
   calc: () => `<div class="fnq-calc">${ringSvg(0, 'big', 7, true, true)}<h1>Skladám tvoj plán</h1>
     <ul class="fnq-list"><li><i>✓</i>Počítam tvoj denný výdaj energie</li><li><i>✓</i>Nastavujem bielkoviny pre tvoj cieľ</li><li><i>✓</i>Rozdeľujem sacharidy a tuky</li><li><i>✓</i>Pripravujem AI kouča</li></ul></div>`,
   plan: () => {
@@ -585,7 +586,7 @@ const BIND = {
     for (let i = 0; i < N; i++) {
       const sg = document.createElementNS('http://www.w3.org/2000/svg', 'path'), c = colAt(i * step + step / 2);
       sg.setAttribute('d', ARC); sg.setAttribute('pathLength', '100'); sg.setAttribute('stroke', `rgb(${c})`); sg.setAttribute('stroke-width', '8');
-      sg.setAttribute('stroke-dasharray', `${step * 1.02} ${100 - step * 1.02}`); sg.setAttribute('stroke-dashoffset', String(-i * step));
+      const dl = Math.min(step * 1.02, 100 - i * step - 0.01); sg.setAttribute('stroke-dasharray', `${dl} ${100 - dl}`); sg.setAttribute('stroke-dashoffset', String(-i * step));
       sg.style.opacity = '0'; sg.style.transition = `opacity .25s ease ${reduce() ? 0 : 120 + i * 11}ms`;
       svg.appendChild(sg); requestAnimationFrame(() => requestAnimationFrame(() => { sg.style.opacity = '1'; }));
     }
