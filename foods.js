@@ -118,7 +118,7 @@ export async function renderFood() {
       e.stopPropagation(); if (b.classList.contains('ok')) return;
       const l = pool.get(b.dataset.qa)?.log; if (!l) return;
       b.classList.add('ok'); b.textContent = '✓';
-      try { const r = await db.addFood(logRow(l)); added.push(r); if (l.food_id) db.foodUsed(l.food_id); if (navigator.vibrate) navigator.vibrate(15); drawBar(); }
+      try { await db.addFood(logRow(l)); if (l.food_id) db.foodUsed(l.food_id); if (navigator.vibrate) navigator.vibrate(15); toast(`Pridané do: ${MEALS()[meal].toLowerCase()} · ${r0(l.kcal)} kcal`); }
       catch (err) { b.classList.remove('ok'); b.textContent = '+'; toast(err.message, true); }
       setTimeout(() => { if (b.isConnected) { b.classList.remove('ok'); b.textContent = '+'; } }, 1400);
     });

@@ -186,6 +186,8 @@ function placeholderLoop(q) {
 }
 
 let barTxt = '', barT = 0;
+// po každom uloženom jedle obnov súčty kcal pri jedlách (predtým to robila spodná lišta Pridané/Späť/Hotovo)
+addEventListener('fw-logged', () => { clearTimeout(barT); barT = setTimeout(() => { const hero = document.querySelector('#jh'), seg = document.querySelector('#mealseg'); if (hero && seg) fill(hero, seg); }, 600); });
 function watchBar() {
   const t = document.querySelector('.fast-bar')?.textContent || '';
   if (t === barTxt) return; barTxt = t;
