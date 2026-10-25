@@ -60,7 +60,7 @@ const NAV_GROUP = { '#/vaha': '#/pokrok', '#/fotky': '#/pokrok', '#/checkin': '#
 function nav(active) {
   const items = [['#/', 'home', 'Dnes'], ['#/jedlo', 'food', 'Jedlo'], ['#/trening', 'dumbbell', 'Tréning'], ['#/pokrok', 'chart', 'Pokrok']];
   if (state.profile?.role === 'coach') items.push(['#/kouc', 'coach', 'Kouč']);
-  else if (state.trainer) items.push(['#/kouc', 'coach', 'Klienti']);
+  else if (state.trainer?.approved) items.push(['#/kouc', 'coach', 'Klienti']);
   else items.push(['#/treneri', 'coach', 'Tréneri']);
   items.push(['#/profil', 'user', 'Profil']);
   const cur = groupOf(active);
@@ -70,7 +70,7 @@ function nav(active) {
 function groupOf(path) {
   const p = String(path || '#/').split('?')[0] || '#/';
   if (p.startsWith('#/kouc/')) return '#/kouc';
-  if (p.startsWith('#/trener/')) return state.trainer && state.profile?.role !== 'coach' ? '#/profil' : '#/treneri';
+  if (p.startsWith('#/trener/')) return state.trainer?.approved && state.profile?.role !== 'coach' ? '#/profil' : '#/treneri';
   if (p === '#/trener-profil' || p === '#/treneri-ziadosti' || p.startsWith('#/chat/')) return '#/profil';
   return NAV_GROUP[p] || p;
 }

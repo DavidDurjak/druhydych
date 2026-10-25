@@ -425,7 +425,7 @@ export async function renderMessages() {
 }
 
 // ---------- KOUČ 2.0 ----------
-const coachy = () => state.profile.role === 'coach' || !!ctx.state.trainer; // kouč (vlastník) alebo tréner s profilom
+const coachy = () => state.profile.role === 'coach' || !!ctx.state.trainer?.approved; // kouč (vlastník) alebo tréner s profilom
 export async function renderCoach() {
   if (!coachy()) { location.hash = '#/'; return; }
   const isTr = state.profile.role !== 'coach';
