@@ -64,7 +64,8 @@ create trigger trainer_profiles_guard before insert or update on public.trainer_
 -- katalóg vidia prihlásení používatelia (len zverejnené profily); vlastník vidí a upravuje svoj
 drop policy if exists "trainer profiles read" on public.trainer_profiles;
 create policy "trainer profiles read" on public.trainer_profiles for select to authenticated
-  using (status = 'published' or user_id = (select auth.uid()));
+  using (status = 'published' or user_id = (select auth.uid())
+    or exists (select 1 from public.trainer_clients tc where tc.trainer_id = trainer_profiles.user_id and tc.client_id = (select auth.uid()) and tc.status in ('active','requested')));
 drop policy if exists "trainer profiles write own" on public.trainer_profiles;
 create policy "trainer profiles write own" on public.trainer_profiles for all to authenticated
   using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
