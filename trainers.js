@@ -83,9 +83,37 @@ const CSS = `
 .tr-join.row{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.09)}
 .tr-join:active{opacity:.7}
 .tr-pill{flex:none;padding:8px 13px;border-radius:99px;border:1px solid rgba(124,255,178,.4);background:rgba(124,255,178,.1);color:#9DFFC8!important;font-size:12.5px;font-weight:800;text-decoration:none;white-space:nowrap;text-transform:none!important;letter-spacing:normal!important}
-.tr-perks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 14px}
-.tr-perks div{padding:10px 8px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);text-align:center;font-size:12px;line-height:1.3;color:var(--muted)}
-.tr-perks b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
+.tr-perks{display:grid;grid-template-columns:repeat(3,1fr);margin:4px 0 16px;padding:14px 4px;border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.tr-perks>div{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;padding:2px 6px;min-width:0}
+.tr-perks>div+div{border-left:1px solid rgba(255,255,255,.08)}
+.tr-perks svg{width:22px;height:22px;stroke:#9DFFC8;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:4px}
+.tr-perks b{font-size:12.5px;font-weight:800;line-height:1.2;color:var(--text)}
+.tr-perks span{font-size:11px;line-height:1.25;color:var(--muted)}
+.tr-search{position:relative}
+.tr-search .input{padding-left:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B95A5' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:15px center;background-size:19px}
+.tr-card{display:block;padding:0;gap:0}
+.tr-cov{position:relative;height:196px;background-size:cover;background-position:center 22%;display:flex;flex-direction:column;justify-content:space-between;padding:12px;overflow:hidden}
+.tr-cov::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,12,16,.25) 0%,rgba(8,12,16,0) 32%,rgba(8,12,16,.86) 100%);pointer-events:none}
+.tr-cov>*{position:relative;z-index:1}
+.tr-cov .ini{position:absolute;z-index:0;left:0;right:0;top:34px;text-align:center;font-size:74px;font-weight:800;letter-spacing:-.04em;color:rgba(255,255,255,.2)}
+.tr-cov.big{height:300px;border-radius:28px;margin-bottom:14px;padding:14px}
+.tr-cov.big .ini{font-size:110px;top:60px}
+.tr-ctop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tr-glass{display:inline-flex;align-items:center;gap:4px;padding:6px 11px;border-radius:99px;font-size:12px;font-weight:800;color:#fff;background:rgba(10,14,18,.5);border:1px solid rgba(255,255,255,.16);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.tr-glass.g{color:#9DFFC8}.tr-glass.y{color:#FFD27A}
+.tr-cbot .tr-name{font-size:21px;color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.5)}
+.tr-cov.big .tr-cbot .tr-name{font-size:26px}
+.tr-cbot .tr-loc{font-size:12.5px;color:rgba(255,255,255,.78);margin-top:2px;font-weight:600}
+.tr-cbot .tr-sub2{font-size:14px;line-height:1.4;color:rgba(255,255,255,.86);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tr-cb{display:grid;gap:9px;padding:13px 16px 16px}
+.tr-cb .tr-hl{-webkit-line-clamp:2;font-size:14px;color:rgba(255,255,255,.78)}
+.tr-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}
+.tr-foot .tr-price{margin:0;font-size:13px}
+.tr-go{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#9DFFC8,#3FE0A8);color:#06140C;font-size:22px;font-weight:800;line-height:1;padding-bottom:2px}
+.tr-emp{display:flex;flex-direction:column;align-items:center;text-align:center;padding:38px 24px;border-radius:26px;background:rgba(255,255,255,.035);border:1px dashed rgba(255,255,255,.16)}
+.tr-emp .ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:rgba(124,255,178,.12);margin-bottom:14px}
+.tr-emp .ic svg{width:30px;height:30px;stroke:#9DFFC8;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tr-emp b{font-size:17px;margin-bottom:6px}.tr-emp span{color:var(--muted);font-size:14px;line-height:1.45;max-width:260px}
 .tag-y-placeholder{}
 .tr-tag.y{background:rgba(255,210,122,.16);color:#FFD27A}
 .tr-tag.b{background:rgba(91,184,255,.14);color:#8CCBFF}
@@ -144,17 +172,25 @@ const score = t => (t.verified ? 100 : 0) + (t.reviews ? t.avg * 10 + Math.min(t
 const stars = t => t.reviews ? `<span class="tr-tag y">★ ${t.avg.toFixed(1).replace('.', ',')} (${t.reviews})</span>` : '<span class="tr-tag">Nový</span>';
 const fmtDate = d => new Date(d).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+const priceShort = t => t.price_from != null ? `<div class="tr-price">od <b>${Number(t.price_from).toLocaleString('sk-SK')} €</b> / mesiac</div>` : '<div class="tr-price">Cena po dohode</div>';
+const ratingGlass = t => t.reviews ? `<span class="tr-glass y">★ ${t.avg.toFixed(1).replace('.', ',')} <span style="opacity:.7;font-weight:600">(${t.reviews})</span></span>` : '<span class="tr-glass">Nový</span>';
+function cover(t, big, sub) {
+  const g = GRAD[hash(t.display_name || t.user_id) % GRAD.length];
+  const bg = t.photo_url ? `background-image:url('${h(t.photo_url)}')` : `background:linear-gradient(150deg,${g[0]},${g[1]})`;
+  const mode = t.online ? '<span class="tr-glass g">Online</span>' : '<span class="tr-glass">Osobne</span>';
+  return `<div class="tr-cov${big ? ' big' : ''}" style="${bg}">${t.photo_url ? '' : `<span class="ini">${h(initials(t.display_name))}</span>`}
+    <div class="tr-ctop">${mode}${ratingGlass(t)}</div>
+    <div class="tr-cbot"><div class="tr-name">${h(t.display_name)}${trusted(t) ? CHECK : ''}</div>${t.city ? `<div class="tr-loc">${h(t.city)}${t.in_person && t.online ? ' · aj osobne' : ''}</div>` : ''}${sub ? `<div class="tr-sub2">${h(sub)}</div>` : ''}</div></div>`;
+}
 function card(t) {
   const a = best(t);
-  return `<a class="tr-card" href="#/trener/${t.user_id}">${avatar(t)}<div class="tr-body">
-    <div class="tr-name">${h(t.display_name)}${trusted(t) ? CHECK : ''}</div>
+  return `<a class="tr-card" href="#/trener/${t.user_id}">${cover(t)}<div class="tr-cb">
     <div class="tr-hl">${h(t.headline || '')}</div>
     ${a ? `<div class="tr-win">🏆 ${h(a.title)}${a.year ? ` · ${h(a.year)}` : ''}</div>` : ''}
-    <div class="tr-meta">${stars(t)}${t.online ? '<span class="tr-tag g">Online</span>' : ''}${t.in_person ? '<span class="tr-tag">Osobne</span>' : ''}${t.city ? `<span class="tr-tag">${h(t.city)}</span>` : ''}${(t.specialties || []).slice(0, 2).map(s => `<span class="tr-tag b">${h(s)}</span>`).join('')}</div>
-    ${price(t)}</div></a>`;
+    <div class="tr-meta" style="margin:0">${(t.specialties || []).slice(0, 3).map(s => `<span class="tr-tag b">${h(s)}</span>`).join('')}</div>
+    <div class="tr-foot">${priceShort(t)}<span class="tr-go" aria-hidden="true">›</span></div></div></a>`;
 }
 
-// vstup pre trénerov: viditeľný v katalógu aj v Profile
 function joinBanner(kind) {
   const own = ctx.state.trainer; const cl = `tr-join ${kind || 'card'}`;
   if (own?.approved) return '';
@@ -182,12 +218,16 @@ export async function renderCatalog() {
       && (!q || `${t.display_name} ${t.headline || ''} ${t.city || ''} ${(t.specialties || []).join(' ')}`.toLowerCase().includes(q))
       && (!spec || (t.specialties || []).includes(spec)) && (!online || t.online));
     $app().querySelector('#trList').innerHTML = f.length ? f.map(card).join('')
-      : `<div class="tr-empty"><b>${list.length ? 'Nič sme nenašli' : 'Tréneri sa práve pridávajú'}</b>${list.length ? 'Skús zmeniť filter alebo hľadaný text.' : 'Prvých overených trénerov pridávame práve teraz. Pozri sa o chvíľu znova.'}</div>`;
+      : `<div class="tr-emp"><div class="ic"><svg viewBox="0 0 24 24">${list.length ? '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>' : '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 5.5a3 3 0 010 5.5M19 14.5c1.5.8 2.5 2.4 2.5 4.5"/>'}</svg></div><b>${list.length ? 'Nič sme nenašli' : 'Prví tréneri už čoskoro'}</b><span>${list.length ? 'Skús zmeniť filter alebo hľadaný text.' : 'Práve pridávame prvých trénerov. Pozri sa o chvíľu znova.'}</span></div>`;
   };
   $app().innerHTML = `<div class="screen">
     <div class="tr-top"><h1>Tréneri</h1>${joinPill()}</div>
-    <p class="tr-sub">${mine ? 'Už máš trénera. Tu nájdeš ďalších.' : 'Vyber si trénera podľa cieľa. Koučovať ťa môže online odkiaľkoľvek.'}</p>
-    <div class="tr-perks"><div><b>Plán na mieru</b>tréning aj jedlo</div><div><b>Check-iny</b>každý týždeň</div><div><b>Priamy chat</b>s tvojím trénerom</div></div>
+    <p class="tr-sub">${mine ? 'Už máš trénera. Tu nájdeš ďalších.' : 'Online koučing od trénerov, ktorých sme skontrolovali.'}</p>
+    <div class="tr-perks">
+      <div><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5h6M9 11l2 2 4-4M9 17h6"/></svg><b>Plán na mieru</b><span>tréning a jedlo</span></div>
+      <div><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></svg><b>Check-iny</b><span>každý týždeň</span></div>
+      <div><svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/></svg><b>Priamy chat</b><span>s tvojím trénerom</span></div>
+    </div>
     <div class="tr-search"><input class="input" id="trQ" placeholder="Meno, mesto alebo cieľ" autocomplete="off"></div>
     <div class="tr-chips" id="trChips"><button class="tr-chip" data-o="1">Online</button>${SPECS.map(s => `<button class="tr-chip" data-s="${h(s)}">${h(s)}</button>`).join('')}</div>
     <div id="trList"></div></div>${nav('#/treneri')}`;
@@ -220,9 +260,7 @@ export async function renderTrainer(id) {
   };
   $app().innerHTML = `<div class="screen">
     <div class="tr-top"><a class="btn sm ghost" href="#/treneri">←</a><span></span></div>
-    <div class="tr-hero">${avatar(t, true)}<div class="tr-body"><div class="tr-name" style="font-size:21px">${h(t.display_name)}${trusted(t) ? CHECK : ''}</div>
-      <div class="tr-hl" style="-webkit-line-clamp:3">${h(t.headline || '')}</div>
-      <div class="tr-meta">${t.online ? '<span class="tr-tag g">Online</span>' : ''}${t.in_person ? '<span class="tr-tag">Osobne</span>' : ''}${t.city ? `<span class="tr-tag">${h(t.city)}</span>` : ''}</div></div></div>
+    ${cover(t, true, t.headline)}
     <div class="tr-stats"><div><b>${t.experience_years ?? '–'}</b><span>rokov praxe</span></div><div><b>${t.reviews ? '★ ' + t.avg.toFixed(1).replace('.', ',') : 'Nový'}</b><span>hodnotenie</span></div><div><b>${t.reviews}</b><span>recenzií</span></div></div>
     ${t.bio ? `<div class="card tr-sec"><h3>O mne</h3><p style="margin:0;line-height:1.5;white-space:pre-wrap">${h(t.bio)}</p></div>` : ''}
     ${(t.specialties || []).length ? `<div class="card tr-sec"><h3>Špecializácia</h3><div class="tr-meta" style="margin:0">${t.specialties.map(s => `<span class="tr-tag b">${h(s)}</span>`).join('')}</div></div>` : ''}
