@@ -188,8 +188,8 @@ html[data-theme=light] .fnq-seal{filter:none}
 .fnq-o .bars i:nth-child(1){height:9px}.fnq-o .bars i:nth-child(2){height:16px}.fnq-o .bars i:nth-child(3){height:24px}
 .fnq-o .bars i.on{background:var(--c)}.fnq-o .bars+.ck{margin-left:4px}
 .fnq-opts.tight{gap:8px}
-.fnq-opts.tight .fnq-o.v2{min-height:58px;padding:7px 14px 7px 8px;border-radius:18px}
-.fnq-opts.tight .tl{width:42px;height:42px;border-radius:13px}.fnq-opts.tight .tl svg{width:21px;height:21px}
+.fnq-opts.tight .fnq-o.v2{min-height:54px;padding:7px 14px 7px 8px;border-radius:18px}
+.fnq-opts.tight .tl{width:40px;height:40px;border-radius:12px}.fnq-opts.tight .tl svg{width:21px;height:21px}
 .fnq-opts.tight .fnq-o b{font-size:15.5px;line-height:1.2}
 .fnq-opts.two .fnq-o.v2{flex-direction:column;justify-content:center;gap:14px;min-height:184px;padding:20px 10px}
 .fnq-opts.two .fnq-o.v2::before{background:radial-gradient(90% 90% at 50% 0%,color-mix(in srgb,var(--c) 20%,transparent),transparent 75%)}
@@ -209,9 +209,9 @@ html[data-theme=light] .fnq-seal{filter:none}
 .fnq-nf .mi{flex:none;width:46px;height:46px;border-radius:15px;display:grid;place-items:center;margin-right:2px;color:var(--accent,#7CFFB2);background:color-mix(in srgb,var(--accent,#7CFFB2) 12%,var(--bg-2,#10141a))}
 .fnq-nf .mi svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .fnq-bmi{margin:20px 4px 0}.fnq-bmi[hidden]{display:none}
-.fnq-bmi .tr{position:relative;height:10px;border-radius:99px;background:linear-gradient(90deg,#5BB8FF 0 14%,#7CFFB2 14% 40%,#FFC857 40% 60%,#FF8A4C 60% 100%)}
+.fnq-bmi .tr{position:relative;height:12px;border-radius:99px;background:linear-gradient(90deg,#5BB8FF 0%,#6FE6C8 14%,#7CFFB2 27%,#C9E58A 40%,#FFC857 55%,#FF9A52 75%,#FF7A4C 100%);box-shadow:0 0 18px color-mix(in srgb,#7CFFB2 14%,transparent)}
 .fnq-bmi .tr i{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--bg,#0B0E12);box-shadow:0 2px 8px #0008;transform:translate(-50%,-50%);transition:left .35s cubic-bezier(.3,1,.4,1)}
-.fnq-bmi .lb{display:grid;grid-template-columns:14fr 26fr 20fr 40fr;margin-top:8px;font-size:11px;color:var(--muted,#8a94a3)}
+.fnq-bmi .lb{position:relative;height:16px;margin-top:8px;font-size:11px;color:var(--muted,#8a94a3)}.fnq-bmi .lb span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .fnq-week{gap:6px}.fnq-week i{width:38px;height:38px;border-radius:12px}
 .fnq-week i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 .fnq-sec{margin:0 0 12px;padding:14px;border-radius:22px;background:var(--card,#151a21);border:1.5px solid var(--line,#232a33)}
@@ -308,10 +308,10 @@ const ICON = {
   bolt: I('<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>'),
   coach: I('<path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/>'),
 };
-const GOALS = [['lose', ICON.flame, 'Schudnúť', 'zhodiť tuk, udržať svaly', '#FF8A4C', '−0,5 kg týždenne'], ['maintain', ICON.scale, 'Udržať váhu', 'jesť vyvážene, cítiť sa lepšie', '#5BB8FF', 'stabilná váha'], ['gain', ICON.trend, 'Nabrať svaly', 'rásť bez zbytočného tuku', '#7CFFB2', '+0,25 kg týždenne']];
+const GOALS = [['lose', ICON.flame, 'Schudnúť', 'zhodiť tuk, udržať svaly', '#FF8A4C', 'kalórie pod výdajom'], ['maintain', ICON.scale, 'Udržať váhu', 'jesť vyvážene, cítiť sa lepšie', '#5BB8FF', 'kalórie na úrovni výdaja'], ['gain', ICON.trend, 'Nabrať svaly', 'rásť bez zbytočného tuku', '#7CFFB2', 'kalórie nad výdajom']];
 const SEX = [['m', ICON.male, 'Muž', '#5BB8FF'], ['f', ICON.female, 'Žena', '#FF8AC6']];
 const JOBS = [['desk', ICON.laptop, 'Sedím väčšinu dňa', 'škola, kancelária', '#5BB8FF', 1], ['stand', ICON.person, 'Som veľa na nohách', 'obchod, gastro, učenie', '#FFC857', 2], ['phys', ICON.helmet, 'Fyzická práca', 'stavba, sklad, záhrada', '#FF8A4C', 3]];
-const BLOCK = [['time', ICON.clock, 'Zapisovanie ma zdržiava'], ['what', ICON.help, 'Neviem, čo mám jesť'], ['out', ICON.utensils, 'Často jem vonku alebo v jedálni'], ['sweet', ICON.candy, 'Chute na sladké a večerné jedenie'], ['motiv', ICON.down, 'Vydržím pár dní a prestanem'], ['train', ICON.dumbbell, 'Neviem, ako trénovať']];
+const BLOCK = [['time', ICON.clock, 'Zapisovanie ma zdržiava'], ['what', ICON.help, 'Neviem, čo mám jesť'], ['out', ICON.utensils, 'Často jem vonku alebo v jedálni'], ['sweet', ICON.candy, 'Chute na sladké a večerné jedenie'], ['motiv', ICON.down, 'Vydržím pár dní a prestanem'], ['train', ICON.dumbbell, 'Neviem, ako trénovať'], ['health', ICON.pulse, 'Cukrovka, celiakia, alergia alebo diéta ma obmedzujú']];
 const HEALTH = [['diabetes', 'Cukrovka'], ['celiac', 'Celiakia'], ['lactose', 'Intolerancia laktózy'], ['allergy', 'Alergia na potraviny'], ['salt', 'Vysoký tlak']];
 const SRC = [['instagram', ICON.camera, 'Instagram'], ['tiktok', ICON.music, 'TikTok'], ['facebook', ICON.people, 'Facebook'], ['youtube', ICON.play, 'YouTube'], ['gym', ICON.dumbbell, 'Fitko alebo tréner'], ['friend', ICON.heart, 'Kamarát'], ['store', ICON.search, 'Google alebo obchod s appkami'], ['other', ICON.spark, 'Iné']];
 const FIX = {
@@ -320,6 +320,7 @@ const FIX = {
   out: [ICON.utensils, 'Odfoť denné menu', 'AI ti z lístka vyberie jedlo, ktoré ti dnes sedí najviac.'],
   sweet: [ICON.moon, 'Plán aj na chute', 'kouč ti pomôže rozložiť kalórie tak, aby ostalo aj na niečo sladké.'],
   motiv: [ICON.repeat, 'Séria, ktorá odpúšťa', 'jeden vynechaný deň ťa nevráti na nulu. Kouč ťa podrží.'],
+  health: [ICON.pulse, 'Jedlá podľa tvojho zdravia', 'appka označí, čo ti nesedí, a upozorní ťa pred zápisom.'],
   train: [ICON.trend, 'Tréningový plán na mieru', 'podľa tvojich dní, s radou, kedy pridať váhu.'],
 };
 
@@ -421,7 +422,7 @@ const VIEWS = {
       <div class="fnq-nf"><span class="mi">${ICON.ruler}</span><label><span>Výška</span><input id="fnqH" type="number" inputmode="numeric" placeholder="178" min="120" max="230" value="${h(q.h)}"></label><em>cm</em><div class="fnq-pm"><button type="button" data-pm="fnqH:-1" aria-label="Menej">−</button><button type="button" data-pm="fnqH:1" aria-label="Viac">+</button></div></div>
       <div class="fnq-nf"><span class="mi">${ICON.scale}</span><label><span>Váha teraz</span><input id="fnqW" type="number" inputmode="decimal" step="0.1" placeholder="76" min="30" max="300" value="${h(q.w)}"></label><em>kg</em><div class="fnq-pm"><button type="button" data-pm="fnqW:-0.5" aria-label="Menej">−</button><button type="button" data-pm="fnqW:0.5" aria-label="Viac">+</button></div></div>
     </div>
-    <div class="fnq-bmi" id="fnqBmi" hidden><div class="tr"><i id="fnqBmiM"></i></div><div class="lb"><span></span><span>norma</span><span>nadváha</span><span>obezita</span></div></div>
+    <div class="fnq-bmi" id="fnqBmi" hidden><div class="tr"><i id="fnqBmiM"></i></div><div class="lb"><span style="left:27%">norma</span><span style="left:50%">nadváha</span><span style="left:80%">obezita</span></div></div>
     <p class="fnq-cap" id="fnqCap"></p>${foot('Pokračovať', true)}`,
   target: () => `<h1>${q.goal === 'lose' ? `Akú váhu by si ${q.sex === 'f' ? 'chcela' : 'chcel'} mať?` : 'Kam to chceš dotiahnuť?'}</h1><p class="fnq-sub">Ukážeme ti, za ako dlho je to reálne pri zdravom tempe.</p>
     <div class="fnq-num"><div class="fnq-nf"><label><span>Cieľová váha</span><input id="fnqT" type="number" inputmode="decimal" step="0.5" min="35" max="250" value="${h(q.tw || (Number(q.w) ? (q.goal === 'lose' ? Math.round(Number(q.w) * 0.92) : Math.round(Number(q.w) * 1.05)) : ''))}"></label><em>kg</em><div class="fnq-pm"><button type="button" data-pm="fnqT:-0.5" aria-label="Menej">−</button><button type="button" data-pm="fnqT:0.5" aria-label="Viac">+</button></div></div></div>
@@ -572,16 +573,22 @@ const BIND = {
     // prstenec z loga rozdelený na makrá: bielkoviny, sacharidy, tuky
     const cal = [t.protein * 4, t.carbs * 4, t.fat * 9], sum = cal.reduce((a, b) => a + b, 0) || 1, COL = ['#7CFFB2', '#5BB8FF', '#FFC857'];
     svg.querySelectorAll('.p, circle').forEach(x => x.remove());
-    let start = 0;
-    cal.forEach((c, i) => {
-      const len = (c / sum) * 100, s = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      s.setAttribute('d', ARC); s.setAttribute('pathLength', '100'); s.setAttribute('class', 'seg'); s.setAttribute('stroke', COL[i]); s.setAttribute('stroke-width', '8');
-      s.setAttribute('stroke-dasharray', `0 100`); s.setAttribute('stroke-dashoffset', String(-start));
-      svg.appendChild(s);
-      const gap = i < 2 ? 1.6 : 0;
-      setTimeout(() => { s.setAttribute('stroke-dasharray', `${Math.max(0, len - gap)} ${100 - len + gap}`); }, 120 + i * 180);
-      start += len;
-    });
+    // farby plynulo prechádzajú jedna do druhej: stred každého makra má svoju farbu, medzi nimi sa farba mieša
+    const lens = cal.map(c => c / sum * 100), mids = [lens[0] / 2, lens[0] + lens[1] / 2, lens[0] + lens[1] + lens[2] / 2];
+    const rgb = hx => [1, 3, 5].map(i => parseInt(hx.slice(i, i + 2), 16));
+    const colAt = x => {
+      if (x <= mids[0]) return rgb(COL[0]); if (x >= mids[2]) return rgb(COL[2]);
+      const j = x < mids[1] ? 0 : 1, k = (x - mids[j]) / (mids[j + 1] - mids[j]), A = rgb(COL[j]), B = rgb(COL[j + 1]);
+      return A.map((v, n) => Math.round(v + (B[n] - v) * k));
+    };
+    const N = 100, step = 100 / N;
+    for (let i = 0; i < N; i++) {
+      const sg = document.createElementNS('http://www.w3.org/2000/svg', 'path'), c = colAt(i * step + step / 2);
+      sg.setAttribute('d', ARC); sg.setAttribute('pathLength', '100'); sg.setAttribute('stroke', `rgb(${c})`); sg.setAttribute('stroke-width', '8');
+      sg.setAttribute('stroke-dasharray', `${step * 1.02} ${100 - step * 1.02}`); sg.setAttribute('stroke-dashoffset', String(-i * step));
+      sg.style.opacity = '0'; sg.style.transition = `opacity .25s ease ${reduce() ? 0 : 120 + i * 11}ms`;
+      svg.appendChild(sg); requestAnimationFrame(() => requestAnimationFrame(() => { sg.style.opacity = '1'; }));
+    }
     const b = r.querySelector('[data-kc]'), to = Number(b.dataset.kc), t0 = performance.now();
     if (reduce()) b.textContent = nf(to);
     else { const stp = tt => { const k = Math.min(1, (tt - t0) / 1100); b.textContent = nf(to * (1 - Math.pow(1 - k, 3))); if (k < 1 && b.isConnected) requestAnimationFrame(stp); }; requestAnimationFrame(stp); }
