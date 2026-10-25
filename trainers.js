@@ -336,7 +336,7 @@ export async function renderTrainerEdit() {
     <p class="tr-sub">${cur ? (cur.approved ? 'Takto ťa uvidia klienti v katalógu.' : 'Doplň profil a pošli ho na schválenie.') : 'Vytvor si profil. Potrebuješ fotku, krátky popis, pár viet o sebe a špecializáciu. Certifikát nie je povinný, dôveru si buduješ hodnoteniami klientov.'}</p>
     <div class="card" style="text-align:center"><div id="trPh" style="display:flex;justify-content:center;margin-bottom:10px">${avatar(t, true)}</div><label class="btn sm ghost" style="cursor:pointer">Nahrať fotku<input type="file" id="trFile" accept="image/*" hidden></label></div>
     <div class="card mt">
-      <label><span>Meno</span><input class="input" id="f_name" maxlength="60" value="${h(t.display_name)}"></label>
+      <div class="tr-two"><label><span>Meno</span><input class="input" id="f_fn" maxlength="30" autocomplete="given-name" value="${h((t.display_name || '').split(' ')[0])}"></label><label><span>Priezvisko</span><input class="input" id="f_ln" maxlength="30" autocomplete="family-name" value="${h((t.display_name || '').split(' ').slice(1).join(' '))}"></label></div>
       <label><span>Krátky popis (čo ti ide najlepšie)</span><input class="input" id="f_hl" maxlength="90" placeholder="Napr. Naberanie svalov pre začiatočníkov bez stresu" value="${h(t.headline || '')}"></label>
       <div class="tr-two"><label><span>Mesto</span><input class="input" id="f_city" maxlength="60" value="${h(t.city || '')}"></label><label><span>Rokov praxe</span><input class="input" id="f_exp" inputmode="numeric" value="${t.experience_years ?? ''}"></label></div>
       <label><span>O mne</span><textarea class="input" id="f_bio" rows="5" maxlength="1200" placeholder="Ako pracuješ, s kým pracuješ najradšej, čo klient dostane.">${h(t.bio || '')}</textarea></label>
@@ -392,12 +392,13 @@ export async function renderTrainerEdit() {
   root.addEventListener('click', e => { const el = e.target.closest?.('.card.tr-bad'); if (el) { el.classList.remove('tr-bad', 'tr-shake'); const n = el.nextElementSibling; if (n?.classList.contains('tr-ferr')) n.remove(); } });
   const save = async status => {
     clearErr();
-    const name = root.querySelector('#f_name').value.trim();
+    const fn = root.querySelector('#f_fn').value.trim(), ln = root.querySelector('#f_ln').value.trim(), name = `${fn} ${ln}`.trim();
     const specs = [...root.querySelectorAll('#f_specs .tr-chip.on')].map(x => x.dataset.s);
     const bad = [];
     const need = status === 'published';
     if (!photo && !blob && need) bad.push([root.querySelector('#trPh').closest('.card'), 'Nahraj svoju fotku. Klienti si vyberajú podľa tváre.']);
-    if (name.length < 2) bad.push([root.querySelector('#f_name'), 'Dopíš meno (aspoň 2 znaky).']);
+    if (fn.length < 2) bad.push([root.querySelector('#f_fn'), 'Dopíš meno.']);
+    if (ln.length < 2) bad.push([root.querySelector('#f_ln'), 'Dopíš priezvisko. Klienti dôverujú tým, čo sa predstavia celým menom.']);
     if (need && root.querySelector('#f_hl').value.trim().length < 8) bad.push([root.querySelector('#f_hl'), 'Napíš krátky popis, aspoň 8 znakov.']);
     if (need && root.querySelector('#f_bio').value.trim().length < 40) bad.push([root.querySelector('#f_bio'), 'Napíš o sebe aspoň 40 znakov.']);
     if (need && !specs.length) bad.push([root.querySelector('#f_specs').closest('.card'), 'Vyber aspoň jednu špecializáciu.']);
