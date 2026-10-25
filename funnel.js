@@ -6,6 +6,8 @@ import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
 import { cookie } from './brandmark.js';
+import { DIETS, DIET_KEYS } from './dietcore.js';
+import * as dx from './dxcore.js';
 
 const KEY = 'fw_quiz', SKIP = 'fw_fq_skip';
 const jget = (k, s = localStorage) => { try { return JSON.parse(s.getItem(k) || 'null'); } catch (_) { return null; } };
@@ -92,8 +94,27 @@ html[data-theme=light] .fnq-seal{filter:none}
 @keyframes fnqDraw{to{stroke-dashoffset:0}}@keyframes fnqDot{to{opacity:1}}
 .fnq-hero h1{font-size:40px;line-height:1.02;letter-spacing:-.045em}
 .fnq-hero .fnq-sub{font-size:16px;margin-bottom:22px}
-.fnq-chips{display:flex;flex-wrap:wrap;gap:8px}
-.fnq-chips span{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:99px;font-size:13.5px;background:var(--card,#151a21);border:1px solid var(--line,#232a33)}
+.fnq-feats{display:grid;gap:10px;margin:22px 0 18px}
+.fnq-opts.days .fnq-o .ck{display:none}
+.fnq-feats>div{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;background:var(--card,#151a21);border:1.5px solid var(--line,#232a33)}
+.fnq-feats .fi{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent,#7CFFB2) 14%,var(--bg-2,#10141a));color:var(--accent,#7CFFB2)}
+.fnq-feats .fi svg,.fnq-o .ic svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fnq-feats b{display:block;font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+.fnq-feats small{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:var(--muted,#8a94a3)}
+.fnq-body{scrollbar-width:none}.fnq-body::-webkit-scrollbar{display:none}
+.fnq-opts.src .fnq-o{min-height:56px;padding:8px 14px}
+.fnq-opts.src .fnq-o .ic{width:38px;height:38px;color:var(--accent,#7CFFB2)}
+.fnq-opts.days .fnq-o small{font-size:11.5px}
+.fnq-week{display:flex;gap:6px;justify-content:center;margin:18px 0 0}
+.fnq-week i{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;color:var(--muted,#8a94a3);background:var(--card,#151a21);border:1.5px solid var(--line,#232a33);transition:all .25s}
+.fnq-week i.on{background:var(--accent,#7CFFB2);border-color:var(--accent,#7CFFB2);color:var(--accent-ink,#06130C);transform:translateY(-3px)}
+.fnq-ch{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.fnq-ch button{appearance:none;-webkit-appearance:none;min-height:42px;padding:0 15px;border-radius:99px;border:1.5px solid var(--line,#232a33);background:var(--card,#151a21);color:var(--text,#fff);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .18s}
+.fnq-ch button[aria-pressed=true]{border-color:var(--accent,#7CFFB2);background:color-mix(in srgb,var(--accent,#7CFFB2) 15%,var(--card,#151a21));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#7CFFB2) 14%,transparent)}
+.fnq-h{margin:18px 0 8px;font-size:13px;font-weight:700;color:var(--muted,#8a94a3)}
+.fnq-cons{display:flex;gap:10px;align-items:flex-start;margin-top:16px;padding:12px 14px;border-radius:16px;border:1.5px solid var(--line,#232a33);background:var(--card,#151a21);font-size:12.5px;line-height:1.4;color:var(--muted,#8a94a3)}
+.fnq-cons.bad{border-color:#ff5d5d}.fnq-cons input{flex:none;width:20px;height:20px;margin-top:1px;accent-color:var(--accent,#7CFFB2)}
+.fnq-unused span{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:99px;font-size:13.5px;background:var(--card,#151a21);border:1px solid var(--line,#232a33)}
 .fnq-chips span i{font-style:normal;color:var(--accent,#7CFFB2)}
 /* počítanie */
 .fnq-calc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
@@ -151,8 +172,7 @@ html[data-theme=light] .fnq-seal{filter:none}
 @keyframes fnqWob{0%,100%{transform:translate(50px,50px) rotate(-9deg) scale(1) translate(-50px,-50px)}50%{transform:translate(50px,50px) rotate(9deg) scale(1.05) translate(-50px,-50px)}}
 @keyframes fnqSpin{to{transform:rotate(360deg)}}
 @media (min-width:700px){.fnq h1{font-size:36px}.fnq-hero h1{font-size:48px}}
-@media (prefers-reduced-motion:reduce){.fnq,.fnq-step,.fnq-seal *{animation:none!important}.fnq-cover .rgp,.fnq-cover .gt-ck,.fnq-calc .gt-ck{animation:none}.fnq-seal .rg,.fnq-seal .mk{stroke-dashoffset:0}.fnq-seal .dot{opacity:1}}
-`;
+@media (prefers-reduced-motion:reduce){.fnq,.fnq-step,.fnq-seal *{animation:none!important}.fnq-cover .rgp,.fnq-cover .gt-ck,.fnq-calc .gt-ck{animation:none}.fnq-seal .rg,`;
 const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
 
 const BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -184,7 +204,21 @@ const GOALS = [['lose', '🔥', 'Schudnúť', 'zhodiť tuk, udržať svaly'], ['
 const SEX = [['m', '👨', 'Muž'], ['f', '👩', 'Žena']];
 const JOBS = [['desk', '💻', 'Sedím väčšinu dňa', 'škola, kancelária'], ['stand', '🚶', 'Som veľa na nohách', 'obchod, gastro, učenie'], ['phys', '🏗️', 'Fyzická práca', 'stavba, sklad, záhrada']];
 const BLOCK = [['time', '⏱️', 'Zapisovanie ma zdržiava'], ['what', '🤷', 'Neviem, čo mám jesť'], ['out', '🍽️', 'Často jem vonku alebo v jedálni'], ['sweet', '🍫', 'Chute na sladké a večerné jedenie'], ['motiv', '📉', 'Vydržím pár dní a prestanem'], ['train', '🏋️', 'Neviem, ako trénovať']];
-const SRC = [['instagram', '📸', 'Instagram'], ['tiktok', '🎵', 'TikTok'], ['facebook', '👍', 'Facebook'], ['youtube', '▶️', 'YouTube'], ['gym', '🏋️', 'Fitko alebo tréner'], ['friend', '🤝', 'Kamarát'], ['store', '🔎', 'Google alebo obchod s appkami'], ['other', '✨', 'Iné']];
+const I = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  camera: I('<rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-2.5h5L16 7"/>'),
+  music: I('<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>'),
+  people: I('<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.5 0 4 2 4 5"/>'),
+  play: I('<rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10.5 9.5v5l4-2.5z"/>'),
+  dumbbell: I('<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>'),
+  heart: I('<path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z"/>'),
+  search: I('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/>'),
+  spark: I('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>'),
+  bolt: I('<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>'),
+  coach: I('<path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/>'),
+};
+const HEALTH = [['diabetes', 'Cukrovka'], ['celiac', 'Celiakia'], ['lactose', 'Intolerancia laktózy'], ['allergy', 'Alergia na potraviny'], ['salt', 'Vysoký tlak']];
+const SRC = [['instagram', ICON.camera, 'Instagram'], ['tiktok', ICON.music, 'TikTok'], ['facebook', ICON.people, 'Facebook'], ['youtube', ICON.play, 'YouTube'], ['gym', ICON.dumbbell, 'Fitko alebo tréner'], ['friend', ICON.heart, 'Kamarát'], ['store', ICON.search, 'Google alebo obchod s appkami'], ['other', ICON.spark, 'Iné']];
 const FIX = {
   time: ['⚡', 'Zápis za 3 sekundy', 'napíš, nadiktuj alebo odfoť, čo máš na tanieri. AI spočíta zvyšok.'],
   what: ['🧭', 'Vždy vieš, čo zjesť ďalej', 'návrhy jedál podľa zvyšných kalórií a bielkovín.'],
@@ -195,8 +229,8 @@ const FIX = {
 };
 
 let el = null, q = null, step = 0, dir = 1;
-const fresh = () => ({ goal: '', sex: '', by: '', h: '', w: '', tw: '', job: '', days: null, block: [], src: '', name: '', done: false });
-const steps = () => ['hello', 'goal', 'sex', 'age', 'body', ...(q.goal && q.goal !== 'maintain' ? ['target'] : []), 'job', 'days', 'block', 'src', 'calc', 'plan', 'account'];
+const fresh = () => ({ goal: '', sex: '', by: '', h: '', w: '', tw: '', job: '', days: null, block: [], diet: { diets: [], modes: [], dtype: 't2', allergens: [], consent: false }, src: '', name: '', done: false });
+const steps = () => ['hello', 'goal', 'sex', 'age', 'body', ...(q.goal && q.goal !== 'maintain' ? ['target'] : []), 'job', 'days', 'block', 'diet', 'src', 'calc', 'plan', 'account'];
 
 function plan() {
   const w = Number(q.w), activity = calc.encodeActivity({ job: q.job || 'desk', steps: (calc.JOBS[q.job] || calc.JOBS.desk).steps, days: q.days || 0 });
@@ -209,7 +243,7 @@ function plan() {
 
 function open(startAt = 0) {
   if (el) return;
-  q = { ...fresh(), ...(jget(KEY) || {}) };
+  q = { ...fresh(), ...(jget(KEY) || {}) }; if (!q.diet || !Array.isArray(q.diet.diets)) q.diet = fresh().diet;
   step = startAt; dir = 1;
   el = document.createElement('div'); el.className = 'fnq'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Nastavenie plánu');
   el.innerHTML = `<div class="fnq-top"><button class="fnq-back" aria-label="Späť">${BACK}</button><div class="fnq-bar"><i></i></div><span class="fnq-ring-slot"></span></div><div class="fnq-body"></div>`;
@@ -252,11 +286,16 @@ const pickOne = (root, key, after) => root.querySelectorAll('.fnq-o').forEach(b 
   after ? after(b) : setTimeout(() => go(1), 230);
 });
 
+const daysCap = () => q.days == null ? '' : q.days === 0 ? 'Začneme jedlom a krokmi, tréning pridáš, keď budeš chcieť.' : q.days <= 3 ? 'Ideálne na celé telo, 3 dni stačia na viditeľný rast.' : 'Rozdelíme to na hornú a dolnú časť alebo push, pull, nohy.';
 const VIEWS = {
   hello: () => `<div class="fnq-hero">${SEAL}
       <h1>Tvoj plán jedla a tréningu za minútu.</h1>
       <p class="fnq-sub">Pár otázok a appka ti vypočíta kalórie a makrá presne na teba. Potom už len zapisuješ, zvyšok stráži AI.</p>
-      <div class="fnq-chips"><span><i>✦</i>Zápis jedla fotkou</span><span><i>✦</i>Odfoť denné menu</span><span><i>✦</i>Kouč, ktorý ťa pozná</span></div></div>
+      <div class="fnq-feats">
+        <div><span class="fi">${ICON.bolt}</span><div><b>Jedlo zapíšeš za 3 sekundy</b><small>Napíš, nadiktuj alebo odfoť tanier. AI spočíta zvyšok.</small></div></div>
+        <div><span class="fi">${ICON.dumbbell}</span><div><b>Tréning, ktorý si pamätá</b><small>Váhy, série a pokrok sa ukladajú samy.</small></div></div>
+        <div><span class="fi">${ICON.coach}</span><div><b>Reálni tréneri a AI kouč</b><small>Online koučing od overených trénerov na jednom mieste.</small></div></div>
+      </div></div>
     ${foot('Poďme na to', false, '<button class="fnq-link" data-login type="button">Už mám účet. <b>Prihlásiť sa</b></button>')}`,
   goal: () => `<h1>Čo chceš dosiahnuť?</h1><p class="fnq-sub">Podľa toho nastavíme kalórie aj tréning.</p>
     <div class="fnq-opts">${GOALS.map(([v, ic, l, s]) => opt(v, ic, l, s, q.goal === v)).join('')}</div>`,
@@ -277,11 +316,24 @@ const VIEWS = {
     <div class="fnq-opts">${JOBS.map(([v, ic, l, s]) => opt(v, ic, l, s, q.job === v)).join('')}</div>`,
   days: () => `<h1>Koľkokrát týždenne chceš trénovať?</h1><p class="fnq-sub">Aj nula je v poriadku. Plán sa prispôsobí.</p>
     <div class="fnq-opts days">${[0, 1, 2, 3, 4, 5, 6, 7].map(n => opt(n, '', String(n), n === 0 ? 'zatiaľ nie' : n === 1 ? 'raz' : 'krát', q.days === n)).join('')}</div>
-    <p class="fnq-cap">${q.days == null ? '' : q.days === 0 ? 'Začneme jedlom a krokmi, tréning pridáš, keď budeš chcieť.' : q.days <= 3 ? 'Ideálne na celé telo, 3 dni stačia na viditeľný rast.' : 'Rozdelíme to na hornú a dolnú časť alebo push, pull, nohy.'}</p>`,
+    <div class="fnq-week" id="fnqWeek">${['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne'].map((d, i) => `<i class="${q.days > i ? 'on' : ''}">${d}</i>`).join('')}</div>
+    <p class="fnq-cap" id="fnqCap">${daysCap()}</p>
+    ${foot('Pokračovať', q.days == null)}`,
   block: () => `<h1>Čo ti doteraz najviac bránilo?</h1><p class="fnq-sub">Vyber všetko, čo sedí. Appka sa podľa toho nastaví.</p>
     <div class="fnq-opts">${BLOCK.map(([v, ic, l]) => opt(v, ic, l, '', q.block.includes(v), true)).join('')}</div>${foot('Pokračovať', false)}`,
+  diet: () => {
+    const d = q.diet, any = d.diets.length || d.modes.length;
+    return `<h1>Stravuješ sa nejako špecificky?</h1><p class="fnq-sub">Appka podľa toho označí jedlá a nastaví limity. Ak nič z toho, pokračuj ďalej.</p>
+    <div class="fnq-h">Ako sa stravuješ</div><div class="fnq-ch">${DIET_KEYS.map(k => `<button type="button" data-d="${k}" aria-pressed="${d.diets.includes(k)}">${h(DIETS[k].title)}</button>`).join('')}</div>
+    <div class="fnq-h">Zdravie</div><div class="fnq-ch">${HEALTH.map(([k, l]) => `<button type="button" data-m="${k}" aria-pressed="${d.modes.includes(k)}">${l}</button>`).join('')}</div>
+    ${d.modes.includes('diabetes') ? `<div class="fnq-h">Aký typ cukrovky máš?</div><div class="fnq-ch">${Object.entries(dx.DTYPES).map(([k, v]) => `<button type="button" data-t="${k}" aria-pressed="${d.dtype === k}">${h(v.label)}</button>`).join('')}</div>` : ''}
+    ${d.modes.includes('allergy') ? `<div class="fnq-h">Na čo máš alergiu?</div><div class="fnq-ch">${dx.ALLERGENS.map(([k, l]) => `<button type="button" data-a="${k}" aria-pressed="${d.allergens.includes(k)}">${h(l)}</button>`).join('')}</div>` : ''}
+    ${d.modes.includes('diabetes') && q.goal === 'lose' ? `<p class="fnq-cap">Pri cukrovke sa o chudnutí poraď s lekárom. Appka nepočíta dávky inzulínu ani liekov.</p>` : ''}
+    ${any ? `<label class="fnq-cons" id="fnqCons"><input type="checkbox" ${d.consent ? 'checked' : ''}><span>Súhlasím, aby Fuelwind ukladal údaje o mojom zdraví a stravovaní na účely týchto funkcií. Súhlas môžeš kedykoľvek odvolať v Profile.</span></label>` : ''}
+    ${foot(any ? 'Pokračovať' : 'Preskočiť', false)}`;
+  },
   src: () => `<h1>Kde si o nás ${q.sex === 'f' ? 'počula' : 'počul'}?</h1><p class="fnq-sub">Pomôže nám to dostať appku k ďalším ľuďom ako ty.</p>
-    <div class="fnq-opts">${SRC.map(([v, ic, l]) => opt(v, ic, l, '', q.src === v)).join('')}</div>`,
+    <div class="fnq-opts src">${SRC.map(([v, ic, l]) => opt(v, ic, l, '', q.src === v)).join('')}</div>`,
   calc: () => `<div class="fnq-calc">${ringSvg(0, 'big', 7)}<h1>Skladám tvoj plán</h1>
     <ul class="fnq-list"><li><i>✓</i>Počítam tvoj denný výdaj energie</li><li><i>✓</i>Nastavujem bielkoviny pre tvoj cieľ</li><li><i>✓</i>Rozdeľujem sacharidy a tuky</li><li><i>✓</i>Pripravujem AI kouča</li></ul></div>`,
   plan: () => {
@@ -355,13 +407,36 @@ const BIND = {
     r.querySelector('[data-skip]').onclick = () => { q.tw = ''; save(); go(1); };
   },
   job: r => pickOne(r, 'job'),
-  days: r => pickOne(r, 'days', () => { draw(); setTimeout(() => go(1), 650); }),
+  days: r => {
+    const cta = r.querySelector('.fnq-cta');
+    r.querySelectorAll('.fnq-o').forEach(b => b.onclick = () => {
+      q.days = Number(b.dataset.v); save(); buzz();
+      r.querySelectorAll('.fnq-o').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+      r.querySelectorAll('#fnqWeek i').forEach((d, i) => d.classList.toggle('on', q.days > i));
+      r.querySelector('#fnqCap').textContent = daysCap(); cta.disabled = false;
+    });
+    cta.onclick = () => { if (q.days != null) go(1); };
+  },
   block: r => {
     r.querySelectorAll('.fnq-o').forEach(b => b.onclick = () => {
       const v = b.dataset.v; q.block = q.block.includes(v) ? q.block.filter(x => x !== v) : [...q.block, v]; save(); buzz();
       b.setAttribute('aria-checked', String(q.block.includes(v)));
     });
     r.querySelector('.fnq-cta').onclick = () => go(1);
+  },
+  diet: r => {
+    const d = q.diet, FG = ['vegetarian', 'vegan', 'pescatarian'], re = () => { save(); const y = r.parentElement.scrollTop; draw(); const b = el.querySelector('.fnq-body'); b.scrollTop = y; };
+    r.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { const k = b.dataset.d; d.diets = d.diets.includes(k) ? d.diets.filter(x => x !== k) : [...d.diets.filter(x => !(FG.includes(k) && FG.includes(x))), k]; buzz(); re(); });
+    r.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { const k = b.dataset.m; d.modes = d.modes.includes(k) ? d.modes.filter(x => x !== k) : [...d.modes, k]; buzz(); re(); });
+    r.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { d.dtype = b.dataset.t; buzz(); re(); });
+    r.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { const k = b.dataset.a; d.allergens = d.allergens.includes(k) ? d.allergens.filter(x => x !== k) : [...d.allergens, k]; buzz(); re(); });
+    const c = r.querySelector('#fnqCons input'); if (c) c.onchange = () => { d.consent = c.checked; save(); r.querySelector('#fnqCons').classList.remove('bad'); };
+    r.querySelector('.fnq-cta').onclick = () => {
+      const any = d.diets.length || d.modes.length;
+      if (any && !d.consent) { const l = r.querySelector('#fnqCons'); l.classList.add('bad'); l.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+      if (d.modes.includes('allergy') && !d.allergens.length) { r.querySelector('.fnq-cta').textContent = 'Vyber aspoň jeden alergén'; return; }
+      go(1);
+    };
   },
   src: r => pickOne(r, 'src'),
   calc: r => {
@@ -444,12 +519,22 @@ async function autofill(form) {
     form.querySelector('.ob-act [data-g=steps] [data-v="auto"]')?.click();
     const adult = form.querySelector('[name=adult]'); if (adult) adult.checked = true;
     await new Promise(r => setTimeout(r, 120));
+    try { localStorage.setItem('fw_first_done', '1'); } catch (_) { /* nič */ }
     const before = location.hash;
     form.requestSubmit ? form.requestSubmit() : form.querySelector('button[type=submit]')?.click();
     for (let i = 0; i < 100 && location.hash === before; i++) await new Promise(r => setTimeout(r, 100));
     if (location.hash !== before && ctx.state?.profile?.onboarded) {
       const intake = { block: data.block || [], src: data.src || null, target_weight: Number(data.tw) || null, v: 1, at: new Date().toISOString() };
       try { await db.sb.from('profiles').update({ intake }).eq('id', ctx.state.profile.id); } catch (_) { /* intake je bonus */ }
+      try {
+        const dd = data.diet || {}, any = (dd.diets?.length || 0) + (dd.modes?.length || 0) > 0;
+        if (any && dd.consent) {
+          await dx.ensure(ctx.state.profile.id);
+          const patch = { diets: dd.diets, modes: dd.modes, allergens: dd.modes.includes('allergy') ? dd.allergens : [], consent: new Date().toISOString(), hide: true };
+          if (dd.modes.includes('diabetes')) { const t = dx.DTYPES[dd.dtype]; if (t) Object.assign(patch, { dtype: dd.dtype, lo: t.lo, hi: t.hi, fast: t.fast, insulin: t.insulin }); }
+          await dx.saveCfg(ctx.state.profile.id, patch);
+        }
+      } catch (_) { /* nastavenia sa dajú doplniť v Profile */ }
       jset(KEY, null);
     }
   } catch (_) { /* ak niečo zlyhá, človek vidí vyplnený formulár a uloží ho sám */ }
