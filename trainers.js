@@ -83,6 +83,11 @@ const CSS = `
 .tr-join.row{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.09)}
 .tr-join:active{opacity:.7}
 .tr-pill{flex:none;padding:8px 13px;border-radius:99px;border:1px solid rgba(124,255,178,.4);background:rgba(124,255,178,.1);color:#9DFFC8!important;font-size:12.5px;font-weight:800;text-decoration:none;white-space:nowrap;text-transform:none!important;letter-spacing:normal!important}
+.tr-bad{border-color:#FF6B7A!important;box-shadow:0 0 0 3px rgba(255,107,122,.2)!important}
+.tr-bad.tr-shake{animation:trshake .38s}
+@keyframes trshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.tr-ferr{color:#FF8A96;font-size:12.5px;font-weight:700;margin:6px 2px 10px;line-height:1.35}
+@media (prefers-reduced-motion:reduce){.tr-bad.tr-shake{animation:none}}
 .tr-perks{display:grid;grid-template-columns:repeat(3,1fr);margin:4px 0 16px;padding:14px 4px;border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .tr-perks>div{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;padding:2px 6px;min-width:0}
 .tr-perks>div+div{border-left:1px solid rgba(255,255,255,.08)}
@@ -346,7 +351,7 @@ export async function renderTrainerEdit() {
     <div class="tr-row mt"><button class="btn primary" id="trSave" style="flex:1">${cur?.status === 'published' ? 'Uložiť zmeny' : cur?.approved ? 'Zverejniť profil' : cur?.status === 'pending' ? 'Uložiť a poslať znova' : 'Odoslať na schválenie'}</button>${cur?.status === 'published' ? '<button class="btn" id="trHide">Skryť z katalógu</button>' : ''}</div>
   </div>${nav('#/profil')}`;
   const root = $app(); let photo = t.photo_url || null, blob = null; const proofs = [...(t.proof_paths || [])];
-  root.querySelector('#trProof')?.addEventListener('change', async e => { const f = e.target.files?.[0]; if (!f) return; try { const b = await shrink(f, 1400); proofs.push(await api().uploadProof(me().id, b)); root.querySelector('#f_proofs').insertAdjacentHTML('beforeend', '<span class="tr-tag g">Dôkaz nahraný</span>'); } catch (err) { toast(err.message || 'Fotku sa nepodarilo nahrať', true); } e.target.value = ''; });
+  root.querySelector('#trProof')?.addEventListener('change', async e => { const f = e.target.files?.[0]; if (!f) return; try { const b = await shrink(f, 1400); proofs.push(await api().uploadProof(me().id, b)); clearErr('proof'); root.querySelector('#f_proofs').insertAdjacentHTML('beforeend', '<span class="tr-tag g">Dôkaz nahraný</span>'); } catch (err) { toast(err.message || 'Fotku sa nepodarilo nahrať', true); } e.target.value = ''; });
   const bind = c => c.addEventListener('click', e => { if (e.target.closest('[data-del]')) e.target.closest('[data-row]').remove(); });
   bind(root.querySelector('#f_cred')); bind(root.querySelector('#f_ach'));
   root.querySelector('#addCred').onclick = () => root.querySelector('#f_cred').insertAdjacentHTML('beforeend', rowHtml('cred'));
@@ -357,20 +362,37 @@ export async function renderTrainerEdit() {
   root.querySelector('#trCopy')?.addEventListener('click', () => { navigator.clipboard?.writeText(cur.invite_code); toast('Kód skopírovaný'); });
   root.querySelector('#trFile').onchange = async e => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { blob = await shrink(f, 720); const u = URL.createObjectURL(blob); root.querySelector('#trPh').innerHTML = `<div class="tr-av lg" style="background-image:url('${u}')"></div>`; } catch { toast('Fotku sa nepodarilo načítať', true); }
+    try { blob = await shrink(f, 720); root.querySelector('#trPh').closest('.card').classList.remove('tr-bad', 'tr-shake'); const fe = root.querySelector('#trPh').closest('.card').nextElementSibling; if (fe?.classList.contains('tr-ferr')) fe.remove(); const u = URL.createObjectURL(blob); root.querySelector('#trPh').innerHTML = `<div class="tr-av lg" style="background-image:url('${u}')"></div>`; } catch { toast('Fotku sa nepodarilo načítať', true); }
   };
   const rows = id => [...root.querySelectorAll(`#${id} [data-row]`)].map(r => ({ title: r.querySelector('[data-f=title]').value.trim(), year: r.querySelector('[data-f=year]').value.trim() })).filter(x => x.title);
+  const clearErr = g => root.querySelectorAll('.tr-bad').forEach(el => { if (g && el.dataset.g !== g) return; el.classList.remove('tr-bad', 'tr-shake'); const n = el.nextElementSibling; if (n?.classList.contains('tr-ferr')) n.remove(); });
+  const mark = (el, msg, g) => { el.classList.add('tr-bad', 'tr-shake'); if (g) el.dataset.g = g; if (msg) { const m = document.createElement('div'); m.className = 'tr-ferr'; m.textContent = msg; el.insertAdjacentElement('afterend', m); } };
+  root.addEventListener('input', e => { const el = e.target.closest?.('.tr-bad'); if (!el) return; if (el.dataset.g) clearErr(el.dataset.g); else { el.classList.remove('tr-bad', 'tr-shake'); const n = el.nextElementSibling; if (n?.classList.contains('tr-ferr')) n.remove(); } });
+  root.addEventListener('click', e => { const el = e.target.closest?.('.card.tr-bad'); if (el) { el.classList.remove('tr-bad', 'tr-shake'); const n = el.nextElementSibling; if (n?.classList.contains('tr-ferr')) n.remove(); } });
   const save = async status => {
+    clearErr();
     const name = root.querySelector('#f_name').value.trim();
-    if (name.length < 2) return toast('Dopíš meno', true);
     const specs = [...root.querySelectorAll('#f_specs .tr-chip.on')].map(x => x.dataset.s);
-    if (status === 'published') {
-      if (!cur?.approved && !proofs.length && !root.querySelector('#f_soc')?.value.trim()) return toast('Pridaj aspoň jeden dôkaz: fotku alebo odkaz na Instagram či web', true);
-      if (!cur?.approved && (root.querySelector('#f_app')?.value.trim().length || 0) < 30) return toast('Napíš aspoň 30 znakov o tom, ako a koho trénuješ', true);
-      if (!photo && !blob) return toast('Pred zverejnením nahraj svoju fotku', true);
-      if (root.querySelector('#f_hl').value.trim().length < 8) return toast('Dopíš krátky popis (aspoň 8 znakov)', true);
-      if (root.querySelector('#f_bio').value.trim().length < 40) return toast('V sekcii O mne napíš aspoň 40 znakov', true);
-      if (!specs.length) return toast('Vyber aspoň jednu špecializáciu', true);
+    const bad = [];
+    const need = status === 'published';
+    if (!photo && !blob && need) bad.push([root.querySelector('#trPh').closest('.card'), 'Nahraj svoju fotku. Klienti si vyberajú podľa tváre.']);
+    if (name.length < 2) bad.push([root.querySelector('#f_name'), 'Dopíš meno (aspoň 2 znaky).']);
+    if (need && root.querySelector('#f_hl').value.trim().length < 8) bad.push([root.querySelector('#f_hl'), 'Napíš krátky popis, aspoň 8 znakov.']);
+    if (need && root.querySelector('#f_bio').value.trim().length < 40) bad.push([root.querySelector('#f_bio'), 'Napíš o sebe aspoň 40 znakov.']);
+    if (need && !specs.length) bad.push([root.querySelector('#f_specs').closest('.card'), 'Vyber aspoň jednu špecializáciu.']);
+    if (need && !cur?.approved) {
+      if (!proofs.length && !root.querySelector('#f_soc')?.value.trim()) {
+        bad.push([root.querySelector('#f_soc'), 'Pridaj odkaz na Instagram alebo web, alebo nahraj fotku dôkazu.', 'proof']);
+        bad.push([root.querySelector('#trProof').closest('label'), null, 'proof']);
+      }
+      if ((root.querySelector('#f_app')?.value.trim().length || 0) < 30) bad.push([root.querySelector('#f_app'), 'Napíš aspoň 30 znakov o tom, ako a koho trénuješ.']);
+    }
+    if (bad.length) {
+      bad.forEach(([el, msg, g]) => mark(el, msg, g));
+      const first = bad.map(x => x[0]).sort((x, y) => x.getBoundingClientRect().top - y.getBoundingClientRect().top)[0];
+      first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (first.matches?.('input,textarea')) setTimeout(() => first.focus({ preventScroll: true }), 380);
+      return;
     }
     const btn = root.querySelector('#trSave'); btn.disabled = true;
     try {
