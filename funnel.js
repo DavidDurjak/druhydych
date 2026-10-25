@@ -94,13 +94,16 @@ html[data-theme=light] .fnq-seal{filter:none}
 @keyframes fnqDraw{to{stroke-dashoffset:0}}@keyframes fnqDot{to{opacity:1}}
 .fnq-hero h1{font-size:40px;line-height:1.02;letter-spacing:-.045em}
 .fnq-hero .fnq-sub{font-size:16px;margin-bottom:22px}
-.fnq-feats{display:grid;gap:10px;margin:22px 0 18px}
+.fnq-feats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 14px}
 .fnq-opts.days .fnq-o .ck{display:none}
-.fnq-feats>div{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;background:var(--card,#151a21);border:1.5px solid var(--line,#232a33)}
-.fnq-feats .fi{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent,#7CFFB2) 14%,var(--bg-2,#10141a));color:var(--accent,#7CFFB2)}
+.fnq-feats>div{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:16px;background:var(--card,#151a21);border:1.5px solid var(--line,#232a33);min-height:52px}
+.fnq-feats .fi{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent,#7CFFB2) 14%,var(--bg-2,#10141a));color:var(--accent,#7CFFB2)}
+.fnq-feats .fi svg{width:19px!important;height:19px!important}
+.fnq-hero .gt-hero{margin:0 0 16px 6px;width:200px}
+.fnq-hero h1{font-size:34px}
+@media (max-height:700px){.fnq-hero .gt-hero{width:150px;margin-bottom:8px}.fnq-hero h1{font-size:28px}.fnq-hero .fnq-sub{display:none}.fnq-feats>div{min-height:44px;padding:5px 8px}}
 .fnq-feats .fi svg,.fnq-o .ic svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.fnq-feats b{display:block;font-size:15.5px;font-weight:700;letter-spacing:-.01em}
-.fnq-feats small{display:block;margin-top:2px;font-size:13px;line-height:1.35;color:var(--muted,#8a94a3)}
+.fnq-feats b{font-size:13.5px;font-weight:700;line-height:1.15;letter-spacing:-.01em}
 .fnq-body{scrollbar-width:none}.fnq-body::-webkit-scrollbar{display:none}
 .fnq-opts.src .fnq-o{min-height:56px;padding:8px 14px}
 .fnq-opts.src .fnq-o .ic{width:38px;height:38px;color:var(--accent,#7CFFB2)}
@@ -214,6 +217,8 @@ const ICON = {
   heart: I('<path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z"/>'),
   search: I('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.2-4.2"/>'),
   spark: I('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>'),
+  video: I('<rect x="3" y="6" width="12" height="12" rx="3"/><path d="M15 11l6-3.5v9L15 13z"/>'),
+  chart: I('<path d="M4 19V5M4 19h16"/><path d="M8 15l3.5-4 3 2.5L19 7"/>'),
   bolt: I('<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>'),
   coach: I('<path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/>'),
 };
@@ -274,7 +279,7 @@ function draw() {
   el.querySelector('.fnq-ring-slot').innerHTML = ringSvg(id === 'plan' || id === 'account' ? 1 : p);
   const body = el.querySelector('.fnq-body');
   body.innerHTML = `<div class="fnq-step ${dir < 0 ? 'back' : ''}">${VIEWS[id]()}</div>`;
-  body.scrollTop = 0;
+  body.scrollTop = 0; body.style.overflowY = id === 'hello' ? 'hidden' : '';
   BIND[id]?.(body.firstElementChild);
 }
 
@@ -290,11 +295,14 @@ const daysCap = () => q.days == null ? '' : q.days === 0 ? 'Začneme jedlom a kr
 const VIEWS = {
   hello: () => `<div class="fnq-hero">${SEAL}
       <h1>Tvoj plán jedla a tréningu za minútu.</h1>
-      <p class="fnq-sub">Pár otázok a appka ti vypočíta kalórie a makrá presne na teba. Potom už len zapisuješ, zvyšok stráži AI.</p>
+      <p class="fnq-sub">Pár otázok a appka ti vypočíta plán presne na teba.</p>
       <div class="fnq-feats">
-        <div><span class="fi">${ICON.bolt}</span><div><b>Jedlo zapíšeš za 3 sekundy</b><small>Napíš, nadiktuj alebo odfoť tanier. AI spočíta zvyšok.</small></div></div>
-        <div><span class="fi">${ICON.dumbbell}</span><div><b>Tréning, ktorý si pamätá</b><small>Váhy, série a pokrok sa ukladajú samy.</small></div></div>
-        <div><span class="fi">${ICON.coach}</span><div><b>Reálni tréneri a AI kouč</b><small>Online koučing od overených trénerov na jednom mieste.</small></div></div>
+        <div><span class="fi">${ICON.camera}</span><b>Zápis jedla fotkou</b></div>
+        <div><span class="fi">${ICON.coach}</span><b>AI kouč na mieru</b></div>
+        <div><span class="fi">${ICON.dumbbell}</span><b>Tréningový plán</b></div>
+        <div><span class="fi">${ICON.chart}</span><b>Kalórie a makrá</b></div>
+        <div><span class="fi">${ICON.people}</span><b>Reální tréneri</b></div>
+        <div><span class="fi">${ICON.video}</span><b>Videohovory</b></div>
       </div></div>
     ${foot('Poďme na to', false, '<button class="fnq-link" data-login type="button">Už mám účet. <b>Prihlásiť sa</b></button>')}`,
   goal: () => `<h1>Čo chceš dosiahnuť?</h1><p class="fnq-sub">Podľa toho nastavíme kalórie aj tréning.</p>
