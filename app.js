@@ -71,7 +71,7 @@ function groupOf(path) {
   const p = String(path || '#/').split('?')[0] || '#/';
   if (p.startsWith('#/kouc/')) return '#/kouc';
   if (p.startsWith('#/trener/')) return state.trainer && state.profile?.role !== 'coach' ? '#/profil' : '#/treneri';
-  if (p === '#/trener-profil' || p.startsWith('#/chat/')) return '#/profil';
+  if (p === '#/trener-profil' || p === '#/treneri-ziadosti' || p.startsWith('#/chat/')) return '#/profil';
   return NAV_GROUP[p] || p;
 }
 const curPath = () => (location.hash || '#/').split('?')[0];
@@ -188,7 +188,7 @@ async function routeInner(my) {
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
     '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals,
-    '#/rezim': dtm.renderDiet, '#/cukor': gls.renderGlucose, '#/cukor-sprava': gls.renderGlucoseReport, '#/karta': crd.renderCards, '#/navyky': hb.renderHabits, '#/treneri': tr.renderCatalog, '#/trener-profil': tr.renderTrainerEdit };
+    '#/rezim': dtm.renderDiet, '#/cukor': gls.renderGlucose, '#/cukor-sprava': gls.renderGlucoseReport, '#/karta': crd.renderCards, '#/navyky': hb.renderHabits, '#/treneri': tr.renderCatalog, '#/trener-profil': tr.renderTrainerEdit, '#/treneri-ziadosti': tr.renderTrainerApps };
   let fn = views[path];
   const tm = path.match(/^#\/(trener|chat)\/([^/]+)$/);
   if (tm) fn = tm[1] === 'chat' ? () => tr.renderChat(tm[2]) : () => tr.renderTrainer(tm[2]);

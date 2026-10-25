@@ -1,5 +1,5 @@
 -- Dôvera v trhovisku trénerov: bez ručného schvaľovania. Všetko beží automaticky.
--- 1) Zverejniť sa dá len kompletný profil (fotka, popis, špecializácia) bez odkazov, e-mailov a telefónov.
+-- 1) Nový tréner podá žiadosť (kompletný profil + dôkaz + opis praxe). Stav 'pending' kontroluje a schvaľuje správca; schválený tréner sa už zverejňuje sám.
 -- 2) Hodnotenia píšu len klienti, ktorí s trénerom reálne spolupracovali aspoň 7 dní.
 -- 3) Nahlásenia: 3 rôzni ľudia a profil sa sám skryje (do kontroly vlastníkom appky).
 -- 4) Limit 5 žiadostí o koučing za 24 hodín na klienta.
@@ -7,30 +7,69 @@
 
 alter table public.trainer_profiles add column if not exists auto_hidden boolean not null default false;
 
+alter table public.trainer_profiles add column if not exists approved boolean not null default false;
+alter table public.trainer_profiles add column if not exists proof_paths text[] not null default '{}';
+alter table public.trainer_profiles add column if not exists social_url text check (char_length(social_url) <= 200);
+alter table public.trainer_profiles add column if not exists application_note text check (char_length(application_note) <= 800);
+alter table public.trainer_profiles add column if not exists review_note text check (char_length(review_note) <= 300);
+alter table public.trainer_profiles drop constraint if exists trainer_profiles_status_check;
+alter table public.trainer_profiles add constraint trainer_profiles_status_check check (status in ('draft','pending','published','hidden','rejected'));
+
+-- doterajšie profily (ak nejaké sú) ostávajú platné
+update public.trainer_profiles set approved = true where status = 'published' and not approved;
+
 create or replace function public.trainer_profiles_guard() returns trigger language plpgsql security definer set search_path = public as $$
 declare bad text := '(https?://|www\.|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}|\+?\d(?:[\s.-]?\d){8,})';
 begin
   if auth.uid() is null or public.is_admin() then return new; end if;
   if tg_op = 'INSERT' then
-    new.verified := false; new.auto_hidden := false;
+    new.verified := false; new.auto_hidden := false; new.approved := false; new.review_note := null;
   else
     new.verified := old.verified; new.invite_code := old.invite_code; new.auto_hidden := old.auto_hidden;
-    new.updated_at := now();
+    new.approved := old.approved; new.review_note := old.review_note; new.updated_at := now();
+    -- schválený/zamietnutý stav nemení tréner sám, mení ho len správca
+    if new.status = 'rejected' then new.status := old.status; end if;
   end if;
   if coalesce(new.headline,'') ~* bad or coalesce(new.bio,'') ~* bad or coalesce(new.price_note,'') ~* bad then
     raise exception 'V popise nepoužívaj odkazy, e-maily ani telefónne čísla. Klienti ťa kontaktujú cez appku.';
   end if;
-  if new.status = 'published' then
+  if new.status in ('published','pending') then
     if tg_op = 'UPDATE' and old.auto_hidden then
       raise exception 'Tvoj profil je dočasne pozastavený po nahlásení. Napíš nám a pozrieme sa na to.';
     end if;
-    if new.photo_url is null then raise exception 'Pred zverejnením nahraj svoju fotku'; end if;
-    if char_length(coalesce(new.headline,'')) < 8 then raise exception 'Pred zverejnením dopíš krátky popis (aspoň 8 znakov)'; end if;
-    if char_length(coalesce(new.bio,'')) < 40 then raise exception 'Pred zverejnením napíš o sebe aspoň 40 znakov'; end if;
-    if coalesce(array_length(new.specialties,1),0) < 1 then raise exception 'Pred zverejnením vyber aspoň jednu špecializáciu'; end if;
+    if new.photo_url is null then raise exception 'Pred odoslaním nahraj svoju fotku'; end if;
+    if char_length(coalesce(new.headline,'')) < 8 then raise exception 'Dopíš krátky popis (aspoň 8 znakov)'; end if;
+    if char_length(coalesce(new.bio,'')) < 40 then raise exception 'V sekcii O mne napíš aspoň 40 znakov'; end if;
+    if coalesce(array_length(new.specialties,1),0) < 1 then raise exception 'Vyber aspoň jednu špecializáciu'; end if;
+    if not new.approved then
+      -- nový tréner: zverejnenie = žiadosť o schválenie
+      if coalesce(array_length(new.proof_paths,1),0) = 0 and coalesce(new.social_url,'') = '' then
+        raise exception 'Pridaj aspoň jeden dôkaz: fotku certifikátu, výsledkov alebo odkaz na Instagram či web';
+      end if;
+      if char_length(coalesce(new.application_note,'')) < 30 then raise exception 'Napíš nám aspoň 30 znakov o tom, ako a koho trénuješ'; end if;
+      new.status := 'pending';
+    end if;
   end if;
   return new;
 end $$;
+
+-- správca (admin) vidí a upravuje všetky profily trénerov
+drop policy if exists "trainer profiles admin" on public.trainer_profiles;
+create policy "trainer profiles admin" on public.trainer_profiles for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- súkromný bucket na dôkazy (certifikáty, výsledky): vidí ich len vlastník a správca
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  values ('trainer-proofs', 'trainer-proofs', false, 5242880, array['image/jpeg','image/png','image/webp'])
+  on conflict (id) do nothing;
+drop policy if exists "proofs insert own" on storage.objects;
+create policy "proofs insert own" on storage.objects for insert to authenticated
+  with check (bucket_id = 'trainer-proofs' and (storage.foldername(name))[1] = (select auth.uid())::text);
+drop policy if exists "proofs read own or admin" on storage.objects;
+create policy "proofs read own or admin" on storage.objects for select to authenticated
+  using (bucket_id = 'trainer-proofs' and ((storage.foldername(name))[1] = (select auth.uid())::text or public.is_admin()));
+drop policy if exists "proofs delete own" on storage.objects;
+create policy "proofs delete own" on storage.objects for delete to authenticated
+  using (bucket_id = 'trainer-proofs' and (storage.foldername(name))[1] = (select auth.uid())::text);
 
 -- hodnotenia
 create table if not exists public.trainer_reviews (

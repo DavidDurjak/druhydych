@@ -39,6 +39,10 @@ const real = {
     const { error } = await sbq().storage.from('trainer-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true }); if (error) throw error;
     return sbq().storage.from('trainer-photos').getPublicUrl(path).data.publicUrl;
   },
+  async uploadProof(uid, blob) { const path = `${uid}/proof-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`; const { error } = await sbq().storage.from('trainer-proofs').upload(path, blob, { contentType: 'image/jpeg' }); if (error) throw error; return path; },
+  async signed(paths) { const out = []; for (const p of paths || []) { const { data } = await sbq().storage.from('trainer-proofs').createSignedUrl(p, 3600); if (data?.signedUrl) out.push(data.signedUrl); } return out; },
+  async pending() { const { data, error } = await sbq().from('trainer_profiles').select('*').eq('status', 'pending').order('updated_at', { ascending: true }); if (error) throw error; return data || []; },
+  async decide(uid, ok, note) { const row = ok ? { status: 'published', approved: true, review_note: null } : { status: 'rejected', review_note: note || 'Žiadosť sme zamietli.' }; const { error } = await sbq().from('trainer_profiles').update(row).eq('user_id', uid); if (error) throw error; },
   async names(ids) { if (!ids.length) return {}; const { data } = await sbq().from('trainer_profiles').select('user_id,display_name,photo_url').in('user_id', ids); return Object.fromEntries((data || []).map(x => [x.user_id, x])); },
   async thread(uid, other) { const m = await db.listMessages(uid); return m.filter(x => x.from_user === other || x.to_user === other); },
 };
@@ -242,7 +246,9 @@ export async function renderTrainerEdit() {
   const t = cur || { display_name: me().name || '', specialties: [], languages: ['sk'], credentials: [], achievements: [], online: true, in_person: false, status: 'draft' };
   $app().innerHTML = `<div class="screen tr-form">
     <div class="tr-top"><h1>${cur ? 'Môj profil trénera' : 'Staň sa trénerom'}</h1><a class="btn sm ghost" href="#/profil">←</a></div>
-    <p class="tr-sub">${cur ? 'Takto ťa uvidia klienti v katalógu.' : 'Vytvor si profil. Potrebuješ fotku, krátky popis, pár viet o sebe a špecializáciu. Certifikát nie je povinný, dôveru si buduješ hodnoteniami klientov.'}</p>
+    ${cur?.status === 'pending' ? '<div class="tr-req" style="display:block"><b>Žiadosť sa kontroluje</b><small>Ozveme sa ti tu v appke. Dovtedy ťa klienti v katalógu nevidia.</small></div>' : ''}
+    ${cur?.status === 'rejected' ? `<div class="tr-req" style="display:block;background:rgba(255,120,120,.08);border-color:rgba(255,120,120,.35)"><b>Žiadosť sme zamietli</b><small>${h(cur.review_note || '')} Uprav profil a pošli ju znova.</small></div>` : ''}
+    <p class="tr-sub">${cur ? (cur.approved ? 'Takto ťa uvidia klienti v katalógu.' : 'Doplň profil a pošli ho na schválenie.') : 'Vytvor si profil. Potrebuješ fotku, krátky popis, pár viet o sebe a špecializáciu. Certifikát nie je povinný, dôveru si buduješ hodnoteniami klientov.'}</p>
     <div class="card" style="text-align:center"><div id="trPh" style="display:flex;justify-content:center;margin-bottom:10px">${avatar(t, true)}</div><label class="btn sm ghost" style="cursor:pointer">Nahrať fotku<input type="file" id="trFile" accept="image/*" hidden></label></div>
     <div class="card mt">
       <label><span>Meno</span><input class="input" id="f_name" maxlength="60" value="${h(t.display_name)}"></label>
@@ -257,10 +263,16 @@ export async function renderTrainerEdit() {
       <div class="tr-two"><label><span>Cena od (€ / mesiac)</span><input class="input" id="f_price" inputmode="decimal" value="${t.price_from ?? ''}"></label><label><span>Poznámka k cene</span><input class="input" id="f_pn" maxlength="120" placeholder="Napr. plán + týždenné check-iny" value="${h(t.price_note || '')}"></label></div>
       <div class="tr-row"><button type="button" class="tr-chip${t.online ? ' on' : ''}" id="f_online">Online</button><button type="button" class="tr-chip${t.in_person ? ' on' : ''}" id="f_inp">Aj osobne</button></div>
     </div>
+    ${cur?.approved ? '' : `<div class="card mt"><h3 style="margin-top:0">Overenie</h3><p class="tr-note" style="margin:0 0 10px">Aby v katalógu neboli náhodní ľudia, každý nový tréner prejde kontrolou. Certifikát nie je povinný. Stačí niečo, čo ukazuje, že trénuješ naozaj: fotka certifikátu alebo výsledkov súťaže, odkaz na Instagram alebo web s tvojou prácou.</p>
+      <label><span>Instagram alebo web</span><input class="input" id="f_soc" maxlength="200" placeholder="napr. instagram.com/tvojemeno" value="${h(t.social_url || '')}"></label>
+      <label><span>Ako a koho trénuješ? (vidíme len my)</span><textarea class="input" id="f_app" rows="4" maxlength="800" placeholder="Koľko rokov, s akými klientmi, aké výsledky si dosiahol.">${h(t.application_note || '')}</textarea></label>
+      <div class="tr-row" id="f_proofs">${(t.proof_paths || []).map(() => '<span class="tr-tag g">Dôkaz nahraný</span>').join('')}</div>
+      <label class="btn sm ghost" style="cursor:pointer;margin-top:8px">Pridať fotku dôkazu<input type="file" id="trProof" accept="image/*" hidden></label><p class="tr-note">Dôkazy vidí len správca appky, nikdy klienti.</p></div>`}
     ${cur ? `<div class="tr-code mt"><div><small class="muted">Kód pre tvojich klientov</small><br><b>${h(cur.invite_code)}</b></div><button type="button" class="btn sm" id="trCopy">Kopírovať</button></div><p class="tr-note">Klient ho zadá v Profile v sekcii Tréner. Klienti z tvojej siete sú pre teba zadarmo.</p>` : ''}
-    <div class="tr-row mt"><button class="btn primary" id="trSave" style="flex:1">${cur?.status === 'published' ? 'Uložiť zmeny' : 'Zverejniť profil'}</button>${cur?.status === 'published' ? '<button class="btn" id="trHide">Skryť z katalógu</button>' : ''}</div>
+    <div class="tr-row mt"><button class="btn primary" id="trSave" style="flex:1">${cur?.status === 'published' ? 'Uložiť zmeny' : cur?.approved ? 'Zverejniť profil' : cur?.status === 'pending' ? 'Uložiť a poslať znova' : 'Odoslať na schválenie'}</button>${cur?.status === 'published' ? '<button class="btn" id="trHide">Skryť z katalógu</button>' : ''}</div>
   </div>${nav('#/profil')}`;
-  const root = $app(); let photo = t.photo_url || null, blob = null;
+  const root = $app(); let photo = t.photo_url || null, blob = null; const proofs = [...(t.proof_paths || [])];
+  root.querySelector('#trProof')?.addEventListener('change', async e => { const f = e.target.files?.[0]; if (!f) return; try { const b = await shrink(f, 1400); proofs.push(await api().uploadProof(me().id, b)); root.querySelector('#f_proofs').insertAdjacentHTML('beforeend', '<span class="tr-tag g">Dôkaz nahraný</span>'); } catch (err) { toast(err.message || 'Fotku sa nepodarilo nahrať', true); } e.target.value = ''; });
   const bind = c => c.addEventListener('click', e => { if (e.target.closest('[data-del]')) e.target.closest('[data-row]').remove(); });
   bind(root.querySelector('#f_cred')); bind(root.querySelector('#f_ach'));
   root.querySelector('#addCred').onclick = () => root.querySelector('#f_cred').insertAdjacentHTML('beforeend', rowHtml('cred'));
@@ -279,6 +291,8 @@ export async function renderTrainerEdit() {
     if (name.length < 2) return toast('Dopíš meno', true);
     const specs = [...root.querySelectorAll('#f_specs .tr-chip.on')].map(x => x.dataset.s);
     if (status === 'published') {
+      if (!cur?.approved && !proofs.length && !root.querySelector('#f_soc')?.value.trim()) return toast('Pridaj aspoň jeden dôkaz: fotku alebo odkaz na Instagram či web', true);
+      if (!cur?.approved && (root.querySelector('#f_app')?.value.trim().length || 0) < 30) return toast('Napíš aspoň 30 znakov o tom, ako a koho trénuješ', true);
       if (!photo && !blob) return toast('Pred zverejnením nahraj svoju fotku', true);
       if (root.querySelector('#f_hl').value.trim().length < 8) return toast('Dopíš krátky popis (aspoň 8 znakov)', true);
       if (root.querySelector('#f_bio').value.trim().length < 40) return toast('V sekcii O mne napíš aspoň 40 znakov', true);
@@ -291,13 +305,43 @@ export async function renderTrainerEdit() {
       const saved = await api().save({ user_id: me().id, display_name: name, headline: root.querySelector('#f_hl').value.trim() || null, bio: root.querySelector('#f_bio').value.trim() || null,
         city: root.querySelector('#f_city').value.trim() || null, photo_url: photo, specialties: specs, credentials: rows('f_cred'), achievements: rows('f_ach'),
         experience_years: num(root.querySelector('#f_exp').value), online: root.querySelector('#f_online').classList.contains('on'), in_person: root.querySelector('#f_inp').classList.contains('on'),
-        price_from: num(root.querySelector('#f_price').value), price_note: root.querySelector('#f_pn').value.trim() || null, status });
+        price_from: num(root.querySelector('#f_price').value), price_note: root.querySelector('#f_pn').value.trim() || null, status,
+        ...(cur?.approved ? {} : { proof_paths: proofs, social_url: root.querySelector('#f_soc')?.value.trim() || null, application_note: root.querySelector('#f_app')?.value.trim() || null }) });
       ctx.state.trainer = saved;
-      toast(status === 'published' ? 'Profil je v katalógu' : 'Uložené'); location.hash = status === 'published' ? `#/trener/${me().id}` : '#/profil';
+      toast(saved.status === 'pending' ? 'Žiadosť odoslaná. Ozveme sa ti.' : status === 'published' ? 'Profil je v katalógu' : 'Uložené'); location.hash = saved.status === 'published' ? `#/trener/${me().id}` : '#/profil';
     } catch (err) { toast(err.message || 'Nepodarilo sa uložiť', true); btn.disabled = false; }
   };
   root.querySelector('#trSave').onclick = () => save('published');
   root.querySelector('#trHide')?.addEventListener('click', () => save('hidden'));
+}
+export async function renderTrainerApps() {
+  $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>Žiadosti trénerov</h1><a class="btn sm ghost" href="#/profil">←</a></div><div class="spinner"></div></div>${nav('#/profil')}`;
+  const list = await api().pending().catch(() => []);
+  const items = await Promise.all(list.map(async t => ({ t, urls: await api().signed(t.proof_paths) })));
+  $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>Žiadosti trénerov</h1><a class="btn sm ghost" href="#/profil">←</a></div>
+    ${items.length ? items.map(({ t, urls }) => `<div class="card tr-sec" data-u="${t.user_id}"><div class="tr-hero" style="margin-bottom:8px">${avatar(t)}<div class="tr-body"><div class="tr-name">${h(t.display_name)}</div><div class="tr-hl">${h(t.headline || '')}</div><div class="tr-meta">${(t.specialties || []).map(x => `<span class="tr-tag b">${h(x)}</span>`).join('')}</div></div></div>
+      <p style="margin:0 0 8px;line-height:1.45;white-space:pre-wrap">${h(t.bio || '')}</p>
+      <p class="tr-note"><b>Prax:</b> ${h(t.application_note || '-')}</p>
+      ${t.social_url ? `<p class="tr-note"><b>Odkaz:</b> ${h(t.social_url)}</p>` : ''}
+      ${(t.credentials || []).length ? `<p class="tr-note"><b>Certifikáty:</b> ${t.credentials.map(c => h(c.title)).join(', ')}</p>` : ''}
+      ${(t.achievements || []).length ? `<p class="tr-note"><b>Úspechy:</b> ${t.achievements.map(c => h(c.title)).join(', ')}</p>` : ''}
+      <div class="tr-row">${urls.map(u => `<a href="${h(u)}" target="_blank" rel="noopener"><img src="${h(u)}" style="width:92px;height:92px;object-fit:cover;border-radius:14px" alt="Dôkaz"></a>`).join('')}</div>
+      <div class="tr-row mt"><button class="btn primary" data-ok style="flex:1">Schváliť</button><button class="btn" data-no>Zamietnuť</button></div></div>`).join('') : '<div class="tr-empty"><b>Žiadne žiadosti</b>Keď sa niekto prihlási za trénera, uvidíš ho tu.</div>'}</div>${nav('#/profil')}`;
+  const rootEl = $app(); if (rootEl._trApps) rootEl.removeEventListener('click', rootEl._trApps);
+  rootEl._trApps = async e => {
+    const card = e.target.closest('[data-u]'); const ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]'); if (!card || (!ok && !no)) return;
+    const uid = card.dataset.u;
+    try {
+      if (ok) await api().decide(uid, true);
+      else {
+        const bg = ctx.sheet(`<h2 style="margin-top:0">Dôvod zamietnutia</h2><p class="tr-note" style="margin:0 0 10px">Uvidí ho tréner.</p><textarea class="input" id="trWhy" rows="3" maxlength="300">Chýba dôkaz, že trénuješ. Pridaj certifikát, výsledky alebo odkaz na svoju prácu.</textarea><button class="btn primary mt" id="trWhyGo" style="width:100%">Zamietnuť</button>`);
+        bg.querySelector('#trWhyGo').onclick = async () => { try { await api().decide(uid, false, bg.querySelector('#trWhy').value.trim()); bg.remove(); toast('Žiadosť zamietnutá'); renderTrainerApps(); } catch (err) { toast(err.message || 'Nepodarilo sa', true); } };
+        return;
+      }
+      toast('Tréner schválený'); renderTrainerApps();
+    } catch (err) { toast(err.message || 'Nepodarilo sa', true); }
+  };
+  rootEl.addEventListener('click', rootEl._trApps);
 }
 async function shrink(file, max) {
   const url = URL.createObjectURL(file); const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
@@ -354,8 +398,11 @@ async function profileCard() {
     : `<h3 style="margin:0 0 4px">Tréner</h3><p class="tr-note" style="margin:0 0 10px">${pend ? 'Čaká sa na odpoveď trénera.' : 'Vyber si trénera, ktorý ťa povedie online, alebo zadaj kód od svojho trénera.'}</p>
        <div class="tr-row"><a class="btn sm primary" href="#/treneri">Nájsť trénera</a><button class="btn sm ghost" id="trCode">Mám kód</button></div>`;
   const ownPart = own ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm" href="#/kouc">Moji klienti</a><a class="btn sm ghost" href="#/trener-profil">Môj trénerský profil</a></div>`
-    : `<p class="tr-note" style="margin-top:12px">Si tréner? <a href="#/trener-profil">Vytvor si profil</a> a klientov pozvi kódom.</p>`;
-  return `<div class="card tr-me" id="trCard">${clientPart}${ownPart}</div>`;
+    : `<p class="tr-note" style="margin-top:12px">Si tréner? <a href="#/trener-profil">Požiadaj o trénerský profil</a> a klientov pozvi kódom.</p>`;
+  const nApps = ctx.state.profile?.role === 'coach' ? (await api().pending().catch(() => [])).length : 0;
+  const st = own?.status === 'pending' ? '<p class="tr-note" style="margin-top:8px">Tvoja žiadosť o trénerský profil sa kontroluje.</p>' : own?.status === 'rejected' ? '<p class="tr-note" style="margin-top:8px">Tvoju žiadosť sme zamietli. Otvor profil a pozri dôvod.</p>' : '';
+  const adm = ctx.state.profile?.role === 'coach' ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm ${nApps ? 'primary' : 'ghost'}" href="#/treneri-ziadosti">Žiadosti trénerov${nApps ? ` (${nApps})` : ''}</a></div>` : '';
+  return `<div class="card tr-me" id="trCard">${clientPart}${ownPart}${st}${adm}</div>`;
 }
 async function mountProfile() {
   if ((location.hash || '#/').split('?')[0] !== '#/profil') return;
