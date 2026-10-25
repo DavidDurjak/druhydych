@@ -27,7 +27,7 @@ const ARC = `M${SX.toFixed(2)} ${SY.toFixed(2)} A ${RR} ${RR} 0 1 1 ${EX.toFixed
 
 const CSS = `
 .fnq{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;background:var(--bg,#0B0E12);color:var(--text,#fff);overflow:hidden;
-  font-feature-settings:"tnum" 1;animation:fnqIn .35s ease both}
+  font-feature-settings:"tnum" 1}
 .fnq::before{content:"";position:absolute;inset:-20% -30% auto;height:70%;pointer-events:none;
   background:radial-gradient(50% 50% at 50% 30%,color-mix(in srgb,var(--accent,#7CFFB2) 14%,transparent),transparent 70%)}
 .fnq.out{animation:fnqOut .35s ease both}
@@ -561,7 +561,7 @@ function scan() {
   // tlačidlo Registrovať otvorí kvíz
   const reg = app.querySelector('[data-m=register]');
   if (reg && !reg.dataset.fnq) { reg.dataset.fnq = '1'; reg.addEventListener('click', e => { e.preventDefault(); e.stopImmediatePropagation(); jset(SKIP, null, sessionStorage); open(jget(KEY)?.goal ? 1 : 0); }, true); }
-  if (!el && !jget(SKIP, sessionStorage) && !known()) open(0); else unpre();
+  if (!el && !jget(SKIP, sessionStorage) && !known()) open(0); else if (!el) unpre();
 }
 const app = document.getElementById('app');
 if (app) new MutationObserver(scan).observe(app, { childList: true, subtree: true });
