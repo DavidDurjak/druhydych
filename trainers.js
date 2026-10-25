@@ -206,6 +206,19 @@ function joinPill() {
   return `<a class="tr-pill" href="#/trener-profil">${t}</a>`;
 }
 
+// písací efekt v hľadaní (rovnako ako v Jedle)
+function typeHints(q, hints) {
+  let i = 0, j = 0, dir = 1, wait = 0;
+  const tm = setInterval(() => {
+    if (!q.isConnected) { clearInterval(tm); return; }
+    if (document.activeElement === q || q.value) return;
+    if (wait > 0) { wait--; return; }
+    const w = hints[i]; j += dir; q.placeholder = 'Hľadaj: ' + w.slice(0, Math.max(0, j)) + (j > 0 ? '|' : '');
+    if (dir === 1 && j >= w.length) { dir = -1; wait = 18; }
+    else if (dir === -1 && j <= 0) { dir = 1; i = (i + 1) % hints.length; wait = 4; }
+  }, 70);
+}
+
 // ---------- katalóg ----------
 export async function renderCatalog() {
   $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>Tréneri</h1></div><div class="spinner"></div></div>${nav('#/treneri')}`;
@@ -233,6 +246,7 @@ export async function renderCatalog() {
     <div id="trList"></div></div>${nav('#/treneri')}`;
   draw();
   const root = $app();
+  typeHints(root.querySelector('#trQ'), ['naberanie svalov', 'chudnutie', 'Košice', 'powerlifting', 'výživa', 'po pôrode', 'meno trénera']);
   root.querySelector('#trQ').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); draw(); });
   root.querySelector('#trChips').addEventListener('click', e => {
     const b = e.target.closest('.tr-chip'); if (!b) return;
