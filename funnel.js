@@ -5,7 +5,7 @@
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
-import { cookie } from './brandmark.js';
+import { cookie, biteTo } from './brandmark.js';
 import { DIETS, DIET_KEYS } from './dietcore.js';
 import * as dx from './dxcore.js';
 
@@ -172,6 +172,61 @@ html[data-theme=light] .fnq-seal{filter:none}
 .fnq-cover .rgp{animation:fnqSpinC 1.4s linear infinite}
 @keyframes fnqSpinC{from{transform:translate(50px,50px) rotate(0) translate(-50px,-50px)}to{transform:translate(50px,50px) rotate(360deg) translate(-50px,-50px)}}
 .fnq-cover .gt-ck,.fnq-calc .gt-ck{animation:fnqWob 2.2s ease-in-out infinite}
+/* v2 karty */
+.tl{flex:none;position:relative;width:54px;height:54px;border-radius:17px;display:grid;place-items:center;color:var(--c);background:linear-gradient(145deg,color-mix(in srgb,var(--c) 28%,var(--bg-2,#10141a)),color-mix(in srgb,var(--c) 8%,var(--bg-2,#10141a)));border:1px solid color-mix(in srgb,var(--c) 38%,transparent);box-shadow:inset 0 1px 0 #ffffff14}
+.tl svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fnq-o.v2{gap:14px;min-height:80px;padding:12px 16px 12px 12px;border-radius:22px;overflow:hidden}
+.fnq-o.v2::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(90% 150% at 0% 50%,color-mix(in srgb,var(--c) 15%,transparent),transparent 72%)}
+.fnq-o.v2>*{position:relative}
+.fnq-o.v2[aria-checked=true]{border-color:var(--c);background:color-mix(in srgb,var(--c) 9%,var(--card,#151a21));box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 16%,transparent)}
+.fnq-o.v2[aria-checked=true] .ck{background:var(--c);border-color:var(--c);color:#06130C}
+.fnq-o.v2.big{min-height:100px}.fnq-opts:has(.big){gap:12px}.fnq-o.v2.big .tl{width:62px;height:62px;border-radius:19px}.fnq-o.v2.big .tl svg{width:30px;height:30px}
+.fnq-o.v2.big b{font-size:18px}
+.fnq-o .pl{display:inline-block;margin-top:7px;font-style:normal;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.fnq-o .bars{display:flex;gap:3px;align-items:flex-end;margin-left:auto;height:24px}
+.fnq-o .bars i{width:6px;border-radius:3px;background:var(--line,#232a33);transition:background .2s}
+.fnq-o .bars i:nth-child(1){height:9px}.fnq-o .bars i:nth-child(2){height:16px}.fnq-o .bars i:nth-child(3){height:24px}
+.fnq-o .bars i.on{background:var(--c)}.fnq-o .bars+.ck{margin-left:4px}
+.fnq-opts.tight{gap:8px}
+.fnq-opts.tight .fnq-o.v2{min-height:58px;padding:7px 14px 7px 8px;border-radius:18px}
+.fnq-opts.tight .tl{width:42px;height:42px;border-radius:13px}.fnq-opts.tight .tl svg{width:21px;height:21px}
+.fnq-opts.tight .fnq-o b{font-size:15.5px;line-height:1.2}
+.fnq-opts.two .fnq-o.v2{flex-direction:column;justify-content:center;gap:14px;min-height:184px;padding:20px 10px}
+.fnq-opts.two .fnq-o.v2::before{background:radial-gradient(90% 90% at 50% 0%,color-mix(in srgb,var(--c) 20%,transparent),transparent 75%)}
+.fnq-opts.two .fnq-o.v2 .tl{width:84px;height:84px;border-radius:50%}.fnq-opts.two .fnq-o.v2 .tl svg{width:40px;height:40px}
+.fnq-opts.two .fnq-o.v2 b{font-size:20px}
+.fnq-opts.two .fnq-o.v2 .ck{position:absolute;top:12px;right:12px;margin:0}
+.fnq-bigin{padding:18px 18px 14px;border-radius:26px;text-align:center;background:radial-gradient(120% 120% at 50% 0%,color-mix(in srgb,var(--accent,#7CFFB2) 13%,transparent),transparent 70%),var(--card,#151a21);border:1.5px solid var(--line,#232a33);transition:border-color .18s}
+.fnq-bigin:focus-within{border-color:var(--accent,#7CFFB2)}
+.fnq-bigin label span{display:block;font-size:13px;color:var(--muted,#8a94a3);font-weight:600}
+.fnq-bigin input{width:100%;text-align:center;border:0;background:transparent;color:var(--text,#fff);font:inherit;font-size:72px;font-weight:800;letter-spacing:-.045em;outline:none;padding:2px 0;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.fnq-bigin input::-webkit-outer-spin-button,.fnq-bigin input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.fnq-bigin input::placeholder{color:color-mix(in srgb,var(--text,#fff) 18%,transparent)}
+.fnq-age{min-height:26px;font-size:16px;font-weight:700;color:var(--accent,#7CFFB2)}
+.fnq-yrs{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0;justify-content:center}
+.fnq-yrs button{appearance:none;-webkit-appearance:none;height:40px;padding:0 16px;border-radius:99px;border:1.5px solid var(--line,#232a33);background:var(--card,#151a21);color:var(--text,#fff);font:inherit;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer}
+.fnq-yrs button:active{transform:scale(.95)}
+.fnq-nf .mi{flex:none;width:46px;height:46px;border-radius:15px;display:grid;place-items:center;margin-right:2px;color:var(--accent,#7CFFB2);background:color-mix(in srgb,var(--accent,#7CFFB2) 12%,var(--bg-2,#10141a))}
+.fnq-nf .mi svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fnq-bmi{margin:20px 4px 0}.fnq-bmi[hidden]{display:none}
+.fnq-bmi .tr{position:relative;height:10px;border-radius:99px;background:linear-gradient(90deg,#5BB8FF 0 14%,#7CFFB2 14% 40%,#FFC857 40% 60%,#FF8A4C 60% 100%)}
+.fnq-bmi .tr i{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--bg,#0B0E12);box-shadow:0 2px 8px #0008;transform:translate(-50%,-50%);transition:left .35s cubic-bezier(.3,1,.4,1)}
+.fnq-bmi .lb{display:grid;grid-template-columns:14fr 26fr 20fr 40fr;margin-top:8px;font-size:11px;color:var(--muted,#8a94a3)}
+.fnq-week{gap:6px}.fnq-week i{width:38px;height:38px;border-radius:12px}
+.fnq-week i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.fnq-sec{margin:0 0 12px;padding:14px;border-radius:22px;background:var(--card,#151a21);border:1.5px solid var(--line,#232a33)}
+.fnq-sec header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.fnq-sec header .tl{width:44px;height:44px;border-radius:14px}.fnq-sec header .tl svg{width:22px;height:22px}
+.fnq-sec header b{display:block;font-size:16px;letter-spacing:-.01em}.fnq-sec header small{display:block;font-size:12.5px;color:var(--muted,#8a94a3);margin-top:1px}
+.fnq-sec header em{margin-left:auto;min-width:24px;height:24px;padding:0 6px;border-radius:99px;display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:800;background:var(--accent,#7CFFB2);color:var(--accent-ink,#06130C)}
+.fnq-sec .fnq-h{margin:14px 0 8px}
+.fnq-ch button{display:inline-flex;align-items:center}
+.fnq-ch button i{display:inline-grid;width:0;opacity:0;overflow:hidden;transition:all .18s;color:var(--accent,#7CFFB2)}
+.fnq-ch button i svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.fnq-ch button[aria-pressed=true] i{width:16px;opacity:1;margin-right:7px}
+.fnq-why li i{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;font-size:0;color:var(--accent,#7CFFB2);background:color-mix(in srgb,var(--accent,#7CFFB2) 14%,var(--bg-2,#10141a))}
+.fnq-why li i svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+@media (max-height:720px){.fnq-opts.tight .fnq-o.v2{min-height:50px;padding-top:5px;padding-bottom:5px}.fnq-opts.tight .tl{width:36px;height:36px}.fnq-opts.tight{gap:6px}.fnq h1{font-size:26px}.fnq .fnq-sub{margin:6px 0 14px}}
 @keyframes fnqWob{0%,100%{transform:translate(50px,50px) rotate(-9deg) scale(1) translate(-50px,-50px)}50%{transform:translate(50px,50px) rotate(9deg) scale(1.05) translate(-50px,-50px)}}
 @keyframes fnqSpin{to{transform:rotate(360deg)}}
 @media (min-width:700px){.fnq h1{font-size:36px}.fnq-hero h1{font-size:48px}}
@@ -192,21 +247,32 @@ const SEAL = `<svg class="fnq-seal" viewBox="0 0 1024 1024" fill="none" stroke-l
 </svg>`;
 // prstenec z loga ako ukazovateľ postupu (p 0..1) s bodkou na konci
 let ckN = 0;
-function ringSvg(p, cls = 'fnq-mini', w = 9, ck = true) {
+function ringSvg(p, cls = 'fnq-mini', w = 9, ck = true, live = false) {
   const a = A0 + SPAN * Math.max(0.001, p), [dx, dy] = pt(a);
-  // sušienka v strede prstenca (znak appky); prstenec sa točí, sušienka sa jemne kolíše
-  const inner = ck ? cookie('fq' + (++ckN), 15).replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '') : '';
-  const c = ck ? `<g class="gt-ck"><g transform="translate(50 50) scale(0.2235)">${inner}</g></g>` : '';
+  // sušienka v strede prstenca (znak appky); live = celá na začiatku, s postupom sa odhryzuje a otáča k bodke
+  const inner = ck ? cookie('fq' + (++ckN), live ? 0 : 15, live ? p : 1).replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '') : '';
+  const c = ck ? `<g class="gt-ck"><g class="gt-cr" transform="translate(50 50) rotate(${live ? (a + 45).toFixed(1) : 0}) scale(0.2235)">${inner}</g></g>` : '';
   return `<svg class="${cls}" viewBox="0 0 100 100" fill="none" stroke-linecap="round" aria-hidden="true">
     <g class="rgp"><path d="${ARC}" style="stroke:var(--line,#232a33)" stroke-width="${w}"/>
     <path class="p" d="${ARC}" pathLength="100" style="stroke:var(--accent,#7CFFB2)" stroke-width="${w}" stroke-dasharray="100" stroke-dashoffset="${100 - p * 100}"/>
-    <circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="${w * 0.62}" style="fill:var(--fnq-dot)"/></g>${c}</svg>`;
+    <circle class="dt" cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="${w * 0.62}" style="fill:var(--fnq-dot)"/></g>${c}</svg>`;
+}
+// plynulé posunutie existujúceho prstenca na hodnotu p: oblúk, bodka, otočenie a odhryznutie sušienky idú spolu
+function setRing(svg, p) {
+  const a = A0 + SPAN * Math.max(0.001, p), [dx, dy] = pt(a), path = svg.querySelector('.p'), dot = svg.querySelector('.dt'), cr = svg.querySelector('.gt-cr');
+  if (path) { path.style.transition = 'none'; path.setAttribute('stroke-dashoffset', 100 - p * 100); }
+  if (dot) { dot.setAttribute('cx', dx.toFixed(2)); dot.setAttribute('cy', dy.toFixed(2)); }
+  if (cr) { cr.setAttribute('transform', `translate(50 50) rotate(${(a + 45).toFixed(1)}) scale(0.2235)`); biteTo(cr, p); }
+}
+let ringP = 0;
+function tweenRing(svg, from, to, ms = 520) {
+  cancelAnimationFrame(svg._raf);
+  if (reduce() || from === to) { setRing(svg, to); return; }
+  const t0 = performance.now(), e = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+  const f = now => { const k = Math.min(1, (now - t0) / ms); setRing(svg, from + (to - from) * e(k)); if (k < 1 && svg.isConnected) svg._raf = requestAnimationFrame(f); };
+  svg._raf = requestAnimationFrame(f);
 }
 
-const GOALS = [['lose', '🔥', 'Schudnúť', 'zhodiť tuk, udržať svaly'], ['maintain', '⚖️', 'Udržať váhu', 'jesť vyvážene, cítiť sa lepšie'], ['gain', '💪', 'Nabrať svaly', 'rásť bez zbytočného tuku']];
-const SEX = [['m', '👨', 'Muž'], ['f', '👩', 'Žena']];
-const JOBS = [['desk', '💻', 'Sedím väčšinu dňa', 'škola, kancelária'], ['stand', '🚶', 'Som veľa na nohách', 'obchod, gastro, učenie'], ['phys', '🏗️', 'Fyzická práca', 'stavba, sklad, záhrada']];
-const BLOCK = [['time', '⏱️', 'Zapisovanie ma zdržiava'], ['what', '🤷', 'Neviem, čo mám jesť'], ['out', '🍽️', 'Často jem vonku alebo v jedálni'], ['sweet', '🍫', 'Chute na sladké a večerné jedenie'], ['motiv', '📉', 'Vydržím pár dní a prestanem'], ['train', '🏋️', 'Neviem, ako trénovať']];
 const I = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const ICON = {
   camera: I('<rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-2.5h5L16 7"/>'),
@@ -219,18 +285,42 @@ const ICON = {
   spark: I('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>'),
   video: I('<rect x="3" y="6" width="12" height="12" rx="3"/><path d="M15 11l6-3.5v9L15 13z"/>'),
   chart: I('<path d="M4 19V5M4 19h16"/><path d="M8 15l3.5-4 3 2.5L19 7"/>'),
+  check: I('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  ruler: I('<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v2"/>'),
+  flame: I('<path d="M12 3c.6 3.2 5 5.2 5 10.2a5 5 0 01-10 0c0-2.2 1-3.6 2.2-4.6.1 1.8.9 2.8 1.9 3.1C10.5 9.5 10.6 6 12 3z"/>'),
+  scale: I('<path d="M12 4v16M8 20h8M4.5 7.5h15M4.5 7.5L2.5 13a2.5 2.5 0 005 0zM19.5 7.5L17.5 13a2.5 2.5 0 005 0z"/>'),
+  trend: I('<path d="M3.5 17l6-6 4 4 7-8.5M15 6.5h5.5V12"/>'),
+  male: I('<circle cx="10" cy="14" r="5"/><path d="M14 10l6-6M15 4h5v5"/>'),
+  female: I('<circle cx="12" cy="9" r="5"/><path d="M12 14v7M9 18h6"/>'),
+  laptop: I('<rect x="5" y="5" width="14" height="10" rx="2"/><path d="M2.5 19h19"/>'),
+  person: I('<circle cx="12" cy="5" r="2.2"/><path d="M12 8.5v6M8 11.5h8M9 21l3-6.5 3 6.5"/>'),
+  helmet: I('<path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5zM3.5 7.5L12 12l8.5-4.5M12 12v9"/>'),
+  clock: I('<circle cx="12" cy="13" r="8"/><path d="M12 9v4.2l2.8 1.8M10 3h4"/>'),
+  help: I('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.6a2.5 2.5 0 114 2c-1 .7-1.5 1.2-1.5 2.4M12 17h.01"/>'),
+  utensils: I('<path d="M7 3v7a2 2 0 002 2v9M7 3v5M11 3v5M17 3c-2.2 1.8-2.6 6-.5 8.5V21"/>'),
+  candy: I('<rect x="6" y="8" width="12" height="8" rx="4"/><path d="M6 12l-3.5-2.5v5zM18 12l3.5-2.5v5z"/>'),
+  down: I('<path d="M3.5 7l6 6 4-4 7 8.5M20.5 12v5.5H15"/>'),
+  pulse: I('<path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z"/><path d="M7.5 11.5h3l1.5-2.5 2 4.5 1-2H17"/>'),
+  leaf: I('<path d="M5 19C5 9 10 5 20 5c0 10-4.5 15-13.5 15M5 19l8-8"/>'),
+  compass: I('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'),
+  moon: I('<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>'),
+  repeat: I('<path d="M4 11V9a3 3 0 013-3h11l-3-3M20 13v2a3 3 0 01-3 3H6l3 3"/>'),
   bolt: I('<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>'),
   coach: I('<path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/>'),
 };
+const GOALS = [['lose', ICON.flame, 'Schudnúť', 'zhodiť tuk, udržať svaly', '#FF8A4C', '−0,5 kg týždenne'], ['maintain', ICON.scale, 'Udržať váhu', 'jesť vyvážene, cítiť sa lepšie', '#5BB8FF', 'stabilná váha'], ['gain', ICON.trend, 'Nabrať svaly', 'rásť bez zbytočného tuku', '#7CFFB2', '+0,25 kg týždenne']];
+const SEX = [['m', ICON.male, 'Muž', '#5BB8FF'], ['f', ICON.female, 'Žena', '#FF8AC6']];
+const JOBS = [['desk', ICON.laptop, 'Sedím väčšinu dňa', 'škola, kancelária', '#5BB8FF', 1], ['stand', ICON.person, 'Som veľa na nohách', 'obchod, gastro, učenie', '#FFC857', 2], ['phys', ICON.helmet, 'Fyzická práca', 'stavba, sklad, záhrada', '#FF8A4C', 3]];
+const BLOCK = [['time', ICON.clock, 'Zapisovanie ma zdržiava'], ['what', ICON.help, 'Neviem, čo mám jesť'], ['out', ICON.utensils, 'Často jem vonku alebo v jedálni'], ['sweet', ICON.candy, 'Chute na sladké a večerné jedenie'], ['motiv', ICON.down, 'Vydržím pár dní a prestanem'], ['train', ICON.dumbbell, 'Neviem, ako trénovať']];
 const HEALTH = [['diabetes', 'Cukrovka'], ['celiac', 'Celiakia'], ['lactose', 'Intolerancia laktózy'], ['allergy', 'Alergia na potraviny'], ['salt', 'Vysoký tlak']];
 const SRC = [['instagram', ICON.camera, 'Instagram'], ['tiktok', ICON.music, 'TikTok'], ['facebook', ICON.people, 'Facebook'], ['youtube', ICON.play, 'YouTube'], ['gym', ICON.dumbbell, 'Fitko alebo tréner'], ['friend', ICON.heart, 'Kamarát'], ['store', ICON.search, 'Google alebo obchod s appkami'], ['other', ICON.spark, 'Iné']];
 const FIX = {
-  time: ['⚡', 'Zápis za 3 sekundy', 'napíš, nadiktuj alebo odfoť, čo máš na tanieri. AI spočíta zvyšok.'],
-  what: ['🧭', 'Vždy vieš, čo zjesť ďalej', 'návrhy jedál podľa zvyšných kalórií a bielkovín.'],
-  out: ['📋', 'Odfoť denné menu', 'AI ti z lístka vyberie jedlo, ktoré ti dnes sedí najviac.'],
-  sweet: ['🌙', 'Plán aj na chute', 'kouč ti pomôže rozložiť kalórie tak, aby ostalo aj na niečo sladké.'],
-  motiv: ['🔁', 'Séria, ktorá odpúšťa', 'jeden vynechaný deň ťa nevráti na nulu. Kouč ťa podrží.'],
-  train: ['📈', 'Tréningový plán na mieru', 'podľa tvojich dní, s radou, kedy pridať váhu.'],
+  time: [ICON.bolt, 'Zápis za 3 sekundy', 'napíš, nadiktuj alebo odfoť, čo máš na tanieri. AI spočíta zvyšok.'],
+  what: [ICON.compass, 'Vždy vieš, čo zjesť ďalej', 'návrhy jedál podľa zvyšných kalórií a bielkovín.'],
+  out: [ICON.utensils, 'Odfoť denné menu', 'AI ti z lístka vyberie jedlo, ktoré ti dnes sedí najviac.'],
+  sweet: [ICON.moon, 'Plán aj na chute', 'kouč ti pomôže rozložiť kalórie tak, aby ostalo aj na niečo sladké.'],
+  motiv: [ICON.repeat, 'Séria, ktorá odpúšťa', 'jeden vynechaný deň ťa nevráti na nulu. Kouč ťa podrží.'],
+  train: [ICON.trend, 'Tréningový plán na mieru', 'podľa tvojich dní, s radou, kedy pridať váhu.'],
 };
 
 let el = null, q = null, step = 0, dir = 1;
@@ -272,20 +362,31 @@ function go(d) {
   step = Math.min(i, list.length - 1); buzz(); draw();
 }
 
+// posúvať sa dá len to, čo sa naozaj nezmestí (inak by tam bol zbytočný posuvník)
+function fitScroll() {
+  const b = el?.querySelector('.fnq-body'); if (!b) return;
+  b.style.overflowY = 'hidden';
+  requestAnimationFrame(() => { if (b.isConnected) b.style.overflowY = b.scrollHeight > b.clientHeight + 2 ? 'auto' : 'hidden'; });
+}
+addEventListener('resize', () => fitScroll());
 function draw() {
   if (!el) return;
   const list = steps(), id = list[step], qs = list.indexOf('calc'), p = Math.min(1, Math.max(0, (step - 1) / (qs - 1)));
   el.querySelector('.fnq-back').hidden = step === 0 || id === 'calc';
   const top = el.querySelector('.fnq-top'); top.style.visibility = id === 'hello' ? 'hidden' : '';
   el.querySelector('.fnq-bar i').style.width = (id === 'plan' || id === 'account' ? 100 : p * 100) + '%';
-  el.querySelector('.fnq-ring-slot').innerHTML = ringSvg(id === 'plan' || id === 'account' ? 1 : p);
+  const slot = el.querySelector('.fnq-ring-slot'), tp = id === 'plan' || id === 'account' ? 1 : p;
+  if (!slot.firstElementChild) { slot.innerHTML = ringSvg(0, 'fnq-mini', 9, true, true); ringP = 0; }
+  tweenRing(slot.firstElementChild, ringP, tp); ringP = tp;
   const body = el.querySelector('.fnq-body');
   body.innerHTML = `<div class="fnq-step ${dir < 0 ? 'back' : ''}">${VIEWS[id]()}</div>`;
-  body.scrollTop = 0; body.style.overflowY = id === 'hello' ? 'hidden' : '';
+  body.scrollTop = 0;
   BIND[id]?.(body.firstElementChild);
+  fitScroll();
 }
 
 const opt = (v, ic, label, sub, on, multi) => `<button class="fnq-o" type="button" role="${multi ? 'checkbox' : 'radio'}" data-v="${v}" aria-checked="${!!on}">${ic ? `<span class="ic">${ic}</span>` : ''}<div><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}</div>${multi || !ic || sub ? '<span class="ck">✓</span>' : ''}</button>`;
+const opt2 = (v, ic, color, label, sub, on, o = {}) => `<button class="fnq-o v2 ${o.cls || ''}" type="button" role="${o.multi ? 'checkbox' : 'radio'}" data-v="${v}" aria-checked="${!!on}" style="--c:${color}"><span class="tl">${ic}</span><div><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}${o.pill ? `<em class="pl">${o.pill}</em>` : ''}</div>${o.bars ? `<span class="bars">${[1, 2, 3].map(n => `<i class="${n <= o.bars ? 'on' : ''}"></i>`).join('')}</span>` : ''}<span class="ck">✓</span></button>`;
 const foot = (label = 'Pokračovať', dis = false, extra = '') => `<div class="fnq-foot"><button class="fnq-cta" type="button" ${dis ? 'disabled' : ''}>${label}</button>${extra}</div>`;
 const pickOne = (root, key, after) => root.querySelectorAll('.fnq-o').forEach(b => b.onclick = () => {
   q[key] = key === 'days' ? Number(b.dataset.v) : b.dataset.v; save();
@@ -293,7 +394,7 @@ const pickOne = (root, key, after) => root.querySelectorAll('.fnq-o').forEach(b 
   after ? after(b) : setTimeout(() => go(1), 230);
 });
 
-const daysCap = () => q.days == null ? '' : q.days === 0 ? 'Začneme jedlom a krokmi, tréning pridáš, keď budeš chcieť.' : q.days <= 3 ? 'Ideálne na celé telo, 3 dni stačia na viditeľný rast.' : 'Rozdelíme to na hornú a dolnú časť alebo push, pull, nohy.';
+const daysCap = () => q.days == null ? '' : q.days === 0 ? 'Začneme jedlom a krokmi. Tréning pridáš, keď budeš chcieť.' : `${q.days} ${q.days === 1 ? 'tréning' : q.days < 5 ? 'tréningy' : 'tréningov'} a ${7 - q.days} ${7 - q.days === 1 ? 'deň' : 7 - q.days < 5 ? 'dni' : 'dní'} voľna. ${q.days <= 3 ? 'Na celé telo to stačí na viditeľný rast.' : 'Rozdelíme to na hornú a dolnú časť alebo push, pull, nohy.'} Konkrétne dni si vyberieš v tréningovom pláne.`;
 const VIEWS = {
   hello: () => `<div class="fnq-hero">${SEAL}
       <h1>Tvoj plán jedla a tréningu za minútu.</h1>
@@ -308,43 +409,50 @@ const VIEWS = {
       </div></div>
     ${foot('Poďme na to', false, '<button class="fnq-link" data-login type="button">Už mám účet. <b>Prihlásiť sa</b></button>')}`,
   goal: () => `<h1>Čo chceš dosiahnuť?</h1><p class="fnq-sub">Podľa toho nastavíme kalórie aj tréning.</p>
-    <div class="fnq-opts">${GOALS.map(([v, ic, l, s]) => opt(v, ic, l, s, q.goal === v)).join('')}</div>`,
+    <div class="fnq-opts">${GOALS.map(([v, ic, l, sb, c, pill]) => opt2(v, ic, c, l, sb, q.goal === v, { pill, cls: 'big' })).join('')}</div>`,
   sex: () => `<h1>Pohlavie</h1><p class="fnq-sub">Muži a ženy majú iný výdaj energie aj odporúčané minimá.</p>
-    <div class="fnq-opts two">${SEX.map(([v, ic, l]) => opt(v, ic, l, '', q.sex === v)).join('')}</div>`,
+    <div class="fnq-opts two">${SEX.map(([v, ic, l, c]) => opt2(v, ic, c, l, '', q.sex === v, { cls: 'tall' })).join('')}</div>`,
   age: () => `<h1>V ktorom roku si sa ${q.sex === 'f' ? 'narodila' : 'narodil'}?</h1><p class="fnq-sub">Vek mení bazálny metabolizmus. Fuelwind je pre ľudí od 18 rokov.</p>
-    <div class="fnq-num"><div class="fnq-nf"><label><span>Rok narodenia</span><input id="fnqBy" type="number" inputmode="numeric" placeholder="2000" min="1930" max="${YEAR - 18}" value="${h(q.by)}"></label></div></div>
-    <p class="fnq-cap" id="fnqCap"></p>${foot('Pokračovať', true)}`,
+    <div class="fnq-bigin"><label><span>Rok narodenia</span><input id="fnqBy" type="number" inputmode="numeric" placeholder="2000" min="1930" max="${YEAR - 18}" value="${h(q.by)}"></label><div class="fnq-age" id="fnqCap"></div></div>
+    <div class="fnq-yrs">${[YEAR - 18, YEAR - 21, YEAR - 25, YEAR - 30, YEAR - 35, YEAR - 40, YEAR - 50].map(y => `<button type="button" data-y="${y}">${y}</button>`).join('')}</div>
+    ${foot('Pokračovať', true)}`,
   body: () => `<h1>Výška a váha</h1><p class="fnq-sub">Stačí približne. Váhu budeš sledovať ako trend, nie jedno číslo.</p>
     <div class="fnq-num">
-      <div class="fnq-nf"><label><span>Výška</span><input id="fnqH" type="number" inputmode="numeric" placeholder="178" min="120" max="230" value="${h(q.h)}"></label><em>cm</em><div class="fnq-pm"><button type="button" data-pm="fnqH:-1" aria-label="Menej">−</button><button type="button" data-pm="fnqH:1" aria-label="Viac">+</button></div></div>
-      <div class="fnq-nf"><label><span>Váha teraz</span><input id="fnqW" type="number" inputmode="decimal" step="0.1" placeholder="76" min="30" max="300" value="${h(q.w)}"></label><em>kg</em><div class="fnq-pm"><button type="button" data-pm="fnqW:-0.5" aria-label="Menej">−</button><button type="button" data-pm="fnqW:0.5" aria-label="Viac">+</button></div></div>
-    </div><p class="fnq-cap" id="fnqCap"></p>${foot('Pokračovať', true)}`,
+      <div class="fnq-nf"><span class="mi">${ICON.ruler}</span><label><span>Výška</span><input id="fnqH" type="number" inputmode="numeric" placeholder="178" min="120" max="230" value="${h(q.h)}"></label><em>cm</em><div class="fnq-pm"><button type="button" data-pm="fnqH:-1" aria-label="Menej">−</button><button type="button" data-pm="fnqH:1" aria-label="Viac">+</button></div></div>
+      <div class="fnq-nf"><span class="mi">${ICON.scale}</span><label><span>Váha teraz</span><input id="fnqW" type="number" inputmode="decimal" step="0.1" placeholder="76" min="30" max="300" value="${h(q.w)}"></label><em>kg</em><div class="fnq-pm"><button type="button" data-pm="fnqW:-0.5" aria-label="Menej">−</button><button type="button" data-pm="fnqW:0.5" aria-label="Viac">+</button></div></div>
+    </div>
+    <div class="fnq-bmi" id="fnqBmi" hidden><div class="tr"><i id="fnqBmiM"></i></div><div class="lb"><span></span><span>norma</span><span>nadváha</span><span>obezita</span></div></div>
+    <p class="fnq-cap" id="fnqCap"></p>${foot('Pokračovať', true)}`,
   target: () => `<h1>${q.goal === 'lose' ? `Akú váhu by si ${q.sex === 'f' ? 'chcela' : 'chcel'} mať?` : 'Kam to chceš dotiahnuť?'}</h1><p class="fnq-sub">Ukážeme ti, za ako dlho je to reálne pri zdravom tempe.</p>
     <div class="fnq-num"><div class="fnq-nf"><label><span>Cieľová váha</span><input id="fnqT" type="number" inputmode="decimal" step="0.5" min="35" max="250" value="${h(q.tw || (Number(q.w) ? (q.goal === 'lose' ? Math.round(Number(q.w) * 0.92) : Math.round(Number(q.w) * 1.05)) : ''))}"></label><em>kg</em><div class="fnq-pm"><button type="button" data-pm="fnqT:-0.5" aria-label="Menej">−</button><button type="button" data-pm="fnqT:0.5" aria-label="Viac">+</button></div></div></div>
     <p class="fnq-cap" id="fnqCap"></p>${foot('Pokračovať', false, '<button class="fnq-link" data-skip type="button">Zatiaľ neviem, preskočiť</button>')}`,
   job: () => `<h1>Ako vyzerá tvoj bežný deň?</h1><p class="fnq-sub">Pohyb mimo tréningu robí viac, než si väčšina ľudí myslí.</p>
-    <div class="fnq-opts">${JOBS.map(([v, ic, l, s]) => opt(v, ic, l, s, q.job === v)).join('')}</div>`,
+    <div class="fnq-opts">${JOBS.map(([v, ic, l, sb, c, bars]) => opt2(v, ic, c, l, sb, q.job === v, { bars, cls: 'big' })).join('')}</div>
+    <p class="fnq-cap">Čím viac pohybu cez deň, tým viac môžeš zjesť.</p>`,
   days: () => `<h1>Koľkokrát týždenne chceš trénovať?</h1><p class="fnq-sub">Aj nula je v poriadku. Plán sa prispôsobí.</p>
     <div class="fnq-opts days">${[0, 1, 2, 3, 4, 5, 6, 7].map(n => opt(n, '', String(n), n === 0 ? 'zatiaľ nie' : n === 1 ? 'raz' : 'krát', q.days === n)).join('')}</div>
-    <div class="fnq-week" id="fnqWeek">${['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne'].map((d, i) => `<i class="${q.days > i ? 'on' : ''}">${d}</i>`).join('')}</div>
+    <div class="fnq-week" id="fnqWeek">${[0, 1, 2, 3, 4, 5, 6].map(i => `<i class="${q.days > i ? 'on' : ''}">${q.days > i ? ICON.dumbbell : ''}</i>`).join('')}</div>
     <p class="fnq-cap" id="fnqCap">${daysCap()}</p>
     ${foot('Pokračovať', q.days == null)}`,
-  block: () => `<h1>Čo ti doteraz najviac bránilo?</h1><p class="fnq-sub">Vyber všetko, čo sedí. Appka sa podľa toho nastaví.</p>
-    <div class="fnq-opts">${BLOCK.map(([v, ic, l]) => opt(v, ic, l, '', q.block.includes(v), true)).join('')}</div>${foot('Pokračovať', false)}`,
+  block: () => `<h1>Čo ti doteraz najviac bránilo?</h1><p class="fnq-sub">Vyber všetko, čo sedí.</p>
+    <div class="fnq-opts tight">${BLOCK.map(([v, ic, l]) => opt2(v, ic, '#7CFFB2', l, '', q.block.includes(v), { multi: true })).join('')}</div>${foot('Pokračovať', false)}`,
   diet: () => {
-    const d = q.diet, any = d.diets.length || d.modes.length;
-    return `<h1>Stravuješ sa nejako špecificky?</h1><p class="fnq-sub">Appka podľa toho označí jedlá a nastaví limity. Ak nič z toho, pokračuj ďalej.</p>
-    <div class="fnq-h">Ako sa stravuješ</div><div class="fnq-ch">${DIET_KEYS.map(k => `<button type="button" data-d="${k}" aria-pressed="${d.diets.includes(k)}">${h(DIETS[k].title)}</button>`).join('')}</div>
-    <div class="fnq-h">Zdravie</div><div class="fnq-ch">${HEALTH.map(([k, l]) => `<button type="button" data-m="${k}" aria-pressed="${d.modes.includes(k)}">${l}</button>`).join('')}</div>
-    ${d.modes.includes('diabetes') ? `<div class="fnq-h">Aký typ cukrovky máš?</div><div class="fnq-ch">${Object.entries(dx.DTYPES).map(([k, v]) => `<button type="button" data-t="${k}" aria-pressed="${d.dtype === k}">${h(v.label)}</button>`).join('')}</div>` : ''}
-    ${d.modes.includes('allergy') ? `<div class="fnq-h">Na čo máš alergiu?</div><div class="fnq-ch">${dx.ALLERGENS.map(([k, l]) => `<button type="button" data-a="${k}" aria-pressed="${d.allergens.includes(k)}">${h(l)}</button>`).join('')}</div>` : ''}
-    ${d.modes.includes('diabetes') && q.goal === 'lose' ? `<p class="fnq-cap">Pri cukrovke sa o chudnutí poraď s lekárom. Appka nepočíta dávky inzulínu ani liekov.</p>` : ''}
+    const d = q.diet, any = d.diets.length || d.modes.length, n1 = d.modes.length, n2 = d.diets.length;
+    const chip = (attr, k, label, on) => `<button type="button" ${attr}="${k}" aria-pressed="${on}"><i>${ICON.check}</i>${h(label)}</button>`;
+    return `<h1>Máš nejaké obmedzenia?</h1><p class="fnq-sub">Appka podľa toho označí jedlá a nastaví limity. Ak nič z toho, pokračuj ďalej.</p>
+    <section class="fnq-sec"><header><span class="tl" style="--c:#FF7A8A">${ICON.pulse}</span><div><b>Zdravie</b><small>Choroby a alergie, ktoré ovplyvňujú jedlo</small></div>${n1 ? `<em>${n1}</em>` : ''}</header>
+      <div class="fnq-ch">${HEALTH.map(([k, l]) => chip('data-m', k, l, d.modes.includes(k))).join('')}</div>
+      ${d.modes.includes('diabetes') ? `<div class="fnq-h">Aký typ cukrovky máš?</div><div class="fnq-ch">${Object.entries(dx.DTYPES).map(([k, v]) => chip('data-t', k, v.label, d.dtype === k)).join('')}</div>` : ''}
+      ${d.modes.includes('allergy') ? `<div class="fnq-h">Na čo máš alergiu?</div><div class="fnq-ch">${dx.ALLERGENS.map(([k, l]) => chip('data-a', k, l, d.allergens.includes(k))).join('')}</div>` : ''}
+      ${d.modes.includes('diabetes') && q.goal === 'lose' ? `<p class="fnq-cap">Pri cukrovke sa o chudnutí poraď s lekárom. Appka nepočíta dávky inzulínu ani liekov.</p>` : ''}</section>
+    <section class="fnq-sec"><header><span class="tl" style="--c:#7CFFB2">${ICON.leaf}</span><div><b>Ako sa stravuješ</b><small>Diéta alebo vierovyznanie</small></div>${n2 ? `<em>${n2}</em>` : ''}</header>
+      <div class="fnq-ch">${DIET_KEYS.map(k => chip('data-d', k, DIETS[k].title, d.diets.includes(k))).join('')}</div></section>
     ${any ? `<label class="fnq-cons" id="fnqCons"><input type="checkbox" ${d.consent ? 'checked' : ''}><span>Súhlasím, aby Fuelwind ukladal údaje o mojom zdraví a stravovaní na účely týchto funkcií. Súhlas môžeš kedykoľvek odvolať v Profile.</span></label>` : ''}
     ${foot(any ? 'Pokračovať' : 'Preskočiť', false)}`;
   },
   src: () => `<h1>Kde si o nás ${q.sex === 'f' ? 'počula' : 'počul'}?</h1><p class="fnq-sub">Pomôže nám to dostať appku k ďalším ľuďom ako ty.</p>
     <div class="fnq-opts src">${SRC.map(([v, ic, l]) => opt(v, ic, l, '', q.src === v)).join('')}</div>`,
-  calc: () => `<div class="fnq-calc">${ringSvg(0, 'big', 7)}<h1>Skladám tvoj plán</h1>
+  calc: () => `<div class="fnq-calc">${ringSvg(0, 'big', 7, true, true)}<h1>Skladám tvoj plán</h1>
     <ul class="fnq-list"><li><i>✓</i>Počítam tvoj denný výdaj energie</li><li><i>✓</i>Nastavujem bielkoviny pre tvoj cieľ</li><li><i>✓</i>Rozdeľujem sacharidy a tuky</li><li><i>✓</i>Pripravujem AI kouča</li></ul></div>`,
   plan: () => {
     const t = plan(), pw = t.perWeek, end = t.weeks ? new Date(Date.now() + t.weeks * 7 * 864e5) : null;
@@ -391,17 +499,20 @@ const BIND = {
   hello: r => { r.querySelector('.fnq-cta').onclick = () => go(1); r.querySelector('[data-login]').onclick = () => close(true); },
   goal: r => pickOne(r, 'goal'),
   sex: r => pickOne(r, 'sex'),
-  age: r => numStep(r, ['fnqBy'], () => {
+  age: r => { numStep(r, ['fnqBy'], () => {
     const y = Number(q.by);
     if (!y || String(q.by).length < 4) return { ok: false };
     if (y > YEAR - 18) return { ok: false, msg: 'Fuelwind je zatiaľ len pre ľudí od 18 rokov.' };
     if (y < 1930) return { ok: false, msg: 'Skontroluj rok.' };
     return { ok: true, msg: `${YEAR - y} rokov` };
-  }, () => { q.by = r.querySelector('#fnqBy').value; save(); }),
+  }, () => { q.by = r.querySelector('#fnqBy').value; save(); });
+    r.querySelectorAll('[data-y]').forEach(b => b.onclick = () => { const i = r.querySelector('#fnqBy'); i.value = b.dataset.y; i.dispatchEvent(new Event('input', { bubbles: true })); buzz(); });
+  },
   body: r => numStep(r, ['fnqH', 'fnqW'], () => {
-    const hh = Number(q.h), ww = Number(q.w);
-    if (!(hh >= 120 && hh <= 230 && ww >= 30 && ww <= 300)) return { ok: false };
+    const hh = Number(q.h), ww = Number(q.w), g = r.querySelector('#fnqBmi');
+    if (!(hh >= 120 && hh <= 230 && ww >= 30 && ww <= 300)) { g.hidden = true; return { ok: false }; }
     const bmi = ww / ((hh / 100) ** 2);
+    g.hidden = false; r.querySelector('#fnqBmiM').style.left = Math.max(2, Math.min(98, (bmi - 15) / 25 * 100)) + '%';
     return { ok: true, msg: `BMI ${nf(bmi, 1)}. Pri tréningu je to len orientačné číslo, sledovať budeme trend a pás.` };
   }, () => { q.h = r.querySelector('#fnqH').value; q.w = r.querySelector('#fnqW').value; save(); }),
   target: r => {
@@ -422,7 +533,7 @@ const BIND = {
     r.querySelectorAll('.fnq-o').forEach(b => b.onclick = () => {
       q.days = Number(b.dataset.v); save(); buzz();
       r.querySelectorAll('.fnq-o').forEach(x => x.setAttribute('aria-checked', String(x === b)));
-      r.querySelectorAll('#fnqWeek i').forEach((d, i) => d.classList.toggle('on', q.days > i));
+      r.querySelectorAll('#fnqWeek i').forEach((d, i) => { const on = q.days > i; d.classList.toggle('on', on); d.innerHTML = on ? ICON.dumbbell : ''; });
       r.querySelector('#fnqCap').textContent = daysCap(); cta.disabled = false;
     });
     cta.onclick = () => { if (q.days != null) go(1); };
@@ -450,9 +561,9 @@ const BIND = {
   },
   src: r => pickOne(r, 'src'),
   calc: r => {
-    const lis = r.querySelectorAll('.fnq-list li'), path = r.querySelector('.big .p');
-    requestAnimationFrame(() => requestAnimationFrame(() => { if (path) path.style.strokeDashoffset = '0'; }));
+    const lis = r.querySelectorAll('.fnq-list li'), svg = r.querySelector('svg.big');
     const T = reduce() ? 150 : 650;
+    if (svg) { setRing(svg, 0); tweenRing(svg, 0, 1, T * (lis.length + 1)); }
     lis.forEach((li, i) => setTimeout(() => { li.classList.add('on'); buzz(); }, T * (i + 1)));
     setTimeout(() => { if (el && steps()[step] === 'calc') go(1); }, T * (lis.length + 1) + 250);
   },
