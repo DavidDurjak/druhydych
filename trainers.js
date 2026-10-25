@@ -76,9 +76,12 @@ const CSS = `
 .tr-body{min-width:0;flex:1;display:grid;gap:4px;align-content:start}
 .tr-name{display:flex;align-items:center;gap:6px;font-size:17px;font-weight:800;letter-spacing:-.02em}
 .tr-name svg{flex:none;width:17px;height:17px;fill:#5BB8FF}
+.tr-li svg{width:15px;height:15px;fill:#5BB8FF;vertical-align:-3px;margin-left:2px}
 .tr-hl{font-size:13.5px;color:var(--muted);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tr-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .tr-tag{padding:4px 9px;border-radius:99px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,.07);color:var(--text)}
+.tr-pf{display:block;margin-top:6px;padding:8px 12px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.tr-pf.ok{border-style:solid;border-color:rgba(124,255,178,.4);color:#9DFFC8;background:rgba(124,255,178,.08)}
 .tr-tag.g{background:rgba(124,255,178,.14);color:#9DFFC8}
 .tr-join,.tr-join *{text-transform:none!important;letter-spacing:normal!important;font-family:inherit}
 .tr-join{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--text)}
@@ -94,12 +97,12 @@ const CSS = `
 @keyframes trshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
 .tr-ferr{color:#FF8A96;font-size:12.5px;font-weight:700;margin:6px 2px 10px;line-height:1.35}
 @media (prefers-reduced-motion:reduce){.tr-bad.tr-shake{animation:none}}
-.tr-perks{display:grid;grid-template-columns:repeat(3,1fr);margin:4px 0 16px;padding:14px 4px;border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.tr-perks{display:grid;grid-template-columns:repeat(4,1fr);margin:4px 0 16px;padding:14px 4px;border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.08);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .tr-perks>div{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;padding:2px 6px;min-width:0}
 .tr-perks>div+div{border-left:1px solid rgba(255,255,255,.08)}
 .tr-perks svg{width:22px;height:22px;stroke:#9DFFC8;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-bottom:4px}
-.tr-perks b{font-size:12.5px;font-weight:800;line-height:1.2;color:var(--text)}
-.tr-perks span{font-size:11px;line-height:1.25;color:var(--muted)}
+.tr-perks b{font-size:11.5px;font-weight:800;line-height:1.2;color:var(--text)}
+.tr-perks span{font-size:10.5px;line-height:1.25;color:var(--muted)}
 .tr-search{position:relative}
 .tr-search .input{padding-left:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B95A5' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:15px center;background-size:19px}
 .tr-card{display:block;padding:0;gap:0}
@@ -236,9 +239,10 @@ export async function renderCatalog() {
     <div class="tr-top"><h1>Tréneri</h1>${joinPill()}</div>
     <p class="tr-sub">${mine ? 'Už máš trénera. Tu nájdeš ďalších.' : 'Online koučing od trénerov, ktorých sme skontrolovali.'}</p>
     <div class="tr-perks">
-      <div><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5h6M9 11l2 2 4-4M9 17h6"/></svg><b>Plán na mieru</b><span>tréning a jedlo</span></div>
+      <div><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5h6M9 11l2 2 4-4M9 17h6"/></svg><b>Tvoj plán</b><span>tréning a jedlo</span></div>
       <div><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></svg><b>Check-iny</b><span>každý týždeň</span></div>
-      <div><svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/></svg><b>Priamy chat</b><span>s tvojím trénerom</span></div>
+      <div><svg viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="M15 10.5l6-3.5v10l-6-3.5"/></svg><b>Videohovory</b><span>online s trénerom</span></div>
+      <div><svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/></svg><b>Priamy chat</b><span>kedykoľvek</span></div>
     </div>
     <div class="tr-search"><input class="input" id="trQ" placeholder="Meno, mesto alebo cieľ" autocomplete="off"></div>
     <div class="tr-chips" id="trChips"><button class="tr-chip" data-o="1">Online</button>${cities.map(c => `<button class="tr-chip notranslate" translate="no" data-c="${h(c)}">📍 ${h(c)}</button>`).join('')}${SPECS.map(s => `<button class="tr-chip" data-s="${h(s)}">${h(s)}</button>`).join('')}</div>
@@ -277,8 +281,8 @@ export async function renderTrainer(id) {
     <div class="tr-stats"><div><b>${t.experience_years ?? '–'}</b><span>rokov praxe</span></div><div><b>${t.reviews ? '★ ' + t.avg.toFixed(1).replace('.', ',') : 'Nový'}</b><span>hodnotenie</span></div><div><b>${t.reviews}</b><span>recenzií</span></div></div>
     ${t.bio ? `<div class="card tr-sec"><h3>O mne</h3><p style="margin:0;line-height:1.5;white-space:pre-wrap">${h(t.bio)}</p></div>` : ''}
     ${(t.specialties || []).length ? `<div class="card tr-sec"><h3>Špecializácia</h3><div class="tr-meta" style="margin:0">${t.specialties.map(s => `<span class="tr-tag b">${h(s)}</span>`).join('')}</div></div>` : ''}
-    ${(t.credentials || []).length ? `<div class="card tr-sec"><h3>Vzdelanie a certifikáty</h3>${t.credentials.map(c => `<div class="tr-li"><span>${h(c.title)}${c.place ? `<br><small class="muted">${h(c.place)}</small>` : ''}</span><i>${h(c.year || '')}</i></div>`).join('')}</div>` : ''}
-    ${(t.achievements || []).length ? `<div class="card tr-sec"><h3>Súťaže a úspechy</h3>${t.achievements.map(c => `<div class="tr-li"><span>🏆 ${h(c.title)}</span><i>${h(c.year || '')}</i></div>`).join('')}</div>` : ''}
+    ${(t.credentials || []).length ? `<div class="card tr-sec"><h3>Vzdelanie a certifikáty</h3>${t.credentials.map(c => `<div class="tr-li"><span>${h(c.title)}${c.proof ? ' ' + CHECK : ''}${c.place ? `<br><small class="muted">${h(c.place)}</small>` : ''}</span><i>${h(c.year || '')}</i></div>`).join('')}</div>` : ''}
+    ${(t.achievements || []).length ? `<div class="card tr-sec"><h3>Súťaže a úspechy</h3>${t.achievements.map(c => `<div class="tr-li"><span>🏆 ${h(c.title)}${c.proof ? ' ' + CHECK : ''}</span><i>${h(c.year || '')}</i></div>`).join('')}</div>` : ''}
     <div class="card tr-sec"><h3>Cena</h3>${price(t).replace('class="tr-price"', 'style="margin:0"')}<p class="tr-note" style="margin-top:6px">Jazyky: ${(t.languages || ['sk']).map(l => ({ sk: 'slovenčina', cs: 'čeština', en: 'angličtina', hu: 'maďarčina', de: 'nemčina' }[l] || l)).join(', ')}</p></div>
     <div class="card tr-sec"><h3>Hodnotenia klientov</h3>${revs.length ? revs.slice(0, 10).map(r => `<div class="tr-li" style="display:block"><b>${'★'.repeat(r.rating)}<span style="opacity:.25">${'★'.repeat(5 - r.rating)}</span></b> <small class="muted">${h(r.client_name || 'Klient')}</small>${r.body ? `<div style="margin-top:3px;line-height:1.45">${h(r.body)}</div>` : ''}</div>`).join('') : '<p class="tr-note" style="margin:0">Zatiaľ bez hodnotení. Hodnotiť môžu len klienti po aspoň 7 dňoch spolupráce.</p>'}${canReview ? `<button class="btn sm" id="trRate" style="margin-top:10px">${myRev ? 'Upraviť moje hodnotenie' : 'Ohodnotiť trénera'}</button>` : ''}</div>
     ${own ? '' : '<p class="tr-note" style="text-align:center"><a href="#" id="trReport">Nahlásiť profil</a></p>'}
@@ -323,7 +327,7 @@ export async function renderTrainer(id) {
 }
 
 // ---------- vlastný profil trénera ----------
-const rowHtml = (kind, r = {}) => `<div class="tr-two" data-row="${kind}" style="margin-bottom:8px;grid-template-columns:1fr 84px 38px"><input class="input" data-f="title" placeholder="${kind === 'cred' ? 'Napr. Kondičný tréner, FTVŠ UK' : 'Napr. 1. miesto, Slovenský pohár'}" value="${h(r.title || '')}"><input class="input" data-f="year" inputmode="numeric" placeholder="Rok" value="${h(r.year || '')}"><button type="button" class="btn sm ghost" data-del aria-label="Odstrániť">×</button></div>`;
+const rowHtml = (kind, r = {}) => `<div data-row="${kind}" data-proof="${h(r.proof || '')}" style="margin-bottom:12px"><div class="tr-two" style="grid-template-columns:1fr 84px 38px"><input class="input" data-f="title" placeholder="${kind === 'cred' ? 'Napr. Kondičný tréner, FTVŠ UK' : 'Napr. 1. miesto, Slovenský pohár'}" value="${h(r.title || '')}"><input class="input" data-f="year" inputmode="numeric" placeholder="Rok" value="${h(r.year || '')}"><button type="button" class="btn sm ghost" data-del aria-label="Odstrániť">×</button></div><label class="tr-pf${r.proof ? ' ok' : ''}" data-pf>${r.proof ? '✓ Doklad nahraný (vidí len správca)' : '+ Fotka dokladu, diplomu alebo výsledkov (vidí len správca)'}<input type="file" accept="image/*" data-proofin hidden></label></div>`;
 export async function renderTrainerEdit() {
   const cur0 = await api().mine(me().id);
   const appRow = cur0 && !cur0.approved ? await api().app(me().id).catch(() => null) : null;
@@ -342,22 +346,25 @@ export async function renderTrainerEdit() {
       <label><span>Viac o tebe</span><small class="muted" style="display:block;margin:-2px 0 6px">Zobrazí sa na tvojom profile. Napíš, ako trénuješ a s kým pracuješ najradšej.</small><textarea class="input" id="f_bio" rows="5" maxlength="1200" placeholder="Ako pracuješ, s kým pracuješ najradšej, čo klient dostane.">${h(t.bio || '')}</textarea></label>
     </div>
     <div class="card mt"><h3 style="margin-top:0">Špecializácia</h3><div class="tr-meta" id="f_specs" style="margin:0">${SPECS.map(s => `<button type="button" class="tr-chip${(t.specialties || []).includes(s) ? ' on' : ''}" data-s="${h(s)}">${h(s)}</button>`).join('')}</div></div>
-    <div class="card mt"><h3 style="margin-top:0">Vzdelanie a certifikáty</h3><div id="f_cred">${(t.credentials || []).map(r => rowHtml('cred', r)).join('')}</div><button type="button" class="btn sm ghost" id="addCred">+ Pridať</button></div>
+    <div class="card mt"><h3 style="margin-top:0">Vzdelanie a certifikáty</h3><p class="tr-note" style="margin:0 0 10px">Ku každému riadku môžeš pridať fotku dokladu. Klienti ju neuvidia, len my, a riadok dostane značku overenia.</p><div id="f_cred">${(t.credentials || []).map(r => rowHtml('cred', r)).join('')}</div><button type="button" class="btn sm ghost" id="addCred">+ Pridať</button></div>
     <div class="card mt"><h3 style="margin-top:0">Súťaže a úspechy</h3><div id="f_ach">${(t.achievements || []).map(r => rowHtml('ach', r)).join('')}</div><button type="button" class="btn sm ghost" id="addAch">+ Pridať</button></div>
     <div class="card mt">
       <div class="tr-two"><label><span>Cena od (€ / mesiac)</span><input class="input" id="f_price" inputmode="decimal" value="${t.price_from ?? ''}"></label><label><span>Poznámka k cene</span><input class="input" id="f_pn" maxlength="120" placeholder="Napr. plán + týždenné check-iny" value="${h(t.price_note || '')}"></label></div>
       <div class="tr-row"><button type="button" class="tr-chip${t.online ? ' on' : ''}" id="f_online">Online</button><button type="button" class="tr-chip${t.in_person ? ' on' : ''}" id="f_inp">Aj osobne</button></div>
     </div>
-    ${cur?.approved ? '' : `<div class="card mt"><h3 style="margin-top:0">Overenie</h3><p class="tr-note" style="margin:0 0 10px">Aby v katalógu neboli náhodní ľudia, každý nový tréner prejde kontrolou. Certifikát nie je povinný. Stačí niečo, čo ukazuje, že trénuješ naozaj: fotka certifikátu alebo výsledkov súťaže, odkaz na Instagram alebo web s tvojou prácou.</p>
-      <label><span>Instagram alebo web</span><input class="input" id="f_soc" maxlength="200" placeholder="napr. instagram.com/tvojemeno" value="${h(t.social_url || '')}"></label>
+    ${cur?.approved ? '' : `<div class="card mt"><h3 style="margin-top:0">Overenie</h3><p class="tr-note" style="margin:0 0 10px">Aby v katalógu neboli náhodní ľudia, každý nový tréner prejde kontrolou. Certifikát nie je povinný. Stačí jedno z dvoch: odkaz na tvoj Instagram alebo web, alebo fotka dokladu pri certifikáte či úspechu vyššie.</p>
+      <label><span>Instagram alebo web</span><input class="input" id="f_soc" maxlength="200" placeholder="@tvojemeno alebo instagram.com/tvojemeno" value="${h(t.social_url || '')}"></label>
       <label><span>Ako a koho trénuješ? (vidíme len my)</span><textarea class="input" id="f_app" rows="4" maxlength="800" placeholder="Koľko rokov, s akými klientmi, aké výsledky si dosiahol.">${h(t.application_note || '')}</textarea></label>
-      <div class="tr-row" id="f_proofs">${(t.proof_paths || []).map(() => '<span class="tr-tag g">Dôkaz nahraný</span>').join('')}</div>
-      <label class="btn sm ghost" style="cursor:pointer;margin-top:8px">Pridať fotku dôkazu<input type="file" id="trProof" accept="image/*" hidden></label><p class="tr-note">Dôkazy vidí len správca appky, nikdy klienti.</p></div>`}
+</div>`}
     ${cur ? `<div class="tr-code mt"><div><small class="muted">Kód pre tvojich klientov</small><br><b>${h(cur.invite_code)}</b></div><button type="button" class="btn sm" id="trCopy">Kopírovať</button></div><p class="tr-note">Klient ho zadá v Profile v sekcii Tréner. Klienti z tvojej siete sú pre teba zadarmo.</p>` : ''}
     <div class="tr-row mt"><button class="btn primary" id="trSave" style="flex:1">${cur?.status === 'published' ? 'Uložiť zmeny' : cur?.approved ? 'Zverejniť profil' : cur?.status === 'pending' ? 'Uložiť a poslať znova' : 'Odoslať na schválenie'}</button>${cur?.status === 'published' ? '<button class="btn" id="trHide">Skryť z katalógu</button>' : ''}</div>
   </div>${nav('#/profil')}`;
-  const root = $app(); let photo = t.photo_url || null, blob = null; const proofs = [...(t.proof_paths || [])];
-  root.querySelector('#trProof')?.addEventListener('change', async e => { const f = e.target.files?.[0]; if (!f) return; try { const b = await shrink(f, 1400); proofs.push(await api().uploadProof(me().id, b)); clearErr('proof'); root.querySelector('#f_proofs').insertAdjacentHTML('beforeend', '<span class="tr-tag g">Dôkaz nahraný</span>'); } catch (err) { toast(err.message || 'Fotku sa nepodarilo nahrať', true); } e.target.value = ''; });
+  const root = $app(); let photo = t.photo_url || null, blob = null; 
+  const legacy = (t.proof_paths || []).filter(p => !(t.credentials || []).concat(t.achievements || []).some(r => r.proof === p));
+  const onProof = async e => { const inp = e.target.closest('[data-proofin]'); if (!inp) return; const f = inp.files?.[0]; if (!f) return; const row = inp.closest('[data-row]'), lab = inp.closest('[data-pf]'); lab.firstChild.textContent = 'Nahrávam…';
+    try { const b = await shrink(f, 1400); row.dataset.proof = await api().uploadProof(me().id, b); lab.classList.add('ok'); lab.firstChild.textContent = '✓ Doklad nahraný (vidí len správca)'; clearErr('proof'); }
+    catch (err) { lab.firstChild.textContent = '+ Fotka dokladu, diplomu alebo výsledkov (vidí len správca)'; toast(err.message || 'Fotku sa nepodarilo nahrať', true); } inp.value = ''; };
+  root.querySelector('#f_cred').addEventListener('change', onProof); root.querySelector('#f_ach').addEventListener('change', onProof);
   const bind = c => c.addEventListener('click', e => { if (e.target.closest('[data-del]')) e.target.closest('[data-row]').remove(); });
   bind(root.querySelector('#f_cred')); bind(root.querySelector('#f_ach'));
   root.querySelector('#addCred').onclick = () => root.querySelector('#f_cred').insertAdjacentHTML('beforeend', rowHtml('cred'));
@@ -385,17 +392,21 @@ export async function renderTrainerEdit() {
     } catch { fail('Fotku sa nepodarilo načítať. Skús inú.'); }
     finally { lt.textContent = oldTxt.includes('Nahrať') ? 'Zmeniť fotku' : oldTxt; lab.style.pointerEvents = ''; lab.style.opacity = ''; if (blob || photo) lt.textContent = 'Zmeniť fotku'; }
   };
-  const rows = id => [...root.querySelectorAll(`#${id} [data-row]`)].map(r => ({ title: r.querySelector('[data-f=title]').value.trim(), year: r.querySelector('[data-f=year]').value.trim() })).filter(x => x.title);
+  const rows = id => [...root.querySelectorAll(`#${id} [data-row]`)].map(r => ({ title: r.querySelector('[data-f=title]').value.trim(), year: r.querySelector('[data-f=year]').value.trim(), ...(r.dataset.proof ? { proof: r.dataset.proof } : {}) })).filter(x => x.title);
   const clearErr = g => root.querySelectorAll('.tr-bad').forEach(el => { if (g && el.dataset.g !== g) return; el.classList.remove('tr-bad', 'tr-shake'); const n = el.nextElementSibling; if (n?.classList.contains('tr-ferr')) n.remove(); });
   const mark = (el, msg, g) => { el.classList.add('tr-bad', 'tr-shake'); if (g) el.dataset.g = g; if (msg) { const m = document.createElement('div'); m.className = 'tr-ferr'; m.textContent = msg; el.insertAdjacentElement('afterend', m); } };
   root.addEventListener('input', e => { const el = e.target.closest?.('.tr-bad'); if (!el) return; if (el.dataset.g) clearErr(el.dataset.g); else { el.classList.remove('tr-bad', 'tr-shake'); const n = el.nextElementSibling; if (n?.classList.contains('tr-ferr')) n.remove(); } });
   root.addEventListener('click', e => { const el = e.target.closest?.('.card.tr-bad'); if (el) { el.classList.remove('tr-bad', 'tr-shake'); const n = el.nextElementSibling; if (n?.classList.contains('tr-ferr')) n.remove(); } });
+  const socRaw = () => root.querySelector('#f_soc')?.value.trim() || '';
+  const rowProofs = () => [...root.querySelectorAll('#f_cred [data-row],#f_ach [data-row]')].filter(r => r.querySelector('[data-f=title]').value.trim()).map(r => r.dataset.proof).filter(Boolean);
   const save = async status => {
     clearErr();
     const fn = root.querySelector('#f_fn').value.trim(), ln = root.querySelector('#f_ln').value.trim(), name = `${fn} ${ln}`.trim();
     const specs = [...root.querySelectorAll('#f_specs .tr-chip.on')].map(x => x.dataset.s);
     const bad = [];
     const need = status === 'published';
+    const soc = normSocial(socRaw());
+    if (!cur?.approved && soc.err) bad.push([root.querySelector('#f_soc'), soc.err, 'proof']);
     if (!photo && !blob && need) bad.push([root.querySelector('#trPh').closest('.card'), 'Nahraj svoju fotku. Klienti si vyberajú podľa tváre.']);
     if (fn.length < 2) bad.push([root.querySelector('#f_fn'), 'Dopíš meno.']);
     if (ln.length < 2) bad.push([root.querySelector('#f_ln'), 'Dopíš priezvisko. Klienti dôverujú tým, čo sa predstavia celým menom.']);
@@ -403,10 +414,7 @@ export async function renderTrainerEdit() {
     if (need && root.querySelector('#f_bio').value.trim().length < 40) bad.push([root.querySelector('#f_bio'), 'Napíš o sebe aspoň 40 znakov.']);
     if (need && !specs.length) bad.push([root.querySelector('#f_specs').closest('.card'), 'Vyber aspoň jednu špecializáciu.']);
     if (need && !cur?.approved) {
-      if (!proofs.length && !root.querySelector('#f_soc')?.value.trim()) {
-        bad.push([root.querySelector('#f_soc'), 'Pridaj odkaz na Instagram alebo web, alebo nahraj fotku dôkazu.', 'proof']);
-        bad.push([root.querySelector('#trProof').closest('label'), null, 'proof']);
-      }
+      if (!rowProofs().length && !socRaw()) bad.push([root.querySelector('#f_soc'), 'Pridaj odkaz na Instagram alebo web, alebo fotku dokladu pri certifikáte či úspechu.', 'proof']);
       if ((root.querySelector('#f_app')?.value.trim().length || 0) < 30) bad.push([root.querySelector('#f_app'), 'Napíš aspoň 30 znakov o tom, ako a koho trénuješ.']);
     }
     if (bad.length) {
@@ -420,12 +428,12 @@ export async function renderTrainerEdit() {
     try {
       if (blob) photo = await api().upload(me().id, blob);
       const num = v => { const n = Number(String(v).replace(',', '.')); return v !== '' && isFinite(n) ? n : null; };
-      if (!cur?.approved) await api().saveApp(me().id, root.querySelector('#f_app')?.value.trim() || null, proofs);
+      if (!cur?.approved) await api().saveApp(me().id, root.querySelector('#f_app')?.value.trim() || null, [...new Set([...legacy, ...rowProofs()])]);
       const saved = await api().save({ user_id: me().id, display_name: name, headline: root.querySelector('#f_hl').value.trim() || null, bio: root.querySelector('#f_bio').value.trim() || null,
         city: root.querySelector('#f_city').value.trim() || null, photo_url: photo, specialties: specs, credentials: rows('f_cred'), achievements: rows('f_ach'),
         experience_years: num(root.querySelector('#f_exp').value), online: root.querySelector('#f_online').classList.contains('on'), in_person: root.querySelector('#f_inp').classList.contains('on'),
         price_from: num(root.querySelector('#f_price').value), price_note: root.querySelector('#f_pn').value.trim() || null, status,
-        ...(cur?.approved ? {} : { social_url: root.querySelector('#f_soc')?.value.trim() || null }) });
+        ...(cur?.approved ? {} : { social_url: soc.url || null }) });
       ctx.state.trainer = saved; try { localStorage.setItem('fw_tr_' + me().id, JSON.stringify(saved)); } catch (_) { /* nič */ }
       toast(saved.status === 'pending' ? 'Žiadosť odoslaná. Ozveme sa ti.' : status === 'published' ? 'Profil je v katalógu' : 'Uložené'); location.hash = saved.status === 'published' ? `#/trener/${me().id}` : '#/profil';
     } catch (err) { toast(err.message || 'Nepodarilo sa uložiť', true); btn.disabled = false; }
@@ -441,9 +449,9 @@ export async function renderTrainerApps() {
     ${items.length ? items.map(({ t, urls }) => `<div class="card tr-sec" data-u="${t.user_id}"><div class="tr-hero" style="margin-bottom:8px">${avatar(t)}<div class="tr-body"><div class="tr-name">${h(t.display_name)}</div><div class="tr-hl">${h(t.headline || '')}</div><div class="tr-meta">${(t.specialties || []).map(x => `<span class="tr-tag b">${h(x)}</span>`).join('')}</div></div></div>
       <p style="margin:0 0 8px;line-height:1.45;white-space:pre-wrap">${h(t.bio || '')}</p>
       <p class="tr-note"><b>Prax:</b> ${h(t.application_note || '-')}</p>
-      ${t.social_url ? `<p class="tr-note"><b>Odkaz:</b> ${h(t.social_url)}</p>` : ''}
-      ${(t.credentials || []).length ? `<p class="tr-note"><b>Certifikáty:</b> ${t.credentials.map(c => h(c.title)).join(', ')}</p>` : ''}
-      ${(t.achievements || []).length ? `<p class="tr-note"><b>Úspechy:</b> ${t.achievements.map(c => h(c.title)).join(', ')}</p>` : ''}
+      ${t.social_url ? `<p class="tr-note"><b>Odkaz:</b> <a href="${h(t.social_url)}" target="_blank" rel="noopener">${h(t.social_url)}</a></p>` : ''}
+      ${(t.credentials || []).length ? `<p class="tr-note"><b>Certifikáty:</b> ${t.credentials.map(c => h(c.title) + (c.proof ? ' 📷' : '')).join(', ')}</p>` : ''}
+      ${(t.achievements || []).length ? `<p class="tr-note"><b>Úspechy:</b> ${t.achievements.map(c => h(c.title) + (c.proof ? ' 📷' : '')).join(', ')}</p>` : ''}
       <div class="tr-row">${urls.map(u => `<a href="${h(u)}" target="_blank" rel="noopener"><img src="${h(u)}" style="width:92px;height:92px;object-fit:cover;border-radius:14px" alt="Dôkaz"></a>`).join('')}</div>
       <div class="tr-row mt"><button class="btn primary" data-ok style="flex:1">Schváliť</button><button class="btn" data-no>Zamietnuť</button></div></div>`).join('') : '<div class="tr-empty"><b>Žiadne žiadosti</b>Keď sa niekto prihlási za trénera, uvidíš ho tu.</div>'}</div>${nav('#/profil')}`;
   const rootEl = $app(); if (rootEl._trApps) rootEl.removeEventListener('click', rootEl._trApps);
@@ -463,6 +471,18 @@ export async function renderTrainerApps() {
   rootEl.addEventListener('click', rootEl._trApps);
 }
 // lokálna kontrola: čierna/prázdna/jednofarebná alebo príliš malá fotka
+// Instagram (@meno, instagram.com/meno) alebo web; náhodné písmená odmietne
+function normSocial(v) {
+  v = (v || '').trim(); if (!v) return { url: '' };
+  const bad = { err: 'Zadaj @meno alebo odkaz, napr. instagram.com/tvojemeno alebo tvoj web.' };
+  if (/^@[A-Za-z0-9._]{2,30}$/.test(v)) return { url: 'https://instagram.com/' + v.slice(1) };
+  try {
+    const u = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v);
+    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(u.hostname)) return bad;
+    if (/(^|\.)instagram\.com$/i.test(u.hostname) && !/^\/[A-Za-z0-9._]{2,30}\/?/.test(u.pathname)) return { err: 'Doplň svoje meno, napr. instagram.com/tvojemeno.' };
+    return { url: u.href.slice(0, 200) };
+  } catch { return bad; }
+}
 async function photoWeak(blob) {
   const url = URL.createObjectURL(blob);
   try {
