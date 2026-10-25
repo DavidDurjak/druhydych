@@ -74,11 +74,17 @@ const CSS = `
 .tr-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .tr-tag{padding:4px 9px;border-radius:99px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,.07);color:var(--text)}
 .tr-tag.g{background:rgba(124,255,178,.14);color:#9DFFC8}
-.tr-join{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:14px;border-radius:20px;background:linear-gradient(135deg,rgba(124,255,178,.16),rgba(91,184,255,.10));border:1px solid rgba(124,255,178,.32);text-decoration:none;color:var(--text)}
-.tr-join:active{transform:scale(.99)}
-.tr-join .tx{flex:1;min-width:0}.tr-join b{display:block;font-size:15.5px;letter-spacing:-.01em}.tr-join small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
-.tr-join .go{flex:none;padding:9px 14px;border-radius:99px;background:linear-gradient(135deg,#9DFFC8,#3FE0A8);color:#06140C;font-weight:800;font-size:13px}
-.tr-join.sec{background:rgba(255,255,255,.04);border-color:var(--line);margin:12px 0 0}
+.tr-join,.tr-join *{text-transform:none!important;letter-spacing:normal!important;font-family:inherit}
+.tr-join{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--text)}
+.tr-join .tx{flex:1;min-width:0}.tr-join b{display:block;font-size:15px;font-weight:800;line-height:1.25;color:var(--text)}
+.tr-join small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px;font-weight:500}
+.tr-join .go{flex:none;white-space:nowrap;font-weight:800;font-size:13.5px;color:#9DFFC8}
+.tr-join.card{padding:14px 16px;margin-top:6px;border-radius:20px;background:rgba(255,255,255,.035);border:1px solid var(--line)}
+.tr-join.row{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.09)}
+.tr-join:active{opacity:.7}
+.tr-perks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 14px}
+.tr-perks div{padding:10px 8px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);text-align:center;font-size:12px;line-height:1.3;color:var(--muted)}
+.tr-perks b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
 .tag-y-placeholder{}
 .tr-tag.y{background:rgba(255,210,122,.16);color:#FFD27A}
 .tr-tag.b{background:rgba(91,184,255,.14);color:#8CCBFF}
@@ -148,12 +154,12 @@ function card(t) {
 }
 
 // vstup pre trénerov: viditeľný v katalógu aj v Profile
-function joinBanner(sec) {
-  const own = ctx.state.trainer;
+function joinBanner(kind) {
+  const own = ctx.state.trainer; const cl = `tr-join ${kind || 'card'}`;
   if (own?.approved) return '';
-  if (own?.status === 'pending') return `<a class="tr-join${sec ? ' sec' : ''}" href="#/trener-profil"><div class="tx"><b>Tvoja žiadosť sa kontroluje</b><small>Ozveme sa ti tu v appke.</small></div><span class="go">Otvoriť</span></a>`;
-  if (own?.status === 'rejected') return `<a class="tr-join${sec ? ' sec' : ''}" href="#/trener-profil"><div class="tx"><b>Žiadosť sme zamietli</b><small>Pozri dôvod a pošli ju znova.</small></div><span class="go">Otvoriť</span></a>`;
-  return `<a class="tr-join${sec ? ' sec' : ''}" href="#/trener-profil"><div class="tx"><b>Si tréner?</b><small>Získaj klientov online. Pošli žiadosť a po schválení si ťa klienti nájdu v katalógu.</small></div><span class="go">Stať sa trénerom</span></a>`;
+  if (own?.status === 'pending') return `<a class="${cl}" href="#/trener-profil"><div class="tx"><b>Tvoja žiadosť sa kontroluje</b><small>Ozveme sa ti tu v appke.</small></div><span class="go">Otvoriť ›</span></a>`;
+  if (own?.status === 'rejected') return `<a class="${cl}" href="#/trener-profil"><div class="tx"><b>Žiadosť sme zamietli</b><small>Pozri dôvod a pošli ju znova.</small></div><span class="go">Otvoriť ›</span></a>`;
+  return `<a class="${cl}" href="#/trener-profil"><div class="tx"><b>Si tréner?</b><small>Získaj klientov online cez GainTrain.</small></div><span class="go">Stať sa trénerom ›</span></a>`;
 }
 
 // ---------- katalóg ----------
@@ -168,15 +174,15 @@ export async function renderCatalog() {
       && (!q || `${t.display_name} ${t.headline || ''} ${t.city || ''} ${(t.specialties || []).join(' ')}`.toLowerCase().includes(q))
       && (!spec || (t.specialties || []).includes(spec)) && (!online || t.online));
     $app().querySelector('#trList').innerHTML = f.length ? f.map(card).join('')
-      : `<div class="tr-empty"><b>${list.length ? 'Nič sme nenašli' : 'Tréneri sa práve pridávajú'}</b>${list.length ? 'Skús zmeniť filter alebo hľadaný text.' : 'Čoskoro tu uvidíš prvých trénerov. Ak si tréner, vytvor si profil v Profile.'}</div>`;
+      : `<div class="tr-empty"><b>${list.length ? 'Nič sme nenašli' : 'Tréneri sa práve pridávajú'}</b>${list.length ? 'Skús zmeniť filter alebo hľadaný text.' : 'Prvých overených trénerov pridávame práve teraz. Pozri sa o chvíľu znova.'}</div>`;
   };
   $app().innerHTML = `<div class="screen">
     <div class="tr-top"><h1>Tréneri</h1></div>
     <p class="tr-sub">${mine ? 'Už máš trénera. Tu nájdeš ďalších.' : 'Vyber si trénera podľa cieľa. Koučovať ťa môže online odkiaľkoľvek.'}</p>
-    ${joinBanner()}
+    <div class="tr-perks"><div><b>Plán na mieru</b>tréning aj jedlo</div><div><b>Check-iny</b>každý týždeň</div><div><b>Priamy chat</b>s tvojím trénerom</div></div>
     <div class="tr-search"><input class="input" id="trQ" placeholder="Meno, mesto alebo cieľ" autocomplete="off"></div>
     <div class="tr-chips" id="trChips"><button class="tr-chip" data-o="1">Online</button>${SPECS.map(s => `<button class="tr-chip" data-s="${h(s)}">${h(s)}</button>`).join('')}</div>
-    <div id="trList"></div></div>${nav('#/treneri')}`;
+    <div id="trList"></div>${joinBanner('card')}</div>${nav('#/treneri')}`;
   draw();
   const root = $app();
   root.querySelector('#trQ').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); draw(); });
@@ -419,11 +425,11 @@ async function profileCard() {
     : `<h3 style="margin:0 0 4px">Tréner</h3><p class="tr-note" style="margin:0 0 10px">${pend ? 'Čaká sa na odpoveď trénera.' : 'Vyber si trénera, ktorý ťa povedie online, alebo zadaj kód od svojho trénera.'}</p>
        <div class="tr-row"><a class="btn sm primary" href="#/treneri">Nájsť trénera</a><button class="btn sm ghost" id="trCode">Mám kód</button></div>`;
   const ownPart = own?.approved ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm" href="#/kouc">Moji klienti</a><a class="btn sm ghost" href="#/trener-profil">Môj trénerský profil</a></div>`
-    : joinBanner(true);
+    : '';
   const nApps = ctx.state.profile?.role === 'coach' ? (await api().pending().catch(() => [])).length : 0;
   const st = own?.status === 'pending' ? '<p class="tr-note" style="margin-top:8px">Tvoja žiadosť o trénerský profil sa kontroluje.</p>' : own?.status === 'rejected' ? '<p class="tr-note" style="margin-top:8px">Tvoju žiadosť sme zamietli. Otvor profil a pozri dôvod.</p>' : '';
   const adm = ctx.state.profile?.role === 'coach' ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm ${nApps ? 'primary' : 'ghost'}" href="#/treneri-ziadosti">Žiadosti trénerov${nApps ? ` (${nApps})` : ''}</a></div>` : '';
-  return `<div class="card tr-me" id="trCard">${clientPart}${ownPart}${adm}</div>`;
+  return `<div class="card tr-me" id="trCard">${clientPart}${ownPart}${own?.approved ? '' : joinBanner('row')}${adm}</div>`;
 }
 async function mountProfile() {
   if ((location.hash || '#/').split('?')[0] !== '#/profil') return;
