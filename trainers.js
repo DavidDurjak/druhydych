@@ -312,7 +312,7 @@ export async function renderTrainerEdit() {
         experience_years: num(root.querySelector('#f_exp').value), online: root.querySelector('#f_online').classList.contains('on'), in_person: root.querySelector('#f_inp').classList.contains('on'),
         price_from: num(root.querySelector('#f_price').value), price_note: root.querySelector('#f_pn').value.trim() || null, status,
         ...(cur?.approved ? {} : { social_url: root.querySelector('#f_soc')?.value.trim() || null }) });
-      ctx.state.trainer = saved;
+      ctx.state.trainer = saved; try { localStorage.setItem('fw_tr_' + me().id, JSON.stringify(saved)); } catch (_) { /* nič */ }
       toast(saved.status === 'pending' ? 'Žiadosť odoslaná. Ozveme sa ti.' : status === 'published' ? 'Profil je v katalógu' : 'Uložené'); location.hash = saved.status === 'published' ? `#/trener/${me().id}` : '#/profil';
     } catch (err) { toast(err.message || 'Nepodarilo sa uložiť', true); btn.disabled = false; }
   };

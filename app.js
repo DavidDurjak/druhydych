@@ -169,7 +169,7 @@ function saveSnap(my) {
   clearTimeout(snapTimer);
   snapTimer = setTimeout(() => {
     if (my !== routeSeq || curPath() !== '#/' || state.date !== calc.today() || document.querySelector('.sheet-bg')) return;
-    try { localStorage.setItem('fw_snap', JSON.stringify({ d: calc.today(), u: state.profile?.id, h: $app.innerHTML })); } catch (_) { /* plné úložisko */ }
+    try { localStorage.setItem('fw_snap', JSON.stringify({ v: 2, d: calc.today(), u: state.profile?.id, h: $app.innerHTML })); } catch (_) { /* plné úložisko */ }
   }, 1800);
 }
 async function route() {
@@ -184,7 +184,17 @@ async function routeInner(my) {
   if (path !== state.curPath) { state.prevPath = state.curPath; state.curPath = path; }
   if (!state.session) return renderAuth();
   if (!state.profile) { const p = await loadProfile(state.session.user.id); if (my !== routeSeq) return; state.profile = p; U.adopt(p); }
-  if (state.trainer === undefined && state.profile) { try { state.trainer = await tr.loadMine(state.profile.id); } catch (_) { state.trainer = null; } if (my !== routeSeq) return; }
+  if (state.trainer === undefined && state.profile) {
+    // trénerský stav sa pamätá v zariadení: spodná lišta je správna hneď, bez čakania na server; čerstvý stav sa dotiahne na pozadí
+    const key = 'fw_tr_' + state.profile.id; let cached;
+    try { const c = localStorage.getItem(key); cached = c === null ? undefined : JSON.parse(c); } catch (_) { cached = undefined; }
+    const pid = state.profile.id;
+    const fetchTr = async () => { try { const f = await tr.loadMine(pid); try { localStorage.setItem(key, JSON.stringify(f)); } catch (_) { /* nič */ } return f; } catch (_) { return cached === undefined ? null : cached; } };
+    if (cached !== undefined) {
+      state.trainer = cached;
+      fetchTr().then(f => { if (state.profile?.id !== pid) return; const changed = !!f !== !!state.trainer || f?.status !== state.trainer?.status; state.trainer = f; if (changed) window.dispatchEvent(new HashChangeEvent('hashchange')); });
+    } else { state.trainer = await fetchTr(); if (my !== routeSeq) return; }
+  }
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
     '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals,

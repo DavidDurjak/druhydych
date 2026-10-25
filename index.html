@@ -182,7 +182,7 @@
         var h = location.hash || '#/';
         if (h !== '#/' || !localStorage.getItem('sb-uxzwqyjbzkcveoxsdqdv-auth-token')) return;
         var s = JSON.parse(localStorage.getItem('fw_snap') || 'null');
-        if (!s || !s.h || s.d !== new Date().toLocaleDateString('sv-SE')) return;
+        if (!s || !s.h || s.v !== 2 || s.d !== new Date().toLocaleDateString('sv-SE')) return;
         document.getElementById('app').innerHTML = s.h;
         document.documentElement.classList.add('fw-snap', 'fw-loading');
       } catch (e) { /* bez snímky */ }
