@@ -144,6 +144,19 @@ const CSS = `
 .tr-call{position:fixed;inset:0;z-index:99999;background:#06090F;display:flex;flex-direction:column}
 .tr-call-top{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 10px}
 .tr-call iframe{flex:1;border:0;width:100%;background:#000}
+.tr-rev{overflow:hidden}
+.tr-rev *{overflow-wrap:anywhere;word-break:break-word;min-width:0}
+.tr-checks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tr-kv{padding:10px 0;border-top:1px solid rgba(255,255,255,.07)}
+.tr-kv>span{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.tr-kv>div{font-size:14.5px;line-height:1.45}
+.tr-kv em{color:var(--muted);font-style:normal}
+.tr-txt{white-space:pre-wrap}
+.tr-lnk{color:#9DFFC8;text-decoration:underline;display:block}
+.tr-arow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 0}
+.tr-arow small{display:block;color:var(--muted)}
+.tr-arow em{display:block;font-size:12px;color:#FFD27A}
+.tr-pthumb{width:72px;height:72px;object-fit:cover;border-radius:12px;flex:none;display:block}
 .tr-li{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid rgba(255,255,255,.07);font-size:14px}
 .tr-li:first-of-type{border-top:0}
 .tr-li i{font-style:normal;color:var(--muted);font-size:12.5px;margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -448,16 +461,35 @@ export async function renderTrainerEdit() {
 export async function renderTrainerApps() {
   $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>Žiadosti trénerov</h1><a class="btn sm ghost" href="#/profil">←</a></div><div class="spinner"></div></div>${nav('#/profil')}`;
   const list = await api().pending().catch(() => []);
-  const items = await Promise.all(list.map(async t => ({ t, urls: await api().signed(t.proof_paths) })));
+  const items = await Promise.all(list.map(async t => {
+    const rowPaths = [...(t.credentials || []), ...(t.achievements || [])].map(r => r.proof).filter(Boolean);
+    const all = [...new Set([...(t.proof_paths || []), ...rowPaths])];
+    const url = {}; await Promise.all(all.map(async p => { url[p] = (await api().signed([p]).catch(() => []))[0] || ''; }));
+    return { t, url, loose: (t.proof_paths || []).filter(p => !rowPaths.includes(p)) };
+  }));
+  const kv = (k, v) => v ? `<div class="tr-kv"><span>${k}</span><div>${v}</div></div>` : '';
+  const ph = u => u ? `<a href="${h(u)}" target="_blank" rel="noopener"><img class="tr-pthumb" src="${h(u)}" alt="Doklad"></a>` : '';
+  const rowsHtml = (arr, url, ic) => (arr || []).map(c => `<div class="tr-arow"><div><b>${ic}${h(c.title)}</b>${c.year ? `<small>${h(c.year)}</small>` : ''}${c.proof ? '' : '<em>bez dokladu</em>'}</div>${c.proof ? ph(url[c.proof]) : ''}</div>`).join('');
+  const ago = d => { if (!d || isNaN(new Date(d))) return 'nedávno'; const m = Math.max(0, Math.round((Date.now() - new Date(d).getTime()) / 60000)); return m < 60 ? `pred ${m} min` : m < 1440 ? `pred ${Math.round(m / 60)} h` : `pred ${Math.round(m / 1440)} d`; };
+  const lang = { sk: 'slovenčina', cs: 'čeština', en: 'angličtina', de: 'nemčina', hu: 'maďarčina', pl: 'poľština', uk: 'ukrajinčina' };
   $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>Žiadosti trénerov</h1><a class="btn sm ghost" href="#/profil">←</a></div>
-    ${items.length ? items.map(({ t, urls }) => `<div class="card tr-sec" data-u="${t.user_id}"><div class="tr-hero" style="margin-bottom:8px">${avatar(t)}<div class="tr-body"><div class="tr-name">${h(t.display_name)}</div><div class="tr-hl">${h(t.headline || '')}</div><div class="tr-meta">${(t.specialties || []).map(x => `<span class="tr-tag b">${h(x)}</span>`).join('')}</div></div></div>
-      <p style="margin:0 0 8px;line-height:1.45;white-space:pre-wrap">${h(t.bio || '')}</p>
-      <p class="tr-note"><b>Prax:</b> ${h(t.application_note || '-')}</p>
-      ${t.social_url ? `<p class="tr-note"><b>Odkaz:</b> <a href="${h(t.social_url)}" target="_blank" rel="noopener">${h(t.social_url)}</a></p>` : ''}
-      ${(t.credentials || []).length ? `<p class="tr-note"><b>Certifikáty:</b> ${t.credentials.map(c => h(c.title) + (c.proof ? ' 📷' : '')).join(', ')}</p>` : ''}
-      ${(t.achievements || []).length ? `<p class="tr-note"><b>Úspechy:</b> ${t.achievements.map(c => h(c.title) + (c.proof ? ' 📷' : '')).join(', ')}</p>` : ''}
-      <div class="tr-row">${urls.map(u => `<a href="${h(u)}" target="_blank" rel="noopener"><img src="${h(u)}" style="width:92px;height:92px;object-fit:cover;border-radius:14px" alt="Dôkaz"></a>`).join('')}</div>
-      <div class="tr-row mt"><button class="btn primary" data-ok style="flex:1">Schváliť</button><button class="btn" data-no>Zamietnuť</button></div></div>`).join('') : '<div class="tr-empty"><b>Žiadne žiadosti</b>Keď sa niekto prihlási za trénera, uvidíš ho tu.</div>'}</div>${nav('#/profil')}`;
+    ${items.length ? items.map(({ t, url, loose }) => {
+      const nProof = Object.values(url).filter(Boolean).length;
+      return `<div class="card tr-sec tr-rev" data-u="${t.user_id}">
+      <div class="tr-hero" style="margin-bottom:12px">${avatar(t)}<div class="tr-body"><div class="tr-name">${h(t.display_name)}</div><div class="tr-hl">${h(t.headline || '-')}</div><small class="muted">Odoslané ${ago(t.updated_at)}</small></div></div>
+      <div class="tr-checks"><span class="tr-tag ${t.social_url ? 'g' : 'y'}">${t.social_url ? '✓ Odkaz' : '✗ Bez odkazu'}</span><span class="tr-tag ${nProof ? 'g' : 'y'}">${nProof ? `✓ ${nProof} ${nProof === 1 ? 'doklad' : 'dokladov'}` : '✗ Bez dokladov'}</span><span class="tr-tag ${(t.application_note || '').length >= 30 ? 'g' : 'y'}">${(t.application_note || '').length >= 30 ? '✓ Popis praxe' : '✗ Krátky popis praxe'}</span></div>
+      ${kv('Mesto', h(t.city || '-'))}${kv('Roky praxe', t.experience_years != null ? h(t.experience_years) : '-')}
+      ${kv('Cena', t.price_from != null ? `od ${h(Number(t.price_from).toLocaleString('sk-SK'))} € / mesiac${t.price_note ? `<br><small class="muted">${h(t.price_note)}</small>` : ''}` : '-')}
+      ${kv('Formát', [t.online ? 'Online' : '', t.in_person ? 'Osobne' : ''].filter(Boolean).join(', ') || '-')}
+      ${kv('Jazyky', (t.languages || []).map(l => h(lang[l] || l)).join(', ') || '-')}
+      ${kv('Špecializácie', (t.specialties || []).map(x => `<span class="tr-tag b">${h(x)}</span>`).join(' ') || '-')}
+      ${kv('O mne (verejné)', `<div class="tr-txt">${h(t.bio || '-')}</div>`)}
+      ${kv('Prax (vidíme len my)', `<div class="tr-txt">${h(t.application_note || '-')}</div>`)}
+      ${kv('Instagram / web', t.social_url ? `<a class="tr-lnk" href="${h(t.social_url)}" target="_blank" rel="noopener">${h(t.social_url)}</a><a class="btn sm ghost" href="${h(t.social_url)}" target="_blank" rel="noopener" style="margin-top:8px;display:inline-flex">Otvoriť odkaz</a>` : '<em>nezadaný</em>')}
+      ${(t.credentials || []).length ? kv('Vzdelanie a certifikáty', rowsHtml(t.credentials, url, '')) : ''}
+      ${(t.achievements || []).length ? kv('Súťaže a úspechy', rowsHtml(t.achievements, url, '🏆 ')) : ''}
+      ${loose.length ? kv('Ďalšie doklady', `<div class="tr-row">${loose.map(p => ph(url[p])).join('')}</div>`) : ''}
+      <div class="tr-row mt"><button class="btn primary" data-ok style="flex:1">Schváliť</button><button class="btn" data-no>Zamietnuť</button></div></div>`; }).join('') : '<div class="tr-empty"><b>Žiadne žiadosti</b>Keď sa niekto prihlási za trénera, uvidíš ho tu.</div>'}</div>${nav('#/profil')}`;
   const rootEl = $app(); if (rootEl._trApps) rootEl.removeEventListener('click', rootEl._trApps);
   rootEl._trApps = async e => {
     const card = e.target.closest('[data-u]'); const ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]'); if (!card || (!ok && !no)) return;
