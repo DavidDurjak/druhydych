@@ -139,7 +139,7 @@ export async function renderCatalog() {
   };
   $app().innerHTML = `<div class="screen">
     <div class="tr-top"><h1>Tréneri</h1></div>
-    <p class="tr-sub">${mine ? 'Už máš trénera. Tu nájdeš ďalších.' : 'Vyber si trénera podľa cieľa. Koučovať ťa môže online odkiaľkoľvek zo Slovenska.'}</p>
+    <p class="tr-sub">${mine ? 'Už máš trénera. Tu nájdeš ďalších.' : 'Vyber si trénera podľa cieľa. Koučovať ťa môže online odkiaľkoľvek.'}</p>
     <div class="tr-search"><input class="input" id="trQ" placeholder="Meno, mesto alebo cieľ" autocomplete="off"></div>
     <div class="tr-chips" id="trChips"><button class="tr-chip" data-o="1">Online</button>${SPECS.map(s => `<button class="tr-chip" data-s="${h(s)}">${h(s)}</button>`).join('')}</div>
     <div id="trList"></div></div>${nav('#/treneri')}`;
