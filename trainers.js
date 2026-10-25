@@ -25,6 +25,8 @@ const real = {
   async addReview(tid, uid, name, rating, body) { const { error } = await sbq().from('trainer_reviews').upsert({ trainer_id: tid, client_id: uid, client_name: name, rating, body }, { onConflict: 'trainer_id,client_id' }); if (error) throw error; },
   async report(tid, uid, reason, note) { const { error } = await sbq().from('trainer_reports').insert({ trainer_id: tid, reporter_id: uid, reason, note }); if (error && error.code !== '23505') throw error; },
   async get(id) { const { data, error } = await sbq().from('trainer_profiles').select('*').eq('user_id', id).maybeSingle(); if (error) throw error; return data; },
+  async app(uid) { const { data } = await sbq().from('trainer_applications').select('*').eq('user_id', uid).maybeSingle(); return data || null; },
+  async saveApp(uid, note, proof_paths) { const { error } = await sbq().from('trainer_applications').upsert({ user_id: uid, note, proof_paths, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }); if (error) throw error; },
   async save(row) { const { data, error } = await sbq().from('trainer_profiles').upsert(row, { onConflict: 'user_id' }).select().single(); if (error) throw error; return data; },
   async links(uid) { const { data, error } = await sbq().from('trainer_clients').select('*').or(`trainer_id.eq.${uid},client_id.eq.${uid}`).order('created_at', { ascending: false }); if (error) throw error; return data || []; },
   async request(tid, uid, name, goal, message) {
@@ -41,7 +43,7 @@ const real = {
   },
   async uploadProof(uid, blob) { const path = `${uid}/proof-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`; const { error } = await sbq().storage.from('trainer-proofs').upload(path, blob, { contentType: 'image/jpeg' }); if (error) throw error; return path; },
   async signed(paths) { const out = []; for (const p of paths || []) { const { data } = await sbq().storage.from('trainer-proofs').createSignedUrl(p, 3600); if (data?.signedUrl) out.push(data.signedUrl); } return out; },
-  async pending() { const { data, error } = await sbq().from('trainer_profiles').select('*').eq('status', 'pending').order('updated_at', { ascending: true }); if (error) throw error; return data || []; },
+  async pending() { const { data, error } = await sbq().from('trainer_profiles').select('*').eq('status', 'pending').order('updated_at', { ascending: true }); if (error) throw error; const ids = (data || []).map(x => x.user_id); const ap = ids.length ? (await sbq().from('trainer_applications').select('*').in('user_id', ids)).data || [] : []; const m = Object.fromEntries(ap.map(a => [a.user_id, a])); return (data || []).map(t => ({ ...t, application_note: m[t.user_id]?.note || null, proof_paths: m[t.user_id]?.proof_paths || [] })); },
   async decide(uid, ok, note) { const row = ok ? { status: 'published', approved: true, review_note: null } : { status: 'rejected', review_note: note || 'Žiadosť sme zamietli.' }; const { error } = await sbq().from('trainer_profiles').update(row).eq('user_id', uid); if (error) throw error; },
   async names(ids) { if (!ids.length) return {}; const { data } = await sbq().from('trainer_profiles').select('user_id,display_name,photo_url').in('user_id', ids); return Object.fromEntries((data || []).map(x => [x.user_id, x])); },
   async thread(uid, other) { const m = await db.listMessages(uid); return m.filter(x => x.from_user === other || x.to_user === other); },
@@ -242,7 +244,9 @@ export async function renderTrainer(id) {
 // ---------- vlastný profil trénera ----------
 const rowHtml = (kind, r = {}) => `<div class="tr-two" data-row="${kind}" style="margin-bottom:8px;grid-template-columns:1fr 84px 38px"><input class="input" data-f="title" placeholder="${kind === 'cred' ? 'Napr. Kondičný tréner, FTVŠ UK' : 'Napr. 1. miesto, Slovenský pohár'}" value="${h(r.title || '')}"><input class="input" data-f="year" inputmode="numeric" placeholder="Rok" value="${h(r.year || '')}"><button type="button" class="btn sm ghost" data-del aria-label="Odstrániť">×</button></div>`;
 export async function renderTrainerEdit() {
-  const cur = await api().mine(me().id);
+  const cur0 = await api().mine(me().id);
+  const appRow = cur0 && !cur0.approved ? await api().app(me().id).catch(() => null) : null;
+  const cur = cur0 && { ...cur0, application_note: appRow?.note || cur0.application_note || null, proof_paths: appRow?.proof_paths || cur0.proof_paths || [] };
   const t = cur || { display_name: me().name || '', specialties: [], languages: ['sk'], credentials: [], achievements: [], online: true, in_person: false, status: 'draft' };
   $app().innerHTML = `<div class="screen tr-form">
     <div class="tr-top"><h1>${cur ? 'Môj profil trénera' : 'Staň sa trénerom'}</h1><a class="btn sm ghost" href="#/profil">←</a></div>
@@ -302,11 +306,12 @@ export async function renderTrainerEdit() {
     try {
       if (blob) photo = await api().upload(me().id, blob);
       const num = v => { const n = Number(String(v).replace(',', '.')); return v !== '' && isFinite(n) ? n : null; };
+      if (!cur?.approved) await api().saveApp(me().id, root.querySelector('#f_app')?.value.trim() || null, proofs);
       const saved = await api().save({ user_id: me().id, display_name: name, headline: root.querySelector('#f_hl').value.trim() || null, bio: root.querySelector('#f_bio').value.trim() || null,
         city: root.querySelector('#f_city').value.trim() || null, photo_url: photo, specialties: specs, credentials: rows('f_cred'), achievements: rows('f_ach'),
         experience_years: num(root.querySelector('#f_exp').value), online: root.querySelector('#f_online').classList.contains('on'), in_person: root.querySelector('#f_inp').classList.contains('on'),
         price_from: num(root.querySelector('#f_price').value), price_note: root.querySelector('#f_pn').value.trim() || null, status,
-        ...(cur?.approved ? {} : { proof_paths: proofs, social_url: root.querySelector('#f_soc')?.value.trim() || null, application_note: root.querySelector('#f_app')?.value.trim() || null }) });
+        ...(cur?.approved ? {} : { social_url: root.querySelector('#f_soc')?.value.trim() || null }) });
       ctx.state.trainer = saved;
       toast(saved.status === 'pending' ? 'Žiadosť odoslaná. Ozveme sa ti.' : status === 'published' ? 'Profil je v katalógu' : 'Uložené'); location.hash = saved.status === 'published' ? `#/trener/${me().id}` : '#/profil';
     } catch (err) { toast(err.message || 'Nepodarilo sa uložiť', true); btn.disabled = false; }

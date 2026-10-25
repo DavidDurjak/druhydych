@@ -8,33 +8,50 @@
 alter table public.trainer_profiles add column if not exists auto_hidden boolean not null default false;
 
 alter table public.trainer_profiles add column if not exists approved boolean not null default false;
-alter table public.trainer_profiles add column if not exists proof_paths text[] not null default '{}';
 alter table public.trainer_profiles add column if not exists social_url text check (char_length(social_url) <= 200);
-alter table public.trainer_profiles add column if not exists application_note text check (char_length(application_note) <= 800);
 alter table public.trainer_profiles add column if not exists review_note text check (char_length(review_note) <= 300);
 alter table public.trainer_profiles drop constraint if exists trainer_profiles_status_check;
 alter table public.trainer_profiles add constraint trainer_profiles_status_check check (status in ('draft','pending','published','hidden','rejected'));
+
+-- súkromná žiadosť (dôkazy a opis praxe): vidí ju len tréner sám a správca, nikdy klienti
+create table if not exists public.trainer_applications (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  note text check (char_length(note) <= 800),
+  proof_paths text[] not null default '{}',
+  updated_at timestamptz not null default now()
+);
+alter table public.trainer_applications enable row level security;
+drop policy if exists "applications own" on public.trainer_applications;
+create policy "applications own" on public.trainer_applications for all to authenticated
+  using (user_id = (select auth.uid()) or public.is_admin()) with check (user_id = (select auth.uid()) or public.is_admin());
 
 -- doterajšie profily (ak nejaké sú) ostávajú platné
 update public.trainer_profiles set approved = true where status = 'published' and not approved;
 
 create or replace function public.trainer_profiles_guard() returns trigger language plpgsql security definer set search_path = public as $$
 declare bad text := '(https?://|www\.|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}|\+?\d(?:[\s.-]?\d){8,})';
+        ex public.trainer_profiles; app public.trainer_applications;
 begin
-  if auth.uid() is null or public.is_admin() then return new; end if;
+  if auth.uid() is null or public.is_admin() or current_setting('app.system_update', true) = '1' then return new; end if;
   if tg_op = 'INSERT' then
-    new.verified := false; new.auto_hidden := false; new.approved := false; new.review_note := null;
+    -- upsert nad existujúcim profilom vyvolá najprv INSERT trigger: zachovaj stav existujúceho riadku
+    select * into ex from public.trainer_profiles where user_id = new.user_id;
+    if found then
+      new.verified := ex.verified; new.auto_hidden := ex.auto_hidden; new.approved := ex.approved; new.review_note := ex.review_note; new.invite_code := ex.invite_code;
+    else
+      new.verified := false; new.auto_hidden := false; new.approved := false; new.review_note := null;
+    end if;
   else
     new.verified := old.verified; new.invite_code := old.invite_code; new.auto_hidden := old.auto_hidden;
     new.approved := old.approved; new.review_note := old.review_note; new.updated_at := now();
-    -- schválený/zamietnutý stav nemení tréner sám, mení ho len správca
+    -- zamietnutý stav nastavuje len správca
     if new.status = 'rejected' then new.status := old.status; end if;
   end if;
   if coalesce(new.headline,'') ~* bad or coalesce(new.bio,'') ~* bad or coalesce(new.price_note,'') ~* bad then
     raise exception 'V popise nepoužívaj odkazy, e-maily ani telefónne čísla. Klienti ťa kontaktujú cez appku.';
   end if;
   if new.status in ('published','pending') then
-    if tg_op = 'UPDATE' and old.auto_hidden then
+    if new.auto_hidden then
       raise exception 'Tvoj profil je dočasne pozastavený po nahlásení. Napíš nám a pozrieme sa na to.';
     end if;
     if new.photo_url is null then raise exception 'Pred odoslaním nahraj svoju fotku'; end if;
@@ -42,11 +59,11 @@ begin
     if char_length(coalesce(new.bio,'')) < 40 then raise exception 'V sekcii O mne napíš aspoň 40 znakov'; end if;
     if coalesce(array_length(new.specialties,1),0) < 1 then raise exception 'Vyber aspoň jednu špecializáciu'; end if;
     if not new.approved then
-      -- nový tréner: zverejnenie = žiadosť o schválenie
-      if coalesce(array_length(new.proof_paths,1),0) = 0 and coalesce(new.social_url,'') = '' then
+      select * into app from public.trainer_applications where user_id = new.user_id;
+      if coalesce(array_length(app.proof_paths,1),0) = 0 and coalesce(new.social_url,'') = '' then
         raise exception 'Pridaj aspoň jeden dôkaz: fotku certifikátu, výsledkov alebo odkaz na Instagram či web';
       end if;
-      if char_length(coalesce(new.application_note,'')) < 30 then raise exception 'Napíš nám aspoň 30 znakov o tom, ako a koho trénuješ'; end if;
+      if char_length(coalesce(app.note,'')) < 30 then raise exception 'Napíš nám aspoň 30 znakov o tom, ako a koho trénuješ'; end if;
       new.status := 'pending';
     end if;
   end if;
@@ -116,7 +133,9 @@ create policy "reports read own" on public.trainer_reports for select to authent
 create or replace function public.trainer_reports_after() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if (select count(*) from public.trainer_reports where trainer_id = new.trainer_id) >= 3 then
+    perform set_config('app.system_update', '1', true);
     update public.trainer_profiles set status = 'hidden', auto_hidden = true where user_id = new.trainer_id and not auto_hidden;
+    perform set_config('app.system_update', '0', true);
   end if;
   return new;
 end $$;
