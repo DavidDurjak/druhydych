@@ -246,17 +246,19 @@ function plan() {
   return { ...t, activity, perWeek, weeks };
 }
 
+const unpre = () => document.documentElement.classList.remove('fnq-pre');
 function open(startAt = 0) {
   if (el) return;
   q = { ...fresh(), ...(jget(KEY) || {}) }; if (!q.diet || !Array.isArray(q.diet.diets)) q.diet = fresh().diet;
   step = startAt; dir = 1;
   el = document.createElement('div'); el.className = 'fnq'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Nastavenie plánu');
   el.innerHTML = `<div class="fnq-top"><button class="fnq-back" aria-label="Späť">${BACK}</button><div class="fnq-bar"><i></i></div><span class="fnq-ring-slot"></span></div><div class="fnq-body"></div>`;
-  document.body.appendChild(el);
+  document.body.appendChild(el); setTimeout(unpre, 450);
   el.querySelector('.fnq-back').onclick = () => go(-1);
   draw();
 }
 function close(toLogin) {
+  unpre();
   if (!el) return;
   const e = el; el = null; e.classList.add('out'); setTimeout(() => e.remove(), 340);
   if (toLogin) { jset(SKIP, 1, sessionStorage); document.querySelector('#app [data-m=login]')?.click(); }
@@ -553,13 +555,13 @@ async function autofill(form) {
 function scan() {
   const app = document.getElementById('app'); if (!app) return;
   const onb = app.querySelector('#onb');
-  if (onb) { if (el) close(false); autofill(onb); return; }
+  if (onb) { unpre(); if (el) close(false); autofill(onb); return; }
   const auth = app.querySelector('#authf');
-  if (!auth) { if (el && ctx.state?.session) close(false); return; }
+  if (!auth) { if (ctx.state?.session) unpre(); if (el && ctx.state?.session) close(false); return; }
   // tlačidlo Registrovať otvorí kvíz
   const reg = app.querySelector('[data-m=register]');
   if (reg && !reg.dataset.fnq) { reg.dataset.fnq = '1'; reg.addEventListener('click', e => { e.preventDefault(); e.stopImmediatePropagation(); jset(SKIP, null, sessionStorage); open(jget(KEY)?.goal ? 1 : 0); }, true); }
-  if (!el && !jget(SKIP, sessionStorage) && !known()) open(0);
+  if (!el && !jget(SKIP, sessionStorage) && !known()) open(0); else unpre();
 }
 const app = document.getElementById('app');
 if (app) new MutationObserver(scan).observe(app, { childList: true, subtree: true });

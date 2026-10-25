@@ -49,6 +49,11 @@
     @media (prefers-reduced-motion: reduce) { html.fw-loading::after { animation: fwin .2s 160ms forwards; background-size: 100% 100%; } }
   </style>
   <script>
+    // nový človek: prihlasovacia obrazovka sa nesmie ani na chvíľu ukázať, kým sa neotvorí úvod kvízu (funnel.js tento znak zloží)
+    (function () { try { var k = Object.keys(localStorage).some(function (x) { return x.indexOf('fw_prof_') === 0; }); if (!k && !sessionStorage.getItem('fw_fq_skip')) { document.documentElement.classList.add('fnq-pre'); setTimeout(function () { document.documentElement.classList.remove('fnq-pre'); }, 5000); } } catch (e) { } })();
+  </script>
+  <style>html.fnq-pre #app{opacity:0}</style>
+  <script>
     // rýchlosť: (1) sledovače zmien obrazovky sa zlúčia, takže všetky doplnkové karty prejdú stránku raz za snímku namiesto stoviek prechodov;
     // (2) rovnaký dotaz na server, ktorý práve beží, sa nepošle dvakrát
     (function () {
