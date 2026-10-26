@@ -9,6 +9,7 @@ import { defaultMeal } from './foods.js';
 const KEY = 'fw_first';
 const DONE = 'fw_first_done';
 const h = (...a) => ctx.h(...a);
+const tk = (n, p) => { try { window.fwTrack && window.fwTrack(n, p || {}); } catch (_) {} };
 const ss = { get: k => { try { return sessionStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} } };
 const ls = { get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} } };
 
@@ -41,7 +42,7 @@ function css() { if (document.getElementById('flCss')) return; const s = documen
 let open = false;
 function intro() {
   const { state } = ctx, p = state.profile || {};
-  open = true; css();
+  open = true; css(); tk('fl_shown');
   const bg = document.createElement('div'); bg.className = 'fl-bg';
   const kc = Math.round(p.target_kcal || 0), pr = Math.round(p.target_protein || 0);
   bg.innerHTML = `<div class="fl-in">
@@ -57,10 +58,11 @@ function intro() {
   bindAiBox(bg, () => defaultMeal(), () => result(bg, close));
   const ta = bg.querySelector('#aiText');
   bg.querySelectorAll('.fl-chips button').forEach(b => b.onclick = () => { ta.value = b.textContent; ta.dispatchEvent(new Event('input')); ta.focus(); });
-  bg.querySelector('.fl-skip').onclick = close;
+  bg.querySelector('.fl-skip').onclick = () => { tk('fl_skip'); close(); };
 }
 
 async function result(bg, close) {
+  tk('fl_done');
   const { state } = ctx, p = state.profile || {};
   let t = { kcal: 0, protein: 0 };
   try { t = calc.sumMacros(await db.listFood(p.id, state.date || calc.today())); } catch (_) {}
@@ -79,6 +81,7 @@ async function result(bg, close) {
 
 // zapamätaj si, že tento submit je úplne prvé vyplnenie onboardingu
 document.addEventListener('submit', e => {
+  if (e.target?.id === 'onb' && !ctx.state?.profile?.onboarded) tk('onb_submit');
   if (e.target?.id === 'onb' && !ctx.state?.profile?.onboarded && !ls.get(DONE)) ss.set(KEY, '1');
 }, true);
 
