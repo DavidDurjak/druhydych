@@ -195,7 +195,7 @@ async function openHistory() {
 async function renderChat() {
   const b = buddy();
   curAv = avatarSvg(b, 34, { anim: true });
-  panel.querySelector('.bd-head').innerHTML = `${avatarSvg(b, 44, { anim: true })}<div class="bd-hn"><b>${esc(b.name)}</b><span>tvoj pomocník a kouč</span></div><button class="bd-hbtn" aria-label="História rozhovorov" title="História rozhovorov">🕘</button><button class="bd-edit" aria-label="Upraviť postavičku">✎</button><button class="bd-x" aria-label="Zavrieť">×</button>`;
+  panel.querySelector('.bd-head').innerHTML = `${avatarSvg(b, 44, { anim: true })}<div class="bd-hn"><b>${esc(b.name)}</b><span>AI pomocník a kouč</span></div><button class="bd-hbtn" aria-label="História rozhovorov" title="História rozhovorov">🕘</button><button class="bd-edit" aria-label="Upraviť postavičku">✎</button><button class="bd-x" aria-label="Zavrieť">×</button>`;
   panel.querySelector('.bd-x').onclick = closeChat;
   panel.querySelector('.bd-edit').onclick = () => setup(false);
   panel.querySelector('.bd-hbtn').onclick = openHistory;
