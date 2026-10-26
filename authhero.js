@@ -108,7 +108,10 @@ function build(hero) {
     <div class="ah-items"></div>
     <div class="ah-out"><div class="ah-ring"><svg viewBox="0 0 72 72"><circle class="b" cx="36" cy="36" r="30"/><circle class="f" cx="36" cy="36" r="30" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><div><span><b class="notranslate">0</b><small>kcal</small></span></div></div>
     <div class="ah-mac">${MAC.map(([n, c]) => `<div><span>${n}</span><p><i style="background:${c}"></i></p><b class="notranslate">0 g</b></div>`).join('')}</div></div>`;
-  (hero.querySelector('.lead') || hero.lastElementChild).after(demo);
+  // podnadpis odstránený: živá ukážka nižšie povie to isté bez textu
+  const lead = hero.querySelector('.lead');
+  (lead || hero.lastElementChild).after(demo);
+  lead?.remove();
   run(demo);
 }
 
@@ -154,6 +157,7 @@ const ICO = {
 };
 function trust() {
   const card = document.querySelector('#app .screen .card');
+  return; // zoznam funkcií pod prihlásením vypnutý: appka má funkcií oveľa viac, výber pôsobil lacno
   if (!card || card.dataset.aht || !card.querySelector('#authf')) return;
   card.dataset.aht = '1';
   const t = document.createElement('div'); t.className = 'ah-trust';

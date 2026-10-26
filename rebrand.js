@@ -31,6 +31,8 @@ const CSS = `
 @keyframes gtBite{to{transform:scale(1)}}
 .gt-hero .gt-crumb{opacity:0;animation:gtCrumb .6s calc(1.5s + var(--i)*.05s) cubic-bezier(.2,.9,.3,1) forwards}
 @keyframes gtCrumb{from{opacity:0;transform:translate(-30px,30px) scale(.3)}to{opacity:1;transform:none}}
+.ah-brand.gt-login{display:block;margin:0}
+.ah-brand.gt-login .gt-hero{margin:44px 0 30px 18px}
 @media (prefers-reduced-motion:reduce){.gt-hero *{animation:none!important;opacity:1!important;transform:none!important}}
 `;
 if (!document.getElementById('gt-css')) { const s = document.createElement('style'); s.id = 'gt-css'; s.textContent = CSS; document.head.appendChild(s); }
@@ -72,21 +74,23 @@ function fixText(root) {
 let uid = 0;
 function brand() {
   // prihlásenie: sušienka + nápis
+  // prihlásenie: rovnaké veľké animované logo ako na úvode kvízu (Registrovať), aby bola značka všade rovnaká
   const b = document.querySelector('.ah-brand');
-  if (b && !b.querySelector('.gt-lock')) { b.classList.add('notranslate'); b.innerHTML = `<div class="gt-lock">${cookie('gtl' + (uid++), 15)}${WORDMARK}</div>`; }
+  if (b && !b.querySelector('.gt-hero')) { b.classList.add('notranslate', 'gt-login'); b.innerHTML = ''; b.appendChild(heroEl()); }
   // týždenný príbeh (rc-brand) a onboarding (.brand): sušienka + nápis namiesto plameňa
   document.querySelectorAll('.rc-brand:not(.gt-done), .screen > .brand:not(.gt-done)').forEach(el => {
     el.classList.add('gt-done', 'notranslate'); el.innerHTML = `<div class="gt-lock gt-sm">${cookie('gtb' + (uid++), 15)}${WORDMARK}</div>`;
   });
   // úvodná obrazovka: animované logo namiesto starého kruhu
   const seal = document.querySelector('svg.fnq-seal');
-  if (seal) {
-    const h = document.createElement('div');
-    h.className = 'gt-hero notranslate'; h.setAttribute('role', 'img'); h.setAttribute('aria-label', NEW);
-    const stack = STACKED.replace('<path transform="translate(808 0)"', '<g class="l1"><path transform="translate(808 0)"').replace('<path transform="translate(0 798)"', '</g><g class="l2"><path transform="translate(0 798)"').replace('</g></svg>', '</g></g></svg>');
-    h.innerHTML = `${stack}<div class="gt-hc">${cookie('gth' + (uid++), 15)}</div>`;
-    seal.replaceWith(h);
-  }
+  if (seal) seal.replaceWith(heroEl());
+}
+function heroEl() {
+  const h = document.createElement('div');
+  h.className = 'gt-hero notranslate'; h.setAttribute('role', 'img'); h.setAttribute('aria-label', NEW);
+  const stack = STACKED.replace('<path transform="translate(808 0)"', '<g class="l1"><path transform="translate(808 0)"').replace('<path transform="translate(0 798)"', '</g><g class="l2"><path transform="translate(0 798)"').replace('</g></svg>', '</g></g></svg>');
+  h.innerHTML = `${stack}<div class="gt-hc">${cookie('gth' + (uid++), 15)}</div>`;
+  return h;
 }
 
 function run(muts) {
