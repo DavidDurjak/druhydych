@@ -327,7 +327,12 @@ function deleteSheet() {
     ok.disabled = true; ok.textContent = 'Mažem…';
     try {
       const { data, error } = await db.sb.functions.invoke('delete-account', { body: { confirm: 'ZMAZAT' } });
-      if (error || !data?.ok) throw new Error(data?.error || error?.message || 'Účet sa nepodarilo zmazať.');
+      if (error || !data?.ok) {
+        // ak účet už neexistuje (zmazal sa pri predchádzajúcom pokuse), je to v poriadku: dokončíme odhlásenie
+        const { data: u, error: ue } = await db.sb.auth.getUser().catch(e => ({ error: e }));
+        const gone = ue && (ue.status === 403 || ue.status === 404 || /not.?found|does not exist/i.test(ue.message || ''));
+        if (!gone && u?.user) throw new Error(data?.error || 'Účet sa nepodarilo zmazať. Skús to znova.');
+      }
       try { await db.sb.auth.signOut({ scope: 'local' }); } catch (_) {}
       try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
       location.replace(location.pathname);

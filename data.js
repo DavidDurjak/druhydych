@@ -30,7 +30,23 @@ function must({ data, error }) {
 // ---------- Auth ----------
 export async function getSession() {
   const { data } = await sb.auth.getSession();
+  if (data.session) verifyUser();
   return data.session;
+}
+// Ak bol účet medzitým zmazaný (napr. na inom zariadení), uložené prihlásenie je neplatné a appka by sa zasekávala
+// na chybách. Na pozadí overíme, či účet ešte existuje, a ak nie, odhlásime a vrátime na úvod.
+let verified = false;
+async function verifyUser() {
+  if (verified || !navigator.onLine) return; verified = true;
+  try {
+    const { data, error } = await sb.auth.getUser();
+    const gone = error && (error.status === 403 || error.status === 404 || /not.?found|does not exist/i.test(error.message || ''));
+    if (gone || (!error && !data?.user)) {
+      try { await sb.auth.signOut({ scope: 'local' }); } catch (_) {}
+      Object.keys(localStorage).filter(k => /^(fw_|sb-)/.test(k)).forEach(k => localStorage.removeItem(k));
+      location.replace(location.pathname);
+    }
+  } catch (_) { verified = false; }
 }
 export function onAuthChange(cb) {
   return sb.auth.onAuthStateChange((_e, session) => cb(session));
