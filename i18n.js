@@ -12,12 +12,26 @@ const LANGS = [['sk', 'Slovenčina'], ['cs', 'Čeština'], ['de', 'Deutsch'], ['
   ['lt', 'Lietuvių'], ['lv', 'Latviešu'], ['et', 'Eesti'], ['el', 'Ελληνικά'],
   ['ar', 'العربية'], ['he', 'עברית'], ['fa', 'فارسی'], ['hi', 'हिन्दी'], ['bn', 'বাংলা'], ['ur', 'اردو'], ['zh', '中文'], ['ja', '日本語'], ['ko', '한국어'],
   ['vi', 'Tiếng Việt'], ['id', 'Bahasa Indonesia'], ['ms', 'Bahasa Melayu'], ['th', 'ไทย'], ['tl', 'Filipino'], ['sw', 'Kiswahili'], ['ca', 'Català'],
-  ['is', 'Íslenska'], ['bs', 'Bosanski'], ['mk', 'Македонски'], ['sq', 'Shqip']];
-const RTL = new Set(['ar', 'he', 'fa', 'ur']);
+  ['is', 'Íslenska'], ['bs', 'Bosanski'], ['mk', 'Македонски'], ['sq', 'Shqip'],
+  // ďalšie jazyky, aby appku mal vo svojom jazyku skoro každý na svete
+  ['zh-TW', '繁體中文'], ['pt-BR', 'Português (Brasil)'], ['ta', 'தமிழ்'], ['te', 'తెలుగు'], ['mr', 'मराठी'], ['gu', 'ગુજરાતી'], ['kn', 'ಕನ್ನಡ'],
+  ['ml', 'മലയാളം'], ['pa', 'ਪੰਜਾਬੀ'], ['or', 'ଓଡ଼ିଆ'], ['as', 'অসমীয়া'], ['ne', 'नेपाली'], ['si', 'සිංහල'], ['my', 'မြန်မာ'], ['km', 'ខ្មែរ'], ['lo', 'ລາວ'],
+  ['mn', 'Монгол'], ['ka', 'ქართული'], ['hy', 'Հայերեն'], ['az', 'Azərbaycanca'], ['kk', 'Қазақша'], ['uz', 'Oʻzbekcha'], ['ky', 'Кыргызча'],
+  ['tg', 'Тоҷикӣ'], ['tk', 'Türkmençe'], ['be', 'Беларуская'], ['ps', 'پښتو'], ['sd', 'سنڌي'], ['ku', 'Kurdî'], ['am', 'አማርኛ'], ['ha', 'Hausa'],
+  ['yo', 'Yorùbá'], ['ig', 'Igbo'], ['zu', 'isiZulu'], ['xh', 'isiXhosa'], ['af', 'Afrikaans'], ['so', 'Soomaali'], ['rw', 'Kinyarwanda'],
+  ['mg', 'Malagasy'], ['jv', 'Basa Jawa'], ['su', 'Basa Sunda'], ['ceb', 'Cebuano'], ['eu', 'Euskara'], ['gl', 'Galego'], ['cy', 'Cymraeg'],
+  ['ga', 'Gaeilge'], ['mt', 'Malti'], ['lb', 'Lëtzebuergesch']];
+const RTL = new Set(['ar', 'he', 'fa', 'ur', 'ps', 'sd']);
 // kódy, ktoré telefóny posielajú inak ako my (nb/nn = nórčina, fil = filipínčina, iw = hebrejčina, in = indonézština)
 const ALIAS = { nb: 'no', nn: 'no', fil: 'tl', iw: 'he', in: 'id' };
-const codeOf = l => { const t = String(l).toLowerCase().split(/[-_]/)[0]; return ALIAS[t] || t.slice(0, 2); };
 const OK = new Set(LANGS.map(l => l[0]));
+// tradičná čínština (Taiwan, Hongkong, Macao) a brazílska portugalčina majú vlastný slovník; trojpísmenové kódy (ceb) ostávajú celé
+const codeOf = l => {
+  const s = String(l).toLowerCase().replace('_', '-'), t = s.split('-')[0];
+  if (t === 'zh' && /-(tw|hk|mo|hant)/.test(s)) return 'zh-TW';
+  if (t === 'pt' && /-br/.test(s)) return 'pt-BR';
+  return ALIAS[t] || (OK.has(t) ? t : t.slice(0, 2));
+};
 const H = document.documentElement;
 
 // doterajší používatelia appku poznajú po slovensky: tým sa jazyk nezmení sám od seba (napr. pri anglickom iPhone), prepnú si ho v Profile
@@ -158,6 +172,14 @@ if (LANG !== 'sk') {
 let saveT = 0;
 function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(LS, JSON.stringify(Object.fromEntries(dict))); localStorage.setItem(LS_T, lastSync); } catch (_) { /* plné úložisko */ } }, 800); }
 function put(k, v) { if (!v) return; dict.set(k, v); out.add(v.trim()); }
+// záloha: kým text nemá preklad v jazyku používateľa, ukáže sa v najbližšom preloženom jazyku (nie po slovensky):
+// brazílska portugalčina → portugalčina, tradičná čínština → zjednodušená, ostatné → angličtina
+const FBL = { 'pt-BR': 'pt', 'zh-TW': 'zh' }[LANG] || 'en';
+const FB = LANG !== 'sk' && LANG !== FBL;
+const fbDict = new Map(); let fbSync = '';
+if (FB) {
+  try { const o = JSON.parse(localStorage.getItem('fw_i18n_' + FBL) || '{}'); for (const k in o) { fbDict.set(k, o[k]); out.add(o[k].trim()); } fbSync = localStorage.getItem('fw_i18n_t_' + FBL) || ''; } catch (_) { /* bez zálohy */ }
+}
 
 const NUM = /\d+(?:[.,:]\d+)*/g;
 function keyOf(core) { const nums = []; const k = core.replace(NUM, m => `{${nums.push(m) - 1}}`); return [k, nums]; }
@@ -177,8 +199,12 @@ function tr(text) {
   if (core.length < 1 || core.length > 600 || !/\p{L}/u.test(core) || out.has(core)) return undefined;
   const [k, nums] = keyOf(core);
   const v = dict.get(k);
-  if (v === undefined) { miss.add(k); schedule(); return null; }
   const lead = text.match(/^\s*/)[0], trail = text.match(/\s*$/)[0];
+  if (v === undefined) {
+    miss.add(k); schedule();
+    const f = FB && fbDict.get(k);
+    return f ? lead + f.trim().replace(/\{(\d+)\}/g, (m, i) => nums[i] ?? m) + trail : null;
+  }
   return lead + v.trim().replace(/\{(\d+)\}/g, (m, i) => nums[i] ?? m) + trail;
 }
 
@@ -224,9 +250,25 @@ async function sync() {
       if (rows.length < 1000) break;
       from += 1000;
     }
-    lastSync = newest; save(); scanAll();
+    lastSync = newest; save();
+    if (FB) await syncFb();
+    scanAll();
   } catch (_) { /* ostane slovník zo zariadenia */ }
   reveal();
+}
+async function syncFb() {
+  let from = 0, newest = fbSync;
+  for (;;) {
+    const q = `${SUPABASE_URL}/rest/v1/i18n?select=src,dst,created_at&lang=eq.${FBL}${fbSync ? `&created_at=gt.${encodeURIComponent(fbSync)}` : ''}&order=created_at.asc`;
+    const r = await fetch(q, { headers: { apikey: SUPABASE_ANON_KEY, Range: `${from}-${from + 999}`, 'Range-Unit': 'items' } });
+    if (!r.ok) return;
+    const rows = await r.json();
+    for (const x of rows) { fbDict.set(x.src, x.dst); out.add(String(x.dst).trim()); if (x.created_at > newest) newest = x.created_at; }
+    if (rows.length < 1000) break;
+    from += 1000;
+  }
+  fbSync = newest;
+  try { localStorage.setItem('fw_i18n_' + FBL, JSON.stringify(Object.fromEntries(fbDict))); localStorage.setItem('fw_i18n_t_' + FBL, fbSync); } catch (_) { /* plné úložisko */ }
 }
 
 // ---------- prekladanie obrazovky ----------
@@ -264,7 +306,7 @@ function reveal() { if (revealed) return; revealed = true; H.classList.remove('f
 
 if (LANG !== 'sk') {
   const st = document.createElement('style'); st.dataset.fwLight = '';
-  st.textContent = 'html.fw-i18n-wait #app{visibility:hidden}';
+  st.textContent = 'html.fw-i18n-wait #app,html.fw-i18n-wait .fnq{visibility:hidden}';
   document.head.appendChild(st);
   if (!dict.size) { H.classList.add('fw-i18n-wait'); setTimeout(reveal, 2500); } else reveal();
   const MO = window.__fwNativeMO || MutationObserver;
