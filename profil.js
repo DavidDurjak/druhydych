@@ -246,7 +246,7 @@ function html(p, admin) {
 <label class="pfx-s">${ic('search')}<input type="search" placeholder="Hľadať v nastaveniach" enterkeyhint="search" autocomplete="off" autocapitalize="off" aria-label="Hľadať v nastaveniach"></label>
 ${groups.map(([t, rows]) => `<h2 class="pfx-gt">${h(t)}</h2><div class="pfx-g">${rows.map(row).join('')}</div>`).join('')}
 <div class="pfx-none" hidden>Nič sme nenašli.<br><a href="#/napis">Napíš nám, čo ti chýba</a></div>
-<p class="pfx-foot"><b>Fuelwind</b>verzia ${h(APP_VERSION)}, ${new Date().getFullYear()}</p>`;
+<p class="pfx-foot"><b>Fuelwind</b>verzia ${h(APP_VERSION)}</p>`;
 }
 
 function fill(box, p, d) {

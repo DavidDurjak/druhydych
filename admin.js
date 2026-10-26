@@ -7,7 +7,7 @@ const $app = () => ctx.$app;
 const state = () => ctx.state;
 const h = (...a) => ctx.h(...a), toast = (...a) => ctx.toast(...a), nav = (...a) => ctx.nav(...a);
 const must = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
-export const APP_VERSION = '0.9';
+export const APP_VERSION = '1.0';
 
 const CSS = `
 .fb-kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
