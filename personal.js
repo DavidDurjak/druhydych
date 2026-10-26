@@ -24,6 +24,17 @@ async function loadCounts(sb) {
   return m;
 }
 
+// hľadania bez výsledku (len text hľadaného jedla, bez účtu): vidíme, čo ľuďom v databáze chýba
+let emT = null; const emSeen = new Set();
+function emptyNote(q, n) {
+  try {
+    clearTimeout(emT);
+    const t = String(q).trim().toLowerCase().slice(0, 40);
+    if (n > 0 || t.length < 3 || emSeen.has(t)) return;
+    emT = setTimeout(() => { emSeen.add(t); window.fwTrack && window.fwTrack('search_empty', { q: t }); }, 2500);
+  } catch (_) { /* bez záznamu */ }
+}
+
 db.ready.then(() => {
   const sb = db.sb;
   if (!sb || sb.__pers) return; sb.__pers = true;
@@ -34,6 +45,7 @@ db.ready.then(() => {
     return Promise.resolve(p).then(async r => {
       try {
         if (r?.error || !Array.isArray(r?.data)) return r;
+        emptyNote(args.q, r.data.length);
         const m = await loadCounts(sb);
         const out = boost(r.data, m);
         return out === r.data ? r : { ...r, data: out };
