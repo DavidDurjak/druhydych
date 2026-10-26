@@ -96,4 +96,29 @@ try {
   fs.writeFileSync(`${OUT}/vendor/supabase.mjs`, umd + '\nexport const createClient = supabase.createClient;\nexport default supabase;\n');
   console.log('vendor ok: supabase-js', require('@supabase/supabase-js/package.json').version);
 } catch (e) { console.warn('vendor preskočené:', e.message); }
+// Rýchly štart: do index.html doplní modulepreload pre každý súbor, ktorý sa pri štarte aj tak načíta (statické importy od vstupných modulov).
+// Prehliadač ich potom stiahne naraz a nie po jednom v reťazci importov. Správanie appky sa nemení. Keď sa niečo nepodarí, index.html ostane taký, aký je.
+try {
+  const idxPath = `${OUT}/index.html`;
+  let html = fs.readFileSync(idxPath, 'utf8');
+  const roots = [...html.matchAll(/<script type="module" src="([^"?]+)"/g)].map(m => m[1]);
+  const have = new Set([...html.matchAll(/<link rel="modulepreload" href="([^"?]+)"/g)].map(m => m[1]));
+  const IMP = /(?:^|[;\n])\s*(?:import|export)\s+(?:[^'";]*?\s+from\s+)?['"]\.\/([^'"?]+)['"]/g;
+  const seen = new Set(), order = [];
+  const walk = f => {
+    if (seen.has(f) || !/\.m?js$/.test(f) || !fs.existsSync(`${OUT}/${f}`)) return;
+    seen.add(f); order.push(f);
+    const src = fs.readFileSync(`${OUT}/${f}`, 'utf8');
+    for (const m of src.matchAll(IMP)) walk(m[1]);
+  };
+  roots.forEach(walk);
+  const add = order.filter(f => !have.has(f));
+  const last = html.lastIndexOf('<link rel="modulepreload"');
+  if (add.length && last >= 0) {
+    const eol = html.indexOf('\n', last);
+    html = html.slice(0, eol + 1) + add.map(f => `  <link rel="modulepreload" href="${f}">\n`).join('') + html.slice(eol + 1);
+    fs.writeFileSync(idxPath, html);
+  }
+  console.log('modulepreload: pridaných', add.length, 'z', order.length);
+} catch (e) { console.warn('modulepreload preskočené:', e.message); }
 iconJob.then(() => console.log('build ok:', fs.readdirSync(OUT).join(', ')));
