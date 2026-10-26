@@ -7,6 +7,7 @@ import { metrics, evaluate } from './badges.js';
 import { exportMine } from './mydata.js';
 import { APP_VERSION } from './admin.js';
 import * as U from './units.js';
+import { tr } from './i18n.js';
 
 const root = document.getElementById('app');
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -320,10 +321,13 @@ function deleteSheet() {
   const bg = ctx.sheet('<div class="pfx-sh"><h3>Zmazať účet?</h3><p>Natrvalo zmažeme tvoj účet, jedlá, váhu, tréningy, fotky, správy aj prepojenia. Nedá sa to vrátiť. Ak chceš dáta zachovať, najprv si ich stiahni cez Stiahnuť moje dáta.</p><p>Na potvrdenie napíš <b>ZMAZAŤ</b>.</p><input class="pfx-in" autocomplete="off" autocapitalize="characters" aria-label="Potvrdenie" placeholder="ZMAZAŤ"><div class="pfx-sb"><button class="btn danger" data-ok disabled>Zmazať natrvalo</button><button class="btn ghost" data-x>Zrušiť</button></div></div>');
   const inp = bg.querySelector('input'), ok = bg.querySelector('[data-ok]');
   const norm = v => v.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  inp.oninput = () => { ok.disabled = norm(inp.value) !== 'zmazat'; };
+  // potvrdzovacie slovo platí po slovensky aj v jazyku appky (en: DELETE, de: LÖSCHEN…)
+  const words = new Set(['zmazat', norm(tr('ZMAZAŤ') || '')].filter(Boolean));
+  const okWord = v => words.has(norm(v));
+  inp.oninput = () => { ok.disabled = !okWord(inp.value); };
   bg.querySelector('[data-x]').onclick = () => bg.remove();
   ok.onclick = async () => {
-    if (norm(inp.value) !== 'zmazat') return;
+    if (!okWord(inp.value)) return;
     ok.disabled = true; ok.textContent = 'Mažem…';
     try {
       const { data, error } = await db.sb.functions.invoke('delete-account', { body: { confirm: 'ZMAZAT' } });

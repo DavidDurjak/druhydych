@@ -52,7 +52,9 @@ export function onAuthChange(cb) {
   return sb.auth.onAuthStateChange((_e, session) => cb(session));
 }
 export async function signUp(email, password, name) {
-  return must(await sb.auth.signUp({ email, password, options: { data: { name } } }));
+  // jazyk sa uloží do účtu, aby e-maily (obnova hesla a pod.) chodili v jazyku používateľa
+  let lang = 'sk'; try { lang = (await import('./i18n.js')).currentLang(); } catch (_) {}
+  return must(await sb.auth.signUp({ email, password, options: { data: { name, lang } } }));
 }
 export async function signIn(email, password) {
   return must(await sb.auth.signInWithPassword({ email, password }));
