@@ -270,9 +270,11 @@ export async function renderToday() {
   $app().innerHTML = `<div class="screen td">
     <header class="tdh">
       <div class="tdh-l"><h1 class="tdh-g">${isToday ? `${greeting()}, ${h(p.name?.split(' ')[0] || '')}` : dayTitle(st.date)}</h1>
-        <label class="tdh-s"><span>${longDate(st.date)}</span><i>▾</i><input type="date" class="tdh-dp" value="${st.date}" aria-label="Vybrať dátum"></label></div>
+      </div>
       ${isToday ? '' : '<button class="tdh-now" data-now>Dnes</button>'}
-      <a class="tdh-streak ${strk ? 'on' : ''}" href="#/vaha" title="Dni v rade" data-saved="${strkSaved}">🔥 ${strk}</a>
+      <button type="button" class="tdh-edit" data-tdedit aria-label="Upraviť obrazovku Dnes" title="Upraviť Dnes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <div class="tdh-row"><label class="tdh-s"><span>${longDate(st.date)}</span><i>▾</i><input type="date" class="tdh-dp" value="${st.date}" aria-label="Vybrať dátum"></label>
+        <a class="tdh-streak ${strk ? 'on' : ''}" href="#/vaha" title="Dni v rade" data-saved="${strkSaved}">🔥 ${strk}</a></div>
     </header>
     ${isToday ? '' : `<div class="dayban"><span>Zapisuješ za <b>${longDate(st.date)}</b></span><button type="button" data-now>Späť na dnes</button></div>`}
     ${weekStrip}

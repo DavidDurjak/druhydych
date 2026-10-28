@@ -22,4 +22,5 @@ import('./touchfx.js').catch(() => { });
 import('./diary.js').catch(() => { });
 import('./weekly.js').catch(() => { });
 import('./todayorder.js').catch(() => { });
+import('./todayedit.js').catch(() => { });
 import('./fridge.js').catch(() => { });
