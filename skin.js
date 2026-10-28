@@ -124,6 +124,9 @@ ${S} .seg,${S} .pg-per{background:var(--well)!important;border:0!important;box-s
 ${S} .seg button,${S} .seg a,${S} .pg-per button{color:var(--t2)!important}
 ${S} .seg .on,${S} .seg button.on,${S} .seg a.on,${S} .pg-per button.on{background:var(--seg-on)!important;color:var(--t1)!important;box-shadow:var(--seg-on-sh)!important;transform:none!important}
 ${S} .seg .on *,${S} .pg-per button.on *{color:var(--t1)!important}
+/* Pokrok: posuvný výber obdobia, aktívna je pilulka pod tlačidlom */
+${S} .pgx-per::before{background:var(--seg-on)!important;box-shadow:var(--seg-on-sh)!important}
+${S} .pgx-per button.on{background:transparent!important;box-shadow:none!important}
 ${S} .lvl button{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:var(--t1)!important}
 ${S} .lvl button.on{background:var(--dk)!important;color:#fff!important;border-color:var(--dk-b)!important}
 ${D} .lvl button.on{background:rgba(124,255,178,.12)!important;box-shadow:0 0 0 1.5px rgba(124,255,178,.55),var(--gl-sh)!important}
@@ -131,7 +134,7 @@ ${S} .lvl button.on small,${S} .lvl button.on .lv-t small{color:#9FB0AB!importan
 ${S} .lvl button.on .lv-ic{background:var(--ck-grad)!important}
 ${S} .chip,${S} .pill{border:0!important}
 ${S} .ml-add{box-shadow:0 8px 16px -8px rgba(0,0,0,.35)!important}
-${S} textarea,${S} .input{background:var(--gl-soft)!important;border:var(--gl-b)!important;box-shadow:var(--well-sh)!important;color:var(--t1)!important}
+${S} textarea,${S} .input{background-color:var(--gl-soft)!important;border:var(--gl-b)!important;box-shadow:var(--well-sh)!important;color:var(--t1)!important}
 
 /* lišta a plusko */
 ${S} .nav{background:var(--dk)!important;border:1px solid var(--dk-b)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 20px 40px -18px rgba(0,0,0,.7)!important}

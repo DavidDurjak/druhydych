@@ -326,7 +326,7 @@ async function renderOnboarding() {
 // ---------- váha ----------
 function weightChart(tr) {
   if (tr.length < 2) return '<p class="empty">Graf sa zobrazí po druhom vážení.</p>';
-  const W = 520, H = 190, pl = 34, pr = 10, pt = 12, pb = 24;
+  const W = 360, H = 190, pl = 38, pr = 8, pt = 12, pb = 24;
   const data = tr.slice(-60);
   const ws = data.flatMap(d => [d.weight, d.trend]);
   let min = Math.min(...ws), max = Math.max(...ws); const pad = Math.max(0.5, (max - min) * 0.15); min -= pad; max += pad;
