@@ -314,7 +314,7 @@ export async function renderTrainer(id) {
     const bg = ctx.sheet(`<h2 style="margin-top:0">Požiadať o koučing</h2>
       <p class="tr-note" style="margin:0 0 12px">Napíš ${h(t.display_name.split(' ')[0])} pár slov o sebe a cieli. Žiadosť uvidí len tréner.</p>
       <textarea class="input" id="trMsg" rows="4" maxlength="500" placeholder="Napr. chcem pribrať 5 kg, trénujem 4x týždenne, ale neviem, ako jesť."></textarea>
-      <div class="card" style="margin:12px 0;padding:12px"><b style="font-size:14px">Čo tréner uvidí, keď žiadosť prijme</b><p class="tr-note" style="margin:6px 0 0">Tvoje jedlo, tréningy, váhu a check-iny. Súhlas môžeš kedykoľvek zrušiť v Profile.</p></div>
+      <div class="card" style="margin:12px 0;padding:12px"><b style="font-size:14px">Čo tréner uvidí, keď žiadosť prijme</b><p class="tr-note" style="margin:6px 0 0">Tvoje jedlo, tréningy, váhu, fotky postavy a check-iny. Súhlas môžeš kedykoľvek zrušiť v Profile.</p></div>
       <button class="btn primary" id="trSend" style="width:100%">Odoslať žiadosť</button>`);
     bg.querySelector('#trSend').onclick = async e => {
       e.target.disabled = true;
