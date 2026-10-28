@@ -67,7 +67,8 @@ ${S} .hk-eat span{color:#3E4A55!important}
 
 /* jedlá dňa pod kruhom */
 ${S} .mbp{background:#fff!important;border:2px dashed #0D1117!important;color:#0D1117!important}
-${S} .mbp.on{background:#E6FFF1!important;border-style:solid!important;box-shadow:2px 2px 0 #0D1117!important}
+${S} .mbp.on{background:color-mix(in srgb,var(--mc) 22%,#fff)!important;border-style:solid!important;box-shadow:2px 2px 0 #0D1117!important}
+${S} .mbp.on::after{box-shadow:none!important;height:4px!important;bottom:4px!important;border:1.5px solid #0D1117;width:18px!important;margin-left:-9px!important}
 ${S} .mbp i{color:#0D1117!important}
 
 /* makrá */
@@ -112,10 +113,33 @@ ${S} .bd-fab{border-radius:50%!important;box-shadow:0 0 0 2.5px #0D1117,3px 3px 
 
 /* plusko: rýchly zápis */
 ${S} .qa-ov{background:linear-gradient(165deg,rgba(147,255,197,.97),rgba(84,236,216,.97) 45%,rgba(99,190,255,.97))!important}
-${S} .qa-in .fq,${S} .qa-in .qa-m,${S} .qa-in .qa-w,${S} .qa-in .qa-t:not(.qa-hero .qa-t){background:#fff!important;border:2.5px solid #0D1117!important;box-shadow:3px 3px 0 #0D1117!important}
+${S} .qa-in .qa-m{background:color-mix(in srgb,var(--c,#7CFFB2) 22%,#fff)!important;border:2.5px solid #0D1117!important;box-shadow:inset 0 -5px 0 var(--c,transparent),3px 3px 0 #0D1117!important}
+${S} .qa-in .fq,${S} .qa-in .qa-w,${S} .qa-in .qa-t:not(.qa-hero .qa-t){background:#fff!important;border:2.5px solid #0D1117!important;box-shadow:3px 3px 0 #0D1117!important}
 ${S} .qa-hero{border:3px solid #0D1117!important;box-shadow:5px 5px 0 #0D1117!important}
 ${S} .qa-lb{color:#0D1117!important;font-weight:800}
 ${S} .qa-h{font-family:'Inter','Sora',sans-serif;font-weight:900;font-style:italic;letter-spacing:-.035em}
+
+/* štatistiky váhy: tri farebné nálepky */
+${S} .grid3 .stat{position:relative;border:2.5px solid #0D1117!important;box-shadow:3px 3px 0 #0D1117!important;border-radius:18px!important;padding:12px 12px 11px!important;overflow:hidden}
+${S} .grid3 .stat:nth-child(1){background:#E6FFF1!important}
+${S} .grid3 .stat:nth-child(2){background:#E7F3FF!important}
+${S} .grid3 .stat:nth-child(3){background:#FFF1E0!important}
+${S} .grid3 .stat::before{content:'';display:block;width:22px;height:5px;border-radius:3px;border:1.5px solid #0D1117;margin-bottom:9px}
+${S} .grid3 .stat:nth-child(1)::before{background:#1FBF76}
+${S} .grid3 .stat:nth-child(2)::before{background:#2F8FE8}
+${S} .grid3 .stat:nth-child(3)::before{background:#D9955A}
+${S} .grid3 .stat b{font-family:'Inter','Sora',sans-serif;font-weight:900;font-style:italic;font-size:26px!important;letter-spacing:-.035em;color:#0D1117}
+${S} .grid3 .stat span{color:#3E4A55!important;font-weight:700}
+${S} .pos{color:#13945A!important}
+
+/* graf váhy na karte Váha */
+${S} svg.chart .trend{stroke:#0D1117!important;stroke-width:3.6!important;fill:none!important;filter:none!important}
+${S} svg.chart .raw{fill:#fff!important;stroke:#0D1117!important;stroke-width:1.6!important;opacity:1!important}
+${S} svg.chart .grid{stroke:rgba(13,17,23,.14)!important;stroke-dasharray:4 5}
+${S} svg.chart .lbl{fill:#4E5A64!important;font-weight:700}
+${S} svg.chart .ck-area{fill:url(#ckWg)}
+${S} svg.chart .ck-end{fill:#0D1117}
+${S} svg.chart .ck-end2{fill:#7CFFB2}
 
 /* grafy */
 ${S} .pgx-rings,${S} .pgx-chart{--accent:#1FBF76}
@@ -233,6 +257,27 @@ function scanCards() {
   });
 }
 
+// graf váhy: plocha pod trendom a výrazný posledný bod (len vizuál, dáta sa nemenia)
+function paintCharts() {
+  if (H.dataset.skin !== 'cookie') return;
+  document.querySelectorAll('#app svg.chart').forEach(svg => {
+    if (svg.querySelector('.ck-area')) return;
+    const tp = svg.querySelector('.trend'); if (!tp) return;
+    const pts = (tp.getAttribute('d') || '').match(/-?[\d.]+,-?[\d.]+/g); if (!pts || pts.length < 2) return;
+    const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number), bottom = (vb[3] || 190) - 24;
+    const [fx] = pts[0].split(',').map(Number), [lx, ly] = pts[pts.length - 1].split(',').map(Number);
+    const NS = 'http://www.w3.org/2000/svg';
+    const defs = document.createElementNS(NS, 'defs');
+    defs.innerHTML = '<linearGradient id="ckWg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3EE6D0" stop-opacity=".55"/><stop offset="1" stop-color="#5BB8FF" stop-opacity=".08"/></linearGradient>';
+    const area = document.createElementNS(NS, 'path');
+    area.setAttribute('class', 'ck-area'); area.setAttribute('d', `${tp.getAttribute('d')} L${lx},${bottom} L${fx},${bottom} Z`);
+    svg.insertBefore(defs, svg.firstChild); tp.before(area);
+    const e1 = document.createElementNS(NS, 'circle'); e1.setAttribute('class', 'ck-end'); e1.setAttribute('cx', lx); e1.setAttribute('cy', ly); e1.setAttribute('r', 8);
+    const e2 = document.createElementNS(NS, 'circle'); e2.setAttribute('class', 'ck-end2'); e2.setAttribute('cx', lx); e2.setAttribute('cy', ly); e2.setAttribute('r', 3.5);
+    svg.append(e1, e2);
+  });
+}
+
 // ---------- zapnutie ----------
 let style = null, font = null;
 function apply() {
@@ -247,11 +292,11 @@ function apply() {
       document.head.appendChild(font);
     }
     let m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = '#8CFBC6';
-    paintRing(); scanCards();
+    paintRing(); scanCards(); paintCharts();
   } else {
     delete H.dataset.skin;
     style?.remove();
-    document.querySelectorAll('.ck-ring').forEach(e => e.remove());
+    document.querySelectorAll('.ck-ring,.ck-area,.ck-end,.ck-end2').forEach(e => e.remove());
     document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in'));
   }
 }
@@ -305,7 +350,7 @@ apply();
 const app = document.getElementById('app');
 if (app) {
   let q = 0;
-  const mo = new MutationObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; paintRing(); profileUi(); setTimeout(scanCards, 60); setTimeout(scanCards, 600); }); });
+  const mo = new MutationObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; paintRing(); paintCharts(); profileUi(); setTimeout(scanCards, 60); setTimeout(scanCards, 600); }); });
   mo.observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-lv'] });
   mo.observe(document.body, { childList: true }); // spodné panely sa vkladajú priamo do body
 }
