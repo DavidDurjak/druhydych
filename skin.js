@@ -18,11 +18,13 @@ ${S}{--bg:#EAFBF5;--bg-2:#E0F6EF;--card:rgba(255,255,255,.66);--card-2:rgba(255,
  --gl-sh:0 1px 0 rgba(255,255,255,.75) inset,0 18px 40px -20px rgba(7,30,40,.38),0 6px 14px -8px rgba(7,30,40,.16);
  --gl-sh2:0 1px 0 rgba(255,255,255,.85) inset,0 30px 60px -28px rgba(7,30,40,.48),0 10px 24px -12px rgba(7,30,40,.2);
  --dk:rgba(7,17,15,.84);color-scheme:light}
-${S},${S} body{background:#4fe8d2 linear-gradient(170deg,#8FFFC6 0%,#4AE9D6 48%,#58B2FF 100%) fixed!important;min-height:100%}
+${S},${S} body{background:#4fe8d2!important;min-height:100%}
+/* pozadie ako pevná vrstva: iPhone nepodporuje background-attachment:fixed, takto gradient ostane na mieste aj pri posúvaní */
 ${S} body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:
  radial-gradient(120% 60% at 15% 0%,rgba(190,255,220,.85),rgba(190,255,220,0) 55%),
  radial-gradient(45% 28% at 80% 6%,rgba(255,255,255,.7),rgba(255,255,255,0) 70%),
- radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.75),rgba(63,139,255,0) 62%)}
+ radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.75),rgba(63,139,255,0) 62%),
+ linear-gradient(170deg,#8FFFC6 0%,#4AE9D6 48%,#58B2FF 100%)}
 ${S} #app{position:relative;z-index:1}
 ${S} body::after{display:none!important}
 
@@ -144,6 +146,30 @@ ${S} .pgx-rings,${S} .pgx-chart{--accent:#22C987}
 ${S} .pgx-area{fill:rgba(62,230,208,.3)!important}
 ${S} .pgx-line{stroke:#22C987!important;stroke-width:3.8!important;filter:drop-shadow(0 6px 6px rgba(34,201,135,.35))!important}
 ${S} .pgx-proj{stroke:#22C987!important}
+
+/* úvod a dotazník pred registráciou */
+${S} .fnq{background:linear-gradient(170deg,#8FFFC6 0%,#4AE9D6 48%,#58B2FF 100%)!important;color:#0B1512!important}
+${S} .fnq::before{inset:0!important;height:auto!important;background:
+ radial-gradient(120% 60% at 15% 0%,rgba(190,255,220,.85),rgba(190,255,220,0) 55%),
+ radial-gradient(45% 28% at 80% 6%,rgba(255,255,255,.7),rgba(255,255,255,0) 70%),
+ radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.75),rgba(63,139,255,0) 62%)!important}
+${S} .fnq h1{color:#0B1512;letter-spacing:-.035em}
+${S} .fnq-sub{color:#2A3A36!important}
+${S} .fnq-o,${S} .fnq-feats>div,${S} .fnq-nf,${S} .fnq-bigin label,${S} .fnq-yrs button,${S} .fnq-week i{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:#0B1512!important;
+ -webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3)}
+${S} .fnq-o[aria-checked=true]{background:rgba(255,255,255,.92)!important;box-shadow:0 0 0 2.5px #16B07A,0 16px 30px -14px rgba(22,176,122,.6)!important}
+${S} .fnq-o.v2[aria-checked=true]{box-shadow:0 0 0 2.5px var(--c),0 16px 30px -14px var(--c)!important}
+${S} .fnq-bar{background:rgba(7,30,40,.12)!important}
+${S} .fnq-bar i,${S} .fnq-bar b,${S} .fnq-bar>*{background:#07110F!important}
+${S} .fnq-back{color:#0B1512!important}
+${S} .fnq-o .ic,${S} .fnq-feats .fi{background:linear-gradient(145deg,#EFFFF6,#C9F7E4)!important;color:#0E8F62!important;box-shadow:0 1px 0 #fff inset,0 6px 12px -8px rgba(14,143,98,.6)}
+${S} .fnq-o small{color:#5B6D68!important}
+${S} .fnq-week i.on{background:var(--ck-grad)!important;color:#07110F!important}
+${S} .fnq-cta{background:var(--dk)!important;color:#fff!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 18px 34px -14px rgba(0,0,0,.6)!important}
+${S} .fnq-cta:disabled{opacity:.4!important}
+${S} .fnq-foot{background:none!important}
+${S} .fnq-link{color:#2A3A36!important}
+${S} .fnq-link b{color:#0B1512!important}
 
 /* panel Upraviť Dnes */
 ${S} .tde-s{background:rgba(240,252,248,.94)!important;-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
