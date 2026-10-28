@@ -11,7 +11,7 @@ const get = () => { try { return localStorage.getItem(KEY) === 'cookie' ? 'cooki
 const S = 'html[data-skin=cookie]';
 
 const CSS = `
-${S}{--bg:transparent;--bg-2:#EAF8F4;--card:#FFFFFF;--card-2:#F3FBF8;--line:rgba(13,17,23,.16);--text:#0D1117;--muted:#4E5A64;
+${S}{--bg:#ECFBF6;--bg-2:#E2F6F0;--card:#FFFFFF;--card-2:#F3FBF8;--line:rgba(13,17,23,.16);--text:#0D1117;--muted:#4E5A64;
  --accent:#0D1117;--accent-ink:#7CFFB2;--accent-2:#D9955A;--protein:#1FBF76;--carbs:#2F8FE8;--fat:#D9955A;--danger:#E0344F;
  --ink:#0D1117;--ck-grad:linear-gradient(135deg,#7CFFB2 0%,#3EE6D0 50%,#5BB8FF 100%);--ck-sh:4px 4px 0 #0D1117;--ck-b:2.5px solid #0D1117;--track:#E3ECEA;color-scheme:light}
 ${S},${S} body{background:#5BE0D0 linear-gradient(165deg,#93FFC5 0%,#54ECD8 45%,#63BEFF 100%) fixed!important;min-height:100%}
@@ -27,7 +27,7 @@ ${S} .screen h1,${S} .tdh-g,${S} .hk-c b,${S} .hk-eat b,${S} .mtile b,${S} .disp
 ${S} .screen h2{font-family:'Inter','Sora',system-ui,sans-serif;font-weight:800;letter-spacing:-.02em}
 
 /* karty ako nálepky */
-${S} .card,${S} .mtile,${S} .ml,${S} #wx,${S} #sp,${S} .duo>*,${S} .fwdk-t>*,${S} .shop-card,${S} .fr-card,${S} #dxdash,${S} .tip,
+${S} .card,${S} .mtile,${S} .ml,${S} #wx,${S} #sp,${S} .duo>*,${S} .fwdk-t>*,${S} .shop-card,${S} .fr-card,${S} .tip,
 ${S} details.an,${S} .pg-card,${S} .tile,${S} .dc-t,${S} .dc-i,${S} .qk-b,${S} .wc-card,${S} .rp-card,${S} .rd-card,${S} .ci{
  background:#fff!important;border:var(--ck-b)!important;box-shadow:var(--ck-sh)!important;color:var(--text)}
 ${S} .card.accent{background:#FFF1DE!important}
@@ -110,6 +110,25 @@ ${S} .qa-fab{background:var(--ck-grad)!important;border:3px solid #0D1117!import
 ${S} .qa-fab svg{color:#0D1117!important;stroke:#0D1117}
 ${S} .bd-fab{border-radius:50%!important;box-shadow:0 0 0 2.5px #0D1117,3px 3px 0 2.5px #0D1117!important}
 
+/* plusko: rýchly zápis */
+${S} .qa-ov{background:linear-gradient(165deg,rgba(147,255,197,.97),rgba(84,236,216,.97) 45%,rgba(99,190,255,.97))!important}
+${S} .qa-in .fq,${S} .qa-in .qa-m,${S} .qa-in .qa-w,${S} .qa-in .qa-t:not(.qa-hero .qa-t){background:#fff!important;border:2.5px solid #0D1117!important;box-shadow:3px 3px 0 #0D1117!important}
+${S} .qa-hero{border:3px solid #0D1117!important;box-shadow:5px 5px 0 #0D1117!important}
+${S} .qa-lb{color:#0D1117!important;font-weight:800}
+${S} .qa-h{font-family:'Inter','Sora',sans-serif;font-weight:900;font-style:italic;letter-spacing:-.035em}
+
+/* grafy */
+${S} .pgx-area{fill:rgba(62,230,208,.32)!important}
+${S} .pgx-line{stroke:#0D1117!important;filter:none!important}
+${S} .pgx-proj{stroke:#0D1117!important}
+
+/* automaticky rozpoznané karty na ostatných obrazovkách */
+${S} .ck-c{border:2.5px solid #0D1117!important;box-shadow:3px 3px 0 #0D1117!important}
+${S} .ck-c.ck-l{box-shadow:4px 4px 0 #0D1117!important}
+${S} .ck-c.ck-in{box-shadow:none!important;border-width:2px!important}
+${S} .ml-add{border:2px solid #0D1117!important;box-shadow:2px 2px 0 #0D1117}
+${S} textarea{border:2px solid #0D1117!important;background:#fff!important}
+
 /* panel Upraviť Dnes */
 ${S} .tde-s{background:#F3FBF8}
 ${S} .tde-r{border:2px solid #0D1117!important;box-shadow:2px 2px 0 #0D1117}
@@ -175,6 +194,44 @@ function paintRing() {
   });
 }
 
+// ---------- automatické nálepky ----------
+// Obrazoviek je veľa a karty majú rôzne triedy. V Sušienke preto karty aj na zriedkavejších obrazovkách nájdeme podľa vzhľadu:
+// svetlé pozadie, zaoblené rohy, rozumná veľkosť. Dostanú obrys a tvrdý tieň. Vnorené karty v karte dostanú len tenší obrys.
+const MANUAL = '.card,.hero-k,.mtile,.ml,#wx,#sp,.duo>*,.fwdk-t>*,.shop-card,.fr-card,.tip,details.an,.pg-card,.tile,.dc-t,.dc-i,.qk-b,.wc-card,.rp-card,.rd-card,.ci,.lvl button,.pfx-hero,.pfx-plan,.pfx-tiles>*,.seg,.pg-per,.mbp,.tdh-cal,.tdh-streak,.btn';
+const seen = new WeakSet();
+// farba môže prísť ako rgb(...) alebo color(srgb 0..1) (výsledok color-mix)
+const light = c => {
+  let m = c.match(/rgba?\(([^)]+)\)/), k = 1;
+  if (!m) { m = c.match(/color\(srgb ([^)]+)\)/); k = 255; }
+  if (!m) return false;
+  const v = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+  const [r, g, b] = v.slice(0, 3).map(x => x * k), a = v[3] == null ? 1 : v[3];
+  return a > 0.15 && (0.2126 * r + 0.7152 * g + 0.0722 * b) > 205;
+};
+function scanCards() {
+  if (H.dataset.skin !== 'cookie') return;
+  const vw = innerWidth;
+  document.querySelectorAll('#app .screen, .sheet-bg > *, .tde-s, .qa-in').forEach(root => {
+    root.querySelectorAll('div,section,article,a,button,li,label,details,aside,form').forEach(el => {
+      if (seen.has(el)) return;
+      const w = el.offsetWidth, h = el.offsetHeight;
+      if (!w || !h) return; // ešte nevykreslené: skúsime pri ďalšom prechode
+      seen.add(el);
+      if (el.closest('.nav,.ck-ring,.hk-ring')) return;
+      if (w < 84 || h < 42 || w > vw * 0.95) return;
+      if (el.matches(MANUAL)) return;
+      const cs = getComputedStyle(el);
+      if (parseFloat(cs.borderTopLeftRadius) < 11 || cs.position === 'fixed' || cs.borderTopStyle === 'dashed') return;
+      const bgi = cs.backgroundImage;
+      if (!light(cs.backgroundColor) && !(bgi.includes('gradient') && (bgi.match(/(rgba?|color)\([^)]+\)/g) || []).some(light))) return;
+      const host = el.parentElement?.closest('.ck-c,' + MANUAL);
+      el.classList.add('ck-c');
+      if (host && root.contains(host)) el.classList.add('ck-in');
+      else if (w > 250) el.classList.add('ck-l');
+    });
+  });
+}
+
 // ---------- zapnutie ----------
 let style = null, font = null;
 function apply() {
@@ -189,11 +246,12 @@ function apply() {
       document.head.appendChild(font);
     }
     let m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = '#8CFBC6';
-    paintRing();
+    paintRing(); scanCards();
   } else {
     delete H.dataset.skin;
     style?.remove();
     document.querySelectorAll('.ck-ring').forEach(e => e.remove());
+    document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in'));
   }
 }
 export function getSkin() { return get(); }
@@ -246,5 +304,7 @@ apply();
 const app = document.getElementById('app');
 if (app) {
   let q = 0;
-  new MutationObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; paintRing(); profileUi(); }); }).observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-lv'] });
+  const mo = new MutationObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; paintRing(); profileUi(); setTimeout(scanCards, 60); setTimeout(scanCards, 600); }); });
+  mo.observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-lv'] });
+  mo.observe(document.body, { childList: true }); // spodné panely sa vkladajú priamo do body
 }
