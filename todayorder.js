@@ -8,7 +8,11 @@
 //
 // Vlastné rozloženie (todayedit.js): človek si karty pod hlavnou kartou kalórií môže preusporiadať a skryť.
 // Hlavička, týždenný pás a karta kalórií ostávajú vždy hore. Jedlá dňa sa dajú presunúť, ale nie skryť (bez nich appka nemá zmysel).
-// Uloží sa poradie a zoznam skrytých kariet (localStorage). Nová karta, ktorú človek ešte nevidel, sa zaradí na svoje predvolené miesto.
+// Uloží sa poradie a zoznam skrytých kariet do telefónu (localStorage) aj do účtu (profiles.today_layout), aby rozloženie
+// išlo s človekom na nový telefón aj po preinštalovaní. Vyhráva novšia zmena (čas „at“). Nová karta, ktorú človek ešte nevidel,
+// sa zaradí na svoje predvolené miesto.
+import * as db from './data.js';
+import { ctx } from './app.js';
 
 const FIXED = ['.tdh', '.wk', '.back-card', '.hero-k'];
 
@@ -35,13 +39,34 @@ const DEFAULT = CARDS.map(c => c.id);
 const byId = Object.fromEntries(CARDS.map(c => [c.id, c]));
 const KEY = 'fw_td_layout_v1';
 
+const clean = v => (v && Array.isArray(v.order) && Array.isArray(v.hidden))
+  ? { order: v.order.filter(id => byId[id]).slice(0, 40), hidden: v.hidden.filter(id => byId[id] && !byId[id].lock).slice(0, 40), at: Number(v.at) || 0 }
+  : null;
 let layout = load();
 function load() {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (v && Array.isArray(v.order) && Array.isArray(v.hidden)) return { order: v.order.filter(id => byId[id]), hidden: v.hidden.filter(id => byId[id] && !byId[id].lock) };
-  } catch (_) { }
-  return { order: [], hidden: [] };
+  try { const v = clean(JSON.parse(localStorage.getItem(KEY) || 'null')); if (v) return v; } catch (_) { }
+  return { order: [], hidden: [], at: 0 };
+}
+const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(layout)); } catch (_) { } };
+
+// účet: zápis s malým oneskorením (pri ťahaní kariet sa nezapisuje pri každom pohybe)
+let pushT = 0, lastUid = '', lastSeen = -1;
+function push() {
+  clearTimeout(pushT);
+  pushT = setTimeout(async () => {
+    const p = ctx.state?.profile; if (!p?.id) return;
+    const v = { order: layout.order, hidden: layout.hidden, at: layout.at };
+    try { const { error } = await db.sb.from('profiles').update({ today_layout: v }).eq('id', p.id); if (!error) { p.today_layout = v; lastSeen = v.at; } } catch (_) { /* offline: zapíše sa pri ďalšej zmene alebo otvorení */ }
+  }, 700);
+}
+// po načítaní profilu: novšie rozloženie z účtu prevezme, novšie z telefónu pošle do účtu
+function sync() {
+  const p = ctx.state?.profile; if (!p?.id) return;
+  const remote = clean(p.today_layout), rat = remote?.at || 0;
+  if (p.id === lastUid && rat === lastSeen) return;
+  lastUid = p.id; lastSeen = rat;
+  if (remote && rat > (layout.at || 0)) { layout = remote; saveLocal(); return true; }
+  if ((layout.at || 0) > rat) push();
 }
 
 // poradie, ktoré človek nastavil + nové karty na ich predvolenom mieste (za najbližšou predchádzajúcou kartou)
@@ -59,14 +84,13 @@ export function mergedOrder(l = layout) {
 export const getLayout = () => ({ order: mergedOrder(), hidden: layout.hidden.slice() });
 export const isCustom = () => layout.order.length > 0 || layout.hidden.length > 0;
 export function setLayout(next) {
-  layout = { order: (next.order || []).filter(id => byId[id]), hidden: (next.hidden || []).filter(id => byId[id] && !byId[id].lock) };
-  try { localStorage.setItem(KEY, JSON.stringify(layout)); } catch (_) { }
-  refresh();
+  layout = clean({ order: next.order || [], hidden: next.hidden || [], at: Date.now() });
+  saveLocal(); push(); refresh();
 }
+// pôvodné rozloženie sa tiež uloží (s časom), aby sa vrátilo aj na ostatných telefónoch
 export function resetLayout() {
-  layout = { order: [], hidden: [] };
-  try { localStorage.removeItem(KEY); } catch (_) { }
-  refresh();
+  layout = { order: [], hidden: [], at: Date.now() };
+  saveLocal(); push(); refresh();
 }
 export const cardOf = el => CARDS.find(c => el.matches(c.sel)) || null;
 
@@ -112,6 +136,7 @@ if (app) {
   mo = new MutationObserver(() => {
     const scr = app.querySelector('.screen.td');
     if (!scr) return;
+    sync();
     sort(scr);
     mo.takeRecords(); // vlastné presuny a prepnutia tried nespúšťajú ďalšie triedenie
   });
