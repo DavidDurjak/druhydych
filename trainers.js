@@ -293,7 +293,7 @@ export async function renderTrainer(id) {
   const myRev = revs.find(r => r.client_id === me().id);
   const cta = () => {
     if (own) return `<a class="btn" href="#/trener-profil">Upraviť môj profil</a>`;
-    if (link?.status === 'active') return `<div class="tr-row"><a class="btn primary" style="flex:1" href="#/chat/${id}">Napísať trénerovi</a></div><p class="tr-note">Toto je tvoj tréner. Vidí tvoje jedlo, tréningy, váhu a check-iny.</p>`;
+    if (link?.status === 'active') return `<div class="tr-row"><a class="btn primary" style="flex:1" href="#/chat/${id}">Napísať trénerovi</a></div><p class="tr-note">Toto je tvoj tréner. Vidí tvoje jedlo, tréningy, váhu, fotky postavy a check-iny.</p>`;
     if (link?.status === 'requested') return `<button class="btn" disabled style="width:100%">Žiadosť odoslaná</button><p class="tr-note">Tréner ti odpovie tu v appke. <a href="#" id="trCancel">Zrušiť žiadosť</a></p>`;
     return `<button class="btn primary" id="trAsk">Požiadať o koučing</button><p class="tr-note">Nič neplatíš teraz. Najprv sa tréner a ty dohodnete.</p>`;
   };
@@ -627,11 +627,11 @@ async function mountProfile() {
     const h1 = scr.querySelector('h1'); (h1 || scr).insertAdjacentHTML(h1 ? 'afterend' : 'afterbegin', html);
     const c = scr.querySelector('#trCard');
     c.querySelector('#trCode')?.addEventListener('click', () => {
-      const bg = ctx.sheet(`<h2 style="margin-top:0">Kód od trénera</h2><p class="tr-note" style="margin:0 0 12px">Tréner uvidí tvoje jedlo, tréningy, váhu a check-iny. Súhlas môžeš kedykoľvek zrušiť.</p><input class="input" id="trC" maxlength="10" placeholder="Napr. 4F7A2C" style="text-transform:uppercase;letter-spacing:.14em;font-size:20px;text-align:center"><button class="btn primary mt" id="trGo" style="width:100%">Pripojiť sa</button>`);
+      const bg = ctx.sheet(`<h2 style="margin-top:0">Kód od trénera</h2><p class="tr-note" style="margin:0 0 12px">Tréner uvidí tvoje jedlo, tréningy, váhu, fotky postavy a check-iny. Súhlas môžeš kedykoľvek zrušiť.</p><input class="input" id="trC" maxlength="10" placeholder="Napr. 4F7A2C" style="text-transform:uppercase;letter-spacing:.14em;font-size:20px;text-align:center"><button class="btn primary mt" id="trGo" style="width:100%">Pripojiť sa</button>`);
       bg.querySelector('#trGo').onclick = async e => { e.target.disabled = true; try { await api().byCode(bg.querySelector('#trC').value); bg.remove(); toast('Pripojený k trénerovi'); location.hash = '#/profil'; window.dispatchEvent(new HashChangeEvent('hashchange')); } catch (err) { toast(err.message || 'Kód sa nenašiel', true); e.target.disabled = false; } };
     });
     c.querySelector('#trEnd')?.addEventListener('click', () => {
-      const bg = ctx.sheet(`<h2 style="margin-top:0">Ukončiť spoluprácu?</h2><p class="tr-note" style="margin:0 0 12px">Tréner prestane vidieť tvoje jedlo a tréningy. Staré správy ostanú.</p><div class="tr-row"><button class="btn primary" id="trY" style="flex:1">Ukončiť</button><button class="btn" id="trN">Nechať</button></div>`);
+      const bg = ctx.sheet(`<h2 style="margin-top:0">Ukončiť spoluprácu?</h2><p class="tr-note" style="margin:0 0 12px">Tréner prestane vidieť tvoje jedlo, tréningy, váhu a fotky. Staré správy ostanú.</p><div class="tr-row"><button class="btn primary" id="trY" style="flex:1">Ukončiť</button><button class="btn" id="trN">Nechať</button></div>`);
       bg.querySelector('#trN').onclick = () => bg.remove();
       bg.querySelector('#trY').onclick = async () => { try { const l = (await api().links(me().id)).find(x => x.client_id === me().id && x.status === 'active'); await api().setLink(l.id, 'ended'); bg.remove(); toast('Spolupráca ukončená'); location.hash = '#/'; setTimeout(() => location.hash = '#/profil', 30); } catch (err) { toast(err.message, true); } };
     });
