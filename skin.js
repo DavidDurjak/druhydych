@@ -14,7 +14,7 @@ const CSS = `
 ${S}{--bg:#EAFBF5;--bg-2:#E0F6EF;--card:rgba(255,255,255,.66);--card-2:rgba(255,255,255,.5);--line:rgba(7,30,40,.1);--text:#0B1512;--muted:#5B6D68;
  --accent:#16B07A;--accent-ink:#FFFFFF;--accent-2:#C97B3F;--protein:#22C987;--carbs:#2A86E6;--fat:#DFA367;--danger:#E0344F;--track:rgba(7,30,40,.08);
  --ck-grad:linear-gradient(135deg,#7CFFB2 0%,#3EE6D0 52%,#5BB8FF 100%);
- --gl:rgba(255,255,255,.64);--gl-b:1px solid rgba(255,255,255,.8);
+ --gl:rgba(255,255,255,.74);--gl-b:1px solid rgba(255,255,255,.8);
  --gl-sh:0 1px 0 rgba(255,255,255,.75) inset,0 18px 40px -20px rgba(7,30,40,.38),0 6px 14px -8px rgba(7,30,40,.16);
  --gl-sh2:0 1px 0 rgba(255,255,255,.85) inset,0 30px 60px -28px rgba(7,30,40,.48),0 10px 24px -12px rgba(7,30,40,.2);
  --dk:rgba(7,17,15,.84);color-scheme:light}
@@ -41,10 +41,16 @@ ${S} .pfx-plan,${S} .pfx-tiles>*,${S} .grid3 .stat,${S} .ck-c{
  background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:var(--text);
  -webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3)}
 ${S} .ck-c.ck-in{background:rgba(255,255,255,.55)!important;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 4px 10px -6px rgba(7,30,40,.2)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
-${S} .hero-k,${S} .pfx-hero{background:rgba(255,255,255,.74)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh2)!important;border-radius:32px!important;
+${S} .hero-k,${S} .pfx-hero{background:rgba(255,255,255,.84)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh2)!important;border-radius:32px!important;
  -webkit-backdrop-filter:blur(22px) saturate(1.35);backdrop-filter:blur(22px) saturate(1.35)}
 ${S} .hero-k::before,${S} .hero-k::after,${S} .pfx-hero::before{display:none!important}
 ${S} .card.accent,${S} .rp-card{background:linear-gradient(135deg,rgba(255,246,227,.88),rgba(255,233,194,.72))!important}
+
+/* text priamo na pozadí (mimo kariet) musí byť tmavší, inak sa na gradiente stráca */
+${S} .topbar .date{color:#0B1512!important;font-weight:700}
+${S} .btn.icon:disabled{opacity:.35}
+${S} .pfx-gt,${S} .screen>.muted,${S} .screen>p.small,${S} .fwdk-h span,${S} .dc>h3+span{color:#1E4D44!important}
+${S} .pfx-gt{font-weight:700}
 
 /* hlavička Dnes */
 ${S} .tdh-cal,${S} .tdh-s{background:rgba(255,255,255,.58)!important;border:var(--gl-b)!important;color:#0B1512!important;box-shadow:var(--gl-sh)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
