@@ -204,6 +204,8 @@ ${S} .fnq-foot{background:none!important}
 ${S} .fnq-link{color:var(--t2)!important}
 ${S} .fnq-link b{color:var(--t1)!important}
 
+/* Klienti: štítok Pozor vo svetlom režime tmavší, aby bol čitateľný na skle */
+html[data-skin=cookie]:not([data-theme=dark]) .ko-c.warn .ko-id span{color:#A35F12!important;background:rgba(223,163,103,.22)!important}
 /* panel Upraviť Dnes */
 ${S} .tde-s{background:var(--tde)!important;-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
 ${S} .tde-r{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important}

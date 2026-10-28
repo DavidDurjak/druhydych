@@ -38,6 +38,6 @@ function run() {
   el.onclick = back;
   s.classList.add('bk'); s.prepend(el);
   // staré textové „Späť“ v hlavičke je už zbytočné
-  s.querySelectorAll('.topbar a').forEach(a => { if (/^(←\s*)?Späť$/.test(a.textContent.trim())) a.style.display = 'none'; });
+  s.querySelectorAll('.topbar a, .tr-top a').forEach(a => { const t = a.textContent.trim(); if (t === '←' || /^(←\s*)?Späť$/.test(t)) a.style.display = 'none'; }); // šípka vľavo hore už je, druhá by mätla
 }
 if (root) { new MutationObserver(run).observe(root, { childList: true, subtree: true }); run(); }

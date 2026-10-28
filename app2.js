@@ -407,6 +407,11 @@ export async function applyAdaptive(p, res) {
 // ---------- SPRÁVY ----------
 export async function renderMessages() {
   const uid = state.profile.id;
+  // klient s vlastným trénerom píše jemu, nie tímu appky
+  if (state.profile.role !== 'coach') {
+    const tid = await import('./trainers.js').then(m => m.activeTrainerOf(uid)).catch(() => null);
+    if (tid) { location.replace('#/chat/' + tid); return; }
+  }
   const msgs = await db.listMessages(uid);
   const unread = msgs.filter(m => m.to_user === uid && !m.read_at).map(m => m.id);
   await db.markRead(unread);
@@ -482,7 +487,7 @@ export async function renderCoach() {
   $app().querySelector('#csv').onclick = async () => {
     const csv = await db.exportCsv();
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `druhydych-${calc.today()}.csv`; a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `gaintrain-klienti-${calc.today()}.csv`; a.click();
   };
 }
 export async function renderCoachDetail(userId) {
@@ -510,7 +515,7 @@ export async function renderCoachDetail(userId) {
     ${photos.length ? `<a class="card link" href="#/kouc/${userId}/fotky"><div class="row between"><h3>Fotky (${photos.length})</h3><span class="muted small">Otvoriť →</span></div><div class="row mt" style="gap:6px">${photos.slice(-3).map(x => `<img src="${urls[x.path]}" style="width:31%;aspect-ratio:3/4;object-fit:cover;border-radius:10px">`).join('')}</div></a>` : '<div class="card"><p class="muted small">Zatiaľ žiadne fotky.</p></div>'}
     ${targets.length ? `<div class="card"><h3 class="mb">Zmeny cieľa</h3>${targets.slice().reverse().map(t => `<div class="item"><div class="n"><b>${t.old_kcal} → ${t.new_kcal} kcal</b><span>${h(t.reason || '')}</span></div><span class="muted small mono">${calc.fmtDate(t.date)}</span></div>`).join('')}</div>` : ''}
     ${notes.length ? `<div class="card"><h3 class="mb">Poznámky z check-inov</h3>${notes.slice(0, 5).map(c => `<div class="item"><div class="n"><b>${calc.fmtDate(c.date)} · nálada ${c.mood ?? '–'}/5 · spánok ${c.sleep_h ?? '–'} h</b><span>${h(c.note)}</span></div></div>`).join('')}</div>` : ''}
-    <form id="mf" class="card"><h3 class="mb">Správa pre ${h(p.name.split(' ')[0])}</h3><textarea class="input" name="b" rows="2" placeholder="Napr. Dobrá práca tento týždeň, skús pridať bielkoviny na raňajky."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>
+    <form id="mf" class="card"><div class="row between mb"><h3>Napísať správu</h3><a class="btn sm ghost" href="#/chat/${userId}">Celá konverzácia</a></div><textarea class="input" name="b" rows="2" placeholder="Napr. Dobrá práca tento týždeň, skús pridať bielkoviny na raňajky."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>
   </div>${nav('#/kouc')}`;
   $app().querySelector('#mf').onsubmit = async e => {
     e.preventDefault(); const body = new FormData(e.target).get('b').trim(); if (!body) return;

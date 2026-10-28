@@ -57,6 +57,7 @@ const real = {
 const api = () => (typeof window !== 'undefined' && window.__trMock) || real;
 
 export async function loadMine(uid) { return api().mine(uid); }
+export async function activeTrainerOf(uid) { const l = (await api().links(uid)).find(x => x.client_id === uid && x.status === 'active'); return l ? l.trainer_id : null; }
 
 // ---------- vzhľad ----------
 const CSS = `
@@ -176,7 +177,10 @@ const CSS = `
 .tr-code{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;border-radius:18px;background:rgba(124,255,178,.08);border:1px dashed rgba(124,255,178,.45)}
 .tr-code b{font-size:26px;letter-spacing:.14em;font-variant-numeric:tabular-nums}
 .tr-me{margin-bottom:14px}
-.tr-me .tr-card{margin-bottom:8px}
+.tr-me .tr-card{display:flex;align-items:center;gap:14px;padding:12px;margin-bottom:12px;border-radius:20px}
+.tr-me .tr-card .tr-av{width:60px;height:60px;border-radius:18px;font-size:22px}
+.tr-me .tr-card .tr-body{gap:2px}
+.tr-me .tr-card .tr-hl{-webkit-line-clamp:1}
 .tr-row{display:flex;gap:8px;flex-wrap:wrap}
 .tr-chat{display:grid;gap:8px;margin-bottom:12px}
 .tr-bub{max-width:82%;padding:10px 13px;border-radius:18px;font-size:14.5px;line-height:1.4;background:rgba(255,255,255,.07);justify-self:start;white-space:pre-wrap}
@@ -576,13 +580,13 @@ async function startCall(otherId, uid) {
 }
 export async function renderChat(otherId) {
   const uid = me().id;
-  $app().innerHTML = `<div class="screen"><div class="spinner"></div></div>${nav('#/profil')}`;
+  $app().innerHTML = `<div class="screen"><div class="spinner"></div></div>${nav('#/chat/' + otherId)}`;
   const [msgs, names] = await Promise.all([api().thread(uid, otherId), api().names([otherId])]);
   const title = names[otherId]?.display_name || (await db.sb.from('trainer_clients').select('client_name').eq('client_id', otherId).eq('trainer_id', uid).maybeSingle().then(r => r.data?.client_name).catch(() => null)) || 'Správy';
   await db.markRead(msgs.filter(m => m.to_user === uid && !m.read_at).map(m => m.id)).catch(() => { });
-  $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>${h(title)}</h1><div class="row2"><button class="btn sm primary" id="trCall" type="button">Videohovor</button><a class="btn sm ghost" href="${ctx.state.trainer && ctx.state.trainer.user_id === uid ? '#/kouc' : '#/profil'}">←</a></div></div>
+  $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>${h(title)}</h1><button class="btn sm primary" id="trCall" type="button">Videohovor</button></div>
     <div class="tr-chat">${msgs.length ? msgs.map(m => `<div class="tr-bub${m.from_user === uid ? ' me' : ''}">${h(m.body)}<small>${fmtDate(m.created_at)}</small></div>`).join('') : '<div class="tr-empty"><b>Zatiaľ nič</b>Napíš prvú správu.</div>'}</div>
-    <form id="trF" class="card"><textarea class="input" name="b" rows="2" maxlength="1000" placeholder="Napíš správu"></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form></div>${nav('#/profil')}`;
+    <form id="trF" class="card"><textarea class="input" name="b" rows="2" maxlength="1000" placeholder="Napíš správu"></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form></div>${nav('#/chat/' + otherId)}`;
   $app().querySelector('#trCall').onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; const t0 = btn.textContent; btn.textContent = 'Pripájam…';
     try { await startCall(otherId, uid); } catch (err) { toast(err.message || 'Videohovor sa nepodarilo spustiť', true); }

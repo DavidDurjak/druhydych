@@ -71,6 +71,8 @@ function groupOf(path) {
   const p = String(path || '#/').split('?')[0] || '#/';
   if (p.startsWith('#/kouc/')) return '#/kouc';
   if (p.startsWith('#/trener/')) return state.trainer?.approved && state.profile?.role !== 'coach' ? '#/profil' : '#/treneri';
+  const trv = state.profile?.role === 'coach' || state.trainer?.approved;
+  if (trv && (p.startsWith('#/chat/') || (p === '#/report' && /[?&]u=/.test(location.hash)))) return '#/kouc'; // tréner pri klientovi ostáva v záložke Klienti
   if (p === '#/trener-profil' || p === '#/treneri-ziadosti' || p.startsWith('#/chat/')) return '#/profil';
   return NAV_GROUP[p] || p;
 }

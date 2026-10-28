@@ -295,12 +295,12 @@ if (typeof document !== 'undefined') {
   // karta na Dnes (nedeľa od 18:00, pondelok, utorok): otvorí príbeh namiesto holého reportu
   document.addEventListener('click', e => {
     const a = e.target.closest?.('a.rp-card');
-    if (!a) return;
+    if (!a || /[?&]u=/.test(a.getAttribute('href') || '')) return; // tréner pozerá report klienta: otvorí sa jeho report, nie vlastný príbeh
     e.preventDefault(); e.stopPropagation();
     openRecap();
   }, true);
   const enhance = () => {
-    const card = app?.querySelector('a.rp-card:not([data-rc])');
+    const card = app?.querySelector('a.rp-card:not([data-rc]):not([href*="u="])');
     if (card) {
       card.dataset.rc = '1';
       const t = card.querySelector('h3'), p = card.querySelector('p'), go = card.querySelector('.rp-card-go');
@@ -309,7 +309,7 @@ if (typeof document !== 'undefined') {
       if (go) go.textContent = '▶';
     }
     const sc = app?.querySelector('.screen.rp:not([data-rcp])');
-    if (sc && sc.querySelector('a.btn.ghost[href="#/pokrok"]')) {
+    if (sc && !/[?&]u=/.test(location.hash) && sc.querySelector('a.btn.ghost[href="#/pokrok"]')) {
       sc.dataset.rcp = '1';
       const q = new URLSearchParams((location.hash.split('?')[1]) || '');
       const b = document.createElement('button'); b.className = 'btn primary mb rp-play'; b.id = 'rcPlay'; b.textContent = '▶ Prehrať týždeň';

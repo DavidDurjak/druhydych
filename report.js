@@ -59,14 +59,14 @@ const sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v);
 export async function renderReport() {
   const st = state(), me = st.profile;
   const q = new URLSearchParams((location.hash.split('?')[1]) || '');
-  const uid = q.get('u') && me.role === 'coach' ? q.get('u') : me.id;
+  const uid = q.get('u') && (me.role === 'coach' || st.trainer?.approved) ? q.get('u') : me.id; // kouč alebo schválený tréner pozerá report klienta
   const from = calc.weekStart(q.get('w') || defaultWeek());
   const thisWeek = calc.weekStart(calc.today());
   const base = '#/report?' + (uid !== me.id ? `u=${uid}&` : '');
-  $app().innerHTML = `<div class="screen"><h1>Týždenný report</h1><div class="spinner"></div></div>${nav('#/report')}`;
+  $app().innerHTML = `<div class="screen"><h1>Týždenný report</h1><div class="spinner"></div></div>${nav(location.hash.startsWith('#/report') ? location.hash : '#/report')}`;
 
   const r = await weeklyReport(uid, from);
-  const who = uid !== me.id ? (r.name || 'Účastník') : null;
+  const who = uid !== me.id ? (r.name || 'Klient') : null;
   const score = Number(r.score) || 0, prev = r.prev_score == null ? null : Number(r.prev_score);
   const delta = prev != null && (prev > 0 || score > 0) ? score - prev : null;
   const wDelta = r.weight_avg != null && r.prev_weight_avg != null ? Math.round((r.weight_avg - r.prev_weight_avg) * 10) / 10 : null;
@@ -116,8 +116,8 @@ export async function renderReport() {
     </section>
 
     ${'share' in navigator && !who ? '<button class="btn mb" id="share">Zdieľať report</button>' : ''}
-    ${who ? `<a class="btn mb" href="#/kouc/${uid}">Detail účastníka</a>` : '<a class="btn ghost mb" href="#/pokrok">Späť na Pokrok</a>'}
-  </div>${nav('#/report')}`;
+    ${who ? `<a class="btn mb" href="#/kouc/${uid}">Späť na klienta</a>` : '<a class="btn ghost mb" href="#/pokrok">Späť na Pokrok</a>'}
+  </div>${nav(location.hash.startsWith('#/report') ? location.hash : '#/report')}`;
 
   const root = $app();
   requestAnimationFrame(() => requestAnimationFrame(() => root.querySelectorAll('.rg-fill').forEach(c => c.setAttribute('stroke-dashoffset', c.dataset.off))));
