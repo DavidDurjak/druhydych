@@ -118,8 +118,9 @@ ${S} .qa-lb{color:#0D1117!important;font-weight:800}
 ${S} .qa-h{font-family:'Inter','Sora',sans-serif;font-weight:900;font-style:italic;letter-spacing:-.035em}
 
 /* grafy */
+${S} .pgx-rings,${S} .pgx-chart{--accent:#1FBF76}
 ${S} .pgx-area{fill:rgba(62,230,208,.32)!important}
-${S} .pgx-line{stroke:#0D1117!important;filter:none!important}
+${S} .pgx-line{stroke:#0D1117!important;stroke-width:3.4!important;filter:none!important}
 ${S} .pgx-proj{stroke:#0D1117!important}
 
 /* automaticky rozpoznané karty na ostatných obrazovkách */
