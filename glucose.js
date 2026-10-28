@@ -30,6 +30,12 @@ const CSS = `
 .gl-tir{display:flex;height:10px;border-radius:99px;overflow:hidden;margin:14px 0 6px;background:var(--bg-2)}.gl-tir i{display:block;height:100%}
 .gl-leg{display:flex;justify-content:space-between;font-size:11.5px;font-weight:700}
 .gl .chart{width:100%;height:auto;display:block}
+.gl-lg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--muted);font-weight:600}
+.gl-lg span{display:inline-flex;align-items:center;gap:6px}
+.gl-lg i{display:inline-block}
+.gl-lg .d{width:9px;height:9px;border-radius:50%;background:#7CFFB2;box-shadow:0 0 0 1.5px var(--card)}
+.gl-lg .r{width:6px;height:14px;border-radius:3px;background:var(--muted);opacity:.45}
+.gl-lg .b{width:16px;height:10px;border-radius:3px;background:rgba(124,255,178,.22);box-shadow:inset 0 0 0 1px rgba(124,255,178,.5)}
 .gl-steps{margin:12px 0 14px;padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.4}
 .gl-timer{text-align:center;padding:22px 0}.gl-timer b{display:block;font-size:56px;letter-spacing:-.04em}.gl-timer span{color:var(--muted);font-size:14px}
 .rep{background:#fff;color:#111;border-radius:14px;padding:18px;font-size:13px;line-height:1.45;margin-bottom:14px;overflow-x:auto}
@@ -49,23 +55,32 @@ if (!document.getElementById('gl-css')) { const el = document.createElement('sty
 
 // ---------- grafy ----------
 function chartTrend(rows, days, c, light) {
-  const W = 360, H = 200, pl = 24, pr = 6, pt = 8, pb = 20;
+  // jeden deň = jeden stĺpec: svetlý pásik = od najnižšieho po najvyššie meranie v ten deň, bodka = priemer dňa
+  const W = 360, H = 200, pl = 30, pr = 8, pt = 14, pb = 20;
   const end = Date.now(), start = end - days * 86400000;
   const pts = rows.map(r => ({ t: new Date(r.at).getTime(), v: Number(r.mmol) })).filter(p => p.t >= start);
   if (!pts.length) return '<p class="empty">V tomto období nemáš žiadne merania.</p>';
-  const top = Math.max(14, Math.ceil(Math.max(...pts.map(p => p.v)) + 1)), bot = 2;
-  const x = t => pl + (t - start) / (end - start) * (W - pl - pr), y = v => pt + (1 - (v - bot) / (top - bot)) * (H - pt - pb);
+  const top = Math.ceil(Math.max(c.hi + 1.5, ...pts.map(p => p.v + 0.8))), bot = Math.floor(Math.min(c.lo - 1.5, ...pts.map(p => p.v - 0.8)));
+  const day0 = new Date(start); day0.setHours(0, 0, 0, 0);
+  const n = Math.round((new Date(end).setHours(0, 0, 0, 0) - day0) / 86400000) + 1;
+  const cw = (W - pl - pr) / n, x = i => pl + (i + 0.5) * cw, y = v => pt + (1 - (v - bot) / (top - bot)) * (H - pt - pb);
   const txt = light ? '#555' : '#8A94A6', grid = light ? '#ddd' : '#262E3A';
-  const byDay = {}; pts.forEach(p => { const d = new Date(p.t).toDateString(); (byDay[d] = byDay[d] || []).push(p); });
-  const line = Object.values(byDay).map(a => ({ t: a.reduce((s, p) => s + p.t, 0) / a.length, v: a.reduce((s, p) => s + p.v, 0) / a.length })).sort((a, b) => a.t - b.t);
-  const ticks = [4, 7, 10, 14].filter(t => t < top);
-  const dateTicks = [0, 0.5, 1].map(f => start + f * (end - start));
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Graf glykémie">
-    <rect x="${pl}" y="${y(c.hi)}" width="${W - pl - pr}" height="${y(c.lo) - y(c.hi)}" fill="${light ? '#d8f5e4' : 'rgba(124,255,178,.10)'}"/>
-    ${ticks.map(t => `<line x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}" stroke="${grid}" stroke-width="1"/><text x="2" y="${y(t) + 4}" font-size="11" fill="${txt}">${t}</text>`).join('')}
-    ${line.length > 1 ? `<path d="${line.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="${light ? '#2a7' : '#7CFFB2'}" stroke-width="1.5" opacity=".6"/>` : ''}
-    ${pts.map(p => `<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3.6" fill="${dx.GCOL[dx.gclass(p.v, c)]}"/>`).join('')}
-    ${dateTicks.map((t, i) => `<text x="${i === 0 ? pl : i === 2 ? W - pr : x(t)}" y="${H - 5}" font-size="11" fill="${txt}" text-anchor="${i === 0 ? 'start' : i === 2 ? 'end' : 'middle'}">${calc.fmtDate(calc.toISO(new Date(t)))}</text>`).join('')}
+  const byDay = {};
+  pts.forEach(p => { const i = Math.round((new Date(p.t).setHours(0, 0, 0, 0) - day0) / 86400000); (byDay[i] = byDay[i] || []).push(p.v); });
+  const ds = Object.entries(byDay).map(([i, a]) => ({ i: +i, lo: Math.min(...a), hi: Math.max(...a), av: a.reduce((s, v) => s + v, 0) / a.length })).sort((p, q) => p.i - q.i);
+  const bw = Math.max(3, Math.min(10, cw * 0.62)), r = Math.max(2.4, Math.min(4.6, cw * 0.36));
+  const u = c.unit, lbl = v => dx.fmtG(v, u).replace(/,0$/, '');
+  const firstD = new Date(day0), midD = new Date(day0.getTime() + Math.floor(n / 2) * 86400000);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Graf glykémie po dňoch">
+    <rect x="${pl}" y="${y(c.hi)}" width="${W - pl - pr}" height="${y(c.lo) - y(c.hi)}" rx="6" fill="${light ? '#d8f5e4' : 'rgba(124,255,178,.10)'}"/>
+    ${[c.lo, c.hi].map(t => `<line x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}" stroke="${light ? '#2a7' : '#7CFFB2'}" stroke-opacity=".45" stroke-dasharray="3 4"/><text x="${pl - 5}" y="${y(t) + 4}" font-size="11" font-weight="700" fill="${light ? '#2a7' : '#7CFFB2'}" text-anchor="end">${lbl(t)}</text>`).join('')}
+    <text x="2" y="${pt - 4}" font-size="9.5" fill="${txt}">${dx.unitLbl(u)}</text>
+    ${ds.map(d => `<rect x="${(x(d.i) - bw / 2).toFixed(1)}" y="${y(d.hi).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bw, y(d.lo) - y(d.hi)).toFixed(1)}" rx="${(bw / 2).toFixed(1)}" fill="${txt}" opacity=".28"/>`).join('')}
+    ${ds.length > 1 ? `<path d="${ds.map((d, k) => `${k ? 'L' : 'M'}${x(d.i).toFixed(1)},${y(d.av).toFixed(1)}`).join(' ')}" fill="none" stroke="${txt}" stroke-width="1.4" opacity=".55"/>` : ''}
+    ${ds.map(d => `<circle cx="${x(d.i).toFixed(1)}" cy="${y(d.av).toFixed(1)}" r="${r.toFixed(1)}" fill="${dx.GCOL[dx.gclass(d.av, c)]}" stroke="${light ? '#fff' : '#0B0E12'}" stroke-width="1.4"/>`).join('')}
+    <text x="${pl}" y="${H - 5}" font-size="11" fill="${txt}">${calc.fmtDate(calc.toISO(firstD))}</text>
+    <text x="${x(Math.floor(n / 2))}" y="${H - 5}" font-size="11" fill="${txt}" text-anchor="middle">${calc.fmtDate(calc.toISO(midD))}</text>
+    <text x="${W - pr}" y="${H - 5}" font-size="11" fill="${txt}" text-anchor="end">dnes</text>
   </svg>`;
 }
 function chartDay(rows, days, c, light) {
@@ -166,7 +181,7 @@ export async function renderGlucose() {
       <div class="card">
         <div class="seg mb" id="vw"><button data-v="trend" class="${view === 'trend' ? 'on' : ''}">Vývoj</button><button data-v="day" class="${view === 'day' ? 'on' : ''}">Počas dňa</button></div>
         ${view === 'trend' ? chartTrend(rows, range, c) : chartDay(rows, range, c)}
-        <p class="muted small mt">${view === 'trend' ? 'Zelené pásmo je tvoj cieľový rozsah. Čiara je denný priemer.' : 'Modrá čiara je medián po 3 hodinách. Ukáže, kedy sa ti cukor zvyčajne vychyľuje.'}</p>
+        ${view === 'trend' ? `<div class="gl-lg"><span><i class="d"></i>priemer dňa</span><span><i class="r"></i>od najnižšieho po najvyššie</span><span><i class="b"></i>tvoj cieľ ${dx.fmtG(c.lo, c.unit)} až ${dx.fmtG(c.hi, c.unit)}</span></div><p class="muted small mt">Každý stĺpec je jeden deň. Čím viac bodiek je v zelenom pásme, tým lepšie.</p>` : '<p class="muted small mt">Body sú jednotlivé merania podľa času. Modrá čiara ukazuje, kedy počas dňa máš cukor zvyčajne najvyšší.</p>'}
       </div>
       ${s ? `<div class="card"><h3 class="mb">Podľa situácie</h3>${byCtx(inRange, c)}${rise.length ? `<p class="sec">Nárast po jedle (po − pred)</p>${rise.map(r => `<div class="item"><div class="n"><b>${h(r.meal)}</b><span>${r.n} ${r.n < 5 ? 'páry' : 'párov'} meraní</span></div><span class="k mono" style="color:${r.avg > 3 ? '#FFC857' : '#7CFFB2'}">${r.avg >= 0 ? '+' : '−'}${dx.fmtG(Math.abs(r.avg), u())}</span></div>`).join('')}` : '<p class="muted small mt">Ak zapíšeš cukor „pred jedlom“ aj „po jedle“ pri tom istom jedle, ukážem ti, ako ťa ktoré jedlo zdvíha.</p>'}</div>` : ''}
       <div class="card"><div class="row between"><div><b>Jednotky a rozsah</b><p class="muted small">${dx.unitLbl(u())} · cieľ ${dx.fmtG(c.lo, u())} až ${dx.fmtG(c.hi, u())}</p></div><a class="btn sm" href="#/rezim">Upraviť</a></div>

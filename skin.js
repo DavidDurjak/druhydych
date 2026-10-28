@@ -381,7 +381,7 @@ function profileUi() {
   const box = document.createElement('div'); box.id = 'fwSkin'; box.style.margin = '10px 0 12px';
   box.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
     <button type="button" data-sk="classic" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('c')}Klasický</button>
-    <button type="button" data-sk="cookie" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('k')}Sušienka</button>
+    <button type="button" data-sk="cookie" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('k')}Farebný</button>
   </div>`;
   const seg = card.querySelector('.seg');
   card.insertBefore(box, seg);
