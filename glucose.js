@@ -49,7 +49,7 @@ if (!document.getElementById('gl-css')) { const el = document.createElement('sty
 
 // ---------- grafy ----------
 function chartTrend(rows, days, c, light) {
-  const W = 520, H = 210, pl = 32, pr = 8, pt = 10, pb = 22;
+  const W = 360, H = 200, pl = 24, pr = 6, pt = 8, pb = 20;
   const end = Date.now(), start = end - days * 86400000;
   const pts = rows.map(r => ({ t: new Date(r.at).getTime(), v: Number(r.mmol) })).filter(p => p.t >= start);
   if (!pts.length) return '<p class="empty">V tomto období nemáš žiadne merania.</p>';
@@ -69,7 +69,7 @@ function chartTrend(rows, days, c, light) {
   </svg>`;
 }
 function chartDay(rows, days, c, light) {
-  const W = 520, H = 210, pl = 32, pr = 8, pt = 10, pb = 22;
+  const W = 360, H = 200, pl = 24, pr = 6, pt = 8, pb = 20;
   const since = Date.now() - days * 86400000;
   const pts = rows.filter(r => new Date(r.at).getTime() >= since).map(r => { const d = new Date(r.at); return { hr: d.getHours() + d.getMinutes() / 60, v: Number(r.mmol) }; });
   if (pts.length < 3) return '<p class="empty">Denný profil sa ukáže po troch meraniach.</p>';

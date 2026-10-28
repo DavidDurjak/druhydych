@@ -415,7 +415,7 @@ if (root) { new MutationObserver(inject).observe(root, { childList: true, subtre
 
 // ---------- obrazovka #/navyky ----------
 function chart(hb, s) {
-  const W = 520, H = 150, pl = 6, pb = 20, days = 30, from = calc.addDays(calc.today(), -days + 1);
+  const W = 340, H = 140, pl = 4, pb = 20, days = 30, from = calc.addDays(calc.today(), -days + 1);
   const lim = hb.mode === 'quit' ? 0 : Number(hb.daily_limit) || 0;
   const vals = Array.from({ length: days }, (_, i) => { const d = calc.addDays(from, i); return { d, v: s.byDay[d] || 0, pre: d < hb.start_date }; });
   const max = Math.max(1, lim, ...vals.map(x => x.v), Number(hb.baseline) || 0);
@@ -424,7 +424,7 @@ function chart(hb, s) {
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Posledných 30 dní">
     ${hb.baseline ? `<line x1="${pl}" x2="${W - pl}" y1="${y(Number(hb.baseline))}" y2="${y(Number(hb.baseline))}" stroke="#8A94A6" stroke-dasharray="4 4"/><text x="${W - pl}" y="${y(Number(hb.baseline)) - 4}" font-size="10" fill="#8A94A6" text-anchor="end">predtým ${hb.baseline}</text>` : ''}
     ${lim ? `<line x1="${pl}" x2="${W - pl}" y1="${y(lim)}" y2="${y(lim)}" stroke="#7CFFB2" stroke-dasharray="4 4"/><text x="${pl}" y="${y(lim) - 4}" font-size="10" fill="#7CFFB2">cieľ ${lim}</text>` : ''}
-    ${vals.map((x, i) => x.pre ? '' : `<rect x="${pl + i * bw + 1}" y="${x.v ? y(x.v) : H - pb - 3}" width="${bw - 2}" height="${x.v ? H - pb - y(x.v) : 3}" rx="2" fill="${x.v > lim ? '#FF5C7A' : x.v ? '#FFC857' : '#7CFFB2'}" opacity="${x.v ? '.95' : '.8'}"/>`).join('')}
+    ${vals.map((x, i) => x.pre ? '' : `<rect x="${pl + i * bw + 1}" y="${x.v ? y(x.v) : H - pb - 6}" width="${bw - 2.4}" height="${x.v ? H - pb - y(x.v) : 6}" rx="2.5" fill="${x.v > lim ? '#FF5C7A' : x.v ? '#FFC857' : '#7CFFB2'}" opacity="${x.v ? '.95' : '.8'}"/>`).join('')}
     <text x="${pl}" y="${H - 5}" font-size="11" fill="#8A94A6">${calc.fmtDate(from)}</text><text x="${W - pl}" y="${H - 5}" font-size="11" fill="#8A94A6" text-anchor="end">dnes</text>
   </svg>`;
 }

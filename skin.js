@@ -2,36 +2,55 @@
 // gradient z ikony (mätová, tyrkysová, modrá), karty z matného skla s jemným svetlom a mäkkým tieňom,
 // čisté písmo s výraznými číslami, a kruh kalórií ako sušienka, z ktorej ubúda, čo zješ.
 // Rozloženie obrazoviek sa nemení, mení sa len vzhľad. Voľba sa uloží v telefóne (fw_skin) a vyberá sa v Profile pri Vzhľade.
-// Sušienka je svetlá: pri jej zapnutí sa svetlý režim zapne sám a pri návrate na Klasický sa vráti pôvodná voľba.
-import { getMode, setMode } from './theme.js';
+// Sušienka má svetlú aj tmavú verziu. Riadi ich ten istý prepínač ako Klasický (Automaticky podľa telefónu / Svetlý / Tmavý).
+import { setMode } from './theme.js';
 
 const KEY = 'fw_skin', PREV = 'fw_skin_prev_mode';
+const dark = () => document.documentElement.dataset.theme === 'dark';
 const H = document.documentElement;
 const get = () => { try { return localStorage.getItem(KEY) === 'cookie' ? 'cookie' : 'classic'; } catch (_) { return 'classic'; } };
 const S = 'html[data-skin=cookie]';
+const D = 'html[data-skin=cookie][data-theme=dark]';
 
 const CSS = `
 ${S}{--bg:#EAFBF5;--bg-2:#E0F6EF;--card:rgba(255,255,255,.66);--card-2:rgba(255,255,255,.5);--line:rgba(7,30,40,.1);--text:#0B1512;--muted:#5B6D68;
  --accent:#16B07A;--accent-ink:#FFFFFF;--accent-2:#C97B3F;--protein:#22C987;--carbs:#2A86E6;--fat:#DFA367;--danger:#E0344F;--track:rgba(7,30,40,.08);
  --ck-grad:linear-gradient(135deg,#7CFFB2 0%,#3EE6D0 52%,#5BB8FF 100%);
- --gl:rgba(255,255,255,.74);--gl-b:1px solid rgba(255,255,255,.8);
+ --t1:#0B1512;--t2:#2A3A36;--t3:#5B6D68;--tbg:#1E4D44;--ink:#07110F;
+ --gl:rgba(255,255,255,.74);--gl-in:rgba(255,255,255,.55);--gl-hero:rgba(255,255,255,.84);--gl-soft:rgba(255,255,255,.6);--gl-b:1px solid rgba(255,255,255,.8);
  --gl-sh:0 1px 0 rgba(255,255,255,.75) inset,0 18px 40px -20px rgba(7,30,40,.38),0 6px 14px -8px rgba(7,30,40,.16);
  --gl-sh2:0 1px 0 rgba(255,255,255,.85) inset,0 30px 60px -28px rgba(7,30,40,.48),0 10px 24px -12px rgba(7,30,40,.2);
- --dk:rgba(7,17,15,.84);color-scheme:light}
-${S},${S} body{background:#4fe8d2!important;min-height:100%}
+ --gl-shin:0 1px 0 rgba(255,255,255,.8) inset,0 4px 10px -6px rgba(7,30,40,.2);
+ --well:rgba(7,30,40,.08);--well-sh:inset 0 1px 2px rgba(7,30,40,.1);--seg-on:#fff;--seg-on-sh:0 1px 0 #fff inset,0 6px 14px -6px rgba(7,30,40,.35);
+ --mixb:#fff;--warm:linear-gradient(135deg,rgba(255,246,227,.88),rgba(255,233,194,.72));--streak:linear-gradient(135deg,rgba(255,255,255,.78),rgba(255,230,200,.6));--streak-t:#C44D14;
+ --dk:rgba(7,17,15,.84);--dk-b:rgba(255,255,255,.14);--pri:var(--dk);--pri-t:#fff;--pos:#117A50;--tde:rgba(240,252,248,.94);
+ --bgc:#4fe8d2;--bg1:radial-gradient(120% 60% at 15% 0%,rgba(190,255,220,.85),rgba(190,255,220,0) 55%);--bg2:radial-gradient(45% 28% at 80% 6%,rgba(255,255,255,.7),rgba(255,255,255,0) 70%);
+ --bg3:radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.75),rgba(63,139,255,0) 62%);--bg4:linear-gradient(170deg,#8FFFC6 0%,#4AE9D6 48%,#58B2FF 100%);
+ --ctr:#fff;--ctr2:#EEF6F4;--raw:#fff;color-scheme:light}
+/* tmavá Sušienka: hlboká tyrkysovo-modrá noc s farbami ikony ako svetlom, karty z tmavého skla */
+${D}{--bg:#0B2226;--bg-2:#0E2A2E;--card:rgba(20,40,44,.62);--card-2:rgba(255,255,255,.06);--line:rgba(255,255,255,.1);--text:#EFFFF8;--muted:#8FAAA3;
+ --accent:#7CFFB2;--accent-ink:#06301A;--track:rgba(255,255,255,.08);
+ --t1:#EFFFF8;--t2:#BCD3CC;--t3:#8FAAA3;--tbg:#A9C9C1;--ink:#04100E;
+ --gl:rgba(22,44,48,.62);--gl-in:rgba(255,255,255,.05);--gl-hero:rgba(24,48,52,.72);--gl-soft:rgba(255,255,255,.08);--gl-b:1px solid rgba(255,255,255,.1);
+ --gl-sh:0 1px 0 rgba(255,255,255,.08) inset,0 20px 40px -20px rgba(0,0,0,.7),0 6px 14px -8px rgba(0,0,0,.4);
+ --gl-sh2:0 1px 0 rgba(255,255,255,.1) inset,0 30px 60px -26px rgba(0,0,0,.8),0 10px 24px -12px rgba(0,0,0,.45);
+ --gl-shin:0 1px 0 rgba(255,255,255,.06) inset;
+ --well:rgba(0,0,0,.28);--well-sh:inset 0 1px 2px rgba(0,0,0,.4);--seg-on:rgba(255,255,255,.14);--seg-on-sh:0 1px 0 rgba(255,255,255,.12) inset,0 6px 14px -6px rgba(0,0,0,.6);
+ --mixb:#10282B;--warm:linear-gradient(135deg,rgba(90,58,24,.55),rgba(60,38,16,.45));--streak:linear-gradient(135deg,rgba(255,150,60,.2),rgba(255,120,40,.08));--streak-t:#FFB45E;
+ --dk:rgba(4,12,12,.86);--dk-b:rgba(255,255,255,.12);--pri:var(--ck-grad);--pri-t:#04100E;--pos:#7CFFB2;--tde:rgba(10,30,32,.95);
+ --bgc:#0A1F24;--bg1:radial-gradient(90% 50% at 10% 0%,rgba(124,255,178,.22),rgba(124,255,178,0) 60%);--bg2:radial-gradient(60% 40% at 95% 20%,rgba(62,230,208,.16),rgba(62,230,208,0) 70%);
+ --bg3:radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.32),rgba(63,139,255,0) 62%);--bg4:linear-gradient(170deg,#0D2E2A 0%,#0A2230 55%,#0B1A33 100%);
+ --ctr:#173236;--ctr2:#0F2427;--raw:#0F2427;color-scheme:dark}
+${S},${S} body{background:var(--bgc)!important;min-height:100%}
 /* pozadie ako pevná vrstva: iPhone nepodporuje background-attachment:fixed, takto gradient ostane na mieste aj pri posúvaní */
-${S} body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:
- radial-gradient(120% 60% at 15% 0%,rgba(190,255,220,.85),rgba(190,255,220,0) 55%),
- radial-gradient(45% 28% at 80% 6%,rgba(255,255,255,.7),rgba(255,255,255,0) 70%),
- radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.75),rgba(63,139,255,0) 62%),
- linear-gradient(170deg,#8FFFC6 0%,#4AE9D6 48%,#58B2FF 100%)}
+${S} body::before{content:'';display:block!important;position:fixed;inset:0!important;animation:none!important;transform:none!important;pointer-events:none;z-index:0;background:var(--bg1),var(--bg2),var(--bg3),var(--bg4)}
 ${S} #app{position:relative;z-index:1}
 ${S} body::after{display:none!important}
 
 /* písmo: čisté, hrubé len čísla a nadpisy */
-${S} .screen h1,${S} .tdh-g,${S} .qa-h{font-family:'Inter','Sora',system-ui,sans-serif;font-weight:800;font-style:normal;letter-spacing:-.03em;color:#0B1512}
+${S} .screen h1,${S} .tdh-g,${S} .qa-h{font-family:'Inter','Sora',system-ui,sans-serif;font-weight:800;font-style:normal;letter-spacing:-.03em;color:var(--t1)}
 ${S} .screen h2,${S} .screen h3{font-family:'Inter','Sora',system-ui,sans-serif;font-weight:700;letter-spacing:-.02em}
-${S} .hk-c b,${S} .hk-eat b,${S} .mtile b,${S} .grid3 .stat b{font-family:'Inter','Sora',system-ui,sans-serif;font-weight:800;font-style:normal;letter-spacing:-.04em;color:#0B1512}
+${S} .hk-c b,${S} .hk-eat b,${S} .mtile b,${S} .grid3 .stat b{font-family:'Inter','Sora',system-ui,sans-serif;font-weight:800;font-style:normal;letter-spacing:-.04em;color:var(--t1)}
 ${S} .muted,${S} .small.muted{color:var(--muted)!important}
 
 /* sklo: všetky karty */
@@ -40,77 +59,82 @@ ${S} details.an,${S} .pg-card,${S} .tile,${S} .dc-t,${S} .dc-i,${S} .qk-b,${S} .
 ${S} .pfx-plan,${S} .pfx-tiles>*,${S} .grid3 .stat,${S} .ck-c{
  background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:var(--text);
  -webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3)}
-${S} .ck-c.ck-in{background:rgba(255,255,255,.55)!important;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 4px 10px -6px rgba(7,30,40,.2)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
-${S} .hero-k,${S} .pfx-hero{background:rgba(255,255,255,.84)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh2)!important;border-radius:32px!important;
+${S} .ck-c.ck-in{background:var(--gl-in)!important;box-shadow:var(--gl-shin)!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+${S} .hero-k,${S} .pfx-hero{background:var(--gl-hero)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh2)!important;border-radius:32px!important;
  -webkit-backdrop-filter:blur(22px) saturate(1.35);backdrop-filter:blur(22px) saturate(1.35)}
 ${S} .hero-k::before,${S} .hero-k::after,${S} .pfx-hero::before{display:none!important}
-${S} .card.accent,${S} .rp-card{background:linear-gradient(135deg,rgba(255,246,227,.88),rgba(255,233,194,.72))!important}
+${S} .card.accent,${S} .rp-card{background:var(--warm)!important}
 
-/* text priamo na pozadí (mimo kariet) musí byť tmavší, inak sa na gradiente stráca */
-${S} .topbar .date{color:#0B1512!important;font-weight:700}
+/* text priamo na pozadí (mimo kariet) */
+${S} .topbar .date{color:var(--t1)!important;font-weight:700}
 ${S} .btn.icon:disabled{opacity:.35}
-${S} .pfx-gt,${S} .screen>.muted,${S} .screen>p.small,${S} .fwdk-h span,${S} .dc>h3+span{color:#1E4D44!important}
+${S} .pfx-gt,${S} .screen>.muted,${S} .screen>p.small,${S} .fwdk-h span,${S} .dc>h3+span{color:var(--tbg)!important}
 ${S} .pfx-gt{font-weight:700}
 
 /* hlavička Dnes */
-${S} .tdh-cal,${S} .tdh-s{background:rgba(255,255,255,.58)!important;border:var(--gl-b)!important;color:#0B1512!important;box-shadow:var(--gl-sh)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+${S} .tdh-cal,${S} .tdh-s{background:var(--gl-soft)!important;border:var(--gl-b)!important;color:var(--t1)!important;box-shadow:var(--gl-sh)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 ${S} .tdh-cal .cal-ic{background:#07110F!important;box-shadow:0 4px 10px -4px rgba(0,0,0,.55)!important}
 ${S} .tdh-cal .cal-ic b{color:#fff!important}
-${S} .tdh-streak{background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(255,230,200,.6))!important;border:var(--gl-b)!important;color:#C44D14!important;box-shadow:var(--gl-sh)!important}
+${S} .tdh-streak{background:var(--streak)!important;border:var(--gl-b)!important;color:var(--streak-t)!important;box-shadow:var(--gl-sh)!important}
 ${S} .tdh-streak::after{display:none!important}
-${S} .tdh-edit{color:#07110F}
+${S} .tdh-edit{color:var(--t1)}
 
 /* týždeň */
-${S} .wk-d .wk-l{color:#2A3A36!important;font-weight:600}
+${S} .wk-d .wk-l{color:var(--t2)!important;font-weight:600}
 ${S} .wk-d.hit .wk-r::before{background:linear-gradient(145deg,#8FFFC6,#3EE6D0)!important;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 6px 12px -6px rgba(20,160,140,.8)!important}
 ${S} .wk-d.hit .wk-r b{color:#07110F!important}
 ${S} .wk-d.now{background:#07110F!important;border-radius:18px;box-shadow:0 10px 20px -8px rgba(7,17,15,.7)}
+${D} .wk-d.now{background:rgba(255,255,255,.1)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 10px 20px -8px rgba(0,0,0,.7)}
 ${S} .wk-d.now .wk-l{color:#7CFFB2!important}
 ${S} .wk-d.now .wk-r b{color:#fff!important}
-${S} .rg-track{stroke:rgba(7,30,40,.1)!important}
+${S} .rg-track{stroke:var(--track)!important}
 
 /* kruh kalórií = sušienka */
 ${S} .hk-ring .hk-rings,${S} .hk-ring .breath{display:none!important}
 ${S} .screen.td .hk-ring::before,${S} .screen.td .hk-ring::after{display:none!important}
 ${S} .ck-ring{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+${D} .ck-ring .ck-ctr{fill:var(--ctr)}
+${S} .ck-ring .ck-trail{stroke:var(--t3);opacity:.35}
+${D} .ck-ring .ck-rim{stroke:rgba(255,255,255,.12)}
 ${S} .hk-c{z-index:1}
 ${S} .hk-c b{font-size:44px!important}
-${S} .hk-c span{color:#5B6D68!important;font-weight:600}
+${S} .hk-c span{color:var(--t3)!important;font-weight:600}
 ${S} .hk-pc{background:var(--ck-grad)!important;color:#07110F!important;border:0!important;font-style:normal;font-weight:700;box-shadow:0 6px 12px -6px rgba(62,230,208,.8)}
 ${S} .hero-k.over .hk-pc{background:linear-gradient(135deg,#FFC9C9,#FF9A9A)!important}
-${S} .hk-t{color:#0B1512!important;font-weight:700}
-${S} .hk-edit{background:var(--dk)!important;color:#fff!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 8px 16px -8px rgba(0,0,0,.6)}
-${S} .hk-eat span{color:#5B6D68!important}
+${S} .hk-t{color:var(--t1)!important;font-weight:700}
+${S} .hk-edit{background:var(--dk)!important;color:#fff!important;border:1px solid var(--dk-b)!important;box-shadow:0 8px 16px -8px rgba(0,0,0,.6)}
+${S} .hk-eat span{color:var(--t3)!important}
 
 /* jedlá dňa pod kruhom */
-${S} .mbp{background:rgba(255,255,255,.5)!important;border:0!important;box-shadow:inset 0 0 0 1.5px rgba(7,30,40,.1)!important;color:#2A3A36!important}
-${S} .mbp.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mc) 10%,#fff),color-mix(in srgb,var(--mc) 26%,#fff))!important;box-shadow:0 1px 0 #fff inset,0 8px 14px -9px var(--mc)!important;color:#0B1512!important}
+${S} .mbp{background:var(--gl-in)!important;border:0!important;box-shadow:inset 0 0 0 1.5px var(--line)!important;color:var(--t2)!important}
+${S} .mbp.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mc) 12%,var(--mixb)),color-mix(in srgb,var(--mc) 30%,var(--mixb)))!important;box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 8px 14px -9px var(--mc)!important;color:var(--t1)!important}
 ${S} .mbp.on::after{box-shadow:0 0 8px var(--mc)!important}
 ${S} .mbp i{color:inherit!important}
 
 /* makrá */
 ${S} .mtile{border-radius:22px!important}
-${S} .mt-b{background:rgba(7,30,40,.08)!important;border:0!important;border-radius:6px!important;height:8px!important;overflow:hidden;box-shadow:inset 0 1px 2px rgba(7,30,40,.08)}
+${S} .mt-b{background:var(--well)!important;border:0!important;border-radius:6px!important;height:8px!important;overflow:hidden;box-shadow:var(--well-sh)}
 ${S} .mt-b i{border:0!important;border-radius:6px}
 ${S} .mt-b i::after{display:none!important}
 
 /* tlačidlá a prepínače */
-${S} .btn{border:var(--gl-b)!important;background:rgba(255,255,255,.62)!important;color:#0B1512!important;box-shadow:var(--gl-sh)!important}
-${S} .btn.primary{background:var(--dk)!important;color:#fff!important;border-color:rgba(255,255,255,.14)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 14px 26px -12px rgba(0,0,0,.6)!important}
-${S} .seg,${S} .pg-per{background:rgba(7,30,40,.08)!important;border:0!important;box-shadow:inset 0 1px 2px rgba(7,30,40,.1)!important}
-${S} .seg button,${S} .seg a,${S} .pg-per button{color:#2A3A36!important}
-${S} .seg .on,${S} .seg button.on,${S} .seg a.on,${S} .pg-per button.on{background:#fff!important;color:#0B1512!important;box-shadow:0 1px 0 #fff inset,0 6px 14px -6px rgba(7,30,40,.35)!important;transform:none!important}
-${S} .seg .on *,${S} .pg-per button.on *{color:#0B1512!important}
-${S} .lvl button{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:#0B1512!important}
-${S} .lvl button.on{background:var(--dk)!important;color:#fff!important;border-color:rgba(255,255,255,.14)!important}
+${S} .btn{border:var(--gl-b)!important;background:var(--gl-soft)!important;color:var(--t1)!important;box-shadow:var(--gl-sh)!important}
+${S} .btn.primary{background:var(--pri)!important;color:var(--pri-t)!important;border-color:var(--dk-b)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 14px 26px -12px rgba(0,0,0,.6)!important}
+${S} .seg,${S} .pg-per{background:var(--well)!important;border:0!important;box-shadow:var(--well-sh)!important}
+${S} .seg button,${S} .seg a,${S} .pg-per button{color:var(--t2)!important}
+${S} .seg .on,${S} .seg button.on,${S} .seg a.on,${S} .pg-per button.on{background:var(--seg-on)!important;color:var(--t1)!important;box-shadow:var(--seg-on-sh)!important;transform:none!important}
+${S} .seg .on *,${S} .pg-per button.on *{color:var(--t1)!important}
+${S} .lvl button{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:var(--t1)!important}
+${S} .lvl button.on{background:var(--dk)!important;color:#fff!important;border-color:var(--dk-b)!important}
+${D} .lvl button.on{background:rgba(124,255,178,.12)!important;box-shadow:0 0 0 1.5px rgba(124,255,178,.55),var(--gl-sh)!important}
 ${S} .lvl button.on small,${S} .lvl button.on .lv-t small{color:#9FB0AB!important}
 ${S} .lvl button.on .lv-ic{background:var(--ck-grad)!important}
 ${S} .chip,${S} .pill{border:0!important}
 ${S} .ml-add{box-shadow:0 8px 16px -8px rgba(0,0,0,.35)!important}
-${S} textarea,${S} .input{background:rgba(255,255,255,.62)!important;border:var(--gl-b)!important;box-shadow:inset 0 1px 3px rgba(7,30,40,.08)!important;color:#0B1512!important}
+${S} textarea,${S} .input{background:var(--gl-soft)!important;border:var(--gl-b)!important;box-shadow:var(--well-sh)!important;color:var(--t1)!important}
 
 /* lišta a plusko */
-${S} .nav{background:var(--dk)!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 20px 40px -18px rgba(0,0,0,.7)!important}
+${S} .nav{background:var(--dk)!important;border:1px solid var(--dk-b)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 20px 40px -18px rgba(0,0,0,.7)!important}
 ${S} .nav a{color:#8A9B96!important}
 ${S} .nav a.on{color:#7CFFB2!important}
 ${S} .nav a.on .ic{background:var(--ck-grad)!important;color:#07110F!important;box-shadow:0 8px 18px -8px rgba(62,230,208,.8),0 1px 0 rgba(255,255,255,.6) inset}
@@ -119,14 +143,14 @@ ${S} .nav-lens{display:none!important}
 ${S} .qa-fab{background:linear-gradient(140deg,#8FFFC6,#3EE6D0 55%,#5BB8FF)!important;border:0!important;color:#07110F!important;
  box-shadow:0 2px 0 rgba(255,255,255,.7) inset,0 -6px 14px rgba(0,80,120,.18) inset,0 16px 30px -10px rgba(24,150,160,.75)!important}
 ${S} .qa-fab svg{color:#07110F!important;stroke:#07110F}
-${S} .bd-fab{box-shadow:0 10px 22px -10px rgba(7,30,40,.55)!important}
+${S} .bd-fab{box-shadow:0 10px 22px -10px rgba(0,0,0,.55)!important}
 
 /* plusko: rýchly zápis */
-${S} .qa-ov{background:linear-gradient(170deg,rgba(143,255,198,.96),rgba(74,233,214,.96) 48%,rgba(88,178,255,.96))!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-${S} .qa-in .qa-m{background:linear-gradient(180deg,color-mix(in srgb,var(--c,#7CFFB2) 10%,#fff),color-mix(in srgb,var(--c,#7CFFB2) 26%,#fff))!important;border:var(--gl-b)!important;box-shadow:0 1px 0 #fff inset,0 12px 22px -12px var(--c,rgba(7,30,40,.4))!important}
+${S} .qa-ov{background:var(--bg1),var(--bg3),var(--bg4)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+${S} .qa-in .qa-m{background:linear-gradient(180deg,color-mix(in srgb,var(--c,#7CFFB2) 12%,var(--mixb)),color-mix(in srgb,var(--c,#7CFFB2) 30%,var(--mixb)))!important;border:var(--gl-b)!important;box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 12px 22px -12px var(--c,rgba(7,30,40,.4))!important}
 ${S} .qa-in .fq,${S} .qa-in .qa-w,${S} .qa-in .qa-t:not(.qa-hero .qa-t){background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important}
 ${S} .qa-hero{box-shadow:0 30px 60px -28px rgba(30,20,120,.6)!important}
-${S} .qa-lb{color:#2A3A36!important;font-weight:700}
+${S} .qa-lb{color:var(--t2)!important;font-weight:700}
 
 /* štatistiky váhy */
 ${S} .grid3 .stat{border-radius:22px!important;padding:12px 12px 11px!important}
@@ -135,55 +159,54 @@ ${S} .grid3 .stat:nth-child(1)::before{background:#22C987;box-shadow:0 0 8px #22
 ${S} .grid3 .stat:nth-child(2)::before{background:#2A86E6;box-shadow:0 0 8px #2A86E6}
 ${S} .grid3 .stat:nth-child(3)::before{background:#DFA367;box-shadow:0 0 8px #DFA367}
 ${S} .grid3 .stat b{font-size:26px!important}
-${S} .grid3 .stat span{color:#5B6D68!important;font-weight:600}
-${S} .pos{color:#117A50!important}
+${S} .grid3 .stat span{color:var(--t3)!important;font-weight:600}
+${S} .pos{color:var(--pos)!important}
 
 /* graf váhy */
 ${S} svg.chart .trend{stroke:url(#ckWl)!important;stroke-width:4!important;fill:none!important;filter:drop-shadow(0 6px 6px rgba(34,201,135,.35))}
-${S} svg.chart .raw{fill:#fff!important;stroke:rgba(7,30,40,.35)!important;stroke-width:1.4!important;opacity:1!important}
-${S} svg.chart .grid{stroke:rgba(7,30,40,.1)!important;stroke-dasharray:3 5}
-${S} svg.chart .lbl{fill:#5B6D68!important;font-weight:600}
+${S} svg.chart .raw{fill:var(--raw)!important;stroke:var(--t3)!important;stroke-width:1.4!important;opacity:.9!important}
+${S} svg.chart .grid{stroke:var(--line)!important;stroke-dasharray:3 5}
+${S} svg.chart .lbl{fill:var(--t3)!important;font-weight:600}
 ${S} svg.chart .ck-area{fill:url(#ckWg)}
-${S} svg.chart .ck-end{fill:#fff;stroke:#22C987;stroke-width:3;filter:drop-shadow(0 4px 6px rgba(34,201,135,.45))}
+${S} svg.chart .ck-end{fill:var(--raw);stroke:#22C987;stroke-width:3;filter:drop-shadow(0 4px 6px rgba(34,201,135,.45))}
 ${S} svg.chart .ck-end2{display:none}
 
 /* Pokrok */
 ${S} .pgx-rings,${S} .pgx-chart{--accent:#22C987}
+${D} .pgx-rings,${D} .pgx-chart{--accent:#7CFFB2}
 ${S} .pgx-area{fill:rgba(62,230,208,.3)!important}
 ${S} .pgx-line{stroke:#22C987!important;stroke-width:3.8!important;filter:drop-shadow(0 6px 6px rgba(34,201,135,.35))!important}
+${D} .pgx-line{stroke:#7CFFB2!important}
 ${S} .pgx-proj{stroke:#22C987!important}
 
 /* úvod a dotazník pred registráciou */
-${S} .fnq{background:linear-gradient(170deg,#8FFFC6 0%,#4AE9D6 48%,#58B2FF 100%)!important;color:#0B1512!important}
-${S} .fnq::before{inset:0!important;height:auto!important;background:
- radial-gradient(120% 60% at 15% 0%,rgba(190,255,220,.85),rgba(190,255,220,0) 55%),
- radial-gradient(45% 28% at 80% 6%,rgba(255,255,255,.7),rgba(255,255,255,0) 70%),
- radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.75),rgba(63,139,255,0) 62%)!important}
-${S} .fnq h1{color:#0B1512;letter-spacing:-.035em}
-${S} .fnq-sub{color:#2A3A36!important}
-${S} .fnq-o,${S} .fnq-feats>div,${S} .fnq-nf,${S} .fnq-bigin label,${S} .fnq-yrs button,${S} .fnq-week i{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:#0B1512!important;
+${S} .fnq{background:var(--bg4)!important;color:var(--t1)!important}
+${S} .fnq::before{inset:0!important;height:auto!important;background:var(--bg1),var(--bg2),var(--bg3)!important}
+${S} .fnq h1{color:var(--t1);letter-spacing:-.035em}
+${S} .fnq-sub{color:var(--t2)!important}
+${S} .fnq-o,${S} .fnq-feats>div,${S} .fnq-nf,${S} .fnq-bigin label,${S} .fnq-yrs button,${S} .fnq-week i{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:var(--t1)!important;
  -webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3)}
-${S} .fnq-o[aria-checked=true]{background:rgba(255,255,255,.92)!important;box-shadow:0 0 0 2.5px #16B07A,0 16px 30px -14px rgba(22,176,122,.6)!important}
+${S} .fnq-o[aria-checked=true]{background:var(--gl-hero)!important;box-shadow:0 0 0 2.5px #16B07A,0 16px 30px -14px rgba(22,176,122,.6)!important}
 ${S} .fnq-o.v2[aria-checked=true]{box-shadow:0 0 0 2.5px var(--c),0 16px 30px -14px var(--c)!important}
-${S} .fnq-bar{background:rgba(7,30,40,.12)!important}
-${S} .fnq-bar i,${S} .fnq-bar b,${S} .fnq-bar>*{background:#07110F!important}
-${S} .fnq-back{color:#0B1512!important}
+${S} .fnq-bar{background:var(--well)!important}
+${S} .fnq-bar i,${S} .fnq-bar b,${S} .fnq-bar>*{background:var(--t1)!important}
+${S} .fnq-back{color:var(--t1)!important}
 ${S} .fnq-o .ic,${S} .fnq-feats .fi{background:linear-gradient(145deg,#EFFFF6,#C9F7E4)!important;color:#0E8F62!important;box-shadow:0 1px 0 #fff inset,0 6px 12px -8px rgba(14,143,98,.6)}
-${S} .fnq-o small{color:#5B6D68!important}
+${D} .fnq-o .ic,${D} .fnq-feats .fi{background:rgba(124,255,178,.12)!important;color:#7CFFB2!important;box-shadow:none}
+${S} .fnq-o small{color:var(--t3)!important}
 ${S} .fnq-week i.on{background:var(--ck-grad)!important;color:#07110F!important}
-${S} .fnq-cta{background:var(--dk)!important;color:#fff!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 18px 34px -14px rgba(0,0,0,.6)!important}
+${S} .fnq-cta{background:var(--pri)!important;color:var(--pri-t)!important;border:1px solid var(--dk-b)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 18px 34px -14px rgba(0,0,0,.6)!important}
 ${S} .fnq-cta:disabled{opacity:.4!important}
 ${S} .fnq-foot{background:none!important}
-${S} .fnq-link{color:#2A3A36!important}
-${S} .fnq-link b{color:#0B1512!important}
+${S} .fnq-link{color:var(--t2)!important}
+${S} .fnq-link b{color:var(--t1)!important}
 
 /* panel Upraviť Dnes */
-${S} .tde-s{background:rgba(240,252,248,.94)!important;-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
+${S} .tde-s{background:var(--tde)!important;-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
 ${S} .tde-r{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important}
 ${S} .tde-r.drag{border-color:#3EE6D0!important}
-${S} .td-editlink{border:var(--gl-b)!important;color:#2A3A36!important;background:rgba(255,255,255,.4)!important}
+${S} .td-editlink{border:var(--gl-b)!important;color:var(--t2)!important;background:var(--gl-in)!important}
 `;
-
 // ---------- sušienka v kruhu kalórií ----------
 const NS = 'http://www.w3.org/2000/svg';
 const CHIPS = [[-24, -8, 4.6, 3.8], [-6, -34, 4, 3.2], [0, 37, 4.2, 3.4], [34, 10, 3.8, 3], [-34, 20, 3.4, 2.7], [30, -28, 3.6, 2.9], [22, 32, 3, 2.4], [-36, -24, 3, 2.4], [38, -6, 2.6, 2.1], [-18, 35, 2.8, 2.2], [-12, -16, 2.6, 2.1], [14, 18, 2.4, 2]];
@@ -225,7 +248,7 @@ function cookieSvg(pct) {
    <filter id="${id}s" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#5A3016" flood-opacity=".36"/></filter>
    <filter id="${id}d" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#5A3016" flood-opacity=".26"/></filter>
   </defs>
-  <circle r="45" fill="none" stroke="rgba(7,30,40,.14)" stroke-width="1.2" stroke-dasharray="1.4 2.8"/>
+  <circle class="ck-trail" r="45" fill="none" stroke="#5B6D68" stroke-width="1.2" stroke-dasharray="1.4 2.8"/>
   ${full ? '' : `<g filter="url(#${id}s)">
    <g mask="url(#${id}n)"><circle r="45" fill="url(#${id}i)"/></g>
    <g mask="url(#${id}m)"><circle r="45" fill="url(#${id}g)"/><circle r="45" fill="url(#${id}h)"/><circle r="40" fill="none" stroke="#9D5F2E" stroke-width="2" opacity=".35"/>
@@ -233,8 +256,8 @@ function cookieSvg(pct) {
     <g fill="#fff" opacity=".35">${CHIPS.slice(0, 6).map(([x, y, rx]) => `<ellipse cx="${x - 1}" cy="${y - 1.4}" rx="${(rx * 0.35).toFixed(1)}" ry="${(rx * 0.22).toFixed(1)}"/>`).join('')}</g></g>
   </g>`}
   <g>${crumbs.join('')}</g>
-  <circle r="29.5" fill="url(#${id}t)" filter="url(#${id}d)"/>
-  <circle r="29.5" fill="none" stroke="rgba(255,255,255,.9)" stroke-width=".8"/>
+  <circle class="ck-ctr" r="29.5" fill="url(#${id}t)" filter="url(#${id}d)"/>
+  <circle class="ck-rim" r="29.5" fill="none" stroke="rgba(255,255,255,.9)" stroke-width=".8"/>
  </svg>`;
 }
 function paintRing() {
@@ -253,7 +276,7 @@ function paintRing() {
 // Obrazoviek je veľa a karty majú rôzne triedy. V Sušienke preto karty aj na zriedkavejších obrazovkách nájdeme podľa vzhľadu:
 // svetlé pozadie, zaoblené rohy, rozumná veľkosť. Dostanú sklenený vzhľad. Vnorené karty v karte dostanú jemnejšiu verziu.
 const MANUAL = '.card,.hero-k,.mtile,.ml,#wx,#sp,.duo>*,.fwdk-t>*,.shop-card,.fr-card,.tip,details.an,.pg-card,.tile,.dc-t,.dc-i,.qk-b,.wc-card,.rp-card,.rd-card,.ci,.lvl button,.pfx-hero,.pfx-plan,.pfx-tiles>*,.seg,.pg-per,.mbp,.tdh-cal,.tdh-streak,.btn';
-const seen = new WeakSet();
+let seen = new WeakSet();
 // farba môže prísť ako rgb(...) alebo color(srgb 0..1) (výsledok color-mix)
 const light = c => {
   let m = c.match(/rgba?\(([^)]+)\)/), k = 1;
@@ -261,7 +284,11 @@ const light = c => {
   if (!m) return false;
   const v = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
   const [r, g, b] = v.slice(0, 3).map(x => x * k), a = v[3] == null ? 1 : v[3];
-  return a > 0.15 && (0.2126 * r + 0.7152 * g + 0.0722 * b) > 205;
+  const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  if (a <= 0.15) return false;
+  if (L > 205) return true;
+  // v tmavom režime sú karty tmavé a nesýte (sivé až modrosivé), nie farebné tlačidlá
+  return dark() && L < 95 && Math.max(r, g, b) - Math.min(r, g, b) < 45;
 };
 function scanCards() {
   if (H.dataset.skin !== 'cookie') return;
@@ -321,7 +348,7 @@ function apply() {
       font.href = 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,600;0,700;0,800;1,800;1,900&display=swap';
       document.head.appendChild(font);
     }
-    let m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = '#8CFBC6';
+    let m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = dark() ? '#0B2427' : '#8CFBC6';
     paintRing(); scanCards(); paintCharts();
   } else {
     delete H.dataset.skin;
@@ -333,14 +360,9 @@ function apply() {
 export function getSkin() { return get(); }
 export function setSkin(v) {
   try {
-    if (v === 'cookie') {
-      if (get() !== 'cookie') localStorage.setItem(PREV, getMode());
-      localStorage.setItem(KEY, 'cookie');
-      setMode('light');
-    } else {
-      localStorage.setItem(KEY, 'classic');
-      const p = localStorage.getItem(PREV); if (p) setMode(p);
-    }
+    // Sušienka má svetlú aj tmavú verziu: režim (Automaticky / Svetlý / Tmavý) sa pri zmene vzhľadu nemení
+    localStorage.setItem(KEY, v === 'cookie' ? 'cookie' : 'classic');
+    localStorage.removeItem(PREV);
   } catch (_) { }
   apply();
   try { window.fwTrack?.('skin_set', { v }); } catch (_) { }
@@ -350,8 +372,8 @@ export function setSkin(v) {
 // náhľady vzhľadov: štýl mimo prevodu svetlého režimu (inak by tmavý náhľad zosvetlel)
 const pst = document.createElement('style'); pst.dataset.fwLight = '';
 pst.textContent = `.sk-sw{display:block;width:100%;height:54px;border-radius:12px;margin-bottom:8px}
-.sk-sw.c{background:linear-gradient(160deg,#171C24,#0B0E12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
-.sk-sw.k{background:linear-gradient(135deg,#7CFFB2,#3EE6D0 50%,#5BB8FF);box-shadow:inset 0 0 0 2.5px #0D1117}`;
+.sk-sw.c{background:linear-gradient(135deg,#F3F5F8 0 49%,#0B0E12 51%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.sk-sw.k{background:linear-gradient(135deg,#8FFFC6,#4AE9D6 49%,#0D2E2A 51%,#0B1A33);box-shadow:inset 0 0 0 2.5px #0D1117}`;
 document.head.appendChild(pst);
 const SW = k => `<i class="sk-sw ${k}"></i>`;
 function profileUi() {
@@ -363,20 +385,25 @@ function profileUi() {
   </div>`;
   const seg = card.querySelector('.seg');
   card.insertBefore(box, seg);
-  const note = document.createElement('p'); note.className = 'muted small'; note.id = 'fwSkinNote'; note.style.margin = '8px 2px 0';
-  note.textContent = 'Sušienka je svetlý vzhľad podľa ikony appky. Tmavá verzia príde neskôr.';
   const mark = () => {
     const sk = get();
     box.querySelectorAll('[data-sk]').forEach(b => { const on = b.dataset.sk === sk; b.style.outline = on ? '2.5px solid var(--accent)' : '1px solid var(--line)'; b.setAttribute('aria-pressed', String(on)); });
-    seg.style.display = sk === 'cookie' ? 'none' : '';
-    card.querySelectorAll(':scope > p.muted').forEach(p => { if (p !== note) p.style.display = sk === 'cookie' ? 'none' : ''; });
-    if (sk === 'cookie') { if (!note.isConnected) seg.after(note); } else note.remove();
   };
   box.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { setSkin(b.dataset.sk); mark(); });
   mark();
 }
 
+// staré nastavenie: kým Sušienka nemala tmavú verziu, prepla režim na Svetlý. Vrátime pôvodný režim používateľa.
+try { const p = localStorage.getItem(PREV); if (p) { localStorage.removeItem(PREV); if (p !== 'light') setMode(p); } } catch (_) { }
 apply();
+// zmena svetlý/tmavý (aj automaticky podľa telefónu): karty sa nájdu nanovo a farba lišty telefónu sa prispôsobí
+new MutationObserver(() => {
+  if (H.dataset.skin !== 'cookie') return;
+  seen = new WeakSet();
+  document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in'));
+  let m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = dark() ? '#0B2427' : '#8CFBC6';
+  setTimeout(scanCards, 30); setTimeout(scanCards, 400);
+}).observe(H, { attributes: true, attributeFilter: ['data-theme'] });
 const app = document.getElementById('app');
 if (app) {
   let q = 0;
