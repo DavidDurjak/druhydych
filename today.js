@@ -278,7 +278,7 @@ export async function renderToday() {
     </header>
     ${isToday ? '' : `<div class="dayban"><span>Zapisuješ za <b>${longDate(st.date)}</b></span><button type="button" data-now>Späť na dnes</button></div>`}
     ${weekStrip}
-    ${unread.length ? `<a class="card accent link" href="#/spravy"><div class="row between"><div><h3>Správa od kouča</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
+    ${unread.length ? `<a class="card accent link" href="${st.trainer?.approved ? '#/chat/' + lastMsg.from_user : '#/spravy'}"><div class="row between"><div><h3>${st.trainer?.approved ? 'Nová správa' : 'Správa od kouča'}</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
     ${firstCard || backCard}
     <section class="hero-k ${over ? 'over' : ''}">
       <div class="hk-top"><span class="hk-t">${isFuture ? 'Plán dňa' : 'Dnešný cieľ'}</span><a class="hk-edit" href="#/ciele" aria-label="Upraviť ciele">${p.target_kcal} kcal<i>✎</i></a></div>

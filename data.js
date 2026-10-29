@@ -7,7 +7,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 // Načítava sa asynchrónne (bez top-level await, aby sa nezmenilo poradie spúšťania modulov); app.js pri štarte čaká na `ready`.
 const SUPA_VER = '2.117.3';
 let client = null;
-export const ready = import('./vendor/supabase.mjs')
+export const ready = (typeof window !== 'undefined' && window.__fwDemo ? import('./demo.js') : import('./vendor/supabase.mjs')) // ukážka pre prezentáciu (#demo) má vlastnú databázu v pamäti
   .catch(() => import(`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@${SUPA_VER}/+esm`))
   .then(m => (client = m.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)));
 

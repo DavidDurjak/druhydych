@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Fuelwind">
   <link rel="manifest" href="manifest.json">
+  <script src="demo-boot.js"></script>
   <script>
     // svetlý alebo tmavý režim ešte pred prvým vykreslením (Automaticky = podľa iPhonu, inak voľba z Profilu)
     (function () { try { var m = localStorage.getItem('fw_theme') || 'auto'; var t = m === 'auto' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : m; document.documentElement.setAttribute('data-theme', t); } catch (e) { } })();
