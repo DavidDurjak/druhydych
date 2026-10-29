@@ -328,18 +328,38 @@ async function renderOnboarding() {
 // ---------- váha ----------
 function weightChart(tr) {
   if (tr.length < 2) return '<p class="empty">Graf sa zobrazí po druhom vážení.</p>';
-  const W = 360, H = 190, pl = 38, pr = 8, pt = 12, pb = 24;
-  const data = tr.slice(-60);
+  // trend ako hladká krivka s plochou pod ňou, jednotlivé váženia ako jemné body, posledná hodnota v štítku
+  const W = 360, H = 200, pl = 8, pr = 40, pt = 30, pb = 26;
+  const data = tr.slice(-60), n = data.length;
   const ws = data.flatMap(d => [d.weight, d.trend]);
-  let min = Math.min(...ws), max = Math.max(...ws); const pad = Math.max(0.5, (max - min) * 0.15); min -= pad; max += pad;
-  const x = i => pl + (i / (data.length - 1)) * (W - pl - pr);
-  const y = v => pt + (1 - (v - min) / (max - min)) * (H - pt - pb);
-  const ticks = [min, (min + max) / 2, max];
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}">
-    ${ticks.map(t => `<line class="grid" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text class="lbl" x="2" y="${y(t) + 4}">${U.fmtW(t)}</text>`).join('')}
-    ${data.map((d, i) => `<circle class="raw" cx="${x(i)}" cy="${y(d.weight)}" r="4"/>`).join('')}
-    <path class="trend" d="${data.map((d, i) => `${i ? 'L' : 'M'}${x(i)},${y(d.trend)}`).join(' ')}"/>
-    <text class="lbl" x="${pl}" y="${H - 6}">${calc.fmtDate(data[0].date)}</text><text class="lbl" x="${W - pr}" y="${H - 6}" text-anchor="end">${calc.fmtDate(data[data.length - 1].date)}</text>
+  let min = Math.min(...ws), max = Math.max(...ws);
+  const span = Math.max(1, max - min), step = span > 6 ? 2 : span > 2.5 ? 1 : 0.5;
+  min = Math.floor((min - span * 0.08) / step) * step; max = Math.ceil((max + span * 0.08) / step) * step;
+  const x = i => pl + (i / (n - 1)) * (W - pl - pr), y = v => pt + (1 - (v - min) / (max - min)) * (H - pt - pb);
+  const pts = data.map((d, i) => [x(i), y(d.trend)]);
+  // hladká krivka (Catmull-Rom → Bézier), aby trend nebol lámaný
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2, t = 0.18;
+    d += `C${(p1[0] + (p2[0] - p0[0]) * t).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) * t).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) * t).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) * t).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  const ticks = []; for (let v = min; v <= max + 1e-6; v += step) ticks.push(v);
+  while (ticks.length > 4) ticks.splice(1, 1);
+  const last = data[n - 1], [lx, ly] = pts[n - 1];
+  const tag = U.fmtWU(last.trend), tw = 14 + tag.length * 6.9, tx = Math.max(pl, lx - tw - 12), ty = Math.min(H - pb - 24, Math.max(4, ly - 10.5)); // štítok vľavo od posledného bodu, aby nezakryl čísla osi
+  const mid = data[Math.floor((n - 1) / 2)];
+  return `<svg class="chart wchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Graf váhy, trend ${tag} ${U.wUnit()}">
+    <defs><linearGradient id="wcA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="wc-a0"/><stop offset="1" class="wc-a1"/></linearGradient></defs>
+    ${ticks.map(t => `<line class="grid" x1="${pl}" x2="${W - 2}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/><text class="lbl wc-y" x="${W - 2}" y="${(y(t) - 4).toFixed(1)}" text-anchor="end">${U.fmtW(t)}</text>`).join('')}
+    <path class="wc-area" d="${d} L${lx.toFixed(1)},${H - pb} L${pts[0][0].toFixed(1)},${H - pb} Z" fill="url(#wcA)"/>
+    ${data.map((p, i) => `<circle class="raw" cx="${x(i).toFixed(1)}" cy="${y(p.weight).toFixed(1)}" r="2.6"/>`).join('')}
+    <path class="trend" d="${d}"/>
+    <circle class="wc-end-h" cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="9"/>
+    <circle class="wc-end" cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="5"/>
+    <g class="wc-tag"><rect x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" width="${tw.toFixed(1)}" height="21" rx="10.5"/><text x="${(tx + tw / 2).toFixed(1)}" y="${(ty + 14.6).toFixed(1)}" text-anchor="middle">${tag}</text></g>
+    <text class="lbl" x="${pl}" y="${H - 6}">${calc.fmtDate(data[0].date)}</text>
+    ${n > 8 ? `<text class="lbl" x="${x(Math.floor((n - 1) / 2)).toFixed(1)}" y="${H - 6}" text-anchor="middle">${calc.fmtDate(mid.date)}</text>` : ''}
+    <text class="lbl" x="${lx.toFixed(1)}" y="${H - 6}" text-anchor="end">${last.date === calc.today() ? 'dnes' : calc.fmtDate(last.date)}</text>
   </svg>`;
 }
 async function renderWeight() {

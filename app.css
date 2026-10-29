@@ -117,6 +117,17 @@ select.input { appearance: none; }
 .chart .raw { fill: var(--muted); }
 .chart .trend { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
 .chart .lbl { fill: var(--muted); font-size: 13px; }
+/* graf váhy: plocha pod trendom, jemné body váženia, posledná hodnota v štítku */
+.wchart .grid { stroke-dasharray: 2 5; opacity: .8; }
+.wchart .lbl { font-size: 11px; font-weight: 600; }
+.wchart .raw { fill: var(--muted); opacity: .45; }
+.wchart .trend { stroke-width: 3.2; }
+.wchart .wc-a0 { stop-color: var(--accent); stop-opacity: .26; }
+.wchart .wc-a1 { stop-color: var(--accent); stop-opacity: 0; }
+.wchart .wc-end { fill: var(--card); stroke: var(--accent); stroke-width: 3; }
+.wchart .wc-end-h { fill: var(--accent); opacity: .18; }
+.wchart .wc-tag rect { fill: var(--accent); }
+.wchart .wc-tag text { fill: var(--accent-ink, #06140C); font-size: 12px; font-weight: 800; }
 
 .mood { display: flex; gap: 6px; }
 .mood button { flex: 1; border: 1px solid var(--line); background: var(--bg-2); border-radius: 12px; padding: 10px 0; font-size: 22px; cursor: pointer; }
@@ -229,3 +240,4 @@ details summary { cursor: pointer; padding: 4px 0; }
 input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 18px; height: 18px; }
 .seg a { flex: 1; text-align: center; color: var(--muted); padding: 9px 6px; border-radius: 9px; font-weight: 600; font-size: 14px; }
 .seg a.on { background: var(--card-2); color: var(--text); }
+.rrow .input.tm { width: 118px; min-width: 118px; flex: none; padding-left: 12px; padding-right: 8px; font-variant-numeric: tabular-nums; } /* čas sa zmestí celý aj s ikonou hodín */

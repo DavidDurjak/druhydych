@@ -18,7 +18,7 @@ ${S}{--bg:#EEFBF6;--bg-2:#E3F6EF;--card:#FFFFFF;--card-2:#F2FBF7;--line:rgba(13,
  --p-pro:#DDFBEA;--p-car:#E1EEFF;--p-fat:#FFEEDA;
  --bgc:#63E4D4;--bg1:radial-gradient(rgba(13,17,23,.075) 1.1px,transparent 1.5px) 0 0/15px 15px;--bg2:radial-gradient(70% 40% at 0% 0%,rgba(255,255,255,.6),rgba(255,255,255,0) 65%);
  --bg3:radial-gradient(90% 50% at 100% 105%,rgba(70,120,255,.28),rgba(70,120,255,0) 65%);--bg4:linear-gradient(165deg,#A2FFCF 0%,#5EEBD9 48%,#70C4FF 100%);
- --ctr:#FFFFFF;--ctr2:#F3FBF8;--raw:#FFFFFF;color-scheme:light}
+ --ctr:#FFFFFF;--ctr2:#F3FBF8;--raw:#FFFFFF;--plate0:#F1FAF7;--plate1:#E4F2EE;--plate2:#D5E8E3;--plate-r:#0D1117;--arc0:#16B07A;--arc1:#16B07A;--wc-line:#0D1117;--wc-area:#3EE6D0;--wc-glow:none;--wc-tag:#7CFFB2;--wc-tag-t:#0D1117;color-scheme:light}
 ${D}{--bg:#121A24;--bg-2:#17202C;--card:#19232F;--card-2:#202C3A;--line:rgba(234,255,246,.14);--text:#F1FFF8;--muted:#A3B1BE;
  --accent:#7CFFB2;--accent-ink:${INK};--accent-2:#FFB45E;--protein:#5BE3A0;--carbs:#6BB0FF;--fat:#F2B26B;--danger:#FF6B80;--track:rgba(255,255,255,.1);
  --t1:#F1FFF8;--t2:#CAD6DF;--t3:#A3B1BE;--tbg:#F1FFF8;
@@ -31,7 +31,7 @@ ${D}{--bg:#121A24;--bg-2:#17202C;--card:#19232F;--card-2:#202C3A;--line:rgba(234
  --p-pro:#183327;--p-car:#172A40;--p-fat:#34281A;
  --bgc:#0C121A;--bg1:radial-gradient(rgba(255,255,255,.055) 1.1px,transparent 1.5px) 0 0/15px 15px;--bg2:radial-gradient(70% 40% at 0% 0%,rgba(124,255,178,.14),rgba(124,255,178,0) 65%);
  --bg3:radial-gradient(90% 50% at 100% 105%,rgba(91,184,255,.18),rgba(91,184,255,0) 65%);--bg4:linear-gradient(165deg,#0F1F1D 0%,#0D1520 50%,#111733 100%);
- --ctr:#19232F;--ctr2:#202C3A;--raw:#19232F;color-scheme:dark}`;
+ --ctr:#19232F;--ctr2:#202C3A;--raw:#19232F;--plate0:#121A24;--plate1:#0E151E;--plate2:#0A1017;--plate-r:#E6FFF3;--arc0:#7CFFB2;--arc1:#7CFFB2;--wc-line:#7CFFB2;--wc-area:#3EE6D0;--wc-glow:none;--wc-tag:#7CFFB2;--wc-tag-t:#0D1117;color-scheme:dark}`;
 
 const EXTRA = (S, D) => `
 /* nálepky nemajú sklo: žiadne rozmazanie (aj rýchlejšie na starších telefónoch) */
@@ -60,9 +60,9 @@ ${D} .wk-d.now .wk-l,${D} .wk-d.now .wk-r b{color:${INK}!important}
 ${S} .wk-d .wk-l{font-weight:800!important}
 
 /* sušienka: obrys a tvrdý tieň ako nálepka */
-${S} .ck-ring{filter:drop-shadow(3px 3px 0 ${INK})}
-${D} .ck-ring{filter:drop-shadow(3px 3px 0 #000)}
-${S} .ck-ring .ck-trail{stroke:var(--t1)!important;opacity:.55!important}
+${S} .ck-ring .ck-plate-r{stroke-width:2!important}
+${S} .ck-ring .ck-ctr{filter:drop-shadow(2px 2px 0 ${INK})}${S} .ck-ring .ck-rim{stroke:${INK}!important;stroke-width:1.6!important}
+${D} .ck-ring .ck-ctr{filter:drop-shadow(2px 2px 0 #000)}${D} .ck-ring .ck-rim{stroke:#E6FFF3!important}
 ${S} .hk-pc{background:#7CFFB2!important;border:2px solid ${INK}!important;box-shadow:2px 2px 0 ${INK}!important;transform:rotate(-3deg);font-weight:800!important}
 ${S} .hero-k.over .hk-pc{background:#FFC2C2!important}
 ${S} .hk-edit{background:${INK}!important;color:#7CFFB2!important;border:2px solid ${INK}!important;box-shadow:none!important}
@@ -97,6 +97,14 @@ ${D} .seg .on,${D} .seg button.on,${D} .seg a.on,${D} .pg-per button.on{backgrou
 ${D} .seg .on *,${D} .pg-per button.on *{color:${INK}!important}
 ${S} .pgx-per::before{background:${INK}!important}${S} .pgx-per button.on,${S} .pgx-per button.on *{color:#7CFFB2!important;background:transparent!important}
 ${D} .pgx-per::before{background:#7CFFB2!important}${D} .pgx-per button.on,${D} .pgx-per button.on *{color:${INK}!important}
+${S} #mealseg button.on{background:color-mix(in srgb,var(--mc) 48%,var(--paper))!important;color:var(--t1)!important;box-shadow:inset 0 0 0 2px var(--o),2px 2px 0 var(--o)!important}
+${S} #mealseg button.on *{color:var(--t1)!important}
+/* Tréning: vybraná oblasť tela na mätovej nálepke (tmavý režim) musí byť tmavá, inak splynie */
+${D} #mseg button.on,${D} #mseg button.on *{color:${INK}!important}
+${D} #mseg button.on .fx-body *{fill:rgba(13,17,23,.22)!important}
+${D} #mseg button.on .fx-body .hd{fill:${INK}!important}
+${D} #mseg [data-k=balanced].on .fx-body .u,${D} #mseg [data-k=balanced].on .fx-body .l,${D} #mseg [data-k=upper].on .fx-body .u,${D} #mseg [data-k=lower].on .fx-body .l{fill:${INK}!important}
+${D} #mseg button.on .fx-body{filter:none!important}
 ${S} .lvl button.on{background:${INK}!important;color:#fff!important;border-color:${INK}!important;box-shadow:4px 4px 0 #3EE6D0!important}
 ${D} .lvl button.on{background:#7CFFB2!important;color:${INK}!important;border-color:#E6FFF3!important;box-shadow:4px 4px 0 #000!important}
 ${D} .lvl button.on small,${D} .lvl button.on .lv-t small{color:#1E3A2D!important}
@@ -152,9 +160,10 @@ ${S} .grid3 .stat:nth-child(3){background:var(--p-fat)!important}
 ${S} .grid3 .stat::before{width:22px!important;height:7px!important;border-radius:4px!important;box-shadow:inset 0 0 0 1.5px var(--o)!important}
 
 /* grafy: atramentová čiara, biele body s obrysom */
-${S} svg.chart .trend{stroke:var(--t1)!important;stroke-width:3.6!important;filter:none!important}
-${D} svg.chart .trend{stroke:#7CFFB2!important}
 ${S} svg.chart .raw{stroke:var(--t1)!important;stroke-width:1.6!important}
+${S} svg.chart.wchart .raw{fill:var(--paper)!important;stroke:var(--t1)!important;stroke-width:1.4!important;opacity:.75!important}
+${S} svg.chart.wchart .wc-tag rect{stroke:var(--o);stroke-width:2;filter:drop-shadow(2px 2px 0 var(--o))}
+${S} svg.chart.wchart .wc-end-h{display:none}
 ${S} svg.chart .ck-end{stroke:var(--t1)!important;filter:none!important}
 ${S} .pgx-line{stroke:var(--t1)!important;filter:none!important}
 ${D} .pgx-line{stroke:#7CFFB2!important}
@@ -177,7 +186,7 @@ ${S}:not([data-theme=dark]) .ko-c.warn .ko-id span{color:#9A4F07!important;backg
 `;
 
 export const stickerCss = RULES => {
-  const S = 'html[data-skin=sticker]', D = 'html[data-skin=sticker][data-theme=dark]';
+  const S = 'html[data-skin=sticker]:root', D = 'html[data-skin=sticker][data-theme=dark]:root';
   return VARS(S, D) + RULES(S, D) + EXTRA(S, D);
 };
 export const STICKER_META = { light: '#9BFFCB', dark: '#0C121A' };

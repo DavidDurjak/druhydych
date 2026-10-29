@@ -12,8 +12,8 @@ const dark = () => document.documentElement.dataset.theme === 'dark';
 const H = document.documentElement;
 const SKINS = ['cookie', 'sticker'];
 const get = () => { try { const v = localStorage.getItem(KEY); return SKINS.includes(v) ? v : 'classic'; } catch (_) { return 'classic'; } };
-const S = 'html[data-skin=cookie]';
-const D = 'html[data-skin=cookie][data-theme=dark]';
+const S = 'html[data-skin=cookie]:root'; // :root pridá váhu, aby vzhľad vždy prebil prevedené pravidlá svetlého režimu
+const D = 'html[data-skin=cookie][data-theme=dark]:root';
 
 const VARS_COOKIE = (S, D) => `
 ${S}{--bg:#EAFBF5;--bg-2:#E0F6EF;--card:rgba(255,255,255,.66);--card-2:rgba(255,255,255,.5);--line:rgba(7,30,40,.1);--text:#0B1512;--muted:#5B6D68;
@@ -29,7 +29,7 @@ ${S}{--bg:#EAFBF5;--bg-2:#E0F6EF;--card:rgba(255,255,255,.66);--card-2:rgba(255,
  --dk:rgba(7,17,15,.84);--dk-b:rgba(255,255,255,.14);--pri:var(--dk);--pri-t:#fff;--pos:#117A50;--tde:rgba(240,252,248,.94);
  --bgc:#4fe8d2;--bg1:radial-gradient(120% 60% at 15% 0%,rgba(190,255,220,.85),rgba(190,255,220,0) 55%);--bg2:radial-gradient(45% 28% at 80% 6%,rgba(255,255,255,.7),rgba(255,255,255,0) 70%);
  --bg3:radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.75),rgba(63,139,255,0) 62%);--bg4:linear-gradient(170deg,#8FFFC6 0%,#4AE9D6 48%,#58B2FF 100%);
- --ctr:#fff;--ctr2:#EEF6F4;--raw:#fff;color-scheme:light}
+ --ctr:#fff;--ctr2:#EEF6F4;--raw:#fff;--plate0:rgba(255,255,255,.5);--plate1:rgba(255,255,255,.72);--plate2:rgba(7,30,40,.08);--plate-r:rgba(255,255,255,.9);--arc0:#3EE6D0;--arc1:#16B07A;--wc-line:#16B07A;--wc-area:#3EE6D0;--wc-glow:drop-shadow(0 5px 6px rgba(22,176,122,.35));--wc-tag:#0B1512;--wc-tag-t:#7CFFB2;color-scheme:light}
 /* tmavá Sušienka: hlboká tyrkysovo-modrá noc s farbami ikony ako svetlom, karty z tmavého skla */
 ${D}{--bg:#0B2226;--bg-2:#0E2A2E;--card:rgba(20,40,44,.62);--card-2:rgba(255,255,255,.06);--line:rgba(255,255,255,.1);--text:#EFFFF8;--muted:#8FAAA3;
  --accent:#7CFFB2;--accent-ink:#06301A;--track:rgba(255,255,255,.08);
@@ -43,7 +43,7 @@ ${D}{--bg:#0B2226;--bg-2:#0E2A2E;--card:rgba(20,40,44,.62);--card-2:rgba(255,255
  --dk:rgba(4,12,12,.86);--dk-b:rgba(255,255,255,.12);--pri:var(--ck-grad);--pri-t:#04100E;--pos:#7CFFB2;--tde:rgba(10,30,32,.95);
  --bgc:#0A1F24;--bg1:radial-gradient(90% 50% at 10% 0%,rgba(124,255,178,.22),rgba(124,255,178,0) 60%);--bg2:radial-gradient(60% 40% at 95% 20%,rgba(62,230,208,.16),rgba(62,230,208,0) 70%);
  --bg3:radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.32),rgba(63,139,255,0) 62%);--bg4:linear-gradient(170deg,#0D2E2A 0%,#0A2230 55%,#0B1A33 100%);
- --ctr:#173236;--ctr2:#0F2427;--raw:#0F2427;color-scheme:dark}
+ --ctr:#173236;--ctr2:#0F2427;--raw:#0F2427;--plate0:rgba(0,0,0,.18);--plate1:rgba(0,0,0,.3);--plate2:rgba(255,255,255,.06);--plate-r:rgba(255,255,255,.1);--arc0:#5BB8FF;--arc1:#7CFFB2;--wc-line:#7CFFB2;--wc-area:#3EE6D0;--wc-glow:drop-shadow(0 4px 8px rgba(124,255,178,.35));--wc-tag:#7CFFB2;--wc-tag-t:#04100E;color-scheme:dark}
 `;
 // spoločné pravidlá pre farebné vzhľady: farby berú z premenných, takže každý vzhľad ich má z rovnakého zoznamu obrazoviek
 export const RULES = (S, D) => `
@@ -100,7 +100,9 @@ ${S} .hk-ring .hk-rings,${S} .hk-ring .breath{display:none!important}
 ${S} .screen.td .hk-ring::before,${S} .screen.td .hk-ring::after{display:none!important}
 ${S} .ck-ring{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 ${D} .ck-ring .ck-ctr{fill:var(--ctr)}
-${S} .ck-ring .ck-trail{stroke:var(--t3);opacity:.35}
+${S} .ck-ring .ck-p0{stop-color:var(--plate0)}${S} .ck-ring .ck-p1{stop-color:var(--plate1)}${S} .ck-ring .ck-p2{stop-color:var(--plate2)}
+${S} .ck-ring .ck-plate-r{stroke:var(--plate-r)}
+${S} .ck-ring .ck-a0{stop-color:var(--arc0)}${S} .ck-ring .ck-a1{stop-color:var(--arc1)}
 ${D} .ck-ring .ck-rim{stroke:rgba(255,255,255,.12)}
 ${S} .hk-c{z-index:1}
 ${S} .hk-c b{font-size:44px!important}
@@ -130,6 +132,9 @@ ${S} .seg,${S} .pg-per{background:var(--well)!important;border:0!important;box-s
 ${S} .seg button,${S} .seg a,${S} .pg-per button{color:var(--t2)!important}
 ${S} .seg .on,${S} .seg button.on,${S} .seg a.on,${S} .pg-per button.on{background:var(--seg-on)!important;color:var(--t1)!important;box-shadow:var(--seg-on-sh)!important;transform:none!important}
 ${S} .seg .on *,${S} .pg-per button.on *{color:var(--t1)!important}
+/* Jedlo: vybraná časť dňa má svoju farbu (raňajky oranžová, obed červená...), nie jednotnú */
+${S} #mealseg button.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mc) 20%,var(--mixb)),color-mix(in srgb,var(--mc) 42%,var(--mixb)))!important;color:var(--t1)!important;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--mc) 75%,transparent),0 10px 18px -10px var(--mc)!important}
+${S} #mealseg button.on *{color:var(--t1)!important}
 /* Pokrok: posuvný výber obdobia, aktívna je pilulka pod tlačidlom */
 ${S} .pgx-per::before{background:var(--seg-on)!important;box-shadow:var(--seg-on-sh)!important}
 ${S} .pgx-per button.on{background:transparent!important;box-shadow:none!important}
@@ -179,6 +184,14 @@ ${S} svg.chart .lbl{fill:var(--t3)!important;font-weight:600}
 ${S} svg.chart .ck-area{fill:url(#ckWg)}
 ${S} svg.chart .ck-end{fill:var(--raw);stroke:#22C987;stroke-width:3;filter:drop-shadow(0 4px 6px rgba(34,201,135,.45))}
 ${S} svg.chart .ck-end2{display:none}
+/* graf váhy (wchart) */
+${S} svg.chart.wchart .trend{stroke:var(--wc-line)!important;stroke-width:3.4!important;filter:var(--wc-glow)!important}
+${S} svg.chart.wchart .raw{fill:var(--t3)!important;stroke:none!important;opacity:.4!important}
+${S} svg.chart.wchart .wc-a0{stop-color:var(--wc-area);stop-opacity:.42}${S} svg.chart.wchart .wc-a1{stop-color:var(--wc-area);stop-opacity:0}
+${S} svg.chart.wchart .wc-end{fill:var(--raw);stroke:var(--wc-line);stroke-width:3}
+${S} svg.chart.wchart .wc-end-h{fill:var(--wc-line);opacity:.2}
+${S} svg.chart.wchart .wc-tag rect{fill:var(--wc-tag)}${S} svg.chart.wchart .wc-tag text{fill:var(--wc-tag-t)}
+${S} svg.chart.wchart .lbl{fill:var(--t3)!important}
 
 /* Pokrok */
 ${S} .pgx-rings,${S} .pgx-chart{--accent:#22C987}
@@ -224,55 +237,86 @@ const META_OF = { cookie: { light: '#8CFBC6', dark: '#0B2427' }, sticker: STICKE
 const setMeta = () => { const sk = H.dataset.skin; const m = document.querySelector('meta[name="theme-color"]'); if (m && META_OF[sk]) m.content = META_OF[sk][dark() ? 'dark' : 'light']; };
 // ---------- sušienka v kruhu kalórií ----------
 const NS = 'http://www.w3.org/2000/svg';
-const CHIPS = [[-24, -8, 4.6, 3.8], [-6, -34, 4, 3.2], [0, 37, 4.2, 3.4], [34, 10, 3.8, 3], [-34, 20, 3.4, 2.7], [30, -28, 3.6, 2.9], [22, 32, 3, 2.4], [-36, -24, 3, 2.4], [38, -6, 2.6, 2.1], [-18, 35, 2.8, 2.2], [-12, -16, 2.6, 2.1], [14, 18, 2.4, 2]];
+// čokoládové kúsky: [x, y, veľkosť, natočenie] v pásiku sušienky (polomer 31 až 43, stred zakrýva biely disk)
+const CHIPS = [[-37, -6, 3.4, 20], [-26, -28, 2.9, -30], [-3, -38, 3.2, 50], [21, -33, 2.7, 10], [36, -15, 3.3, -40], [39, 9, 2.6, 70], [28, 29, 3.3, -15], [9, 39, 2.8, 35], [-15, 37, 3.4, -55], [-33, 22, 2.8, 15], [-40, 9, 2.2, 80], [33, -26, 2, 0], [-8, -40, 2, -20], [16, 37, 1.9, 60]];
 let uid = 0;
+const P = (r, a) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180)];
+const f1 = v => v.toFixed(2);
+// výsek od uhla a0 po a1 (stupne, 0 = vpravo, -90 = hore) s polomerom r
+function wedge(a0, a1, r) {
+  if (a1 - a0 >= 359.9) return `M${-r},0a${r},${r} 0 1,0 ${2 * r},0a${r},${r} 0 1,0 ${-2 * r},0Z`;
+  const [x0, y0] = P(r, a0), [x1, y1] = P(r, a1);
+  return `M0,0L${f1(x0)},${f1(y0)}A${r},${r} 0 ${a1 - a0 > 180 ? 1 : 0},1 ${f1(x1)},${f1(y1)}Z`;
+}
+// obrys sušienky: jemne zvlnený okraj ako upečené cesto
+function rimPath(r, n, amp) {
+  let d = '';
+  for (let i = 0; i <= n * 4; i++) {
+    const a = i / (n * 4) * 360 - 90, rr = r + amp * Math.sin(i / 4 * Math.PI * 2) * (0.7 + 0.3 * Math.cos(i * 1.7));
+    const [x, y] = P(rr, a); d += (i ? 'L' : 'M') + f1(x) + ',' + f1(y);
+  }
+  return d + 'Z';
+}
+const RIM = rimPath(43.2, 22, 0.55);
+// Kruh kalórií ako sušienka na tanieri: z ktorej ubúda, čo zješ. Hrany zjedenej časti sú odhryznuté (s vidnou svetlou stredovou časťou cesta),
+// na tanieri v zjedenej časti ostanú omrvinky. Nič nepresahuje tanier, žiadne prerušované čiary.
 function cookieSvg(pct) {
-  const k = Math.max(0, Math.min(1, pct / 100)), id = 'ck' + (++uid);
-  const ang = k * 360, bites = [], inner = [], crumbs = [];
-  // odhryznutia pozdĺž zjedenej časti (od vrchu v smere hodín)
-  if (k > 0.005) {
-    const step = 19;
-    for (let a = -90 + step * 0.45; a < -90 + ang + step * 0.3; a += step) {
-      const x = 38.5 * Math.cos(a * Math.PI / 180), y = 38.5 * Math.sin(a * Math.PI / 180);
-      bites.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="14.5"/>`);
-      inner.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12"/>`);
-    }
-    // omrvinky: deterministicky podľa percenta, aby pri prekreslení neskákali
-    let s = 7 + Math.round(k * 100);
-    const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
-    const n = Math.min(11, 4 + Math.round(k * 10));
-    for (let i = 0, t = 0; i < n && t < 80; t++) {
-      const a = -84 + rnd() * Math.max(10, ang - 4), rr = 48 + rnd() * 9;
-      const x = rr * Math.cos(a * Math.PI / 180), y = rr * Math.sin(a * Math.PI / 180);
-      if (y > 42) continue;
-      i++;
-      const sz = 0.9 + rnd() * 1.2, col = ['#C98A50', '#DFA367', '#9D5F2E', '#E9BE86'][Math.floor(rnd() * 4)];
-      crumbs.push(`<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${sz.toFixed(1)}" ry="${(sz * 0.7).toFixed(1)}" transform="rotate(${Math.round(rnd() * 120 - 60)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${col}"/>`);
+  const k = Math.max(0, Math.min(1, pct / 100)), id = 'ck' + (++uid), ang = k * 360, a0 = -90, a1 = -90 + ang;
+  const eaten = k > 0.004, full = k >= 0.996;
+  // odhryznutia: kruhy na oboch reznych hranách (na začiatku hore a na konci zjedenej časti)
+  const bites = [], dough = [];
+  if (eaten && !full) {
+    const edge = (a, dir) => [[31.2, 5, 1.4], [36.8, 6.1, 2.6], [42.8, 5.2, 1.2]].forEach(([r, br, off], i) => {
+      const [x, y] = P(r, a + dir * (off + (i === 1 ? 0.6 : 0)));
+      bites.push(`<circle cx="${f1(x)}" cy="${f1(y)}" r="${br}"/>`);
+      dough.push(`<circle cx="${f1(x)}" cy="${f1(y)}" r="${(br - 1.5).toFixed(2)}"/>`);
+    });
+    edge(a0, -1); edge(a1, 1);
+  }
+  const cut = eaten ? `<path d="${wedge(a0, a1, 52)}"/>` : '';
+  const cutIn = eaten && !full ? `<path d="${wedge(a0 + 1.6, a1 - 1.6, 52)}"/>` : cut;
+  // omrvinky ležia na tanieri v zjedenej časti (deterministicky podľa percenta, pri prekreslení neskáču)
+  const crumbs = [];
+  if (eaten) {
+    let sd = 11 + Math.round(k * 100); const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    const n = Math.min(16, 3 + Math.round(ang / 24));
+    for (let i = 0; i < n; i++) {
+      const a = a0 + 5 + rnd() * Math.max(2, ang - 10), r = 33 + rnd() * 10.5, [x, y] = P(r, a), sz = 0.55 + rnd() * 0.95;
+      const c = ['#C98A50', '#DFA367', '#9D5F2E', '#E9BE86', '#5A3520'][Math.floor(rnd() * 5)];
+      crumbs.push(`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${sz.toFixed(2)}" ry="${(sz * 0.72).toFixed(2)}" transform="rotate(${Math.round(rnd() * 160 - 80)} ${f1(x)} ${f1(y)})" fill="${c}"/>`);
     }
   }
-  const full = k >= 0.995;
+  const M = (mid, parts) => `<mask id="${id}${mid}" maskUnits="userSpaceOnUse" x="-55" y="-55" width="110" height="110"><rect x="-55" y="-55" width="110" height="110" fill="#fff"/><g fill="#000">${parts}</g></mask>`;
   return `<svg class="ck-ring" viewBox="-50 -50 100 100" aria-hidden="true" xmlns="${NS}">
   <defs>
-   <radialGradient id="${id}g" cx=".4" cy=".32" r=".8"><stop offset="0" stop-color="#F7D4A4"/><stop offset=".45" stop-color="#DFA367"/><stop offset=".85" stop-color="#B4723A"/><stop offset="1" stop-color="#95582A"/></radialGradient>
-   <radialGradient id="${id}h" cx=".32" cy=".22" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-   <radialGradient id="${id}c" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#5A3520"/><stop offset="1" stop-color="#2A1609"/></radialGradient>
-   <radialGradient id="${id}i" cx=".5" cy=".5" r=".5"><stop offset=".6" stop-color="#F4D9B0"/><stop offset="1" stop-color="#E7BE85"/></radialGradient>
-   <radialGradient id="${id}t" cx=".4" cy=".3" r=".75"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#EEF6F4"/></radialGradient>
-   <mask id="${id}m" maskUnits="userSpaceOnUse" x="-70" y="-70" width="140" height="140"><rect x="-70" y="-70" width="140" height="140" fill="#fff"/><g fill="#000">${bites.join('')}</g></mask>
-   <mask id="${id}n" maskUnits="userSpaceOnUse" x="-70" y="-70" width="140" height="140"><rect x="-70" y="-70" width="140" height="140" fill="#fff"/><g fill="#000">${inner.join('')}</g></mask>
-   <filter id="${id}s" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#5A3016" flood-opacity=".36"/></filter>
-   <filter id="${id}d" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#5A3016" flood-opacity=".26"/></filter>
+   <radialGradient id="${id}g" cx=".42" cy=".34" r=".78"><stop offset="0" stop-color="#F6CF98"/><stop offset=".5" stop-color="#DFA063"/><stop offset=".86" stop-color="#B9773C"/><stop offset="1" stop-color="#97592A"/></radialGradient>
+   <radialGradient id="${id}h" cx=".3" cy=".2" r=".55"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+   <linearGradient id="${id}c" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6B3F22"/><stop offset="1" stop-color="#2B160A"/></linearGradient>
+   <radialGradient id="${id}t" cx=".42" cy=".32" r=".75"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#EEF5F3"/></radialGradient>
+   <radialGradient id="${id}p" cx=".5" cy=".5" r=".5"><stop offset=".62" class="ck-p0"/><stop offset=".93" class="ck-p1"/><stop offset="1" class="ck-p2"/></radialGradient>
+   <linearGradient id="${id}a" x1="0" y1="-1" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop offset="0" class="ck-a0"/><stop offset="1" class="ck-a1"/></linearGradient>
+   <pattern id="${id}x" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(28)"><circle cx="1.5" cy="2" r=".45" fill="#8A4F23" opacity=".35"/><circle cx="5" cy="5.3" r=".35" fill="#FFF3DE" opacity=".45"/></pattern>
+   ${M('m', cut + bites.join(''))}
+   ${M('n', cutIn + dough.join(''))}
+   <filter id="${id}s" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="2.6" stdDeviation="2.2" flood-color="#4A2610" flood-opacity=".38"/></filter>
+   <filter id="${id}d" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2.2" stdDeviation="2.4" flood-color="#2A1A10" flood-opacity=".22"/></filter>
   </defs>
-  <circle class="ck-trail" r="45" fill="none" stroke="#5B6D68" stroke-width="1.2" stroke-dasharray="1.4 2.8"/>
+  <circle class="ck-plate" r="46.6" fill="url(#${id}p)"/>
+  <circle class="ck-plate-r" r="46.6" fill="none" stroke-width=".9"/>
+  ${eaten ? `<path class="ck-arc" d="${full ? `M0,-44.4a44.4,44.4 0 1,1 -0.01,0` : (() => { const [x0, y0] = P(44.4, a0), [x1, y1] = P(44.4, a1); return `M${f1(x0)},${f1(y0)}A44.4,44.4 0 ${ang > 180 ? 1 : 0},1 ${f1(x1)},${f1(y1)}`; })()}" fill="none" stroke="url(#${id}a)" stroke-width="2.6" stroke-linecap="round"/>` : ''}
+  <g class="ck-crumbs">${crumbs.join('')}</g>
   ${full ? '' : `<g filter="url(#${id}s)">
-   <g mask="url(#${id}n)"><circle r="45" fill="url(#${id}i)"/></g>
-   <g mask="url(#${id}m)"><circle r="45" fill="url(#${id}g)"/><circle r="45" fill="url(#${id}h)"/><circle r="40" fill="none" stroke="#9D5F2E" stroke-width="2" opacity=".35"/>
-    <g fill="url(#${id}c)">${CHIPS.map(([x, y, rx, ry]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/>`).join('')}</g>
-    <g fill="#fff" opacity=".35">${CHIPS.slice(0, 6).map(([x, y, rx]) => `<ellipse cx="${x - 1}" cy="${y - 1.4}" rx="${(rx * 0.35).toFixed(1)}" ry="${(rx * 0.22).toFixed(1)}"/>`).join('')}</g></g>
+   <g mask="url(#${id}n)"><path d="${RIM}" fill="#F3D4A6"/></g>
+   <g mask="url(#${id}m)">
+    <path d="${RIM}" fill="url(#${id}g)"/>
+    <path d="${RIM}" fill="url(#${id}x)"/>
+    <path d="${RIM}" fill="url(#${id}h)"/>
+    <circle r="40.6" fill="none" stroke="#8E5124" stroke-width="1.1" opacity=".22"/>
+    <g>${CHIPS.map(([x, y, s, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M${-s},${s * 0.35}C${-s},${-s * 0.75} ${s * 0.9},${-s * 0.95} ${s},${s * 0.1}C${s * 0.9},${s * 0.85} ${-s * 0.6},${s} ${-s},${s * 0.35}Z" fill="url(#${id}c)"/><ellipse cx="${-s * 0.25}" cy="${-s * 0.3}" rx="${s * 0.32}" ry="${s * 0.18}" fill="#fff" opacity=".28"/></g>`).join('')}</g>
+   </g>
   </g>`}
-  <g>${crumbs.join('')}</g>
-  <circle class="ck-ctr" r="29.5" fill="url(#${id}t)" filter="url(#${id}d)"/>
-  <circle class="ck-rim" r="29.5" fill="none" stroke="rgba(255,255,255,.9)" stroke-width=".8"/>
+  <circle class="ck-ctr" r="30" fill="url(#${id}t)" filter="url(#${id}d)"/>
+  <circle class="ck-rim" r="30" fill="none" stroke="rgba(255,255,255,.95)" stroke-width=".7"/>
  </svg>`;
 }
 function paintRing() {
@@ -333,7 +377,7 @@ function scanCards() {
 function paintCharts() {
   if (!H.dataset.skin) return;
   document.querySelectorAll('#app svg.chart').forEach(svg => {
-    if (svg.querySelector('.ck-area')) return;
+    if (svg.querySelector('.ck-area,.wc-area')) return; // graf váhy má plochu a koncový bod už sám
     const tp = svg.querySelector('.trend'); if (!tp) return;
     const pts = (tp.getAttribute('d') || '').match(/-?[\d.]+,-?[\d.]+/g); if (!pts || pts.length < 2) return;
     const vb = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number), bottom = (vb[3] || 190) - 24;
@@ -432,3 +476,4 @@ if (app) {
   mo.observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-lv'] });
   mo.observe(document.body, { childList: true }); // spodné panely sa vkladajú priamo do body
 }
+export { cookieSvg };
