@@ -2,17 +2,20 @@
 // gradient z ikony (mätová, tyrkysová, modrá), karty z matného skla s jemným svetlom a mäkkým tieňom,
 // čisté písmo s výraznými číslami, a kruh kalórií ako sušienka, z ktorej ubúda, čo zješ.
 // Rozloženie obrazoviek sa nemení, mení sa len vzhľad. Voľba sa uloží v telefóne (fw_skin) a vyberá sa v Profile pri Vzhľade.
-// Sušienka má svetlú aj tmavú verziu. Riadi ich ten istý prepínač ako Klasický (Automaticky podľa telefónu / Svetlý / Tmavý).
+// Tretí vzhľad „Nálepky“ (skin-sticker.js) používa rovnaké pravidlá obrazoviek, len iné farby a obrysy.
+// Každý vzhľad má svetlú aj tmavú verziu. Riadi ich ten istý prepínač ako Klasický (Automaticky podľa telefónu / Svetlý / Tmavý).
 import { setMode } from './theme.js';
+import { stickerCss, STICKER_META } from './skin-sticker.js';
 
 const KEY = 'fw_skin', PREV = 'fw_skin_prev_mode';
 const dark = () => document.documentElement.dataset.theme === 'dark';
 const H = document.documentElement;
-const get = () => { try { return localStorage.getItem(KEY) === 'cookie' ? 'cookie' : 'classic'; } catch (_) { return 'classic'; } };
+const SKINS = ['cookie', 'sticker'];
+const get = () => { try { const v = localStorage.getItem(KEY); return SKINS.includes(v) ? v : 'classic'; } catch (_) { return 'classic'; } };
 const S = 'html[data-skin=cookie]';
 const D = 'html[data-skin=cookie][data-theme=dark]';
 
-const CSS = `
+const VARS_COOKIE = (S, D) => `
 ${S}{--bg:#EAFBF5;--bg-2:#E0F6EF;--card:rgba(255,255,255,.66);--card-2:rgba(255,255,255,.5);--line:rgba(7,30,40,.1);--text:#0B1512;--muted:#5B6D68;
  --accent:#16B07A;--accent-ink:#FFFFFF;--accent-2:#C97B3F;--protein:#22C987;--carbs:#2A86E6;--fat:#DFA367;--danger:#E0344F;--track:rgba(7,30,40,.08);
  --ck-grad:linear-gradient(135deg,#7CFFB2 0%,#3EE6D0 52%,#5BB8FF 100%);
@@ -41,6 +44,9 @@ ${D}{--bg:#0B2226;--bg-2:#0E2A2E;--card:rgba(20,40,44,.62);--card-2:rgba(255,255
  --bgc:#0A1F24;--bg1:radial-gradient(90% 50% at 10% 0%,rgba(124,255,178,.22),rgba(124,255,178,0) 60%);--bg2:radial-gradient(60% 40% at 95% 20%,rgba(62,230,208,.16),rgba(62,230,208,0) 70%);
  --bg3:radial-gradient(110% 70% at 50% 112%,rgba(63,139,255,.32),rgba(63,139,255,0) 62%);--bg4:linear-gradient(170deg,#0D2E2A 0%,#0A2230 55%,#0B1A33 100%);
  --ctr:#173236;--ctr2:#0F2427;--raw:#0F2427;color-scheme:dark}
+`;
+// spoločné pravidlá pre farebné vzhľady: farby berú z premenných, takže každý vzhľad ich má z rovnakého zoznamu obrazoviek
+export const RULES = (S, D) => `
 ${S},${S} body{background:var(--bgc)!important;min-height:100%}
 /* pozadie ako pevná vrstva: iPhone nepodporuje background-attachment:fixed, takto gradient ostane na mieste aj pri posúvaní */
 ${S} body::before{content:'';display:block!important;position:fixed;inset:0!important;animation:none!important;transform:none!important;pointer-events:none;z-index:0;background:var(--bg1),var(--bg2),var(--bg3),var(--bg4)}
@@ -205,13 +211,17 @@ ${S} .fnq-link{color:var(--t2)!important}
 ${S} .fnq-link b{color:var(--t1)!important}
 
 /* Klienti: štítok Pozor vo svetlom režime tmavší, aby bol čitateľný na skle */
-html[data-skin=cookie]:not([data-theme=dark]) .ko-c.warn .ko-id span{color:#A35F12!important;background:rgba(223,163,103,.22)!important}
+${S}:not([data-theme=dark]) .ko-c.warn .ko-id span{color:#A35F12!important;background:rgba(223,163,103,.22)!important}
 /* panel Upraviť Dnes */
 ${S} .tde-s{background:var(--tde)!important;-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
 ${S} .tde-r{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important}
 ${S} .tde-r.drag{border-color:#3EE6D0!important}
 ${S} .td-editlink{border:var(--gl-b)!important;color:var(--t2)!important;background:var(--gl-in)!important}
 `;
+const CSS = VARS_COOKIE(S, D) + RULES(S, D);
+const CSS_OF = { cookie: () => CSS, sticker: () => stickerCss(RULES) };
+const META_OF = { cookie: { light: '#8CFBC6', dark: '#0B2427' }, sticker: STICKER_META };
+const setMeta = () => { const sk = H.dataset.skin; const m = document.querySelector('meta[name="theme-color"]'); if (m && META_OF[sk]) m.content = META_OF[sk][dark() ? 'dark' : 'light']; };
 // ---------- sušienka v kruhu kalórií ----------
 const NS = 'http://www.w3.org/2000/svg';
 const CHIPS = [[-24, -8, 4.6, 3.8], [-6, -34, 4, 3.2], [0, 37, 4.2, 3.4], [34, 10, 3.8, 3], [-34, 20, 3.4, 2.7], [30, -28, 3.6, 2.9], [22, 32, 3, 2.4], [-36, -24, 3, 2.4], [38, -6, 2.6, 2.1], [-18, 35, 2.8, 2.2], [-12, -16, 2.6, 2.1], [14, 18, 2.4, 2]];
@@ -266,7 +276,7 @@ function cookieSvg(pct) {
  </svg>`;
 }
 function paintRing() {
-  if (H.dataset.skin !== 'cookie') return;
+  if (!H.dataset.skin) return;
   document.querySelectorAll('#app .hk-ring').forEach(r => {
     const lv = Number(r.dataset.lv) || 0;
     const cur = r.querySelector(':scope > .ck-ring');
@@ -296,7 +306,7 @@ const light = c => {
   return dark() && L < 95 && Math.max(r, g, b) - Math.min(r, g, b) < 45;
 };
 function scanCards() {
-  if (H.dataset.skin !== 'cookie') return;
+  if (!H.dataset.skin) return;
   const vw = innerWidth;
   document.querySelectorAll('#app .screen, .sheet-bg > *, .tde-s, .qa-in').forEach(root => {
     root.querySelectorAll('div,section,article,a,button,li,label,details,aside,form').forEach(el => {
@@ -321,7 +331,7 @@ function scanCards() {
 
 // graf váhy: plocha pod trendom a výrazný posledný bod (len vizuál, dáta sa nemenia)
 function paintCharts() {
-  if (H.dataset.skin !== 'cookie') return;
+  if (!H.dataset.skin) return;
   document.querySelectorAll('#app svg.chart').forEach(svg => {
     if (svg.querySelector('.ck-area')) return;
     const tp = svg.querySelector('.trend'); if (!tp) return;
@@ -344,20 +354,23 @@ function paintCharts() {
 let style = null, font = null;
 function apply() {
   const sk = get();
-  if (sk === 'cookie') {
-    H.dataset.skin = 'cookie';
-    if (!style) { style = document.createElement('style'); style.dataset.fwLight = ''; style.dataset.skin = ''; style.textContent = CSS; }
+  if (sk !== 'classic') {
+    const changed = H.dataset.skin !== sk;
+    H.dataset.skin = sk;
+    if (!style) { style = document.createElement('style'); style.dataset.fwLight = ''; style.dataset.skin = ''; }
+    if (changed || !style.textContent) style.textContent = CSS_OF[sk]();
     if (!style.isConnected) document.head.appendChild(style);
     if (!font) {
       font = document.createElement('link'); font.rel = 'stylesheet';
-      font.href = 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,600;0,700;0,800;1,800;1,900&display=swap';
+      font.href = 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&display=swap';
       document.head.appendChild(font);
     }
-    let m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = dark() ? '#0B2427' : '#8CFBC6';
+    setMeta();
+    if (changed) { seen = new WeakSet(); document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in')); }
     paintRing(); scanCards(); paintCharts();
   } else {
     delete H.dataset.skin;
-    style?.remove();
+    style?.remove(); if (style) style.textContent = '';
     document.querySelectorAll('.ck-ring,.ck-area,.ck-end,.ck-end2').forEach(e => e.remove());
     document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in'));
   }
@@ -366,7 +379,7 @@ export function getSkin() { return get(); }
 export function setSkin(v) {
   try {
     // Sušienka má svetlú aj tmavú verziu: režim (Automaticky / Svetlý / Tmavý) sa pri zmene vzhľadu nemení
-    localStorage.setItem(KEY, v === 'cookie' ? 'cookie' : 'classic');
+    localStorage.setItem(KEY, SKINS.includes(v) ? v : 'classic');
     localStorage.removeItem(PREV);
   } catch (_) { }
   apply();
@@ -378,15 +391,18 @@ export function setSkin(v) {
 const pst = document.createElement('style'); pst.dataset.fwLight = '';
 pst.textContent = `.sk-sw{display:block;width:100%;height:54px;border-radius:12px;margin-bottom:8px}
 .sk-sw.c{background:linear-gradient(135deg,#F3F5F8 0 49%,#0B0E12 51%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
-.sk-sw.k{background:linear-gradient(135deg,#8FFFC6,#4AE9D6 49%,#0D2E2A 51%,#0B1A33);box-shadow:inset 0 0 0 2.5px #0D1117}`;
+.sk-sw.k{background:linear-gradient(135deg,#8FFFC6,#4AE9D6 49%,#0D2E2A 51%,#0B1A33);box-shadow:inset 0 0 0 2.5px #0D1117}
+.sk-sw.s{position:relative;background:radial-gradient(rgba(13,17,23,.12) 1px,transparent 1.4px) 0 0/8px 8px,linear-gradient(135deg,#A2FFCF,#5EEBD9 49%,#121A24 51%);box-shadow:inset 0 0 0 2.5px #0D1117}
+.sk-sw.s::after{content:'';position:absolute;left:22%;top:24%;width:42%;height:46%;border-radius:8px;background:#fff;border:2px solid #0D1117;box-shadow:3px 3px 0 #0D1117;transform:rotate(-4deg)}`;
 document.head.appendChild(pst);
 const SW = k => `<i class="sk-sw ${k}"></i>`;
 function profileUi() {
   const card = document.querySelector('#fwTheme'); if (!card || card.querySelector('#fwSkin')) return;
   const box = document.createElement('div'); box.id = 'fwSkin'; box.style.margin = '10px 0 12px';
-  box.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+  box.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
     <button type="button" data-sk="classic" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('c')}Klasický</button>
     <button type="button" data-sk="cookie" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('k')}Farebný</button>
+    <button type="button" data-sk="sticker" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('s')}Nálepky</button>
   </div>`;
   const seg = card.querySelector('.seg');
   card.insertBefore(box, seg);
@@ -403,10 +419,10 @@ try { const p = localStorage.getItem(PREV); if (p) { localStorage.removeItem(PRE
 apply();
 // zmena svetlý/tmavý (aj automaticky podľa telefónu): karty sa nájdu nanovo a farba lišty telefónu sa prispôsobí
 new MutationObserver(() => {
-  if (H.dataset.skin !== 'cookie') return;
+  if (!H.dataset.skin) return;
   seen = new WeakSet();
   document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in'));
-  let m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = dark() ? '#0B2427' : '#8CFBC6';
+  setMeta();
   setTimeout(scanCards, 30); setTimeout(scanCards, 400);
 }).observe(H, { attributes: true, attributeFilter: ['data-theme'] });
 const app = document.getElementById('app');
