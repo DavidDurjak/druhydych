@@ -6,6 +6,16 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 const KEY = 'fw_lang';
+// nové preklady cez AI spúšťa server len prihláseným; pred prihlásením appka dostane hotové preklady zo slovníka
+const authHdr = () => {
+  const h = { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY };
+  try {
+    const k = Object.keys(localStorage).find(x => /^sb-.+-auth-token$/.test(x));
+    const t = k && JSON.parse(localStorage.getItem(k))?.access_token;
+    if (t) h.Authorization = 'Bearer ' + t;
+  } catch (_) { }
+  return h;
+};
 const LANGS = [['sk', 'Slovenčina'], ['cs', 'Čeština'], ['de', 'Deutsch'], ['hu', 'Magyar'], ['pl', 'Polski'], ['en', 'English'], ['uk', 'Українська'],
   ['es', 'Español'], ['fr', 'Français'], ['it', 'Italiano'], ['ro', 'Română'], ['hr', 'Hrvatski'], ['sl', 'Slovenščina'], ['sr', 'Srpski'], ['bg', 'Български'],
   ['ru', 'Русский'], ['nl', 'Nederlands'], ['pt', 'Português'], ['sv', 'Svenska'], ['da', 'Dansk'], ['no', 'Norsk'], ['fi', 'Suomi'], ['tr', 'Türkçe'],
@@ -225,7 +235,7 @@ async function flush() {
   const one = async part => {
     part.forEach(k => flying.add(k));
     try {
-      const r = await fetch(`${SUPABASE_URL}/functions/v1/i18n`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY }, body: JSON.stringify({ lang: LANG, strings: part }) });
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/i18n`, { method: 'POST', headers: authHdr(), body: JSON.stringify({ lang: LANG, strings: part }) });
       const j = await r.json();
       const m = j?.map || {};
       part.forEach(k => { if (m[k]) put(k, m[k]); else failed.set(k, Date.now() + 120000); });

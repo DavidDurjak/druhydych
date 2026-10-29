@@ -1,7 +1,9 @@
-// Druhý dych: AI logovanie jedla z textu alebo fotky.
+// GainTrain: AI logovanie jedla z textu alebo fotky.
 // AI len rozpozná položky a odhadne gramy; výživové hodnoty berieme z našej databázy (search_foods).
 // Ak sa jedlo v databáze nenájde, vrátime odhad AI označený ako odhad.
 // v15: celý deň naraz. Ak človek povie čas dňa ("ráno vajíčka, na obed kuracie"), AI pri každej položke vráti "meal".
+// v22: odstránený testovací vstup bez prihlásenia (?probe), AI volá len prihlásený používateľ.
+// v16: jazyk používateľa (appka posiela lang). Názvy, porcie a poznámka sú v jeho jazyku, hľadacie slová vždy po slovensky (databáza je slovenská).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -20,28 +22,34 @@ const TIMEOUT_MS = 20000;
 const MAX_TEXT = 1600;
 const MAX_ITEMS = 30;
 const MEAL_KEYS = ["breakfast", "brunch", "lunch", "afternoon", "dinner", "late", "snack"];
-const fold = (s: string) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const fold = (s: string) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const DAILY_LIMIT = 60;
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
-// zápis, na ktorý používateľ nečaká: dobehne na pozadí po odoslaní odpovede
+// zápis, na ktorý používateľ neváča: dobehne na pozadí po odoslaní odpovede
 const bg = (p: any) => { const pr = Promise.resolve(p).then(() => { }, () => { }); try { (globalThis as any).EdgeRuntime?.waitUntil?.(pr); } catch (_) { /* nič */ } };
 
-const PROMPT = `Si výživový asistent slovenskej aplikácie Druhý dych. Používateľ popísal alebo odfotil, čo zjedol (alebo čo plánuje zjesť).
+// jazyk appky
+const LANGS: Record<string, string> = { sk: "Slovak", cs: "Czech", de: "German", hu: "Hungarian", pl: "Polish", en: "English", uk: "Ukrainian", es: "Spanish", fr: "French", it: "Italian", ro: "Romanian", hr: "Croatian", sl: "Slovenian", sr: "Serbian (Latin script)", bg: "Bulgarian", ru: "Russian", nl: "Dutch", pt: "Portuguese", sv: "Swedish", da: "Danish", no: "Norwegian", fi: "Finnish", tr: "Turkish", lt: "Lithuanian", lv: "Latvian", et: "Estonian", el: "Greek",
+  ar: "Arabic", he: "Hebrew", fa: "Persian", hi: "Hindi", bn: "Bengali", ur: "Urdu", zh: "Simplified Chinese", ja: "Japanese", ko: "Korean", vi: "Vietnamese", id: "Indonesian", ms: "Malay", th: "Thai", tl: "Filipino (Tagalog)", sw: "Swahili", ca: "Catalan", is: "Icelandic", bs: "Bosnian", mk: "Macedonian", sq: "Albanian" };
+const langOf = (v: unknown) => { const c = String(v || "").toLowerCase().slice(0, 2); return c in LANGS ? c : "sk"; };
+const langRule = (lang: string) => lang === "sk" ? "" : `JAZYK: používateľ používa appku v jazyku ${LANGS[lang]} a pravdepodobne píše v tomto jazyku. "name", "portion" a "note" napíš v jazyku ${LANGS[lang]}. "search" VŽDY po slovensky, lebo databáza potravín je slovenská: použi bežné slovenské slovo, ktoré by Slovák napísal do vyhľadávania v obchode, nie doslovný preklad (Brötchen alebo bread roll = "rožok", scrambled eggs alebo Rührei = "praženica", Hähnchenbrust gebraten = "kuracie prsia pečené", Quark = "tvaroh", cottage cheese = "cottage", oatmeal = "ovsená kaša", porridge oats = "ovsené vločky"). Ak si nie si istý slovenským slovom, použi všeobecnejšie (napr. "pečivo", "syr"). Pre "meal" platía rovnaké pravidlá aj pre výrazy v jeho jazyku (breakfast, Frühstück, reggeli = breakfast; lunch, Mittagessen = lunch; dinner, Abendessen = dinner). Ak používateľ množstvo neuviedol, použi bežnnú porciu pre dospelého.`;
+
+const PROMPT = `Si výživový asistent slovenskej aplikácie GainTrain. Používateľ popísal alebo odfotil, čo zjedol (alebo čo plánuje zjesť).
 Rozlož to na jednotlivé potraviny a pre každú odhadni hmotnosť v gramoch.
 Pravidlá:
 - Používateľ môže popísať aj viac jedál alebo celý deň naraz. Rozlož všetky položky, žiadnu nevynechaj.
 - Ak používateľ uviedol množstvo (napr. "2 vajcia", "150 g ryže", "pol avokáda"), použi presne to.
-- Ak množstvo neuviedol, použi bežnú slovenskú porciu pre dospelého.
+- Ak množstvo neuviedol, použi bežnnú slovenskú porciu pre dospelého.
 - Pri fotke odhadni porciu podľa taniera, príboru a veľkosti jedla. Buď realistický, skôr mierne viac ako menej (oleje a omáčky sa často podceňujú).
-- Zložené jedlá z jedálne alebo reštaurácie (napr. "vyprážaný syr s hranolkami") rozdeľ na hlavné zložky, ak to dáva zmysel; jednoduché jedlá nechaj ako celok (napr. "bryndzové halušky").
+- Zložené jedlá z jedálne alebo reštaurácie (napr. "vyprážaný syr s hranolkami") rozdel na hlavné zložky, ak to dáva zmysel; jednoduché jedlá nechaj ako celok (napr. "bryndzové halušky").
 - Ak ide o málo známe, regionálne alebo nezvyčajné jedlo, nevynechaj ho: odhadni ho podľa najpodobnejšieho jedla a daj nižšiu "confidence".
-- Mäso, ryby, vajcia a prílohy (ryža, cestoviny, zemiaky, strukoviny, kuskus): ak používateľ výslovne nenapíše "surové" alebo "suché", ber to ako hotové jedlo tak, ako sa je (pečené, grilované, varené). Stav dopíš do "name" aj do "search" (napr. "kuracie prsia pečené", "ryža varená") a hodnoty na 100 g uveď pre hotový stav. Gramy sú hmotnosť hotového jedla na tanieri.
+- Mäso, ryby, vajcia a prílohy (ryža, cestoviny, zemiaky, strukoviny, kuskus): ak používateľ výslovne nenapíše "surové" alebo "suché", ber to ako hotové jedlo tak, ako sa je (pečené, grilované, varené). Stav dopíš do "name" aj do "search" (napr. "kuracie prsia pečené", "ryža varená") a hodnoty na 100 g uveď pre hotový stav. Gramy sú hmotnosť hotového jedla na taniери.
 - Názvy píš po slovensky, krátko a bežne (ako by ich človek hľadal v obchode).
 - "search" je 1 až 3 kľúčové slová po slovensky bez značky, ktorými sa dá potravina nájsť v databáze (napr. "vajce", "ryža varená", "kuracie prsia").
 - Hodnoty na 100 g odhadni podľa bežných tabuliek (ako záloha, ak potravina v databáze nebude).
-- "portion" je ľudský popis množstva, napr. "2 ks", "1 tanier", "1 lyžica", alebo prázdny reťazec.
-- "meal" uveď LEN vtedy, keď používateľ v texte výslovne povedal jedlo alebo čas dňa. Povolené hodnoty: breakfast (raňajky, ráno), brunch (desiata, dopoludnia), lunch (obed, na obed), afternoon (olovrant, popoludní), dinner (večera, večer), late (druhá večera, neskoro v noci), snack (snack, maškrta, medzi jedlami). Platí pre všetky položky, ktoré k tomu času patria, kým človek nepovie iný čas (napr. "ráno vajíčka a chlieb, na obed kuracie": vajcia aj chlieb sú breakfast, kuracie je lunch). Ak čas dňa nepovedal, daj prázdny reťazec. Pri fotke vždy prázdny reťazec.
+- "portion" je ľudský popis množstva, napr. "2 ks", "1 tanier", "1 lžička", alebo prázdny reťazec.
+- "meal" uveď LEN vtedy, keď používateľ v texte výslovne povedal jedlo alebo čas dňa. Povolené hodnoty: breakfast (raňajky, ráno), brunch (desiata, dopoludnia), lunch (obed, na obed), afternoon (olovrant, popoludňí), dinner (večera, večer), late (druhá večera, neskoro v noci), snack (snack, maškrta, medzi jedlami). Platí pre všetky položky, ktoré k tomu času patria, kým človek nepovie iný čas (napr. "ráno vajíčka a chlieb, na obed kuracie": vajcia aj chlieb sú breakfast, kuracie je lunch). Ak čas dňa nepovedal, daj prázdny reťazec. Pri fotke vždy prázdny reťazec.
 - "confidence" je 0 až 1, ako veľmi si istý potravinou a gramami.
 - Ak na fotke ani v texte nie je jedlo, vráť prázdny zoznam items a do "note" krátko napíš prečo.
 Vráť IBA JSON v tvare:
@@ -109,10 +117,11 @@ Deno.serve(async (req) => {
   const user = createClient(SUPABASE_URL, ANON, { global: { headers: { Authorization: auth } } });
 
   const admin = createClient(SUPABASE_URL, SERVICE);
-  let body: { text?: string; image?: string; mime?: string } = {};
+  let body: { text?: string; image?: string; mime?: string; lang?: string } = {};
   try { body = await req.json(); } catch { return json({ error: "Zlá požiadavka." }, 400); }
   const text = String(body.text || "").slice(0, MAX_TEXT).trim();
   const image = body.image ? String(body.image) : "";
+  const lang = langOf(body.lang);
   if (!text && !image) return json({ error: "Napíš, čo si jedol, alebo pridaj fotku." }, 400);
   if (image.length > 4_000_000) return json({ error: "Fotka je príliš veľká." }, 413);
   const kind = image ? "photo" : "text";
@@ -197,8 +206,8 @@ Deno.serve(async (req) => {
     }
   }
 
-  // 2) pamäť: rovnaký text už AI rozpoznávala
-  const cacheKey = !image ? fold(text).replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim() : "";
+  // 2) pamäť: rovnaký text už AI rozpoznávala (pre iný jazyk appky zvlášť, lebo názvy sú v jazyku používateľa)
+  const cacheKey = !image ? (lang === "sk" ? "" : lang + "|") + fold(text).replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim() : "";
   if (cacheKey) {
     const { data: hit } = await admin.from("ai_cache").select("result,hits").eq("key", cacheKey).maybeSingle();
     if (hit?.result?.items?.length) {
@@ -215,6 +224,7 @@ Deno.serve(async (req) => {
   const usedP = usedToday();
 
   const parts: unknown[] = [{ text: PROMPT }];
+  if (lang !== "sk") parts.push({ text: langRule(lang) });
   if (text) parts.push({ text: "Používateľ napísal: " + text });
   if (image) parts.push({ inline_data: { mime_type: body.mime || "image/jpeg", data: image } });
 
@@ -237,12 +247,12 @@ Deno.serve(async (req) => {
     };
     const isQuota = (e: any) => e?.status === 429 || /quota/i.test(String(e?.message || ""));
     let j: any = null, lastErr = "";
-    // 3 kolá s krátkou pauzou (bezplatná úroveň Googlu pri vyťažení často odmietne na pár sekúnd)
+    // 3 kála s krátkou pauzou (bezplatná úroveň Googlu pri vyťažení často odmietne na pár sekúnd)
     outer: for (const wait of [0, 1200, 2500]) {
       if (wait) { if (Date.now() - t0 > 30000) break; await new Promise((s) => setTimeout(s, wait)); }
       const list = image ? MODELS_PHOTO : MODELS_TEXT;
       let quotaHits = 0;
-      // vlna 1: dva najrýchlejšie modely naraz, berieme prvú úspešnú odpoveď (rýchlejšie a odolnejšie pri preťaženien)
+      // vlna 1: dva najrýchlejšie modely naraz, berieme prvú úspšnú odpoveď (rýchlejšie a odolnejšie pri preťažení)
       try {
         j = await Promise.any(list.slice(0, 2).map(([m, extra]) => callOne(m, extra)));
         break outer;
@@ -254,7 +264,7 @@ Deno.serve(async (req) => {
         if (Date.now() - t0 > 40000) break outer;
         try { j = await callOne(m, extra); break outer; } catch (e: any) { lastErr = e?.message || "AI neodpovedala včas"; if (isQuota(e)) quotaHits++; }
       }
-      // kvóta vyčerpaná pri všetkých modeloch: ďalšie kolá by ju len míňali
+      // kvóta vyčerpaná pri všetkých modeloch: ďalšie kála by ju len mísali
       if (quotaHits >= list.length) break outer;
     }
     if (!j) throw new Error(lastErr);

@@ -1,20 +1,20 @@
 // GainTrain: automatický preklad textov appky zo slovenčiny do jazyka používateľa. Každý text sa prekladá len raz
 // a uloží sa do tabuľky i18n, odkiaľ ho potom berú všetci. Nové funkcie sa tak preložia samé pri prvom zobrazení.
-// Čísla prichádzajú ako {0}, {1}… a musia ostať na mieste. Funguje aj pred prihlásením (prihlasovacia obrazovka),
-// preto poistky: max 100 textov na volanie, denný strop na jazyk aj celkovo, len známe jazyky.
-// redo (s tajným kľúčom) preloží zadané texty nanovo a prepíše starý preklad, napr. po zlepšení pokynov.
-// v10: ďalších 48 jazykov (aj tradičná čínština zh-TW a brazílska portugalčina pt-BR).
+// Čísla prichádzajú ako {0}, {1}… a musia ostať na mieste.
+// v11 (bezpečnosť): hotové preklady dostane každý (aj pred prihlásením), ale nové preklady cez AI spustí len
+// prihlásený používateľ, cron appky (x-cron-secret) alebo server (služobný kľúč). Prepis starých prekladov (redo) len server.
+// Poistky ostávajú: max 100 textov na volanie, denný strop na jazyk aj celkovo, len známe jazyky.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const KEY = Deno.env.get("GEMINI_API_KEY") || "";
 const MODELS = [Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash", Deno.env.get("GEMINI_MODEL_LITE") || "gemini-3.5-flash-lite", "gemini-flash-latest"];
-const MAX_N = 100, MAX_LEN = 600, DAILY_CAP = 15000, DAILY_CAP_ALL = 300000, REDO = "rd-91f3a7";
+const MAX_N = 100, MAX_LEN = 600, DAILY_CAP = 15000, DAILY_CAP_ALL = 300000;
 const LANGS = new Set(["cs", "de", "hu", "pl", "en", "uk", "es", "fr", "it", "ro", "hr", "sl", "sr", "bg", "ru", "nl", "pt", "sv", "da", "no", "fi", "tr", "lt", "lv", "et", "el",
   "ar", "he", "fa", "hi", "bn", "ur", "zh", "ja", "ko", "vi", "id", "ms", "th", "tl", "sw", "ca", "is", "bs", "mk", "sq",
   "zh-TW", "pt-BR", "ta", "te", "mr", "gu", "kn", "ml", "pa", "or", "as", "ne", "si", "my", "km", "lo", "mn", "ka", "hy", "az", "kk", "uz", "ky", "tg", "tk", "be",
   "ps", "sd", "ku", "am", "ha", "yo", "ig", "zu", "xh", "af", "so", "rw", "mg", "jv", "su", "ceb", "eu", "gl", "cy", "ga", "mt", "lb"]);
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-cron-secret", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const ph = (s: string) => (s.match(/\{\d+\}/g) || []).sort().join(",");
 const TONE: Record<string, string> = { cs: "tykání", de: "du (informal)", hu: "tegezés", pl: "ty (informal)", en: "friendly, second person", uk: "ти", es: "tú", fr: "tu", it: "tu", ro: "tu", hr: "ti", sl: "ti", sr: "ti", bg: "ти", ru: "ты", nl: "je/jij", pt: "tu (European Portuguese, informal)", sv: "du", da: "du", no: "du", fi: "sinä", tr: "sen", lt: "tu", lv: "tu", et: "sina", el: "εσύ",
@@ -25,24 +25,40 @@ const NAMES: Record<string, string> = { zh: "Simplified Chinese (Mandarin)", "zh
 const GLOSSARY = `Raňajky = breakfast; Desiata = morning snack (between breakfast and lunch); Obed = lunch; Olovrant = afternoon snack (between lunch and dinner); Večera = dinner; Druhá večera = second dinner / late snack; Snack = snack. Desiata and Olovrant MUST be two different terms.
 Ťukni / ťuknutie = tap (on a touch screen). Bielkoviny = protein, Sacharidy = carbs, Tuky = fat, Vláknina = fiber. Séria = streak (days in a row) or set (in training, depends on context). Rezerva = reps in reserve (RIR). Kouč = coach (the AI coach). Tréner = a real human trainer. Check-in stays "check-in". Pitný režim = hydration / water intake. Zápis / zapísať = log.`;
 
+let cronSecret: string | null = null;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  let body: { lang?: string; strings?: unknown[]; redo?: string } = {};
+  let body: { lang?: string; strings?: unknown[]; redo?: boolean | string } = {};
   try { body = await req.json(); } catch { return json({ error: "bad" }, 400); }
   const raw = String(body.lang || "");
   const lang = ({ "zh-tw": "zh-TW", "pt-br": "pt-BR" } as Record<string, string>)[raw.toLowerCase()] || raw.toLowerCase();
   if (!LANGS.has(lang)) return json({ map: {} });
-  const redo = body.redo === REDO;
   const strings = [...new Set((Array.isArray(body.strings) ? body.strings : []).map((s) => String(s ?? "")).filter((s) => s.trim() && s.length <= MAX_LEN && /\p{L}/u.test(s)))].slice(0, MAX_N);
   if (!strings.length) return json({ map: {} });
   const admin = createClient(SUPABASE_URL, SERVICE);
+
+  // kto volá: server (služobný kľúč), cron appky, prihlásený používateľ, alebo nik (len hotové preklady)
+  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+  const isServer = !!token && token === SERVICE;
+  let isCron = false;
+  const cs = req.headers.get("x-cron-secret");
+  if (cs) {
+    if (cronSecret === null) { const { data } = await admin.rpc("get_cron_secret"); cronSecret = data || ""; }
+    isCron = !!cronSecret && cs === cronSecret;
+  }
+  let isUser = false;
+  if (!isServer && !isCron && token) { const { data } = await admin.auth.getUser(token); isUser = !!data?.user; }
+  const mayTranslate = isServer || isCron || isUser;
+  const redo = isServer && (body.redo === true || body.redo === "1");
+
   const map: Record<string, string> = {};
   if (!redo) {
     const { data: have } = await admin.from("i18n").select("src,dst").eq("lang", lang).in("src", strings);
     for (const r of have || []) map[r.src] = r.dst;
   }
   const todo = strings.filter((s) => !(s in map));
-  if (!todo.length || !KEY) return json({ map });
+  if (!todo.length || !KEY || !mayTranslate) return json({ map });
   if (!redo) {
     const since = new Date(Date.now() - 864e5).toISOString();
     const [{ count: cl }, { count: ca }] = await Promise.all([
