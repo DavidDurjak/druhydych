@@ -24,3 +24,4 @@ import('./weekly.js').catch(() => { });
 import('./todayorder.js').catch(() => { });
 import('./todayedit.js').catch(() => { });
 import('./fridge.js').catch(() => { });
+import('./acctdel.js').catch(() => { });

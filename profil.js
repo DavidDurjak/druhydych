@@ -318,9 +318,10 @@ function logoutSheet(screen) {
 }
 
 function deleteSheet() {
-  const bg = ctx.sheet('<div class="pfx-sh"><h3>Zmazať účet?</h3><p>Natrvalo zmažeme tvoj účet, jedlá, váhu, tréningy, fotky, správy aj prepojenia. Nedá sa to vrátiť. Ak chceš dáta zachovať, najprv si ich stiahni cez Stiahnuť moje dáta.</p><p>Na potvrdenie napíš <b>ZMAZAŤ</b>.</p><input class="pfx-in" autocomplete="off" autocapitalize="characters" aria-label="Potvrdenie" placeholder="ZMAZAŤ"><div class="pfx-sb"><button class="btn danger" data-ok disabled>Zmazať natrvalo</button><button class="btn ghost" data-x>Zrušiť</button></div></div>');
+  // ako TikTok a Instagram: účet sa hneď deaktivuje a natrvalo zmaže o 30 dní; prihlásením sa dá dovtedy obnoviť
+  const bg = ctx.sheet('<div class="pfx-sh"><h3>Zmazať účet?</h3><p>Účet sa hneď deaktivuje: zmizne priateľom aj trénerovi a nebudú ti chodiť pripomienky. <b>Natrvalo ho zmažeme o 30 dní</b>, spolu s jedlami, váhou, tréningami, fotkami a správami.</p><p>Ak si to rozmyslíš, stačí sa do 30 dní prihlásiť a účet obnoviť. Dáta si môžeš najprv stiahnuť cez Stiahnuť moje dáta.</p><p>Na potvrdenie napíš <b>ZMAZAŤ</b>.</p><input class="input" autocomplete="off" autocapitalize="characters" placeholder="ZMAZAŤ"><div class="pfx-sb"><button class="btn danger" data-ok disabled>Zmazať účet</button><button class="btn ghost" data-x>Nechať</button></div></div>');
   const inp = bg.querySelector('input'), ok = bg.querySelector('[data-ok]');
-  const norm = v => v.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const norm = v => v.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // potvrdzovacie slovo platí po slovensky aj v jazyku appky (en: DELETE, de: LÖSCHEN…)
   const words = new Set(['zmazat', norm(tr('ZMAZAŤ') || '')].filter(Boolean));
   const okWord = v => words.has(norm(v));
@@ -330,17 +331,19 @@ function deleteSheet() {
     if (!okWord(inp.value)) return;
     ok.disabled = true; ok.textContent = 'Mažem…';
     try {
-      const { data, error } = await db.sb.functions.invoke('delete-account', { body: { confirm: 'ZMAZAT' } });
-      if (error || !data?.ok) {
-        // ak účet už neexistuje (zmazal sa pri predchádzajúcom pokuse), je to v poriadku: dokončíme odhlásenie
-        const { data: u, error: ue } = await db.sb.auth.getUser().catch(e => ({ error: e }));
-        const gone = ue && (ue.status === 403 || ue.status === 404 || /not.?found|does not exist/i.test(ue.message || ''));
-        if (!gone && u?.user) throw new Error(data?.error || 'Účet sa nepodarilo zmazať. Skús to znova.');
-      }
-      try { await db.sb.auth.signOut({ scope: 'local' }); } catch (_) {}
-      try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
-      location.replace(location.pathname);
-    } catch (e) { ok.disabled = false; ok.textContent = 'Zmazať natrvalo'; ctx.toast(e.message || 'Účet sa nepodarilo zmazať.', true); }
+      const { data, error } = await db.sb.rpc('request_account_deletion');
+      if (error) throw new Error('Účet sa nepodarilo zmazať. Skús to znova alebo nám napíš.');
+      try { window.fwTrack?.('account_delete_requested'); } catch (_) {}
+      const d = data ? new Date(data).toLocaleDateString('sk-SK', { day: 'numeric', month: 'long' }) : '';
+      bg.innerHTML = `<div class="pfx-sh"><h3>Účet je deaktivovaný</h3><p>Natrvalo ho zmažeme${d ? ` <b>${d}</b>` : ' o 30 dní'}. Dovtedy ho obnovíš tak, že sa prihlásiš.</p><div class="pfx-sb"><button class="btn primary" data-done>Rozumiem</button></div></div>`;
+      const out = async () => {
+        try { await db.sb.auth.signOut({ scope: 'local' }); } catch (_) {}
+        try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
+        location.replace(location.pathname);
+      };
+      bg.querySelector('[data-done]').onclick = out;
+      bg.addEventListener('click', e => { if (e.target === bg) out(); });
+    } catch (e) { ok.disabled = false; ok.textContent = 'Zmazať účet'; ctx.toast(e.message || 'Účet sa nepodarilo zmazať.', true); }
   };
 }
 const bound = new WeakSet();
