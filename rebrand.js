@@ -33,7 +33,8 @@ const CSS = `
 @keyframes gtCrumb{from{opacity:0;transform:translate(-30px,30px) scale(.3)}to{opacity:1;transform:none}}
 .ah-brand.gt-login{display:block;margin:0}
 .ah-brand.gt-login .gt-hero{margin:44px 0 30px 18px}
-@media (prefers-reduced-motion:reduce){.gt-hero *{animation:none!important;opacity:1!important;transform:none!important}}
+/* bez animácie (Obmedziť pohyb v iPhone): všetko hneď na mieste. Nie transform:none na všetko, to by v SVG zrušilo aj natočenie a polohu kúskov loga */
+@media (prefers-reduced-motion:reduce){.gt-hero .l1,.gt-hero .l2,.gt-hero .gt-hc,.gt-hero .gt-crumb{animation:none!important;opacity:1!important}.gt-hero .gt-bite{animation:none!important;transform:scale(1)!important}}
 `;
 if (!document.getElementById('gt-css')) { const s = document.createElement('style'); s.id = 'gt-css'; s.textContent = CSS; document.head.appendChild(s); }
 

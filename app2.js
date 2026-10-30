@@ -405,28 +405,21 @@ export async function applyAdaptive(p, res) {
 }
 
 // ---------- SPRÁVY ----------
+// Správy sú len medzi klientom a trénerom, ktorého si klient sám pridal. Kto trénera nemá, vidí staré správy (ak nejaké má)
+// a cestu k trénerovi alebo k tímu appky (Napíš nám). Písať „komukoľvek s rolou kouč“ sa už nedá (GDPR, v301).
 export async function renderMessages() {
   const uid = state.profile.id;
-  // klient s vlastným trénerom píše jemu, nie tímu appky
-  if (state.profile.role !== 'coach') {
-    const tid = await import('./trainers.js').then(m => m.activeTrainerOf(uid)).catch(() => null);
-    if (tid) { location.replace('#/chat/' + tid); return; }
-  }
-  const msgs = await db.listMessages(uid);
+  const tid = await import('./trainers.js').then(m => m.activeTrainerOf(uid)).catch(() => null);
+  if (tid) { location.replace('#/chat/' + tid); return; }
+  const msgs = await db.listMessages(uid).catch(() => []);
   const unread = msgs.filter(m => m.to_user === uid && !m.read_at).map(m => m.id);
-  await db.markRead(unread);
-  const coaches = state.profile.role === 'coach' ? [] : null;
+  if (unread.length) await db.markRead(unread).catch(() => { });
   $app().innerHTML = `<div class="screen">
-    <h1 class="mb">Správy od kouča</h1>
-    ${state.profile.role !== 'coach' ? `<form id="mf" class="card"><textarea class="input" name="b" rows="2" placeholder="Napíš koučovi..."></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form>` : ''}
-    ${msgs.length ? msgs.map(m => `<div class="card msg ${m.from_user === uid ? 'mine' : ''}"><p>${h(m.body)}</p><p class="muted small mt">${m.from_user === uid ? 'Ty' : 'Kouč'} · ${new Date(m.created_at).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>`).join('') : '<p class="empty">Zatiaľ žiadne správy.</p>'}
+    <h1 class="mb">Správy</h1>
+    <div class="card"><h3 style="margin-top:0">Zatiaľ nemáš trénera</h3><p class="muted small" style="margin:4px 0 12px">Správy si píšeš s trénerom, ktorého si sám vyberieš. Otázku na appku nám pošli cez Napíš nám.</p>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><a class="btn sm primary" href="#/treneri">Nájsť trénera</a><a class="btn sm ghost" href="#/napis">Napíš nám</a></div></div>
+    ${msgs.length ? `<h3 class="mt">Staršie správy</h3>` + msgs.map(m => `<div class="card msg ${m.from_user === uid ? 'mine' : ''}"><p>${h(m.body)}</p><p class="muted small mt">${m.from_user === uid ? 'Ty' : 'Tím GainTrain'} · ${new Date(m.created_at).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</p></div>`).join('') : ''}
   </div>${nav('#/spravy')}`;
-  $app().querySelector('#mf')?.addEventListener('submit', async e => {
-    e.preventDefault(); const body = new FormData(e.target).get('b').trim(); if (!body) return;
-    const { data } = await db.sb.from('profiles').select('id').eq('role', 'coach').limit(1);
-    if (!data?.length) return toast('Kouč zatiaľ nie je nastavený', true);
-    await db.sendMessage(uid, data[0].id, body); toast('Odoslané'); renderMessages();
-  });
 }
 
 // ---------- KOUČ 2.0 ----------

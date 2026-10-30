@@ -5,7 +5,7 @@
 // Tretí vzhľad „Nálepky“ (skin-sticker.js) používa rovnaké pravidlá obrazoviek, len iné farby a obrysy.
 // Každý vzhľad má svetlú aj tmavú verziu. Riadi ich ten istý prepínač ako Klasický (Automaticky podľa telefónu / Svetlý / Tmavý).
 import { setMode } from './theme.js';
-import { stickerCss, STICKER_META } from './skin-sticker.js';
+import { stickerCss, STICKER_META, STICKER_FONT } from './skin-sticker.js';
 
 const KEY = 'fw_skin', PREV = 'fw_skin_prev_mode';
 const dark = () => document.documentElement.dataset.theme === 'dark';
@@ -47,10 +47,12 @@ ${D}{--bg:#0B2226;--bg-2:#0E2A2E;--card:rgba(20,40,44,.62);--card-2:rgba(255,255
 `;
 // spoločné pravidlá pre farebné vzhľady: farby berú z premenných, takže každý vzhľad ich má z rovnakého zoznamu obrazoviek
 export const RULES = (S, D) => `
-${S},${S} body{background:var(--bgc)!important;min-height:100%}
-/* pozadie ako pevná vrstva: iPhone nepodporuje background-attachment:fixed, takto gradient ostane na mieste aj pri posúvaní */
-${S} body::before{content:'';display:block!important;position:fixed;inset:0!important;animation:none!important;transform:none!important;pointer-events:none;z-index:0;background:var(--bg1),var(--bg2),var(--bg3),var(--bg4)}
-${S} #app{position:relative;z-index:1}
+${S}{background:var(--bgc)!important}
+${S} body{background:transparent!important;min-height:100%}
+/* pozadie ako pevná vrstva: iPhone nepodporuje background-attachment:fixed, takto gradient ostane na mieste aj pri posúvaní.
+   Vrstva je pod obsahom (z-index -1) a #app NESMIE mať vlastnú vrstvu (position+z-index): iPhone by pri potiahnutí za koniec
+   stránky orezal spodnú lištu, ktorá je vnútri #app, spolu s ním (lišta „mizla“, v301). */
+${S} body::before{content:'';display:block!important;position:fixed;inset:0!important;animation:none!important;transform:none!important;pointer-events:none;z-index:-1;background:var(--bg1),var(--bg2),var(--bg3),var(--bg4)}
 ${S} body::after{display:none!important}
 
 /* písmo: čisté, hrubé len čísla a nadpisy */
@@ -104,6 +106,9 @@ ${S} .ck-ring .ck-p0{stop-color:var(--plate0)}${S} .ck-ring .ck-p1{stop-color:va
 ${S} .ck-ring .ck-plate-r{stroke:var(--plate-r)}
 ${S} .ck-ring .ck-a0{stop-color:var(--arc0)}${S} .ck-ring .ck-a1{stop-color:var(--arc1)}
 ${D} .ck-ring .ck-rim{stroke:rgba(255,255,255,.12)}
+${S} .ck-ring .ck-track{stroke:rgba(16,60,48,.08)}${D} .ck-ring .ck-track{stroke:rgba(255,255,255,.07)}
+${S} .ck-ring .ck-knob{fill:#fff;stroke:var(--arc1);stroke-width:1.7}
+${S} .ck-ring .ck-rim2{stroke:rgba(16,60,48,.07)}${D} .ck-ring .ck-rim2{stroke:rgba(255,255,255,.06)}
 ${S} .hk-c{z-index:1}
 ${S} .hk-c b{font-size:44px!important}
 ${S} .hk-c span{color:var(--t3)!important;font-weight:600}
@@ -238,7 +243,9 @@ const setMeta = () => { const sk = H.dataset.skin; const m = document.querySelec
 // ---------- sušienka v kruhu kalórií ----------
 const NS = 'http://www.w3.org/2000/svg';
 // čokoládové kúsky: [x, y, veľkosť, natočenie] v pásiku sušienky (polomer 31 až 43, stred zakrýva biely disk)
-const CHIPS = [[-37, -6, 3.4, 20], [-26, -28, 2.9, -30], [-3, -38, 3.2, 50], [21, -33, 2.7, 10], [36, -15, 3.3, -40], [39, 9, 2.6, 70], [28, 29, 3.3, -15], [9, 39, 2.8, 35], [-15, 37, 3.4, -55], [-33, 22, 2.8, 15], [-40, 9, 2.2, 80], [33, -26, 2, 0], [-8, -40, 2, -20], [16, 37, 1.9, 60]];
+const CHIPS = [[-37, -6, 4.1, 20], [-25, -29, 3.6, -30], [-2, -38.5, 3.9, 50], [21, -33, 3.3, 10], [36, -15, 4, -40], [39, 9, 3.2, 70], [28, 29, 4, -15], [9, 38.5, 3.4, 35], [-15, 37, 4.1, -55], [-33, 22, 3.4, 15], [-39.5, 9, 2.7, 80], [32, -26, 2.5, 0], [-9, -40, 2.4, -20], [16, 37, 2.3, 60], [-30, -15, 2.2, 40], [24, 18, 2, -10], [-20, 27, 2.1, 25], [4, -31, 2, 70]];
+// praskliny na povrchu upečenej sušienky
+const CRACKS = ['M-30,-22 q4,-3 9,-1', 'M18,-37 q3,4 8,4', 'M33,18 q-2,5 -7,7', 'M-12,39 q-3,-4 -8,-4', 'M-41,-1 q4,2 4,7', 'M6,30 q4,1 7,-2'];
 let uid = 0;
 const P = (r, a) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180)];
 const f1 = v => v.toFixed(2);
@@ -289,7 +296,7 @@ function cookieSvg(pct) {
   const M = (mid, parts) => `<mask id="${id}${mid}" maskUnits="userSpaceOnUse" x="-55" y="-55" width="110" height="110"><rect x="-55" y="-55" width="110" height="110" fill="#fff"/><g fill="#000">${parts}</g></mask>`;
   return `<svg class="ck-ring" viewBox="-50 -50 100 100" aria-hidden="true" xmlns="${NS}">
   <defs>
-   <radialGradient id="${id}g" cx=".42" cy=".34" r=".78"><stop offset="0" stop-color="#F6CF98"/><stop offset=".5" stop-color="#DFA063"/><stop offset=".86" stop-color="#B9773C"/><stop offset="1" stop-color="#97592A"/></radialGradient>
+   <radialGradient id="${id}g" cx=".42" cy=".34" r=".8"><stop offset="0" stop-color="#F9D39A"/><stop offset=".45" stop-color="#E7A961"/><stop offset=".8" stop-color="#C47F3D"/><stop offset="1" stop-color="#92511F"/></radialGradient>
    <radialGradient id="${id}h" cx=".3" cy=".2" r=".55"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
    <linearGradient id="${id}c" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6B3F22"/><stop offset="1" stop-color="#2B160A"/></linearGradient>
    <radialGradient id="${id}t" cx=".42" cy=".32" r=".75"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#EEF5F3"/></radialGradient>
@@ -300,23 +307,29 @@ function cookieSvg(pct) {
    ${M('n', cutIn + dough.join(''))}
    <filter id="${id}s" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="2.6" stdDeviation="2.2" flood-color="#4A2610" flood-opacity=".38"/></filter>
    <filter id="${id}d" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2.2" stdDeviation="2.4" flood-color="#2A1A10" flood-opacity=".22"/></filter>
+   <filter id="${id}k" x="-100%" y="-100%" width="300%" height="300%"><feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#0B3A2A" flood-opacity=".35"/></filter>
+   <radialGradient id="${id}e" cx=".5" cy=".5" r=".5"><stop offset=".86" stop-color="#7A421C" stop-opacity="0"/><stop offset="1" stop-color="#6B3615" stop-opacity=".55"/></radialGradient>
   </defs>
   <circle class="ck-plate" r="46.6" fill="url(#${id}p)"/>
   <circle class="ck-plate-r" r="46.6" fill="none" stroke-width=".9"/>
-  ${eaten ? `<path class="ck-arc" d="${full ? `M0,-44.4a44.4,44.4 0 1,1 -0.01,0` : (() => { const [x0, y0] = P(44.4, a0), [x1, y1] = P(44.4, a1); return `M${f1(x0)},${f1(y0)}A44.4,44.4 0 ${ang > 180 ? 1 : 0},1 ${f1(x1)},${f1(y1)}`; })()}" fill="none" stroke="url(#${id}a)" stroke-width="2.6" stroke-linecap="round"/>` : ''}
+  <circle class="ck-track" r="44.6" fill="none" stroke-width="4.2"/>
+  ${eaten ? `<path class="ck-arc" d="${full ? `M0,-44.6a44.6,44.6 0 1,1 -0.01,0` : (() => { const [x0, y0] = P(44.6, a0), [x1, y1] = P(44.6, a1); return `M${f1(x0)},${f1(y0)}A44.6,44.6 0 ${ang > 180 ? 1 : 0},1 ${f1(x1)},${f1(y1)}`; })()}" fill="none" stroke="url(#${id}a)" stroke-width="4.2" stroke-linecap="round"/>
+  ${(() => { const [x1, y1] = P(44.6, full ? a0 : a1); return `<circle class="ck-knob" cx="${f1(x1)}" cy="${f1(y1)}" r="3.3" filter="url(#${id}k)"/>`; })()}` : ''}
   <g class="ck-crumbs">${crumbs.join('')}</g>
   ${full ? '' : `<g filter="url(#${id}s)">
    <g mask="url(#${id}n)"><path d="${RIM}" fill="#F3D4A6"/></g>
    <g mask="url(#${id}m)">
     <path d="${RIM}" fill="url(#${id}g)"/>
     <path d="${RIM}" fill="url(#${id}x)"/>
+    <path d="${RIM}" fill="url(#${id}e)"/>
     <path d="${RIM}" fill="url(#${id}h)"/>
-    <circle r="40.6" fill="none" stroke="#8E5124" stroke-width="1.1" opacity=".22"/>
-    <g>${CHIPS.map(([x, y, s, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M${-s},${s * 0.35}C${-s},${-s * 0.75} ${s * 0.9},${-s * 0.95} ${s},${s * 0.1}C${s * 0.9},${s * 0.85} ${-s * 0.6},${s} ${-s},${s * 0.35}Z" fill="url(#${id}c)"/><ellipse cx="${-s * 0.25}" cy="${-s * 0.3}" rx="${s * 0.32}" ry="${s * 0.18}" fill="#fff" opacity=".28"/></g>`).join('')}</g>
+    <g fill="none" stroke="#8A4A1E" stroke-width=".7" stroke-linecap="round" opacity=".22">${CRACKS.map(d => `<path d="${d}"/>`).join('')}</g>
+    <g>${CHIPS.map(([x, y, s, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M${-s},${s * 0.35}C${-s},${-s * 0.75} ${s * 0.9},${-s * 0.95} ${s},${s * 0.1}C${s * 0.9},${s * 0.85} ${-s * 0.6},${s} ${-s},${s * 0.35}Z" fill="url(#${id}c)"/><path d="M${-s * 0.9},${s * 0.45}C${-s * 0.3},${s * 0.95} ${s * 0.6},${s * 0.8} ${s * 0.95},${s * 0.2}" fill="none" stroke="#1A0C04" stroke-width="${(s * 0.22).toFixed(2)}" opacity=".45" stroke-linecap="round"/><ellipse cx="${-s * 0.25}" cy="${-s * 0.32}" rx="${s * 0.34}" ry="${s * 0.17}" fill="#fff" opacity=".42"/></g>`).join('')}</g>
    </g>
   </g>`}
-  <circle class="ck-ctr" r="30" fill="url(#${id}t)" filter="url(#${id}d)"/>
-  <circle class="ck-rim" r="30" fill="none" stroke="rgba(255,255,255,.95)" stroke-width=".7"/>
+  <circle class="ck-ctr" r="28" fill="url(#${id}t)" filter="url(#${id}d)"/>
+  <circle class="ck-rim" r="28" fill="none" stroke="rgba(255,255,255,.95)" stroke-width=".7"/>
+  <circle class="ck-rim2" r="25.6" fill="none" stroke-width=".5"/>
  </svg>`;
 }
 function paintRing() {
@@ -409,6 +422,7 @@ function apply() {
       font.href = 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&display=swap';
       document.head.appendChild(font);
     }
+    if (sk === 'sticker' && !document.getElementById('fw-font-r')) { const l = document.createElement('link'); l.id = 'fw-font-r'; l.rel = 'stylesheet'; l.href = STICKER_FONT; document.head.appendChild(l); }
     setMeta();
     if (changed) { seen = new WeakSet(); document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in')); }
     paintRing(); scanCards(); paintCharts();

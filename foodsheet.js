@@ -121,7 +121,7 @@ export function openFoodSheet(food, meal, done, k) {
   const p = state().profile || {};
   const T = { kcal: Number(p.target_kcal) || 0, protein: Number(p.target_protein) || 0, carbs: Number(p.target_carbs) || 0, fat: Number(p.target_fat) || 0 };
   let eaten = null;
-  const canEdit = food.source === 'db' && (food.mine || p.role === 'coach');
+  const canEdit = food.source === 'db' && (food.mine || !!ctx.state.isAdmin);
   const ph = food.img ? `<span class="ft ph"><img src="${h(food.img)}" alt="" referrerpolicy="no-referrer"></span>` : thumb(food);
 
   const bg = sheet(`<div class="fs">

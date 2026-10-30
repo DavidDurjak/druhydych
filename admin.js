@@ -78,6 +78,7 @@ export async function isAdmin() {
   if (uid && adminCache.uid === uid) return adminCache.val;
   const { data } = await sb.rpc('is_admin');
   adminCache = { uid, val: !!data };
+  try { if (ctx.state) ctx.state.isAdmin = adminCache.val; } catch (_) { /* nič */ }
   return adminCache.val;
 }
 export function resetAdmin() { adminCache = { uid: null, val: false }; }
@@ -269,11 +270,7 @@ export async function renderAdmin() {
       </div>`).join('') : '<p class="muted small mt">Zatiaľ žiadne správy. Tlačidlo „Napíš nám“ majú ľudia v Profile.</p>'}
     </section>
 
-    <section class="pg-card">
-      <div class="pg-row"><h3>Ľudia</h3><span class="pg-chip">${(s.people || []).length}</span></div>
-      ${(s.people || []).map(p => `<div class="ad-row"><div class="n"><b>${h(p.name || '(bez mena)')}${p.role === 'coach' ? ' <span class="chip">kouč</span>' : ''}</b><span>${h(p.email || '')} · od ${calc.fmtDate(p.joined)} · ${p.logs} jedál · naposledy ${ago(p.last)}</span></div><div class="ad-dots" title="${p.days7} z 7 dní">${Array.from({ length: 7 }, (_, i) => `<i class="${i < p.days7 ? 'on' : ''}"></i>`).join('')}</div></div>`).join('')}
-    </section>
-    <p class="muted small center mt">„Aktívny“ = v ten deň zapísal jedlo, váhu, tréning alebo check-in.</p>
+    <p class="muted small center mt">„Aktívny“ = v ten deň zapísal jedlo, váhu, tréning alebo check-in. Prehľad ukazuje len súhrnné čísla, údaje jednotlivých ľudí admin nevidí.</p>
   </div>${nav('#/admin')}`;
 
   const R = $app();

@@ -612,9 +612,11 @@ async function profileCard() {
        <div class="tr-row"><a class="btn sm primary" href="#/treneri">Nájsť trénera</a><button class="btn sm ghost" id="trCode">Mám kód</button></div>`;
   const ownPart = own?.approved ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm" href="#/kouc">Moji klienti</a><a class="btn sm ghost" href="#/trener-profil">Môj trénerský profil</a></div>`
     : '';
-  const nApps = ctx.state.profile?.role === 'coach' ? (await api().pending().catch(() => [])).length : 0;
+  // žiadosti trénerov schvaľuje admin appky (databáza: pravidlo „trainer profiles admin“)
+  const isAdm = await import('./admin.js').then(m => m.isAdmin()).catch(() => false);
+  const nApps = isAdm ? (await api().pending().catch(() => [])).length : 0;
   const st = own?.status === 'pending' ? '<p class="tr-note" style="margin-top:8px">Tvoja žiadosť o trénerský profil sa kontroluje.</p>' : own?.status === 'rejected' ? '<p class="tr-note" style="margin-top:8px">Tvoju žiadosť sme zamietli. Otvor profil a pozri dôvod.</p>' : '';
-  const adm = ctx.state.profile?.role === 'coach' ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm ${nApps ? 'primary' : 'ghost'}" href="#/treneri-ziadosti">Žiadosti trénerov${nApps ? ` (${nApps})` : ''}</a></div>` : '';
+  const adm = isAdm ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm ${nApps ? 'primary' : 'ghost'}" href="#/treneri-ziadosti">Žiadosti trénerov${nApps ? ` (${nApps})` : ''}</a></div>` : '';
   return `<div class="card tr-me" id="trCard">${clientPart}${ownPart}${own?.approved ? '' : joinBanner('row')}${adm}</div>`;
 }
 async function mountProfile() {
