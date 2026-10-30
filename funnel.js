@@ -337,6 +337,14 @@ function plan() {
   return { ...t, activity, perWeek, weeks };
 }
 
+// meranie lievika (track.js): ktorý krok kvízu človek videl, bez odpovedí. Každý krok raz za reláciu.
+const ev = (n, p = {}) => { try { if (window.fwTrack) window.fwTrack(n, p); else (window.__fwEvq ||= []).push([n, p]); } catch (_) { /* nič */ } };
+const seenSteps = new Set((() => { try { return JSON.parse(sessionStorage.getItem('fw_fns') || '[]'); } catch (_) { return []; } })());
+function stepSeen(id, i) {
+  if (seenSteps.has(id)) return; seenSteps.add(id);
+  try { sessionStorage.setItem('fw_fns', JSON.stringify([...seenSteps])); } catch (_) { /* nič */ }
+  ev('fn_step', { s: id, i });
+}
 const unpre = () => document.documentElement.classList.remove('fnq-pre');
 function open(startAt = 0) {
   if (el) return;
@@ -352,7 +360,7 @@ function close(toLogin) {
   unpre();
   if (!el) return;
   const e = el; el = null; e.classList.add('out'); setTimeout(() => e.remove(), 340);
-  if (toLogin) { jset(SKIP, 1, sessionStorage); document.querySelector('#app [data-m=login]')?.click(); }
+  if (toLogin) { ev('fn_login'); jset(SKIP, 1, sessionStorage); document.querySelector('#app [data-m=login]')?.click(); }
 }
 const save = () => jset(KEY, q);
 function go(d) {
@@ -385,6 +393,7 @@ function draw() {
   if (!slot.firstElementChild) { slot.innerHTML = ringSvg(0, 'fnq-mini', 9, true, true); ringP = 0; }
   tweenRing(slot.firstElementChild, ringP, tp); ringP = tp;
   const body = el.querySelector('.fnq-body');
+  stepSeen(id, step);
   body.innerHTML = `<div class="fnq-step ${dir < 0 ? 'back' : ''}">${VIEWS[id]()}</div>`;
   body.scrollTop = 0;
   BIND[id]?.(body.firstElementChild);
@@ -603,22 +612,23 @@ const BIND = {
   },
   account: r => {
     const f = r.querySelector('#fnqAcc'), cta = r.querySelector('.fnq-cta'), err = r.querySelector('#fnqErr');
-    const fail = m => { err.textContent = m; err.hidden = false; cta.disabled = false; cta.textContent = 'Vytvoriť účet'; };
+    const fail = (m, e = 'other') => { ev('fn_signup', { ok: false, e }); err.textContent = m; err.hidden = false; cta.disabled = false; cta.textContent = 'Vytvoriť účet'; };
     r.querySelector('[data-login]').onclick = () => close(true);
     f.onsubmit = e => { e.preventDefault(); cta.click(); };
     cta.onclick = async () => {
       const d = new FormData(f), name = String(d.get('name') || '').trim(), email = String(d.get('email') || '').trim(), pw = String(d.get('password') || '');
       err.hidden = true;
-      if (!name) return fail('Napíš, ako ťa máme volať.');
-      if (!/^\S+@\S+\.\S+$/.test(email)) return fail('Skontroluj e-mail.');
-      if (pw.length < 8) return fail('Heslo musí mať aspoň 8 znakov.');
-      if (!/[a-z]/.test(pw) || !/[A-Z]/.test(pw)) return fail('Heslo musí mať veľké aj malé písmeno.');
-      if (!/\d/.test(pw)) return fail('Heslo musí mať aspoň jednu číslicu.');
-      if (!d.get('ok')) return fail('Potvrď, že máš aspoň 18 rokov a súhlasíš s podmienkami.');
+      if (!name) return fail('Napíš, ako ťa máme volať.', 'v_name');
+      if (!/^\S+@\S+\.\S+$/.test(email)) return fail('Skontroluj e-mail.', 'v_email');
+      if (pw.length < 8) return fail('Heslo musí mať aspoň 8 znakov.', 'v_pw');
+      if (!/[a-z]/.test(pw) || !/[A-Z]/.test(pw)) return fail('Heslo musí mať veľké aj malé písmeno.', 'v_pw');
+      if (!/\d/.test(pw)) return fail('Heslo musí mať aspoň jednu číslicu.', 'v_pw');
+      if (!d.get('ok')) return fail('Potvrď, že máš aspoň 18 rokov a súhlasíš s podmienkami.', 'v_age');
       q.name = name; q.done = true; save();
       cta.disabled = true; cta.textContent = 'Vytváram účet…';
       try {
         const res = await db.signUp(email, pw, name);
+        ev('fn_signup', { ok: true, confirm: !res?.session });
         if (!res?.session) {
           r.innerHTML = `<div class="fnq-calc">${ringSvg(1, 'big', 7)}<h1>Potvrď e-mail</h1><p class="fnq-sub" style="margin:8px auto 0">Poslali sme ti odkaz na ${h(email)}. Po potvrdení sa prihlás a tvoj plán sa uloží automaticky.</p></div>${foot('Prihlásiť sa')}`;
           r.querySelector('.fnq-cta').onclick = () => close(true);
@@ -628,7 +638,8 @@ const BIND = {
         close(false);
       } catch (e2) {
         const m = String(e2?.message || '');
-        fail(/already|registered|exists/i.test(m) ? 'Tento e-mail už má účet. Prihlás sa.' : /password|weak/i.test(m) ? 'Heslo musí mať aspoň 8 znakov, veľké aj malé písmeno a číslicu.' : /network|fetch/i.test(m) ? 'Bez internetu. Skús to znova.' : m || 'Účet sa nepodarilo vytvoriť.');
+        const code = /already|registered|exists/i.test(m) ? 'exists' : /password|weak/i.test(m) ? 'weak' : /network|fetch/i.test(m) ? 'net' : 'other';
+        fail(/already|registered|exists/i.test(m) ? 'Tento e-mail už má účet. Prihlás sa.' : /password|weak/i.test(m) ? 'Heslo musí mať aspoň 8 znakov, veľké aj malé písmeno a číslicu.' : /network|fetch/i.test(m) ? 'Bez internetu. Skús to znova.' : m || 'Účet sa nepodarilo vytvoriť.', code);
       }
     };
   },

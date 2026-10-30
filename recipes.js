@@ -5,8 +5,9 @@
 import * as db from './data.js';
 import * as calc from './calc.js';
 import { ctx } from './app.js';
-import { RECIPES, CATS, CUIS } from './recipes.all.js';
-import { photoOf, photoBackup, creditOf, allCredits } from './recipes.photos2.js';
+import { D } from './recipedata.js'; // dáta načíta foods.js (loadRecipeData) ešte pred týmto modulom
+const { RECIPES, CATS, CUIS } = D.all;
+const { photoOf, photoBackup, creditOf, allCredits } = D.ph;
 import './foodsheet.js';
 import * as dx from './dxcore.js';
 import { recipeTags, tagsOf, fit, DIETS } from './dietcore.js';

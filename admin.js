@@ -45,6 +45,29 @@ const CSS = `
 .ad-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--bg-2); }
 .ad-tag.bug { color: #FF8A7A; } .ad-tag.idea { color: #FFC857; } .ad-tag.new { color: var(--accent); }
 .td-first { margin-bottom: 14px; }
+.af-seg { display: inline-flex; gap: 4px; padding: 3px; border-radius: 12px; background: var(--bg-2); margin: 2px 0 6px; }
+.af-seg button { border: 0; background: none; color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+.af-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+.af-st { padding: 8px 0 9px; border-top: 1px solid var(--line); }
+.af-st:first-of-type { border-top: 0; }
+.af-st .t { display: flex; align-items: baseline; gap: 10px; }
+.af-st .t b { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.af-st .t strong { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; }
+.af-st .t .dr { font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.af-st .t .dr.hi { color: var(--danger, #FF5C7A); }
+.af-tr { height: 6px; border-radius: 99px; background: var(--track, rgba(127,127,127,.15)); margin-top: 7px; overflow: hidden; }
+.af-tr i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.af-st small { display: block; font-size: 12px; color: var(--muted); margin-top: 5px; }
+.af-st.worst { background: color-mix(in srgb, var(--danger, #FF5C7A) 9%, transparent); margin: 2px -10px; padding: 9px 10px 10px; border-radius: 12px; border-top-color: transparent; }
+.af-st.worst + .af-st { border-top-color: transparent; }
+.af-st.worst .af-tr i { background: var(--danger, #FF5C7A); }
+.af-st small.wn { color: var(--danger, #FF5C7A); font-weight: 700; }
+.af-grid { margin-bottom: 6px; }
+.af-lead { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin: 0 0 6px; }
+.af-note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 10px 0 0; }
+.af-li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.af-li:first-of-type { border-top: 0; }
+.af-li span { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 `;
 function css() { if (!document.getElementById('v09css')) { const s = document.createElement('style'); s.id = 'v09css'; s.textContent = CSS; document.head.appendChild(s); } }
 
@@ -119,13 +142,86 @@ export async function renderFeedback() {
 const pct = (ok, n) => n ? Math.round(ok / n * 100) + ' %' : '–';
 const ago = d => { if (!d) return 'nikdy'; const n = Math.round((new Date(calc.today()) - new Date(d)) / 86400000); return n <= 0 ? 'dnes' : n === 1 ? 'včera' : `pred ${n} d`; };
 
+// ---------- lievik: kde ľudia odchádzajú (admin_funnel) ----------
+let fDays = 30;
+const STEP_L = { hello: 'Úvod kvízu', goal: 'Cieľ', sex: 'Pohlavie', age: 'Vek', body: 'Výška a váha', target: 'Cieľová váha', job: 'Práca', days: 'Tréningy za týždeň', block: 'Čo ti doteraz bránilo', diet: 'Strava a obmedzenia', src: 'Kde si o nás počul', calc: 'Skladám plán', plan: 'Tvoj plán', account: 'Vytvorenie účtu' };
+const STEP_O = ['hello', 'goal', 'sex', 'age', 'body', 'target', 'job', 'days', 'block', 'diet', 'src', 'calc', 'plan', 'account'];
+const SRC_L = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', gym: 'Fitko alebo tréner', friend: 'Kamarát', store: 'Google alebo obchod', other: 'Iné', nevyplnil: 'Nevyplnil (Google alebo starší kvíz)' };
+const ERR_L = { v_name: 'nevyplnené meno', v_email: 'zlý e-mail', v_pw: 'slabé heslo', v_age: 'nezaškrtnutý súhlas 18+', exists: 'e-mail už má účet', weak: 'heslo odmietol server', net: 'bez internetu', other: 'iná chyba' };
+const SCR_L = { dnes: 'Dnes', jedlo: 'Jedlo', trening: 'Tréning', pokrok: 'Pokrok', profil: 'Profil', kouc: 'Kouč', treneri: 'Tréneri', onboarding: 'Nastavenie po registrácii', vaha: 'Váha', fotky: 'Fotky', checkin: 'Check-in', tyzden: 'Týždenný check-in', ciele: 'Ciele', rezim: 'Režim stravy', karta: 'Karta', navyky: 'Návyky', cukor: 'Cukor', report: 'Týždenný report', spravy: 'Správy', pripomienky: 'Pripomienky', hodinky: 'Hodinky', admin: 'Admin', 'trener-profil': 'Profil trénera' };
+const FEAT_L = { frg_open: 'Čo uvarím z chladničky', frg_scan: 'Odfotená chladnička', skin_set: 'Zmena vzhľadu', ai_log: 'Zápis cez AI', coach_mem: 'Pamäť kouča', td_edit_open: 'Úprava obrazovky Dnes', td_edit_hide: 'Skrytá karta na Dnes', td_edit_show: 'Vrátená karta na Dnes', td_edit_move: 'Presunutá karta na Dnes', lift_tool: 'Kalkulačka váh', google_signin: 'Prihlásenie cez Google', underfed: 'Upozornenie: málo jedla', afterlog_shown: 'Tip po zápise', shop_recent: 'Nákupný zoznam z posledných', superset: 'Superséria', pr: 'Osobný rekord', recipe_import: 'Import receptu', search_empty: 'Hľadanie bez výsledku', account_delete_requested: 'Žiadosť o zmazanie účtu', account_restored: 'Obnovený účet', ck_day: 'Kalórie podľa dňa', streak_info: 'Info o sérii' };
+const LSRC_L = { db: 'Hľadanie v databáze', plan: 'Z plánu', ai_photo: 'AI z fotky', ai: 'AI z textu', ai_text: 'AI z textu', voice: 'Hlasom', scan: 'Čiarový kód', barcode: 'Čiarový kód', quick: 'Len kcal', manual: 'Ručne', recent: 'Naposledy', fav: 'Obľúbené', recipe: 'Recept' };
+const nfmt = v => Number(v || 0).toLocaleString('sk-SK');
+function funnelRows(rows) {
+  const top = Math.max(1, rows[0]?.n || 0);
+  let worst = -1, worstDrop = 0;
+  rows.forEach((r, i) => { if (!i || r.skipDrop) return; const prev = r.prevN ?? rows[i - 1].n; const drop = prev ? (prev - r.n) / prev : 0; if (prev >= 3 && drop > worstDrop) { worstDrop = drop; worst = i; } });
+  return rows.map((r, i) => {
+    const prev = i ? (r.prevN ?? rows[i - 1].n) : 0, drop = i && prev && !r.skipDrop ? Math.max(0, Math.round((prev - r.n) / prev * 100)) : 0;
+    return `<div class="af-st ${i === worst && worstDrop >= 0.2 ? 'worst' : ''}"><div class="t"><b>${h(r.l)}</b>${drop > 0 ? `<span class="dr ${drop >= 15 ? 'hi' : ''}">−${drop} %</span>` : ''}<strong>${nfmt(r.n)}</strong></div>
+      <div class="af-tr"><i style="width:${Math.max(r.n ? 2 : 0, r.n / top * 100)}%"></i></div>${i === worst && worstDrop >= 0.2 ? '<small class="wn">Tu odchádza najviac ľudí</small>' : ''}${r.note ? `<small>${h(r.note)}</small>` : ''}</div>`;
+  }).join('');
+}
+function funnelHtml(f) {
+  const st = f.steps || {}, seg = `<div class="af-seg">${[7, 30, 90].map(d => `<button data-fd="${d}" class="${fDays === d ? 'on' : ''}">${d} dní</button>`).join('')}</div>`;
+  // cieľová váha je len pri chudnutí a priberaní, preto sa odchody pri nej nerátajú a krok Práca sa porovnáva s krokom Výška a váha
+  const quiz = STEP_O.filter(k => k !== 'target' || k in st).map(k => ({ l: STEP_L[k], n: st[k] || 0, ...(k === 'target' ? { skipDrop: true, note: 'len pri chudnutí a priberaní' } : {}), ...(k === 'job' ? { prevN: st.body || 0 } : {}) }));
+  if (quiz.length) quiz.push({ l: 'Ťukli na Vytvoriť účet', n: f.signup_try || 0 }, { l: 'Vytvorili účet e-mailom', n: f.signup_ok || 0 });
+  const errs = Object.entries(f.signup_err || {}).sort((a, b) => b[1] - a[1]);
+  const act = [
+    { l: 'Nové účty', n: f.acc || 0, note: 'e-mail aj Google, bez trénerov' },
+    { l: 'Dokončili nastavenie', n: f.onb || 0 },
+    { l: 'Zapísali jedlo do 24 h', n: f.log24 || 0 },
+    { l: 'Vrátili sa na 2. deň', n: f.d1?.ok || 0, skipDrop: true, note: `${pct(f.d1?.ok, f.d1?.n)} z ${f.d1?.n || 0} účtov starších ako deň` },
+    { l: 'Aktívni po týždni', n: f.d7?.ok || 0, skipDrop: true, note: `${pct(f.d7?.ok, f.d7?.n)} z ${f.d7?.n || 0} účtov starších ako týždeň` },
+  ];
+  const srcs = Object.entries(f.intake_src || {}).sort((a, b) => b[1] - a[1]);
+  const ls = f.log_speed || {};
+  return `<section class="pg-card">
+      <h3>Kde ľudia odchádzajú</h3>${seg}
+      <p class="af-lead">Koľko nových zariadení videlo každý krok kvízu. Číslo vpravo od názvu je, koľko % ľudí na tom kroku odišlo.</p>
+      ${f.devices ? funnelRows(quiz) : `<p class="af-note">Kvíz pred registráciou sa začal merať v tejto verzii. Prvé čísla uvidíš, keď ho otvorí niekto nový.</p>`}
+      ${errs.length ? `<p class="af-note">Prečo neprešlo vytvorenie účtu: ${errs.map(([k, v]) => `${h(ERR_L[k] || k)} ${v}×`).join(', ')}.</p>` : ''}
+      ${f.login_tap || f.google ? `<p class="af-note">${f.google ? `${f.google} ${f.google === 1 ? 'zariadenie išlo' : 'zariadení išlo'} cez Google (účet sa ráta nižšie). ` : ''}${f.login_tap ? `${f.login_tap} už malo účet a išlo sa prihlásiť.` : ''}</p>` : ''}
+    </section>
+
+    <section class="pg-card">
+      <div class="pg-row"><h3>Po registrácii</h3><span class="pg-chip">${f.days} dní</span></div>
+      ${funnelRows(act)}
+      <p class="af-note">„Vrátili sa“ = otvorili appku alebo niečo zapísali. Ľudia, ktorí sa zaregistrovali dnes, sa do 2. dňa ešte nerátajú.</p>
+    </section>
+
+    <section class="pg-card">
+      <h3 class="mb">Zápis jedla</h3>
+      <div class="rp-grid af-grid">
+        <div class="rp-s"><span>⏱️</span><b>${ls.sec != null ? String(ls.sec).replace('.', ',') + ' s' : '–'}</b><small>medián jedného zápisu</small></div>
+        <div class="rp-s"><span>👆</span><b>${ls.taps != null ? Math.round(ls.taps) : '–'}</b><small>ťuknutí na zápis</small><em>${nfmt(ls.n)} zápisov</em></div>
+      </div>
+      ${(f.log_src || []).map(x => `<div class="af-li">${h(LSRC_L[x.src] || x.src || 'iné')}<span>${nfmt(x.n)}× · ${String(x.sec).replace('.', ',')} s</span></div>`).join('')}
+    </section>
+
+    <section class="pg-card">
+      <h3 class="mb">Odkiaľ prišli</h3>
+      ${(f.sources || []).length ? (f.sources).map(x => `<div class="af-li">${h(x.src === 'priamo' ? 'Priamo (bez odkazu)' : x.src)}<span>${nfmt(x.n)} zariadení</span></div>`).join('') : ''}
+      ${srcs.length ? `<p class="af-note" style="margin-top:${(f.sources || []).length ? 12 : 0}px">Odpoveď v kvíze (nové účty):</p>${srcs.map(([k, v]) => `<div class="af-li">${h(SRC_L[k] || k)}<span>${v}</span></div>`).join('')}` : '<p class="af-note">Zatiaľ bez údajov.</p>'}
+      <p class="af-note">Tip: do odkazu v bio pridaj ?utm_source=tiktok (alebo instagram), potom tu presne uvidíš, koľko ľudí prišlo odkiaľ.</p>
+    </section>
+
+    <section class="pg-card">
+      <h3 class="mb">Čo ľudia používajú</h3>
+      ${(f.screens || []).map(x => `<div class="af-li">${h(SCR_L[x.s] || x.s)}<span>${x.u} ľudí · ${nfmt(x.n)}×</span></div>`).join('')}
+      ${(f.features || []).length ? `<p class="af-note" style="margin-top:12px">Funkcie:</p>${f.features.map(x => `<div class="af-li">${h(FEAT_L[x.name] || x.name)}<span>${x.u} ľudí · ${nfmt(x.n)}×</span></div>`).join('')}` : ''}
+    </section>`;
+}
+
 export async function renderAdmin() {
   css();
   if (!(await isAdmin())) { location.hash = '#/'; return; }
   $app().innerHTML = `<div class="screen"><h1>Admin</h1><div class="spinner"></div></div>${nav('#/admin')}`;
-  const [s, fb] = await Promise.all([
+  const [s, fb, fun] = await Promise.all([
     sb.rpc('admin_stats').then(must),
     sb.from('feedback').select('id,kind,message,screen,device,photo,status,created_at,user_id').order('created_at', { ascending: false }).limit(50).then(must),
+    sb.rpc('admin_funnel', { p_days: fDays }).then(r => r.error ? null : r.data, () => null), // bez migrácie 20261030_funnel ostane prehľad ako predtým
   ]);
   const names = Object.fromEntries((s.people || []).map(p => [p.id, p.name || p.email]));
   const photos = fb.filter(f => f.photo).map(f => f.photo);
@@ -143,6 +239,8 @@ export async function renderAdmin() {
       <div><b>${pct(s.d1.ok, s.d1.n)}</b><span>vrátili sa na 2. deň (${s.d1.ok}/${s.d1.n})</span></div>
       <div><b>${pct(s.d7.ok, s.d7.n)}</b><span>aktívni po týždni (${s.d7.ok}/${s.d7.n})</span></div>
     </div>
+
+    ${fun ? funnelHtml(fun) : ''}
 
     <section class="pg-card">
       <div class="pg-row"><h3>Aktívni ľudia za 14 dní</h3><span class="pg-chip">${s.wau} za 7 dní</span></div>
@@ -180,6 +278,7 @@ export async function renderAdmin() {
 
   const R = $app();
   R.querySelector('#adRe').onclick = () => renderAdmin();
+  R.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { fDays = Number(b.dataset.fd); renderAdmin(); });
   R.querySelectorAll('[data-fs]').forEach(b => b.onclick = async () => {
     const [id, status] = b.dataset.fs.split(':');
     try { must(await sb.from('feedback').update({ status }).eq('id', Number(id))); renderAdmin(); } catch (e) { toast(e.message, true); }

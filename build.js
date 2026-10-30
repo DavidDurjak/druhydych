@@ -63,7 +63,7 @@ function png(size) {
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }
 const OUT = 'public';
-const SKIP = new Set(['public', 'node_modules', '.git', '.vercel', 'supabase', 'build.js', 'vercel.json', 'package.json', 'package-lock.json', 'schema.sql', 'README.md']);
+const SKIP = new Set(['public', 'node_modules', '.git', '.vercel', 'supabase', 'build.js', 'bundle.js', 'vercel.json', 'package.json', 'package-lock.json', 'schema.sql', 'README.md']);
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT);
 for (const f of fs.readdirSync('.')) {
@@ -96,6 +96,11 @@ try {
   fs.writeFileSync(`${OUT}/vendor/supabase.mjs`, umd + '\nexport const createClient = supabase.createClient;\nexport default supabase;\n');
   console.log('vendor ok: supabase-js', require('@supabase/supabase-js/package.json').version);
 } catch (e) { console.warn('vendor preskočené:', e.message); }
+// Rýchly štart (v300): moduly sa zbalia do jedného súboru gt.js (bundle.js). Keď sa to nepodarí, použije sa záložný spôsob nižšie.
+(async () => {
+let bundled = false;
+try { bundled = await require('./bundle.js')(OUT); } catch (e) { console.warn('balík preskočený:', e.message); }
+if (!bundled) {
 // Rýchly štart: do index.html doplní modulepreload pre každý súbor, ktorý sa pri štarte aj tak načíta (statické importy od vstupných modulov).
 // Prehliadač ich potom stiahne naraz a nie po jednom v reťazci importov. Správanie appky sa nemení. Keď sa niečo nepodarí, index.html ostane taký, aký je.
 try {
@@ -121,4 +126,6 @@ try {
   }
   console.log('modulepreload: pridaných', add.length, 'z', order.length);
 } catch (e) { console.warn('modulepreload preskočené:', e.message); }
-iconJob.then(() => console.log('build ok:', fs.readdirSync(OUT).join(', ')));
+}
+await iconJob; console.log('build ok:', fs.readdirSync(OUT).length, 'súborov');
+})();

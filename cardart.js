@@ -1,9 +1,11 @@
 // Kresba karty tréningu na story (1080 × 1920). Anatomická postava (muž alebo žena, spredu a zozadu),
 // na ktorej svietia svaly z dnešného tréningu: čím viac sérií, tým jasnejšie. Tri štýly:
 // 'dark' (hotová karta), 'foto' (tvoja fotka v pozadí), 'clear' (priehľadné PNG ako nálepka do story).
-import { VB, BB, BORDER, PARTS } from './bodymap.js';
 import { drawLogo, logoImg } from './brandmark.js';
-const LOGO = await logoImg('#fff'); // karta sa otvára až po načítaní loga
+// logo sa načíta hneď pri načítaní modulu; workoutcard.js pred kreslením počká na `ready` (bez top-level await, aby šiel modul zbaliť do gt.js)
+// postava (bodymap.js, 130 kB dát) sa tiež načíta až s kartou, nie pri štarte appky
+let LOGO = null, VB, BB, BORDER, PARTS;
+export const ready = Promise.all([logoImg('#fff'), import('./bodymap.js')]).then(([i, m]) => { LOGO = i; ({ VB, BB, BORDER, PARTS } = m); });
 
 export const W = 1080, H = 1920;
 const FONT = (w, s) => `${w} ${s}px Sora, "SF Pro Display", system-ui, -apple-system, "Segoe UI", sans-serif`;

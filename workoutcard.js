@@ -110,7 +110,7 @@ async function loadPhoto(file) {
 }
 async function open() {
   let d;
-  try { ART ||= await import('./cardart.js'); d = await build(); } catch (e) { ctx.toast(e.message || 'Karta sa nepodarila', true); return; }
+  try { ART ||= await import('./cardart.js'); await ART.ready; d = await build(); } catch (e) { ctx.toast(e.message || 'Karta sa nepodarila', true); return; }
   try { await Promise.race([document.fonts.load('800 80px Sora'), new Promise(r => setTimeout(r, 1200))]); } catch (_) { /* náhradné písmo */ }
   let sex = d.sex; try { sex = localStorage.getItem('fw_card_sex') || d.sex; } catch (_) { /* nič */ }
   let mode = 'dark', photo = null, cv = null, url = '';
