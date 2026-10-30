@@ -281,7 +281,7 @@ export async function renderProgress() {
   $app().innerHTML = `<div class="screen pg">
     <h1 class="pg-h1">Pokrok</h1>
     ${progressTabs('pokrok')}
-    <a class="rp-card" href="#/report?w=${defaultWeek()}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre týždňa, porovnanie a na čo sa zamerať.</p></div><span class="rp-card-go">›</span></a>
+    ${logSet.size ? `<a class="rp-card" href="#/report?w=${defaultWeek()}"><span class="rp-card-i">📊</span><div><h3>Týždenný report</h3><p>Skóre týždňa, porovnanie a na čo sa zamerať.</p></div><span class="rp-card-go">›</span></a>` : ''}
     <div class="pg-per pgx-per" style="--i:${prevPer}" data-to="${perIdx}">${[[7, '7 dní'], [30, '30 dní'], ['all', 'Všetko']].map(([v, l]) => `<button data-per="${v}" class="${period === v ? 'on' : ''}">${l}</button>`).join('')}</div>
 
     <section class="pg-card pgx-hero pgx-anim">
