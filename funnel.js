@@ -480,7 +480,7 @@ const VIEWS = {
       <form class="fnq-form" id="fnqAcc" novalidate>
         <label class="fnq-in"><span>Ako ťa máme volať</span><input name="name" autocomplete="given-name" required maxlength="40" value="${h(q.name)}" placeholder="Meno"></label>
         <label class="fnq-in"><span>E-mail</span><input name="email" type="email" autocomplete="email" inputmode="email" required placeholder="ty@email.sk"></label>
-        <label class="fnq-in"><span>Heslo</span><input name="password" type="password" autocomplete="new-password" required minlength="6" placeholder="aspoň 6 znakov"></label>
+        <label class="fnq-in"><span>Heslo</span><input name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="8+ znakov, veľké, malé písmeno a číslica"></label>
         <label class="fnq-ok"><input type="checkbox" name="ok"><span>Mám aspoň 18 rokov a súhlasím s <a href="podmienky.html" target="_blank" rel="noopener">podmienkami</a> a <a href="zasady.html" target="_blank" rel="noopener">zásadami ochrany súkromia</a>. Appka nenahrádza lekára.</span></label>
         <p class="fnq-err" id="fnqErr" hidden></p>
       </form>
@@ -611,7 +611,9 @@ const BIND = {
       err.hidden = true;
       if (!name) return fail('Napíš, ako ťa máme volať.');
       if (!/^\S+@\S+\.\S+$/.test(email)) return fail('Skontroluj e-mail.');
-      if (pw.length < 6) return fail('Heslo musí mať aspoň 6 znakov.');
+      if (pw.length < 8) return fail('Heslo musí mať aspoň 8 znakov.');
+      if (!/[a-z]/.test(pw) || !/[A-Z]/.test(pw)) return fail('Heslo musí mať veľké aj malé písmeno.');
+      if (!/\d/.test(pw)) return fail('Heslo musí mať aspoň jednu číslicu.');
       if (!d.get('ok')) return fail('Potvrď, že máš aspoň 18 rokov a súhlasíš s podmienkami.');
       q.name = name; q.done = true; save();
       cta.disabled = true; cta.textContent = 'Vytváram účet…';
@@ -626,7 +628,7 @@ const BIND = {
         close(false);
       } catch (e2) {
         const m = String(e2?.message || '');
-        fail(/already|registered|exists/i.test(m) ? 'Tento e-mail už má účet. Prihlás sa.' : /network|fetch/i.test(m) ? 'Bez internetu. Skús to znova.' : m || 'Účet sa nepodarilo vytvoriť.');
+        fail(/already|registered|exists/i.test(m) ? 'Tento e-mail už má účet. Prihlás sa.' : /password|weak/i.test(m) ? 'Heslo musí mať aspoň 8 znakov, veľké aj malé písmeno a číslicu.' : /network|fetch/i.test(m) ? 'Bez internetu. Skús to znova.' : m || 'Účet sa nepodarilo vytvoriť.');
       }
     };
   },

@@ -211,7 +211,7 @@ function html(p, admin) {
       { href: 'zasady.html', i: 'doc', c: 'slate', t: 'Zásady ochrany osobných údajov', s: 'Aké údaje máme a prečo', k: 'gdpr sukromie zasady udaje' },
       { href: 'podmienky.html', i: 'doc', c: 'slate', t: 'Podmienky používania', s: 'Pravidlá appky', k: 'podmienky pravidla' },
       { a: 'logout', i: 'out', c: 'red', t: 'Odhlásiť sa', s: p.email || '', dng: true, k: 'odhlasit' },
-      { a: 'delete', i: 'trash', c: 'red', t: 'Zmazať účet a dáta', s: 'Natrvalo, bez možnosti vrátiť', dng: true, k: 'zmazat ucet vymazat dáta gdpr' },
+      { a: 'delete', i: 'trash', c: 'red', t: 'Zmazať účet a dáta', s: '30 dní sa dá obnoviť, potom sa zmaže natrvalo', dng: true, k: 'zmazat ucet vymazat dáta gdpr' },
     ]],
   ];
   return `
@@ -335,14 +335,15 @@ function deleteSheet() {
       if (error) throw new Error('Účet sa nepodarilo zmazať. Skús to znova alebo nám napíš.');
       try { window.fwTrack?.('account_delete_requested'); } catch (_) {}
       const d = data ? new Date(data).toLocaleDateString('sk-SK', { day: 'numeric', month: 'long' }) : '';
-      bg.innerHTML = `<div class="pfx-sh"><h3>Účet je deaktivovaný</h3><p>Natrvalo ho zmažeme${d ? ` <b>${d}</b>` : ' o 30 dní'}. Dovtedy ho obnovíš tak, že sa prihlásiš.</p><div class="pfx-sb"><button class="btn primary" data-done>Rozumiem</button></div></div>`;
+      bg.querySelector('.pfx-sh').outerHTML = `<div class="pfx-sh"><h3>Účet je deaktivovaný</h3><p>Natrvalo ho zmažeme${d ? ` <b>${d}</b>` : ' o 30 dní'}. Dovtedy ho obnovíš tak, že sa prihlásiš.</p><div class="pfx-sb"><button class="btn primary" data-done>Rozumiem</button></div></div>`;
       const out = async () => {
         try { await db.sb.auth.signOut({ scope: 'local' }); } catch (_) {}
         try { localStorage.clear(); sessionStorage.clear(); } catch (_) {}
         location.replace(location.pathname);
       };
       bg.querySelector('[data-done]').onclick = out;
-      bg.addEventListener('click', e => { if (e.target === bg) out(); });
+      // akékoľvek zatvorenie panela (krížik, ťuknutie vedľa) tiež odhlási: deaktivovaný účet sa ďalej nepoužíva
+      new MutationObserver((_, mo) => { if (!bg.isConnected) { mo.disconnect(); out(); } }).observe(document.body, { childList: true, subtree: true });
     } catch (e) { ok.disabled = false; ok.textContent = 'Zmazať účet'; ctx.toast(e.message || 'Účet sa nepodarilo zmazať.', true); }
   };
 }

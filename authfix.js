@@ -61,11 +61,14 @@ const ERR = [
   [/already registered|already been registered/i, 'Tento e-mail už má účet. Skús sa prihlásiť.'],
   [/email not confirmed/i, 'E-mail ešte nie je potvrdený. Klikni na odkaz v správe od nás.'],
   [/at least \d+ characters/i, 'Heslo musí mať aspoň 8 znakov.'],
+  [/should contain at least one character|weak.?password|password is too weak/i, 'Heslo musí mať aspoň 8 znakov, veľké aj malé písmeno a číslicu.'],
   [/rate limit|too many requests|security purposes/i, 'Príliš veľa pokusov. Skús to o chvíľu.'],
   [/unable to validate email|invalid format|valid email/i, 'Zadaj platný e-mail.'],
   [/failed to fetch|network|load failed/i, 'Nepodarilo sa pripojiť. Skontroluj internet a skús znova.'],
   [/same password|different from the old/i, 'Nové heslo musí byť iné ako staré.'],
 ];
+// rovnaké pravidlá ako v nastaveniach prihlasovania (Supabase): aspoň 8 znakov, malé a veľké písmeno, číslica
+const pwWeak = v => v.length < 8 ? 'Heslo musí mať aspoň 8 znakov.' : !/[a-z]/.test(v) || !/[A-Z]/.test(v) ? 'Heslo musí mať veľké aj malé písmeno.' : !/\d/.test(v) ? 'Heslo musí mať aspoň jednu číslicu.' : '';
 const sk = m => { for (const [re, t] of ERR) if (re.test(m)) return t; return m; };
 
 function fixToast(t) {
@@ -146,7 +149,7 @@ function check(form) {
     else if (el.required && !v.trim()) m = el.name === 'password' ? 'Zadaj heslo.' : el.name === 'email' ? 'Zadaj e-mail.' : el.name === 'name' ? 'Napíš svoje meno.' : 'Vyplň toto pole.';
     else if (el.type === 'email' && !EMAIL_RE.test(v.trim())) m = 'Zadaj platný e-mail.';
     else if (el.name === 'name' && v.trim().length < 2) m = 'Meno musí mať aspoň 2 znaky.';
-    else if (el.name === 'password' && register && v.length < 8) m = 'Heslo musí mať aspoň 8 znakov.';
+    else if (el.name === 'password' && register) m = pwWeak(v);
     else if (el.type === 'number' && v !== '') {
       const n = Number(v);
       if (el.max !== '' && n > Number(el.max)) m = el.name === 'birth_year' ? 'Fuelwind je pre ľudí od 18 rokov.' : 'Najvyššia hodnota je ' + el.max + '.';
@@ -240,12 +243,12 @@ if (root) { new MutationObserver(run).observe(root, { childList: true, subtree: 
 let shown = false;
 function newPasswordSheet() {
   if (shown) return; shown = true;
-  const bg = ctx.sheet(`<div class="af-sh"><h3>Nové heslo</h3><p>Zvoľ si nové heslo, aspoň 8 znakov.</p><input class="af-in" type="password" minlength="8" autocomplete="new-password" aria-label="Nové heslo"><button class="btn primary" data-ok>Uložiť heslo</button></div>`);
+  const bg = ctx.sheet(`<div class="af-sh"><h3>Nové heslo</h3><p>Zvoľ si nové heslo: aspoň 8 znakov, veľké aj malé písmeno a číslica.</p><input class="af-in" type="password" minlength="8" autocomplete="new-password" aria-label="Nové heslo"><button class="btn primary" data-ok>Uložiť heslo</button></div>`);
   const inp = bg.querySelector('input'), ok = bg.querySelector('[data-ok]');
   eyeify(inp);
   setTimeout(() => inp.focus(), 150);
   const save = async () => {
-    if (inp.value.length < 8) { ctx.toast('Heslo musí mať aspoň 8 znakov.', true); return; }
+    const w = pwWeak(inp.value); if (w) { ctx.toast(w, true); return; }
     ok.disabled = true;
     try {
       const { error } = await db.sb.auth.updateUser({ password: inp.value });

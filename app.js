@@ -235,7 +235,7 @@ function renderAuth(mode = 'login') {
       <form id="authf">
         ${mode === 'register' ? '<label class="field"><span>Meno</span><input class="input" name="name" required placeholder="Ako ťa máme volať"></label>' : ''}
         <label class="field"><span>E-mail</span><input class="input" type="email" name="email" required autocomplete="email"></label>
-        <label class="field"><span>Heslo</span><input class="input" type="password" name="password" required minlength="6" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}"></label>
+        <label class="field"><span>Heslo</span><input class="input" type="password" name="password" required minlength="${mode === 'register' ? 8 : 6}" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}">${mode === 'register' ? '<small class="muted small pw-hint">Aspoň 8 znakov, veľké aj malé písmeno a číslica.</small>' : ''}</label>
         <button class="btn primary" type="submit">${mode === 'register' ? 'Vytvoriť účet' : 'Prihlásiť sa'}</button>
       </form>
     </div>
