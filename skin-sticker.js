@@ -1,195 +1,267 @@
-// Vzhľad „Nálepky“ (v301, nanovo): hravé farebné nálepky ako v Duolingu. Žiadne čierne ani biele obrysy.
-// Každá karta má vlastnú farbu a hrubší spodný okraj v tmavšom odtieni tej istej farby, takže vyzerá ako nálepka
-// alebo tlačidlo, ktoré sa dá zatlačiť. Farby z klasického vzhľadu (makrá, časti dňa, ikony) ostávajú, len sú výraznejšie.
-// Písmo je zaoblené (na iPhone systémové SF Rounded, inde Nunito). Tlačidlá sa pri stlačení zatlačia dole.
-// Pravidlá obrazoviek sú spoločné s Farebným vzhľadom (RULES zo skin.js), tu sú farby a to, čím sa Nálepky líšia.
+// Vzhľad „Nálepky“ (v304, nanovo): hárok nálepiek z papiernictva. Úplne iný základ ako Cookie:
+//   * podklad je matná lila (nie mätový gradient), v tmavom režime hlboké indigo
+//   * karty sú biele matné nálepky s tvrdým tieňom šikmo doprava dole (ako keby ležali na papieri), bez skla, bez obrysov
+//   * hlavná farba je slnečná žltá s tmavým písmom (Cookie má mätovú), k tomu koralová, mätová, nebeská a levanduľová ako ďalšie nálepky
+//   * písmo je zaoblené (SF Rounded na iPhone, inde Nunito), nadpisy veľmi hrubé
+//   * pár štítkov je mierne natočených (percento cieľa, séria, „Nové“), ako nalepené rukou
+//   * kruh kalórií nie je sušienka, ale prstenec z 24 farebných dielikov, ktoré sa so zjedeným jedlom rozsvecujú
+// Pravidlá obrazoviek (ktoré prvky sú karty, tlačidlá, prepínače) sú spoločné zo skin.js (RULES), tu sú farby a to, čím sa Nálepky líšia.
 
 const R = `ui-rounded,'SF Pro Rounded','Nunito','Sora',system-ui,sans-serif`;
-const VARS = (S, D) => `
-${S}{--bg:#EAFBF4;--bg-2:#DDF5EC;--card:#FFFFFF;--card-2:#F3FBF8;--line:rgba(16,40,32,.10);--text:#10201B;--muted:#5B6B66;
- --accent:#11A267;--accent-ink:#FFFFFF;--accent-2:#E8590C;--protein:#16B06E;--carbs:#2F80E8;--fat:#E0952E;--danger:#E2405A;--track:#E3EEEA;
- --ck-grad:linear-gradient(135deg,#7CFFB2 0%,#3EE6D0 55%,#5BB8FF 100%);
- --t1:#10201B;--t2:#2B3B36;--t3:#5B6B66;--tbg:#10201B;
- --edge:#CFE2DB;--amb:rgba(18,90,72,.16);--paper:#FFFFFF;--paper-2:#F3FBF8;
- --gl:#FFFFFF;--gl-in:#F2FAF7;--gl-hero:#FFFFFF;--gl-soft:#FFFFFF;--gl-b:0 solid transparent;
- --gl-sh:0 4px 0 var(--edge),0 14px 26px -18px var(--amb);--gl-sh2:0 6px 0 var(--edge),0 20px 34px -20px var(--amb);--gl-shin:inset 0 2px 0 rgba(16,40,32,.05);
- --well:#E6F2EE;--well-sh:inset 0 2px 0 rgba(16,40,32,.06);--seg-on:#FFFFFF;--seg-on-sh:0 3px 0 var(--edge);
- --mixb:#FFFFFF;--warm:#FFF2DE;--streak:#FFE9CC;--streak-t:#C2560C;--streak-e:#F2C48C;
- --dk:#FFFFFF;--dk-b:transparent;--pri:#5BE9A6;--pri-e:#1FAE70;--pri-t:#0B2A1C;--pos:#0E9A5E;--tde:#EEF9F5;
- --p-pro:#DDF8E9;--p-pro-e:#A2E2C0;--p-car:#E1EDFF;--p-car-e:#AAC6F2;--p-fat:#FFEDD6;--p-fat-e:#F0C891;--p-vio:#EEE7FF;--p-vio-e:#C9B8F5;--p-red:#FFE4E6;--p-red-e:#F5B3BC;
- --bgc:#C6F6E4;--bg1:radial-gradient(rgba(16,60,48,.06) 1.2px,transparent 1.6px) 0 0/18px 18px;--bg2:radial-gradient(70% 45% at 0% 0%,rgba(255,255,255,.75),rgba(255,255,255,0) 65%);
- --bg3:radial-gradient(90% 55% at 100% 105%,rgba(120,170,255,.35),rgba(120,170,255,0) 65%);--bg4:linear-gradient(168deg,#D9FFEE 0%,#B6F2E5 46%,#C4E2FF 100%);
- --ctr:#FFFFFF;--ctr2:#F3FBF8;--raw:#FFFFFF;--plate0:#F5FCF9;--plate1:#E8F4F0;--plate2:#D9EAE4;--plate-r:rgba(16,60,48,.10);--arc0:#3EE6A0;--arc1:#2BB6F0;
- --wc-line:#11A267;--wc-area:#3EE6D0;--wc-glow:none;--wc-tag:#5BE9A6;--wc-tag-t:#0B2A1C;color-scheme:light}
-${D}{--bg:#111922;--bg-2:#16202B;--card:#1B2531;--card-2:#222E3C;--line:rgba(230,255,245,.08);--text:#EFFAF5;--muted:#9AAAB6;
- --accent:#6CF0AE;--accent-ink:#0B2A1C;--accent-2:#FFB45E;--protein:#5BE3A0;--carbs:#6BB0FF;--fat:#F2B26B;--danger:#FF6B80;--track:rgba(255,255,255,.08);
- --t1:#EFFAF5;--t2:#C7D3DC;--t3:#9AAAB6;--tbg:#EFFAF5;
- --edge:#0A1017;--amb:rgba(0,0,0,.55);--paper:#1B2531;--paper-2:#222E3C;
- --gl:#1B2531;--gl-in:#16202B;--gl-hero:#1D2836;--gl-soft:#222E3C;
- --gl-shin:inset 0 2px 0 rgba(0,0,0,.25);
- --well:#121A23;--well-sh:inset 0 2px 0 rgba(0,0,0,.35);--seg-on:#2A3747;--seg-on-sh:0 3px 0 #0A1017;
- --mixb:#1B2531;--warm:#2E2617;--streak:#3A2A16;--streak-t:#FFB45E;--streak-e:#21170A;
- --dk:#1B2531;--pri:#5BE9A6;--pri-e:#178F5B;--pri-t:#0B2A1C;--pos:#6CF0AE;--tde:#111922;
- --p-pro:#153526;--p-pro-e:#0A1F15;--p-car:#152B45;--p-car-e:#0A182A;--p-fat:#3A2A16;--p-fat-e:#21170A;--p-vio:#2A2342;--p-vio-e:#171226;--p-red:#3A1A22;--p-red-e:#220D12;
- --bgc:#0D141C;--bg1:radial-gradient(rgba(255,255,255,.035) 1.2px,transparent 1.6px) 0 0/18px 18px;--bg2:radial-gradient(70% 45% at 0% 0%,rgba(108,240,174,.12),rgba(108,240,174,0) 65%);
- --bg3:radial-gradient(90% 55% at 100% 105%,rgba(107,176,255,.16),rgba(107,176,255,0) 65%);--bg4:linear-gradient(168deg,#0F2320 0%,#0E1722 50%,#151B36 100%);
- --ctr:#1D2836;--ctr2:#222E3C;--raw:#1B2531;--plate0:#18222E;--plate1:#131C26;--plate2:#0E151D;--plate-r:rgba(255,255,255,.06);--arc0:#6CF0AE;--arc1:#5BB8FF;
- --wc-line:#6CF0AE;--wc-area:#3EE6D0;--wc-glow:none;--wc-tag:#5BE9A6;--wc-tag-t:#0B2A1C;color-scheme:dark}`;
+// tvrdý tieň nálepky: posunutý šikmo, bez rozmazania
+const HARD = (c, d = 5) => `${d}px ${d}px 0 ${c}`;
 
-// farebná nálepka: pozadie + spodný okraj v tmavšom odtieni (n = pro, car, fat, vio, red)
-const tint = n => `background:var(--p-${n})!important;box-shadow:0 4px 0 var(--p-${n}-e),0 14px 26px -18px var(--amb)!important`;
+const VARS = (S, D) => `
+${S}{--bg:#F1ECFF;--bg-2:#E7E0FF;--card:#FFFFFF;--card-2:#F6F3FF;--line:rgba(32,26,61,.1);--text:#201A3D;--muted:#625C86;
+ --accent:#E0A400;--accent-ink:#201A3D;--accent-2:#FF5E78;--protein:#1FC98F;--carbs:#3E9BFF;--fat:#FF9A3D;--danger:#F0405F;--track:#E4DEFA;
+ --ink:#201A3D;--ink-2:#3B3463;--t1:#201A3D;--t2:#3B3463;--t3:#625C86;--tbg:#2A2350;
+ --yel:#FFC83D;--yel-e:#D99E00;--cor:#FF6B85;--cor-e:#D4385A;--mint:#4FE3B0;--mint-e:#17B37F;--sky:#64B5FF;--sky-e:#2A7FD6;--lav:#B79CFF;--lav-e:#8460E6;--pea:#FFB37A;--pea-e:#E07C2A;
+ --sh:rgba(32,26,61,.14);--sh-d:rgba(32,26,61,.22);--paper:#FFFFFF;--paper-2:#F6F3FF;--edge:#DCD5F5;
+ --ck-grad:linear-gradient(135deg,#FFD66B,#FFC83D);
+ --gl:#FFFFFF;--gl-in:#F6F3FF;--gl-hero:#FFFFFF;--gl-soft:#FFFFFF;--gl-b:0 solid transparent;
+ --gl-sh:${HARD('var(--sh)')};--gl-sh2:${HARD('var(--sh)', 7)};--gl-shin:none;
+ --well:#E7E0FF;--well-sh:none;--seg-on:#FFFFFF;--seg-on-sh:${HARD('var(--sh)', 3)};
+ --mixb:#FFFFFF;--warm:#FFF1D1;--streak:#FFE7A3;--streak-t:#7A4D00;
+ --dk:#201A3D;--dk-b:transparent;--pri:var(--yel);--pri-e:var(--yel-e);--pri-t:#201A3D;--pos:#0F9E6E;--tde:#F1ECFF;
+ --p-pro:#DFFBF0;--p-pro-e:#8FE9C6;--p-car:#E1EFFF;--p-car-e:#9CC8FF;--p-fat:#FFEBD9;--p-fat-e:#FFC494;--p-vio:#EEE7FF;--p-vio-e:#CDB9FF;--p-red:#FFE3E8;--p-red-e:#FFA9B8;--p-yel:#FFF3C7;--p-yel-e:#FFD66B;
+ --bgc:#F1ECFF;--bg1:radial-gradient(42% 30% at 92% 4%,rgba(255,107,133,.28),rgba(255,107,133,0) 70%);--bg2:radial-gradient(38% 26% at 4% 38%,rgba(255,200,61,.32),rgba(255,200,61,0) 70%);
+ --bg3:radial-gradient(48% 32% at 85% 96%,rgba(100,181,255,.34),rgba(100,181,255,0) 70%);--bg4:#F1ECFF;
+ --ctr:#FFFFFF;--ctr2:#F6F3FF;--raw:#FFFFFF;--plate0:#FFFFFF;--plate1:#F6F3FF;--plate2:#E7E0FF;--plate-r:transparent;--arc0:#FFC83D;--arc1:#FF6B85;
+ --wc-line:#8460E6;--wc-area:#B79CFF;--wc-glow:none;--wc-tag:#FFC83D;--wc-tag-t:#201A3D;color-scheme:light}
+${D}{--bg:#17132B;--bg-2:#1E1838;--card:#262047;--card-2:#2F2856;--line:rgba(243,239,255,.08);--text:#F3EFFF;--muted:#A49DCB;
+ --accent:#FFC83D;--accent-ink:#201A3D;--accent-2:#FF6B85;--protein:#4FE3B0;--carbs:#64B5FF;--fat:#FFB37A;--danger:#FF6B85;--track:#2F2856;
+ --ink:#F3EFFF;--ink-2:#D3CCF2;--t1:#F3EFFF;--t2:#D3CCF2;--t3:#A49DCB;--tbg:#F3EFFF;
+ --sh:rgba(0,0,0,.42);--sh-d:rgba(0,0,0,.6);--paper:#262047;--paper-2:#2F2856;--edge:#110D22;
+ --gl:#262047;--gl-in:#2F2856;--gl-hero:#2A2350;--gl-soft:#2F2856;
+ --well:#110D22;--seg-on:#3B3463;
+ --mixb:#262047;--warm:#3A2F1C;--streak:#4A3A12;--streak-t:#FFD66B;
+ --dk:#F3EFFF;--pos:#4FE3B0;--tde:#17132B;
+ --p-pro:#163E33;--p-pro-e:#0C2A22;--p-car:#1A3352;--p-car-e:#0F2138;--p-fat:#3E2C17;--p-fat-e:#221709;--p-vio:#2F2558;--p-vio-e:#1C1538;--p-red:#4A2231;--p-red-e:#2E131E;--p-yel:#3D3520;--p-yel-e:#1F1A0C;
+ --bgc:#17132B;--bg1:radial-gradient(42% 30% at 92% 4%,rgba(255,107,133,.16),rgba(255,107,133,0) 70%);--bg2:radial-gradient(38% 26% at 4% 38%,rgba(255,200,61,.14),rgba(255,200,61,0) 70%);
+ --bg3:radial-gradient(48% 32% at 85% 96%,rgba(100,181,255,.18),rgba(100,181,255,0) 70%);--bg4:#17132B;
+ --ctr:#2A2350;--ctr2:#2F2856;--raw:#262047;--plate0:#2A2350;--plate1:#221C42;--plate2:#1A1535;--plate-r:transparent;--arc0:#FFC83D;--arc1:#FF6B85;
+ --wc-line:#B79CFF;--wc-area:#8460E6;--wc-glow:none;--wc-tag:#FFC83D;--wc-tag-t:#201A3D;color-scheme:dark}`;
+
+// farebná nálepka: pastelové pozadie, tvrdý tieň v sýtejšom odtieni tej istej farby
+const tint = n => `background:var(--p-${n})!important;box-shadow:${HARD(`var(--p-${n}-e)`, 4)}!important`;
+// plná sýta nálepka (žltá, koralová...) s tmavým písmom
+const solid = n => `background:var(--${n})!important;color:#201A3D!important;box-shadow:${HARD(`var(--${n}-e)`, 4)}!important`;
 
 const EXTRA = (S, D) => `
-/* nálepky nemajú sklo ani obrysy */
+/* žiadne sklo, žiadne rozmazanie, žiadne obrysy: matná nálepka s tvrdým tieňom */
 ${S} #app *,${S} .sheet-bg *,${S} .qa-ov,${S} .tde-s,${S} .nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-${S} .card,${S} .mtile,${S} .ml,${S} .pg-card,${S} .tile,${S} .tip,${S} .shop-card,${S} .fr-card,${S} .rp-card,${S} .wc-card,${S} .qk-b,${S} .ci{border-radius:24px!important}
-${S} .hero-k,${S} .pfx-hero{border-radius:32px!important}
+${S} .card,${S} .mtile,${S} .ml,${S} .pg-card,${S} .tile,${S} .tip,${S} .shop-card,${S} .fr-card,${S} .rp-card,${S} .wc-card,${S} .qk-b,${S} .ci,${S} .ck-c{border-radius:26px!important}
+${S} .ck-c.ck-in{background:var(--gl-in)!important;box-shadow:none!important}
+${S} .hero-k,${S} .pfx-hero{border-radius:30px!important}
+${S} .card.accent,${S} .rp-card{${tint('yel')}}
 
-/* zaoblené písmo ako na nálepke */
+/* zaoblené hrubé písmo */
 ${S} body,${S} #app,${S} .sheet-bg,${S} .fnq,${S} .qa-ov{font-family:${R}}
-${S} .screen h1,${S} .tdh-g,${S} .qa-h,${S} .fnq h1{font-family:${R};font-weight:900!important;letter-spacing:-.025em}
-${S} .screen h2,${S} .screen h3{font-family:${R};font-weight:800!important;letter-spacing:-.01em}
+${S} .screen h1,${S} .tdh-g,${S} .qa-h,${S} .fnq h1{font-family:${R};font-weight:900!important;letter-spacing:-.03em;color:var(--t1)!important}
+${S} .screen h2,${S} .screen h3{font-family:${R};font-weight:800!important;letter-spacing:-.015em}
 ${S} .hk-c b,${S} .hk-eat b,${S} .mtile b,${S} .grid3 .stat b,${S} .ko-ring b,${S} .ko-kp b,${S} .mbp b{font-family:${R};font-weight:900!important;letter-spacing:-.03em}
-${S} .screen>.muted,${S} .screen>p.small,${S} .pfx-gt,${S} .fwdk-h span{color:var(--tbg)!important;opacity:.78}
+${S} .pfx-gt,${S} .screen>.muted,${S} .screen>p.small,${S} .fwdk-h span,${S} .dc>h3+span{color:var(--tbg)!important}
+${S} .screen>.muted,${S} .screen>p.small{opacity:.75}
 
-/* hlavička Dnes */
-${S} .tdh-cal,${S} .tdh-s{background:var(--gl)!important;border:0!important;box-shadow:0 3px 0 var(--edge)!important}
-${S} .tdh-cal .cal-ic{background:linear-gradient(160deg,#5BE9A6,#2BC7B8)!important;box-shadow:0 2px 0 #1FAE70!important}
-${S} .tdh-cal .cal-ic b{color:#0B2A1C!important}
-${S} .tdh-streak{background:var(--streak)!important;border:0!important;color:var(--streak-t)!important;box-shadow:0 3px 0 var(--streak-e)!important}
+/* hlavička Dnes: dátum ako biela nálepka, kalendár žltý, séria ako natočený žltý štítok */
+${S} .tdh-cal,${S} .tdh-s{background:var(--gl)!important;border:0!important;box-shadow:${HARD('var(--sh)', 4)}!important}
+${S} .tdh-cal .cal-ic{background:var(--yel)!important;box-shadow:0 2px 0 var(--yel-e)!important}
+${S} .tdh-cal .cal-ic b{color:#201A3D!important}
+${S} .tdh-streak{background:var(--yel)!important;border:0!important;color:#201A3D!important;box-shadow:${HARD('var(--yel-e)', 3)}!important;transform:rotate(3deg);font-weight:900}
+${S} .tdh-streak *{color:#201A3D!important}
 
-/* týždeň: splnený deň je mätová gulička, dnešok tmavá pilulka */
-${S} .wk-d.hit .wk-r::before{background:linear-gradient(160deg,#7CFFB2,#3EE6C0)!important;box-shadow:0 3px 0 #1FAE70!important}
-${S} .wk-d.hit .wk-r b{color:#0B2A1C!important}
-${S} .wk-d.now{background:#10201B!important;border-radius:18px;box-shadow:0 4px 0 #000!important}
-${D} .wk-d.now{background:#2A3747!important;box-shadow:0 4px 0 #0A1017!important}
-${S} .wk-d.now .wk-l{color:#7CFFB2!important}${S} .wk-d.now .wk-r b{color:#fff!important}
+/* týždeň: splnený deň je žltá gulička, dnešok tmavá nálepka */
+${S} .wk-d.hit .wk-r::before{background:var(--yel)!important;box-shadow:0 3px 0 var(--yel-e)!important}
+${S} .wk-d.hit .wk-r b{color:#201A3D!important}
+${S} .wk-d.now{background:var(--ink)!important;border-radius:16px;box-shadow:${HARD('var(--sh-d)', 3)}!important}
+${D} .wk-d.now{background:var(--yel)!important;box-shadow:${HARD('rgba(0,0,0,.5)', 3)}!important}
+${S} .wk-d.now .wk-l{color:var(--yel)!important}${S} .wk-d.now .wk-r b{color:#fff!important}
+${D} .wk-d.now .wk-l,${D} .wk-d.now .wk-r b{color:#201A3D!important}
 ${S} .wk-d .wk-l{font-weight:800!important}
 
-/* kruh kalórií: sušienka na tanieri */
-${S} .hero-k{background:linear-gradient(180deg,#FFFFFF 0%,#F4FCF9 100%)!important}
-${D} .hero-k{background:linear-gradient(180deg,#1F2B39 0%,#1A2430 100%)!important}
-${S} .hk-pc{background:linear-gradient(135deg,#7CFFB2,#3EE6D0)!important;color:#0B2A1C!important;border:0!important;box-shadow:0 3px 0 #1FAE70!important;font-weight:900!important}
-${S} .hero-k.over .hk-pc{background:linear-gradient(135deg,#FFD0D0,#FF9E9E)!important;box-shadow:0 3px 0 #D9576B!important}
-${S} .hk-edit{background:#10201B!important;color:#7CFFB2!important;border:0!important;box-shadow:0 3px 0 #000!important}
-${D} .hk-edit{background:#5BE9A6!important;color:#0B2A1C!important;box-shadow:0 3px 0 #178F5B!important}
+/* kruh kalórií: prstenec z farebných dielikov (kreslí ho skin.js podľa vzhľadu) */
+${S} .hero-k{background:var(--gl-hero)!important}
+${S} .ck-ring .st-seg{stroke:var(--track)}
+${S} .ck-ring .st-ctr{fill:var(--ctr)}
+${S} .ck-ring .st-ctr-sh{fill:var(--sh)}
+${S} .hk-c b{font-size:46px!important;color:var(--t1)!important}
+${S} .hk-pc{${solid('yel')};border:0!important;font-weight:900!important;transform:rotate(-3deg);font-style:normal}
+${S} .hero-k.over .hk-pc{${solid('cor')}}
+${S} .hk-edit{background:var(--ink)!important;color:var(--yel)!important;border:0!important;box-shadow:${HARD('var(--sh-d)', 3)}!important;font-weight:800}
+${D} .hk-edit{background:var(--yel)!important;color:#201A3D!important}
 
-/* jedlá dňa: prázdne sú tiché, zjedené majú farbu svojej časti dňa */
-${S} .mbp{background:var(--gl-in)!important;border:0!important;box-shadow:0 3px 0 var(--edge)!important;color:var(--t3)!important}
-${S} .mbp.on{background:color-mix(in srgb,var(--mc) 26%,var(--paper))!important;box-shadow:0 4px 0 color-mix(in srgb,var(--mc) 55%,var(--edge))!important;color:var(--t1)!important}
-${D} .mbp.on{background:color-mix(in srgb,var(--mc) 30%,var(--paper))!important;box-shadow:0 4px 0 color-mix(in srgb,var(--mc) 30%,#000)!important}
+/* jedlá dňa pod kruhom: prázdne sú tiché, zjedené sú sýte nálepky svojej farby */
+${S} .mbp{background:var(--gl-in)!important;border:0!important;box-shadow:none!important;color:var(--t3)!important}
+${S} .mbp.on{background:color-mix(in srgb,var(--mc) 38%,#fff)!important;box-shadow:${HARD('color-mix(in srgb,var(--mc) 75%,#fff)', 3)}!important;color:#201A3D!important}
+${S} .mbp.on *{color:#201A3D!important}
+${D} .mbp.on{background:color-mix(in srgb,var(--mc) 55%,#fff)!important;box-shadow:${HARD('rgba(0,0,0,.4)', 3)}!important}
 ${S} .mbp.on::after{box-shadow:none!important}
 
-/* makrá: tri farebné nálepky, pásik ako koľajnička */
+/* makrá: tri pastelové nálepky s farebným tieňom */
 ${S} .hk-macros .mtile:nth-child(1),${S} .grid3 .stat:nth-child(1){${tint('pro')}}
 ${S} .hk-macros .mtile:nth-child(2),${S} .grid3 .stat:nth-child(2){${tint('car')}}
 ${S} .hk-macros .mtile:nth-child(3),${S} .grid3 .stat:nth-child(3){${tint('fat')}}
-${S} .mt-b{background:rgba(255,255,255,.75)!important;box-shadow:inset 0 2px 0 rgba(16,40,32,.08)!important;height:10px!important;border-radius:6px!important}
-${D} .mt-b{background:rgba(0,0,0,.28)!important;box-shadow:inset 0 2px 0 rgba(0,0,0,.3)!important}
-${S} .mt-b i{border-radius:6px!important;box-shadow:inset 0 -2px 0 rgba(0,0,0,.14)!important}
-${S} .grid3 .stat::before{width:20px!important;height:6px!important;border-radius:4px!important;box-shadow:none!important}
+${S} .mt-b{background:rgba(255,255,255,.7)!important;box-shadow:none!important;height:10px!important;border-radius:6px!important}
+${D} .mt-b{background:rgba(0,0,0,.3)!important}
+${S} .mt-b i{border-radius:6px!important;box-shadow:none!important}
+${S} .grid3 .stat::before{width:22px!important;height:6px!important;border-radius:4px!important;box-shadow:none!important}
 
-/* tlačidlá: hrubší spodok, pri stlačení sa zatlačia */
-${S} .btn{border:0!important;background:var(--gl)!important;color:var(--t1)!important;box-shadow:0 4px 0 var(--edge)!important;font-weight:800;transition:transform .08s,box-shadow .08s}
+/* tlačidlá: biele alebo žlté nálepky, pri stlačení sa pritlačia k papieru */
+${S} .btn{border:0!important;background:var(--gl)!important;color:var(--t1)!important;box-shadow:${HARD('var(--sh)', 4)}!important;font-weight:800;transition:transform .08s,box-shadow .08s}
 ${D} .btn{background:var(--card-2)!important}
-${S} .btn.primary{background:var(--pri)!important;color:var(--pri-t)!important;box-shadow:0 4px 0 var(--pri-e)!important}
-${S} .btn:active,${S} .fnq-cta:active,${S} .qa-b:active,${S} .gs-btn:active{transform:translateY(3px)!important;box-shadow:0 1px 0 var(--edge)!important}
-${S} .btn.primary:active,${S} .fnq-cta:active{box-shadow:0 1px 0 var(--pri-e)!important}
-${S} .qa-fab:active{transform:translateY(3px)!important}
-${S} .ml-add{border:0!important;box-shadow:0 3px 0 var(--edge)!important}
+${S} .btn.primary{${solid('yel')}}
+${S} .btn.danger{${solid('cor')}}
+${S} .btn:active,${S} .fnq-cta:active,${S} .qa-b:active,${S} .gs-btn:active,${S} .tile:active,${S} .pfx-tiles>*:active{transform:translate(3px,3px)!important;box-shadow:1px 1px 0 var(--sh)!important}
+${S} .btn.primary:active,${S} .fnq-cta:active{box-shadow:1px 1px 0 var(--yel-e)!important}
+${S} .qa-fab:active{transform:translate(2px,2px)!important}
+${S} .ml-add{border:0!important;background:var(--yel)!important;color:#201A3D!important;box-shadow:0 3px 0 var(--yel-e)!important}
 ${S} .chip,${S} .pill{border:0!important}
 
-/* prepínače: vybraná voľba je vystúpená nálepka */
-${S} .seg,${S} .pg-per{background:var(--well)!important;border:0!important;box-shadow:var(--well-sh)!important}
-${S} .seg .on,${S} .seg button.on,${S} .seg a.on,${S} .pg-per button.on{background:var(--seg-on)!important;color:var(--t1)!important;box-shadow:var(--seg-on-sh)!important}
+/* prepínače: vybraná voľba je vystúpená biela nálepka */
+${S} .seg,${S} .pg-per{background:var(--well)!important;border:0!important;box-shadow:none!important}
+${S} .seg .on,${S} .seg button.on,${S} .seg a.on,${S} .pg-per button.on{background:var(--seg-on)!important;color:var(--t1)!important;box-shadow:${HARD('var(--sh)', 3)}!important}
 ${S} .seg .on *,${S} .pg-per button.on *{color:var(--t1)!important}
-${S} .pgx-per::before{background:var(--seg-on)!important;box-shadow:var(--seg-on-sh)!important}
-${S} #mealseg button.on{background:color-mix(in srgb,var(--mc) 30%,var(--paper))!important;color:var(--t1)!important;box-shadow:0 4px 0 color-mix(in srgb,var(--mc) 55%,var(--edge))!important}
-${D} #mealseg button.on{box-shadow:0 4px 0 color-mix(in srgb,var(--mc) 30%,#000)!important}
-${S} #mealseg button.on *{color:var(--t1)!important}
-${S} .lvl button{border:0!important;box-shadow:0 4px 0 var(--edge)!important}
-${S} .lvl button.on{background:var(--p-pro)!important;color:var(--t1)!important;box-shadow:0 4px 0 var(--pro-e,var(--p-pro-e)),0 0 0 2px #2FD38A inset!important}
-${S} .lvl button.on small,${S} .lvl button.on .lv-t small{color:var(--t3)!important}
+${S} .pgx-per::before{background:var(--seg-on)!important;box-shadow:${HARD('var(--sh)', 3)}!important}
+${S} #mealseg button.on{background:color-mix(in srgb,var(--mc) 38%,#fff)!important;color:#201A3D!important;box-shadow:${HARD('color-mix(in srgb,var(--mc) 75%,#fff)', 3)}!important}
+${D} #mealseg button.on{background:color-mix(in srgb,var(--mc) 55%,#fff)!important;box-shadow:${HARD('rgba(0,0,0,.4)', 3)}!important}
+${S} #mealseg button.on *{color:#201A3D!important}
+${S} .lvl button{border:0!important;box-shadow:${HARD('var(--sh)', 4)}!important}
+${S} .lvl button.on,${D} .lvl button.on{${solid('yel')};border:0!important}
+${S} .lvl button.on *,${S} .lvl button.on small,${S} .lvl button.on .lv-t small{color:#201A3D!important}
+${S} .lvl button.on .lv-ic{background:#201A3D!important;color:var(--yel)!important}
 
-/* Jedlo: rýchle dlaždice, každá vo svojej farbe */
+/* Jedlo: rýchle dlaždice, každá je iná pastelová nálepka, „Nové“ je natočený žltý štítok */
 ${S} .qa-b{border:0!important;font-weight:800!important;transition:transform .08s,box-shadow .08s}
 ${S} .qa-b:nth-child(4n+1){${tint('pro')}}${S} .qa-b:nth-child(4n+2){${tint('fat')}}${S} .qa-b:nth-child(4n+3){${tint('car')}}${S} .qa-b:nth-child(4n+4){${tint('vio')}}
 ${S} .qa-b b{color:var(--t1)!important}
 ${S} .qk-b:nth-child(4n+1){${tint('car')}}${S} .qk-b:nth-child(4n+2){${tint('fat')}}${S} .qk-b:nth-child(4n+3){${tint('pro')}}${S} .qk-b:nth-child(4n+4){${tint('vio')}}
 ${S} .qk-b span,${S} .qk-b b{color:var(--t1)!important;font-weight:800!important}
+${S} .ms-entry em,${S} .frg-entry em,${S} .frg-entry>em,${S} .ms-entry>em{${solid('yel')};transform:rotate(-6deg);border-radius:10px!important;font-weight:900!important;box-shadow:2px 2px 0 var(--yel-e)!important}
+${S} .ai-box{border:0!important;box-shadow:${HARD('var(--sh)')}!important;background:var(--gl)!important}
+${S} .screen:has(#mealseg) .ai-box::before,${S} .screen:has(#mealseg) .ai-box::after{display:none!important}
+
+/* Profil: hrdina ako biela nálepka, dlaždice v štyroch farbách, karta plánu žltá */
+${S} .pfx-tiles>*:nth-child(1){${tint('car')}}${S} .pfx-tiles>*:nth-child(2){${tint('pro')}}${S} .pfx-tiles>*:nth-child(3){${tint('fat')}}${S} .pfx-tiles>*:nth-child(4){${tint('vio')}}
+${S} .pfx-chip.lv{background:var(--yel)!important;color:#201A3D!important}
+${S} .pfx-chip.fire{background:var(--cor)!important;color:#201A3D!important}
+${S} .pfx-chip.fire *{color:#201A3D!important}
+${S} .pfx-plan{${tint('yel')}}
+${S} .pfx-xb{background:rgba(32,26,61,.1)!important}${D} .pfx-xb{background:rgba(0,0,0,.3)!important}
+${S} .pfx-xb i{background:var(--yel)!important}
+${S} .pfx-s{background:var(--gl)!important;border:0!important;box-shadow:${HARD('var(--sh)', 4)}!important}
+${S} .gt-sub{border:0!important;background:var(--gl)!important;box-shadow:${HARD('var(--sh)', 4)}!important}
+${S} .gt-sub i{background:var(--yel)!important;color:#201A3D!important}
 
 /* tréneri a správy */
 ${S} .tr-perks,${S} .tr-card,${S} .tr-join.card,${S} .tr-req,${S} .tr-code,${S} .ah-demo{background:var(--gl)!important;border:0!important;box-shadow:var(--gl-sh)!important}
 ${S} .tr-perks>div+div{border-left-color:var(--line)!important}
-${S} .tr-chip,${S} .pm-q button{background:var(--gl)!important;border:0!important;box-shadow:0 3px 0 var(--edge)!important;color:var(--t1)!important;font-weight:800}
-${S} .tr-chip.on{background:var(--pri)!important;color:var(--pri-t)!important;box-shadow:0 3px 0 var(--pri-e)!important}
+${S} .tr-chip,${S} .pm-q button{background:var(--gl)!important;border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important;color:var(--t1)!important;font-weight:800}
+${S} .tr-chip.on{${solid('yel')}}
 ${S} .tr-emp{background:var(--gl-in)!important;border:2px dashed var(--edge)!important;box-shadow:none!important}
 ${S} .tr-tag{background:var(--gl-in)!important;box-shadow:none!important;color:var(--t2)!important}
-${S} .tr-bub,${S} .pm-i{border:0!important;box-shadow:0 3px 0 var(--edge)!important}
-${S} .tr-bub.me{background:var(--pri)!important;color:var(--pri-t)!important;box-shadow:0 3px 0 var(--pri-e)!important}
-${S} .tr-bub.me small{color:#1E4A33!important}
+${S} .tr-bub,${S} .pm-i{border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important}
+${S} .tr-bub.me{${solid('yel')}}
+${S} .tr-bub.me small{color:#5E4300!important}
 
 /* prihlásenie */
-${S} .seg:has(+#authf)::before{background:var(--seg-on)!important;box-shadow:var(--seg-on-sh)!important}
+${S} .seg:has(+#authf)::before{background:var(--seg-on)!important;box-shadow:${HARD('var(--sh)', 3)}!important}
 ${S} .seg:has(+#authf) button.on{background:transparent!important;box-shadow:none!important}
-${S} .gs-btn.gs-btn.gs-btn{background:#FFFFFF!important;color:#1F1F1F!important;border:0!important;box-shadow:0 4px 0 #CFD8D5!important;font-weight:800!important}
-${D} .gs-btn.gs-btn.gs-btn{background:#222E3C!important;color:#EFFAF5!important;box-shadow:0 4px 0 #0A1017!important}
+${S} .gs-btn.gs-btn.gs-btn{background:#FFFFFF!important;color:#1F1F1F!important;border:0!important;box-shadow:${HARD('var(--sh)', 4)}!important;font-weight:800!important}
+${D} .gs-btn.gs-btn.gs-btn{background:#2F2856!important;color:#F3EFFF!important}
 
-/* polia: mäkké vpadnuté jamky */
-${S} textarea,${S} .input{background-color:var(--gl-in)!important;border:0!important;box-shadow:inset 0 2px 0 rgba(16,40,32,.07),inset 0 0 0 1.5px var(--line)!important;border-radius:16px}
-${D} textarea,${D} .input{box-shadow:inset 0 2px 0 rgba(0,0,0,.35),inset 0 0 0 1.5px var(--line)!important}
-${S} textarea:focus,${S} .input:focus{box-shadow:inset 0 0 0 2px #2FD38A!important;outline:none}
+/* polia: vpadnuté lila jamky, pri písaní žltý rámik */
+${S} textarea,${S} .input{background-color:var(--well)!important;border:0!important;box-shadow:none!important;border-radius:16px;color:var(--t1)!important}
+${S} textarea:focus,${S} .input:focus{box-shadow:inset 0 0 0 2.5px var(--yel)!important;outline:none}
 
-/* spodná lišta: biela nálepka, aktívna ikona v mätovej guličke */
-${S} .nav{background:var(--gl)!important;border:0!important;box-shadow:0 5px 0 var(--edge),0 18px 34px -16px var(--amb)!important}
-${D} .nav{background:#1E2936!important}
+/* spodná lišta: biela nálepka, aktívna položka je tmavý štvorček so žltou ikonou */
+${S} .nav{background:var(--gl)!important;border:0!important;box-shadow:${HARD('var(--sh-d)', 5)}!important}
+${D} .nav{background:#262047!important}
 ${S} .nav a{color:var(--t3)!important}
 ${S} .nav a.on{color:var(--t1)!important}
-${S} .nav a.on .ic{background:linear-gradient(160deg,#7CFFB2,#3EE6C0)!important;color:#0B2A1C!important;box-shadow:0 3px 0 #1FAE70!important}
-${S} .nav a.on .ic svg{color:#0B2A1C!important}
-${S} .qa-fab{background:linear-gradient(160deg,#7CFFB2,#3EE6C0)!important;border:0!important;color:#0B2A1C!important;box-shadow:0 5px 0 #1FAE70,0 16px 28px -12px rgba(20,140,100,.55)!important}
-${D} .qa-fab{box-shadow:0 5px 0 #178F5B,0 16px 28px -12px rgba(0,0,0,.7)!important}
-${S} .bd-fab{box-shadow:0 4px 0 var(--edge),0 12px 22px -12px var(--amb)!important}
+${S} .nav a.on .ic{background:var(--ink)!important;color:var(--yel)!important;box-shadow:2px 2px 0 var(--sh-d)!important;border-radius:12px!important}
+${S} .nav a.on .ic svg{color:var(--yel)!important}
+${D} .nav a.on .ic{background:var(--yel)!important;color:#201A3D!important}
+${D} .nav a.on .ic svg{color:#201A3D!important}
+${S} .qa-fab{background:var(--yel)!important;border:0!important;color:#201A3D!important;box-shadow:${HARD('var(--yel-e)', 5)},12px 14px 24px -12px var(--sh-d)!important}
+${S} .qa-fab svg{color:#201A3D!important;stroke:#201A3D!important}
+${S} .bd-fab{box-shadow:${HARD('var(--sh-d)', 4)}!important}
 
 /* plusko */
-${S} .qa-in .qa-m{background:color-mix(in srgb,var(--c,#7CFFB2) 24%,var(--paper))!important;border:0!important;box-shadow:0 4px 0 color-mix(in srgb,var(--c,#7CFFB2) 50%,var(--edge))!important}
-${S} .qa-in .fq,${S} .qa-in .qa-w,${S} .qa-in .qa-t:not(.qa-hero .qa-t){border:0!important}
-${S} .qa-hero{box-shadow:0 6px 0 rgba(40,20,110,.45),0 24px 44px -24px rgba(40,20,110,.6)!important}
+${S} .qa-ov{background:var(--bg1),var(--bg2),var(--bg3),var(--bg4)!important}
+${S} .qa-in .qa-m{background:color-mix(in srgb,var(--c,#FFC83D) 28%,var(--paper))!important;border:0!important;box-shadow:${HARD('color-mix(in srgb,var(--c,#FFC83D) 55%,var(--sh))', 4)}!important}
+${S} .qa-in .fq,${S} .qa-in .qa-w,${S} .qa-in .qa-t:not(.qa-hero .qa-t){border:0!important;box-shadow:var(--gl-sh)!important}
+${S} .qa-hero{background:color-mix(in srgb,var(--g1,#FFC83D) 42%,#fff)!important;color:#201A3D!important;border:0!important;box-shadow:${HARD('color-mix(in srgb,var(--g2,#FFC83D) 70%,#201A3D)', 6)}!important}
+${S} .qa-hero::before,${S} .qa-hero::after{display:none!important}
+${S} .qa-hero h2,${S} .qa-hero p{color:#201A3D!important}
+${S} .qa-hero .qa-acts button{background:#fff!important;color:#201A3D!important;border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important;font-weight:800}
+${D} .qa-in .qa-m{background:color-mix(in srgb,var(--c,#FFC83D) 48%,#fff)!important;color:#201A3D!important;box-shadow:${HARD('rgba(0,0,0,.45)', 4)}!important}
+${D} .qa-in .qa-m *{color:#201A3D!important}
 
-/* grafy */
+/* grafy: levanduľová čiara, žltý štítok */
+${S} svg.chart .trend{stroke:var(--wc-line)!important;filter:none!important}
+${S} svg.chart .ck-area{fill:var(--wc-area)!important;opacity:.3}
+${S} svg.chart .ck-end{stroke:var(--wc-line)!important;filter:none!important}
 ${S} svg.chart.wchart .raw{fill:var(--t3)!important;stroke:none!important;opacity:.35!important}
-${S} svg.chart.wchart .wc-tag rect{filter:drop-shadow(0 2px 0 #1FAE70)}
-${S} .pgx-line{stroke:#11A267!important;filter:none!important}
-${D} .pgx-line{stroke:#6CF0AE!important}
-${S} .pgx-rings,${S} .pgx-chart{--accent:#11A267}
-${D} .pgx-rings,${D} .pgx-chart{--accent:#6CF0AE}
+${S} svg.chart.wchart .wc-tag rect{filter:drop-shadow(2px 2px 0 var(--yel-e))}
+${S} .pgx-line{stroke:var(--wc-line)!important;filter:none!important}
+${S} .pgx-area{fill:var(--wc-area)!important;opacity:.3}
+${S} .pgx-proj{stroke:var(--wc-line)!important}
+${S} .pgx-rings,${S} .pgx-chart{--accent:#8460E6}
+${D} .pgx-rings,${D} .pgx-chart{--accent:#B79CFF}
 
-/* úvod a dotazník */
-${S} .fnq-o,${S} .fnq-feats>div,${S} .fnq-nf,${S} .fnq-bigin label,${S} .fnq-yrs button,${S} .fnq-week i{border:0!important;box-shadow:0 4px 0 var(--edge)!important}
-${S} .fnq-o[aria-checked=true]{background:var(--p-pro)!important;color:var(--t1)!important;box-shadow:0 4px 0 #2FD38A,inset 0 0 0 2px #2FD38A!important}
-${S} .fnq-o.v2[aria-checked=true]{background:color-mix(in srgb,var(--c) 22%,var(--paper))!important;box-shadow:0 4px 0 var(--c),inset 0 0 0 2px var(--c)!important}
-${S} .fnq-o[aria-checked=true] *{color:var(--t1)!important}
-${S} .fnq-o .ic,${S} .fnq-feats .fi{background:linear-gradient(160deg,#7CFFB2,#3EE6C0)!important;color:#0B2A1C!important;box-shadow:0 2px 0 #1FAE70!important}
-${S} .fnq-feats>div:nth-child(6n+1){${tint('pro')}}${S} .fnq-feats>div:nth-child(6n+2){${tint('car')}}${S} .fnq-feats>div:nth-child(6n+3){${tint('fat')}}${S} .fnq-feats>div:nth-child(6n+4){${tint('vio')}}${S} .fnq-feats>div:nth-child(6n+5){${tint('red')}}${S} .fnq-feats>div:nth-child(6n+6){${tint('pro')}}
-${S} .fnq-cta{background:var(--pri)!important;color:var(--pri-t)!important;border:0!important;box-shadow:0 5px 0 var(--pri-e)!important;font-weight:900!important}
-${S} .fnq-bar{box-shadow:var(--well-sh)!important}
-${S} .fnq-bar i,${S} .fnq-bar b,${S} .fnq-bar>*{background:linear-gradient(90deg,#5BE9A6,#2BC7B8)!important}
+/* úvod a dotazník: biele nálepky, vybraná je žltá */
+${S} .fnq-o,${S} .fnq-feats>div,${S} .fnq-nf,${S} .fnq-bigin label,${S} .fnq-yrs button,${S} .fnq-week i{border:0!important;box-shadow:${HARD('var(--sh)', 4)}!important}
+${S} .fnq-o[aria-checked=true]{${solid('yel')}}
+${S} .fnq-o.v2[aria-checked=true]{background:color-mix(in srgb,var(--c) 75%,#fff)!important;box-shadow:${HARD('color-mix(in srgb,var(--c) 70%,#201A3D)', 4)}!important}
+${S} .fnq-o[aria-checked=true] *{color:#201A3D!important}
+${S} .fnq-o .ic,${S} .fnq-feats .fi{background:var(--ink)!important;color:var(--yel)!important;box-shadow:none!important}
+${D} .fnq-o .ic,${D} .fnq-feats .fi{background:var(--yel)!important;color:#201A3D!important}
+${S} .fnq-feats>div:nth-child(6n+1){${tint('yel')}}${S} .fnq-feats>div:nth-child(6n+2){${tint('car')}}${S} .fnq-feats>div:nth-child(6n+3){${tint('red')}}${S} .fnq-feats>div:nth-child(6n+4){${tint('pro')}}${S} .fnq-feats>div:nth-child(6n+5){${tint('vio')}}${S} .fnq-feats>div:nth-child(6n+6){${tint('fat')}}
+${S} .fnq-week i.on{background:var(--yel)!important;color:#201A3D!important}
+${S} .fnq-cta{${solid('yel')};border:0!important;box-shadow:${HARD('var(--yel-e)', 5)}!important;font-weight:900!important}
+${S} .fnq-bar{background:var(--well)!important;box-shadow:none!important}
+${S} .fnq-bar i,${S} .fnq-bar b,${S} .fnq-bar>*{background:var(--yel)!important}
 
 /* Upraviť Dnes */
 ${S} .tde-r{border:0!important}
-${S} .td-editlink{border:0!important;box-shadow:0 3px 0 var(--edge)!important;background:var(--gl)!important}
+${S} .td-editlink{border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important;background:var(--gl)!important}
 
 /* Tréning: vybraná oblasť tela (tmavý režim) */
 ${D} #mseg button.on,${D} #mseg button.on *{color:var(--t1)!important}
 
 /* Klienti (tréner) */
-${S}:not([data-theme=dark]) .ko-c.warn .ko-id span{color:#9A4F07!important;background:#FFE7C7!important}
+${S}:not([data-theme=dark]) .ko-c.warn .ko-id span{color:#7A4D00!important;background:#FFE7A3!important}
+
+/* predplatné */
+${S} .pw-hero{background:var(--gl)!important;border:0!important;box-shadow:var(--gl-sh2)!important}
+${S} .pw-tag,${S} .pw-go,${S} .pw-plan .bd{${solid('yel')};border:0!important}
+${S} .pw-plan{border-color:transparent!important;box-shadow:${HARD('var(--sh)', 4)}!important}
+${S} .pw-plan[aria-checked=true]{${tint('yel')}}
+${S} .pw-ben i{border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important}
 `;
+
+// prstenec kalórií z 24 dielikov v piatich farbách nálepiek: zjedené dieliky sa rozsvietia, pri prekročení cieľa sčervenajú všetky
+const COL = ['#FFC83D', '#FF6B85', '#4FE3B0', '#64B5FF', '#B79CFF'];
+export function stickerRingSvg(pct) {
+  const k = Math.max(0, Math.min(1.2, pct / 100)), N = 24, over = k > 1.004, lit = over ? N : Math.round(k * N);
+  const r = 42, gap = 4.6, step = 360 / N, span = step - gap, p = (a) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180)];
+  const segs = [];
+  for (let i = 0; i < N; i++) {
+    const a0 = -90 + i * step + gap / 2, a1 = a0 + span, [x0, y0] = p(a0), [x1, y1] = p(a1);
+    const on = i < lit, c = over ? '#FF6B85' : COL[i % COL.length];
+    segs.push(`<path d="M${x0.toFixed(2)},${y0.toFixed(2)}A${r},${r} 0 0,1 ${x1.toFixed(2)},${y1.toFixed(2)}" class="${on ? 'st-on' : 'st-seg'}" ${on ? `stroke="${c}"` : ''} stroke-width="${on ? 8.2 : 6.4}" fill="none" stroke-linecap="round"/>`);
+  }
+  return `<svg class="ck-ring st-ring" viewBox="-50 -50 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <g>${segs.join('')}</g>
+  <circle class="st-ctr-sh" cx="2.2" cy="2.2" r="30"/>
+  <circle class="st-ctr" r="30"/>
+ </svg>`;
+}
 
 export const stickerCss = RULES => {
   const S = 'html[data-skin=sticker]:root', D = 'html[data-skin=sticker][data-theme=dark]:root';
   return VARS(S, D) + RULES(S, D) + EXTRA(S, D);
 };
-export const STICKER_META = { light: '#CFF8E8', dark: '#0D141C' };
+export const STICKER_META = { light: '#F1ECFF', dark: '#17132B' };
 // zaoblené písmo pre zariadenia bez SF Rounded (Android, počítač); na iPhone sa použije systémové
 export const STICKER_FONT = 'https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap';

@@ -2,10 +2,10 @@
 // gradient z ikony (mätová, tyrkysová, modrá), karty z matného skla s jemným svetlom a mäkkým tieňom,
 // čisté písmo s výraznými číslami, a kruh kalórií ako sušienka, z ktorej ubúda, čo zješ.
 // Rozloženie obrazoviek sa nemení, mení sa len vzhľad. Voľba sa uloží v telefóne (fw_skin) a vyberá sa v Profile pri Vzhľade.
-// Tretí vzhľad „Nálepky“ (skin-sticker.js) používa rovnaké pravidlá obrazoviek, len iné farby a obrysy.
+// Tretí vzhľad „Nálepky“ (skin-sticker.js) používa rovnaké pravidlá obrazoviek, ale úplne iný základ: lila papier, matné nálepky s tvrdým tieňom, žltá, prstenec z dielikov namiesto sušienky.
 // Každý vzhľad má svetlú aj tmavú verziu. Riadi ich ten istý prepínač ako Klasický (Automaticky podľa telefónu / Svetlý / Tmavý).
 import { setMode } from './theme.js';
-import { stickerCss, STICKER_META, STICKER_FONT } from './skin-sticker.js';
+import { stickerCss, stickerRingSvg, STICKER_META, STICKER_FONT } from './skin-sticker.js';
 
 const KEY = 'fw_skin', PREV = 'fw_skin_prev_mode';
 const dark = () => document.documentElement.dataset.theme === 'dark';
@@ -339,7 +339,7 @@ function paintRing() {
     const cur = r.querySelector(':scope > .ck-ring');
     if (cur && cur.dataset.lv === String(lv)) return;
     cur?.remove();
-    r.insertAdjacentHTML('afterbegin', cookieSvg(lv));
+    r.insertAdjacentHTML('afterbegin', (H.dataset.skin === 'sticker' ? stickerRingSvg : cookieSvg)(lv));
     r.querySelector(':scope > .ck-ring').dataset.lv = String(lv);
   });
 }
@@ -424,7 +424,7 @@ function apply() {
     }
     if (sk === 'sticker' && !document.getElementById('fw-font-r')) { const l = document.createElement('link'); l.id = 'fw-font-r'; l.rel = 'stylesheet'; l.href = STICKER_FONT; document.head.appendChild(l); }
     setMeta();
-    if (changed) { seen = new WeakSet(); document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in')); }
+    if (changed) { seen = new WeakSet(); document.querySelectorAll('.ck-c').forEach(e => e.classList.remove('ck-c', 'ck-l', 'ck-in')); document.querySelectorAll('.ck-ring').forEach(e => e.remove()); }
     paintRing(); scanCards(); paintCharts();
   } else {
     delete H.dataset.skin;
@@ -450,8 +450,9 @@ const pst = document.createElement('style'); pst.dataset.fwLight = '';
 pst.textContent = `.sk-sw{display:block;width:100%;height:54px;border-radius:12px;margin-bottom:8px}
 .sk-sw.c{background:linear-gradient(135deg,#F3F5F8 0 49%,#0B0E12 51%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .sk-sw.k{background:linear-gradient(135deg,#8FFFC6,#4AE9D6 49%,#0D2E2A 51%,#0B1A33);box-shadow:inset 0 0 0 2.5px #0D1117}
-.sk-sw.s{position:relative;background:radial-gradient(rgba(13,17,23,.12) 1px,transparent 1.4px) 0 0/8px 8px,linear-gradient(135deg,#A2FFCF,#5EEBD9 49%,#121A24 51%);box-shadow:inset 0 0 0 2.5px #0D1117}
-.sk-sw.s::after{content:'';position:absolute;left:22%;top:24%;width:42%;height:46%;border-radius:8px;background:#fff;border:2px solid #0D1117;box-shadow:3px 3px 0 #0D1117;transform:rotate(-4deg)}`;
+.sk-sw.s{position:relative;overflow:hidden;background:linear-gradient(135deg,#F1ECFF 0 49%,#17132B 51%);box-shadow:inset 0 0 0 2.5px #0D1117}
+.sk-sw.s::before{content:'';position:absolute;left:14%;top:22%;width:36%;height:48%;border-radius:7px;background:#fff;box-shadow:3px 3px 0 rgba(32,26,61,.2);transform:rotate(-7deg)}
+.sk-sw.s::after{content:'';position:absolute;left:50%;top:30%;width:36%;height:44%;border-radius:7px;background:#FFC83D;box-shadow:3px 3px 0 #D99E00;transform:rotate(6deg)}`;
 document.head.appendChild(pst);
 const SW = k => `<i class="sk-sw ${k}"></i>`;
 function profileUi() {
@@ -459,7 +460,7 @@ function profileUi() {
   const box = document.createElement('div'); box.id = 'fwSkin'; box.style.margin = '10px 0 12px';
   box.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
     <button type="button" data-sk="classic" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('c')}Klasický</button>
-    <button type="button" data-sk="cookie" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('k')}Farebný</button>
+    <button type="button" data-sk="cookie" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('k')}Cookie</button>
     <button type="button" data-sk="sticker" class="sk-o" style="all:unset;cursor:pointer;padding:8px;border-radius:16px;text-align:center;font-weight:700;font-size:13px">${SW('s')}Nálepky</button>
   </div>`;
   const seg = card.querySelector('.seg');
