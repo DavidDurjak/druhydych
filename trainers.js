@@ -626,7 +626,7 @@ async function mountProfile() {
   try {
     const html = await profileCard();
     if (!scr.isConnected || scr.querySelector('#trCard')) return;
-    const h1 = scr.querySelector('h1'); (h1 || scr).insertAdjacentHTML(h1 ? 'afterend' : 'afterbegin', html);
+    const h1 = scr.querySelector('.pfx-s') || scr.querySelector('h1'); (h1 || scr).insertAdjacentHTML(h1 ? 'afterend' : 'afterbegin', html); // pod hľadaním (Profil), inak pod nadpisom
     const c = scr.querySelector('#trCard');
     c.querySelector('#trCode')?.addEventListener('click', () => {
       const bg = ctx.sheet(`<h2 style="margin-top:0">Kód od trénera</h2><p class="tr-note" style="margin:0 0 12px">Tréner uvidí tvoje jedlo, tréningy, váhu, fotky postavy a check-iny. Súhlas môžeš kedykoľvek zrušiť.</p><input class="input" id="trC" maxlength="10" placeholder="Napr. 4F7A2C" style="text-transform:uppercase;letter-spacing:.14em;font-size:20px;text-align:center"><button class="btn primary mt" id="trGo" style="width:100%">Pripojiť sa</button>`);

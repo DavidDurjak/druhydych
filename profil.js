@@ -102,7 +102,7 @@ const CSS = `
 .pfx-t b{display:block;font-size:15px;font-weight:700;line-height:1.2}
 .pfx-t small{display:block;margin-top:2px;font-size:12px;color:var(--muted);line-height:1.3}
 .pfx-nb{position:absolute;top:12px;right:12px;min-width:22px;height:22px;padding:0 6px;border-radius:99px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:var(--danger);box-shadow:0 0 0 3px var(--card)}
-.pfx-s{display:flex;align-items:center;gap:10px;height:48px;margin-top:22px;padding:0 14px;border-radius:16px;background:var(--bg-2);border:1px solid var(--line)}
+.pfx-s{display:flex;align-items:center;gap:10px;height:46px;margin:2px 0 18px;padding:0 14px;border-radius:16px;background:var(--bg-2);border:1px solid var(--line)}
 .pfx-s svg{width:19px;height:19px;color:var(--muted);flex:none}
 .pfx-s input{flex:1;min-width:0;height:100%;border:0;outline:0;background:none;font-size:16px;color:var(--text)}
 .pfx-s input::placeholder{color:var(--muted)}
@@ -216,6 +216,7 @@ function html(p, admin) {
   ];
   return `
 <h1>Profil</h1>
+<label class="pfx-s">${ic('search')}<input type="search" placeholder="Hľadať" enterkeyhint="search" autocomplete="off" autocapitalize="off" aria-label="Hľadať v profile a nastaveniach"></label>
 <section class="pfx-hero">
   <div class="pfx-hd">
     <div class="pfx-av">
@@ -243,7 +244,6 @@ function html(p, admin) {
   ${tile({ a: 'shop', i: 'cart', c: 'amber', t: 'Nákupný zoznam', s: 'Z tvojho plánu na 7 dní' })}
   ${tile({ href: '#/report', i: 'chart', c: 'violet', t: 'Týždenný report', s: 'Skóre a rozbor týždňa' })}
 </div>
-<label class="pfx-s">${ic('search')}<input type="search" placeholder="Hľadať v nastaveniach" enterkeyhint="search" autocomplete="off" autocapitalize="off" aria-label="Hľadať v nastaveniach"></label>
 ${groups.map(([t, rows]) => `<h2 class="pfx-gt">${h(t)}</h2><div class="pfx-g">${rows.map(row).join('')}</div>`).join('')}
 <div class="pfx-none" hidden>Nič sme nenašli.<br><a href="#/napis">Napíš nám, čo ti chýba</a></div>
 <p class="pfx-foot"><b>Fuelwind</b>verzia ${h(APP_VERSION)}</p>`;
@@ -364,16 +364,29 @@ function build(screen) {
     else if (a === 'export') { b.style.opacity = .5; try { await exportMine(ctx.toast); } finally { b.style.opacity = ''; } }
   });
   const q = box.querySelector('.pfx-s input'), none = box.querySelector('.pfx-none');
+  // hľadanie (ako na Instagrame): hore pod nadpisom; bez diakritiky, hľadá v nastaveniach aj v kartách, ktoré pridávajú iné časti appky (Tréner, Vzhľad, Jazyk)
+  const fold = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // ďalšie slová pre karty, ktoré pridávajú iné časti appky
+  const alias = txt => (/vzhlad/.test(txt) ? ' tema farby rezim skin dark light' : '') + (/jazyk/.test(txt) ? ' language preklad' : '') + (/trener/.test(txt) ? ' kouc coach' : '');
   q.addEventListener('input', () => {
-    const t = q.value.trim().toLowerCase();
+    const t = fold(q.value.trim());
     box.querySelectorAll('.pfx-g').forEach(g => {
       let any = false;
-      g.querySelectorAll('.pfx-r').forEach(r => { const s = !t || r.dataset.k.includes(t); r.hidden = !s; any = any || s; });
+      g.querySelectorAll('.pfx-r').forEach(r => { const s = !t || fold(r.dataset.k).includes(t); r.hidden = !s; any = any || s; });
       g.hidden = !any; g.previousElementSibling.hidden = !any;
     });
-    const vis = [...box.querySelectorAll('.pfx-r')].some(r => !r.hidden);
-    none.hidden = vis;
     box.querySelector('.pfx-tiles').hidden = !!t; box.querySelector('.pfx-hero').hidden = !!t; box.querySelector('.pfx-plan').hidden = !!t;
+    // karty mimo zoznamu nastavení: pri hľadaní ostanú len tie, ktorých text sedí
+    let extra = false;
+    const others = [...screen.children, ...box.children].filter(el => el !== box && !el.matches('nav,.nav,script,style,h1,h2,.pfx-s,.pfx-g,.pfx-none,.pfx-foot,.pfx-tiles,.pfx-hero,.pfx-plan'));
+    others.forEach(el => {
+      if (!t) { if (el.dataset.pfxHid) { el.hidden = false; delete el.dataset.pfxHid; } return; }
+      const txt = fold(el.textContent); const hit = (txt + alias(txt)).includes(t);
+      if (!hit && !el.hidden) { el.hidden = true; el.dataset.pfxHid = '1'; } else if (hit && el.dataset.pfxHid) { el.hidden = false; delete el.dataset.pfxHid; }
+      extra = extra || (hit && el.getClientRects().length > 0);
+    });
+    const vis = [...box.querySelectorAll('.pfx-r')].some(r => !r.hidden) || extra;
+    none.hidden = vis;
   });
   let shown = null;
   if (cache && cache.uid === p.id) { shown = cache.d; fill(box, p, shown); }
@@ -387,6 +400,9 @@ function run() {
     const old = screen.querySelector(':scope > .pfx-root');
     if (old && !bound.has(old)) { old.remove(); screen.classList.remove('pfx'); }
     if (!screen.classList.contains('pfx')) build(screen);
+    // hľadanie ostáva hneď pod nadpisom: karta trénera (trainers.js) patrí pod neho
+    const srch = screen.querySelector('.pfx-s'), tc = screen.querySelector('#trCard');
+    if (srch && tc && (srch.compareDocumentPosition(tc) & Node.DOCUMENT_POSITION_PRECEDING)) srch.after(tc);
     // popis „Zdravie a diéta“ si doplní podľa zapnutých režimov (odkaz pridáva dxdash.js asynchrónne)
     const dx = screen.querySelector('#dxlink'), sub = screen.querySelector('#pfxDx small');
     if (dx && sub) { const t = dx.textContent.replace(/^\S+\s+Zdravie a diéta:?\s*/, '').replace(/^\(|\)$/g, '').trim(); if (t && sub.textContent !== t) sub.textContent = t; }
