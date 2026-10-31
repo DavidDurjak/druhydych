@@ -151,7 +151,16 @@ async function mount() {
   if (!scr || busy) return;
   const st = ctx.state, uid = st?.profile?.id; if (!uid) return;
   const date = st.date || calc.today();
-  if (date > calc.today()) return;
+  if (date > calc.today()) { // budúci deň: karta ostane na svojom mieste, spánok sa zapíše ráno v ten deň
+    let f = scr.querySelector('#sp'); const anchor = wx || scr.querySelector('.meals');
+    if (!f && anchor) { f = document.createElement('section'); f.className = 'sp'; f.id = 'sp'; anchor.after(f); }
+    if (f && f.dataset.d !== date) {
+      f.dataset.d = date; f.dataset.v = 'fut';
+      f.innerHTML = `<div class="sp-h"><h3>${MOON}Spánok</h3><button type="button" data-sp="open">Týždeň ›</button></div><p class="sp-q">Spánok pred týmto dňom zapíšeš ráno v ten deň.</p>`;
+      f.onclick = e => { if (e.target.closest('[data-sp=open]')) openSleep(uid, calc.today()); };
+    }
+    return;
+  }
   let el = scr.querySelector('#sp');
   if (el && el.dataset.d === date && el.dataset.v === String(cache?.at || '')) return;
   busy = true;

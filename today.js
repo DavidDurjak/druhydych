@@ -328,7 +328,7 @@ export async function renderToday() {
 
     ${analysis}
 
-    ${isFuture ? '' : waterHtml({ ml: waterMl, goalMl })}
+    ${waterHtml({ ml: isFuture ? 0 : waterMl, goalMl })}
 
     ${actCard}
 
@@ -380,7 +380,7 @@ export async function renderToday() {
   root.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { location.hash = `#/jedlo?meal=${b.dataset.add}`; });
   root.querySelectorAll('[data-edit]').forEach(el => el.onclick = () => { const f = foods.find(x => x.id === Number(el.dataset.edit)); if (f) openLogEdit(f, renderToday); });
   root.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
-  if (!isFuture) bindWater(root, { uid, date: st.date, goalMl, ml: waterMl, isToday });
+  bindWater(root, { uid, date: st.date, goalMl, ml: isFuture ? 0 : waterMl, isToday, isFuture });
   root.querySelector('#adaptYes')?.addEventListener('click', async () => { await v2.applyAdaptive(p, adaptive); toast(`Nový cieľ: ${adaptive.newKcal} kcal`); renderToday(); });
   root.querySelector('#adaptNo')?.addEventListener('click', async () => { await db.applyTarget(uid, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: p.target_kcal, reason: 'Ponechané používateľom', avg_intake: adaptive.avg, trend_change: adaptive.ch }, {}); renderToday(); });
 }

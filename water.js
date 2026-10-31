@@ -48,6 +48,7 @@ const CSS = `
 .wx-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
 .wx-chip{-webkit-appearance:none;appearance:none;border:1px solid rgba(110,200,255,.2);border-radius:14px;padding:9px 2px 8px;background:rgba(91,184,255,.10);color:#8FD3FF;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;-webkit-tap-highlight-color:transparent}
 .wx-chip:active{transform:scale(.95)}
+.wx.fut .wx-chips,.wx.fut .wx-bt{opacity:.4;pointer-events:none}
 .wx-chip b{font-size:14.5px}.wx-chip span{font-size:11.5px;color:var(--muted)}
 .wx-chip.pri{background:linear-gradient(180deg,#8FD3FF,#4BA8F0);border-color:transparent;color:#06223d}.wx-chip.pri span{color:rgba(6,34,61,.7)}
 .wx-wk{display:flex;gap:6px;margin-top:16px}
@@ -181,7 +182,7 @@ function goalSheet(d, cur, base, onSave) {
   upd();
 }
 
-export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday }) {
+export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday, isFuture = false }) {
   let goalMl = baseGoal;
   const el = root.querySelector('#wx'); if (!el) return;
   const q = s => el.querySelector(s);
@@ -198,6 +199,7 @@ export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday }) {
 
   const message = () => {
     const left = goalMl - ml;
+    if (isFuture) return { t: 'Vypité zapíšeš v ten deň. Teraz si môžeš naplánovať cieľ, napríklad viac vody v deň tréningu.', k: 'ok' };
     if (ml >= goalMl) return { t: isToday ? 'Cieľ splnený. Dnes máš hotovo.' : 'Cieľ splnený.', k: 'ok' };
     if (!isToday) return { t: ml ? `Chýbalo ${fmtL(Math.round(left / 50) * 50)} l.` : 'Tento deň nie je nič zapísané.', k: 'ok' };
     const now = new Date(), hr = now.getHours() + now.getMinutes() / 60;
@@ -301,6 +303,12 @@ export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday }) {
   };
   q('#wxW').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) { sel = b.dataset.d; drawWeek(); edit(sel); } });
   q('#wxE').onclick = () => { sel = date; drawWeek(); edit(date); };
+  if (isFuture) { // budúci deň: pridávanie vody vypnuté, Upraviť naplánuje cieľ dňa
+    el.classList.add('fut');
+    el.querySelectorAll('[data-wx],[data-wxo]').forEach(b => { b.disabled = true; b.tabIndex = -1; });
+    const e = q('#wxE'); if (e) e.textContent = '✎ Naplánovať cieľ';
+    const u = q('#wxU'); if (u) u.hidden = true;
+  }
   el.querySelectorAll('[data-wx]').forEach(b => b.onclick = () => add(Number(b.dataset.wx)));
   q('[data-wxo]').onclick = () => otherSheet(add);
   q('#wxU').onclick = undo;

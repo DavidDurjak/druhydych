@@ -63,8 +63,9 @@ const cardHtml = (items, admin) => {
 };
 
 export function mountNews(root, anchorSel = '.rd-card') {
-  const anchor = root.querySelector(anchorSel);
-  if (!anchor) return;
+  // karta pripravenosti je len dnes; v iné dni (napr. zajtra) idú novinky za pitný režim, aby nezmizli
+  const anchor = root.querySelector(anchorSel) || root.querySelector('.screen.td #wx') || root.querySelector('.screen.td .meals');
+  if (!anchor || root.querySelector('#newsSlot')) return;
   const slot = document.createElement('div'); slot.id = 'newsSlot';
   anchor.after(slot);
   let admin = false;
