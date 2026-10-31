@@ -332,6 +332,23 @@ function cookieSvg(pct) {
   <circle class="ck-rim2" r="25.6" fill="none" stroke-width=".5"/>
  </svg>`;
 }
+
+// ikona do výberu vzhľadu: celá okrúhla sušienka s odhryznutým kúskom (nie kruh s tanierom)
+function cookieIconSvg() {
+  const bite = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#000"/>`;
+  return `<svg class="sk-ck" viewBox="-50 -50 100 100" aria-hidden="true" xmlns="${NS}">
+  <defs>
+   <radialGradient id="skg" cx=".42" cy=".34" r=".8"><stop offset="0" stop-color="#F9D39A"/><stop offset=".45" stop-color="#E7A961"/><stop offset=".8" stop-color="#C47F3D"/><stop offset="1" stop-color="#92511F"/></radialGradient>
+   <radialGradient id="ske" cx=".5" cy=".5" r=".5"><stop offset=".84" stop-color="#7A421C" stop-opacity="0"/><stop offset="1" stop-color="#6B3615" stop-opacity=".5"/></radialGradient>
+   <mask id="skm" maskUnits="userSpaceOnUse" x="-55" y="-55" width="110" height="110"><rect x="-55" y="-55" width="110" height="110" fill="#fff"/>${bite(34, -26, 17)}${bite(21, -40, 7)}${bite(44, -10, 6)}</mask>
+   <filter id="sks" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2.4" flood-color="#2A1608" flood-opacity=".45"/></filter>
+  </defs>
+  <g filter="url(#sks)" mask="url(#skm)"><path d="${RIM}" fill="url(#skg)"/><path d="${RIM}" fill="url(#ske)"/>
+   <g fill="none" stroke="#8A4A1E" stroke-width=".8" stroke-linecap="round" opacity=".25">${CRACKS.map(d => `<path d="${d}"/>`).join('')}</g>
+   ${[[-28, -8, 5], [-12, -30, 4.5], [8, -14, 5], [-6, 10, 4.5], [18, 10, 5], [-26, 22, 4], [4, 32, 4.5], [26, 30, 4], [-14, -4, 3]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${(r * .78).toFixed(1)}" transform="rotate(${(x * 7 + y * 3) % 60} ${x} ${y})" fill="#3A2013"/><ellipse cx="${x - r * .25}" cy="${y - r * .3}" rx="${(r * .35).toFixed(1)}" ry="${(r * .2).toFixed(1)}" fill="#6B3F22" opacity=".8"/>`).join('')}
+  </g>
+ </svg>`;
+}
 function paintRing() {
   if (!H.dataset.skin) return;
   document.querySelectorAll('#app .hk-ring').forEach(r => {
@@ -450,15 +467,13 @@ const pst = document.createElement('style'); pst.dataset.fwLight = '';
 pst.textContent = `.sk-sw{display:block;width:100%;height:54px;border-radius:12px;margin-bottom:8px}
 .sk-sw.c{background:linear-gradient(135deg,#F3F5F8 0 49%,#0B0E12 51%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .sk-sw.k{position:relative;background:linear-gradient(135deg,#8FFFC6,#4AE9D6 49%,#0D2E2A 51%,#0B1A33);box-shadow:inset 0 0 0 2.5px #0D1117}
-html .sk-sw .ck-ring{position:absolute!important;left:50%!important;top:50%!important;width:46px!important;height:46px!important;transform:translate(-50%,-50%);overflow:visible}
-.sk-sw .ck-ring .ck-p0,.sk-sw .ck-ring .ck-p1{stop-color:#F4FBF8}.sk-sw .ck-ring .ck-p2{stop-color:#CFE6DD}.sk-sw .ck-ring .ck-plate-r{stroke:rgba(255,255,255,.6)}
-.sk-sw .ck-ring .ck-a0{stop-color:#3EE6D0}.sk-sw .ck-ring .ck-a1{stop-color:#16B07A}.sk-sw .ck-ring .ck-track{stroke:rgba(7,30,40,.1)}.sk-sw .ck-ring .ck-knob{fill:#fff;stroke:#16B07A;stroke-width:1.7}
-.sk-sw .ck-ring .ck-rim2{stroke:rgba(7,30,40,.08)}.sk-sw .ck-ring .ck-ctr{fill:#fff}
+.sk-sw .sk-ck{position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%) rotate(-12deg);overflow:visible}
 .sk-sw.s{position:relative;background:linear-gradient(135deg,#F1ECFF 0 49%,#17132B 51%);box-shadow:inset 0 0 0 2.5px #0D1117}
-.sk-sw.s::before{content:'';position:absolute;left:8%;top:14%;width:26%;height:30%;border-radius:5px;background:#FFC83D;box-shadow:2px 2px 0 #D99E00;transform:rotate(-9deg)}
-html .sk-sw.s .ck-ring{width:40px!important;height:40px!important}.sk-sw.s .st-back{fill:#fff}.sk-sw.s .st-back-sh{fill:rgba(32,26,61,.25)}.sk-sw.s .st-ctr{fill:#fff}.sk-sw.s .st-ctr-sh{fill:rgba(170,80,0,.22)}`;
+.sk-sw.s::before{content:'';position:absolute;left:7%;top:12%;width:24%;height:28%;border-radius:5px;background:#FF6B85;box-shadow:2px 2px 0 #D4385A;transform:rotate(-9deg)}
+html .sk-sw.s .ck-ring{position:absolute!important;left:50%!important;top:50%!important;width:42px!important;height:42px!important;transform:translate(-50%,-50%);overflow:visible}
+.sk-sw.s .st-back{fill:#fff}.sk-sw.s .st-back-sh{fill:rgba(32,26,61,.25)}.sk-sw.s .st-track{stroke:#E4DEFA}`;
 document.head.appendChild(pst);
-const SW = k => `<i class="sk-sw ${k}">${k === 'k' ? cookieSvg(38) : k === 's' ? stickerRingSvg(34) : ''}</i>`;
+const SW = k => `<i class="sk-sw ${k}">${k === 'k' ? cookieIconSvg() : k === 's' ? stickerRingSvg(62) : ''}</i>`;
 function profileUi() {
   const card = document.querySelector('#fwTheme'); if (!card || card.querySelector('#fwSkin')) return;
   const box = document.createElement('div'); box.id = 'fwSkin'; box.style.margin = '10px 0 12px';

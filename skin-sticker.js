@@ -94,10 +94,8 @@ ${S} .wk-d .wk-l{font-weight:800!important}
 /* kruh kalórií: prstenec z farebných dielikov (kreslí ho skin.js podľa vzhľadu) */
 ${S} .hero-k{background:var(--gl-hero)!important}
 ${S} .ck-ring .st-back{fill:var(--paper)}${S} .ck-ring .st-back-sh{fill:var(--sh)}
-${S} .ck-ring .st-ctr{fill:var(--ctr)}${S} .ck-ring .st-ctr-sh{fill:rgba(170,80,0,.22)}
-${D} .ck-ring .st-ctr-sh{fill:rgba(0,0,0,.4)}
-${S} .hk-c b{font-size:40px!important;color:var(--t1)!important}
-${S} .hk-c span{font-size:12px!important}
+${S} .ck-ring .st-track{stroke:var(--track)}${D} .ck-ring .st-track{stroke:#3B3463}
+${S} .hk-c b{font-size:44px!important;color:var(--t1)!important}
 ${S} .hk-pc{${solid('yel')};border:0!important;font-weight:900!important;transform:rotate(-3deg);font-style:normal}
 ${S} .hero-k.over .hk-pc{${solid('cor')}}
 ${S} .hk-edit{background:var(--ink)!important;color:var(--yel)!important;border:0!important;box-shadow:${HARD('var(--sh-d)', 3)}!important;font-weight:800}
@@ -269,51 +267,42 @@ ${S} .pw-plan[aria-checked=true]{${tint('yel')}}
 ${S} .pw-ben i{border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important}
 `;
 
-// Kruh kalórií ako nálepka pomaranča: koliesko pomaranča na bielom podklade nálepky s tvrdým tieňom. Kôra s pórmi ostáva vždy celá
-// (drží tvar kruhu), dieliky dužiny ubúdajú s tým, čo zješ (od vrchu v smere hodín). Po zjedených dielikoch ostanú blany.
-// Lístok na kôre, šťavnaté vlákna a lesk v každom dieliku. Pri prekročení cieľa kôra sčervená.
+// Kruh kalórií ako nálepka: hrubý žltý prstenec s tvrdým tieňom (ako vystrihnutá nálepka), ktorý sa plní tým, čo zješ.
+// Na konci prstenca sedí malá nálepka smajlíka a putuje s ním. Výraz sa mení: na prázdno hladný, v polovici spokojný,
+// pri cieli šťastný s lícami, po prekročení cieľa prejedený (prstenec sčervená). Číslo kalórií ostáva v strede.
 const P = (r, a) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180)];
 const f1 = v => v.toFixed(2);
 let uid = 0;
+function face(k, over) {
+  // tvár: žltá nálepka s bielym lemom a tieňom; oči, ústa, líca podľa stavu
+  const mouth = over ? `<path d="M-3.2,2.2q3.2,-2.4 6.4,0" fill="none" stroke="#5A3A00" stroke-width="1.1" stroke-linecap="round"/><path d="M-1.2,2.9q1.6,2.6 3.2,0.4" fill="#FF6B85"/>`
+    : k < 0.3 ? `<path d="M-2.8,2.4h5.6" fill="none" stroke="#5A3A00" stroke-width="1.1" stroke-linecap="round"/>`
+    : k < 0.7 ? `<path d="M-3,1.4q3,3.2 6,0" fill="none" stroke="#5A3A00" stroke-width="1.1" stroke-linecap="round"/>`
+    : `<path d="M-3.4,0.9q3.4,5 6.8,0z" fill="#5A3A00"/><path d="M-1.6,2.6q1.6,1.6 3.2,0" fill="#FF8AA0"/>`;
+  const eyes = over ? `<path d="M-3.6,-2.4l2,2m0,-2l-2,2M1.6,-2.4l2,2m0,-2l-2,2" fill="none" stroke="#5A3A00" stroke-width="1" stroke-linecap="round"/>`
+    : k >= 0.7 ? `<path d="M-3.8,-1.2q1.3,-2.2 2.6,0M1.2,-1.2q1.3,-2.2 2.6,0" fill="none" stroke="#5A3A00" stroke-width="1.1" stroke-linecap="round"/>`
+    : `<circle cx="-2.5" cy="-1.4" r=".95" fill="#5A3A00"/><circle cx="2.5" cy="-1.4" r=".95" fill="#5A3A00"/>`;
+  const cheeks = k >= 0.7 || over ? `<circle cx="-4.6" cy="1" r="1.3" fill="#FF8AA0" opacity=".7"/><circle cx="4.6" cy="1" r="1.3" fill="#FF8AA0" opacity=".7"/>` : '';
+  const star = (x, y, r, c) => `<path transform="translate(${x} ${y}) scale(${r})" d="M0,-1L.28,-.3 1,-.2 .45,.3 .6,1 0,.62 -.6,1 -.45,.3 -1,-.2 -.28,-.3Z" fill="${c}"/>`;
+  const spark = k >= 0.999 && !over ? star(-11.5, -6, 2.4, '#FFC83D') + star(11, -8.5, 1.8, '#FF6B85') + star(9.5, 8, 1.5, '#4FE3B0') : '';
+  return `<g transform="scale(1.12)"><circle r="8.6" fill="#201A3D" opacity=".2" cx="1.2" cy="1.4"/><circle r="8.6" fill="#fff"/><circle r="7.2" fill="${over ? '#FF9DAE' : '#FFC83D'}"/><circle r="7.2" fill="url(#stf)"/>${eyes}${mouth}${cheeks}</g>${spark}`;
+}
 export function stickerRingSvg(pct) {
   const k = Math.max(0, Math.min(1, pct / 100)), over = pct > 100.4, id = 'st' + (++uid);
-  const N = 12, gap = 3.2, step = 360 / N, R2 = 38.4, R1 = 27;
-  const eatenTo = -90 + k * 360; // uhol, po ktorý je zjedené
-  const wedges = [], ghosts = [];
-  for (let i = 0; i < N; i++) {
-    const c0 = -90 + i * step, a0 = c0 + gap / 2 * (R1 / R2), a1 = c0 + step - gap / 2 * (R1 / R2), b0 = c0 + gap / 2 * (R1 / R2) * (R2 / R1), b1 = c0 + step - gap / 2 * (R1 / R2) * (R2 / R1);
-    const mid = c0 + step / 2;
-    const [x0, y0] = P(R2, a0), [x1, y1] = P(R2, a1), [x2, y2] = P(R1, b1), [x3, y3] = P(R1, b0);
-    const d = `M${f1(x0)},${f1(y0)}A${R2},${R2} 0 0,1 ${f1(x1)},${f1(y1)}L${f1(x2)},${f1(y2)}A${R1},${R1} 0 0,0 ${f1(x3)},${f1(y3)}Z`;
-    const gone = k >= 0.999 || mid < eatenTo;
-    if (gone) { ghosts.push(`<path d="${d}"/>`); continue; }
-    // šťavnaté vlákna: 4 jemné svetlé čiary od stredu von, lesk pri vonkajšom okraji
-    const fibers = [0.25, 0.5, 0.75].map(t => { const a = a0 + (a1 - a0) * t, [fx, fy] = P(R1 + 1.5, a), [gx, gy] = P(R2 - 1.6, a); return `<path d="M${f1(fx)},${f1(fy)}L${f1(gx)},${f1(gy)}"/>`; }).join('');
-    const [hx, hy] = P(R2 - 2.6, mid - step * 0.18);
-    wedges.push(`<g><path d="${d}" fill="url(#${id}w)"/><g stroke="#FFE2B0" stroke-width=".55" stroke-linecap="round" opacity=".7">${fibers}</g><ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="2.3" ry="1.1" transform="rotate(${mid + 90} ${f1(hx)} ${f1(hy)})" fill="#fff" opacity=".55"/></g>`);
-  }
-  // póry na kôre (deterministicky rozložené)
-  const pores = []; let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 70; i++) { const a = rnd() * 360, r = 41.2 + rnd() * 2.6, [x, y] = P(r, a); pores.push(`<circle cx="${f1(x)}" cy="${f1(y)}" r="${(0.35 + rnd() * 0.4).toFixed(2)}"/>`); }
-  const peel0 = over ? '#FF7A8A' : '#FFB84A', peel1 = over ? '#E8415F' : '#FF7F12';
+  const R = 39.5, W = 9.5, a0 = -90, a1 = -90 + k * 360, full = k >= 0.999;
+  const arc = (r, b0, b1) => { if (b1 - b0 >= 359.9) return `M${f1(r)},0A${r},${r} 0 1,1 ${f1(-r)},0A${r},${r} 0 1,1 ${f1(r)},0`; const [x0, y0] = P(r, b0), [x1, y1] = P(r, b1); return `M${f1(x0)},${f1(y0)}A${r},${r} 0 ${b1 - b0 > 180 ? 1 : 0},1 ${f1(x1)},${f1(y1)}`; };
+  const col = over ? '#FF6B85' : '#FFC83D', colE = over ? '#C9405C' : '#D99E00';
+  const [kx, ky] = P(R, full ? a0 : a1);
+  const prog = k > 0.004 ? `<path d="${arc(R, a0, full ? a0 + 359.95 : a1)}" fill="none" stroke="${colE}" stroke-width="${W}" stroke-linecap="round" transform="translate(1.6 1.8)"/>
+  <path d="${arc(R, a0, full ? a0 + 359.95 : a1)}" fill="none" stroke="${col}" stroke-width="${W}" stroke-linecap="round"/>
+  <path d="${arc(R + 2.4, a0, full ? a0 + 359.95 : a1)}" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity=".55"/>` : '';
   return `<svg class="ck-ring st-ring" viewBox="-50 -50 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-   <radialGradient id="${id}p" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="${peel0}"/><stop offset="1" stop-color="${peel1}"/></radialGradient>
-   <radialGradient id="${id}w" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="39"><stop offset=".72" stop-color="#FFB13A"/><stop offset="1" stop-color="#FF8C1A"/></radialGradient>
-   <radialGradient id="${id}h" cx=".3" cy=".25" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-  </defs>
+  <defs><radialGradient id="stf" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
   <circle class="st-back-sh" cx="2.6" cy="2.8" r="47.4"/>
   <circle class="st-back" r="47.4"/>
-  <circle r="44.3" fill="url(#${id}p)"/>
-  <g class="st-pores" fill="#B85A00" opacity=".22">${pores.join('')}</g>
-  <circle r="44.3" fill="url(#${id}h)"/>
-  <circle r="40.6" fill="#FFF4DA"/>
-  <circle r="38.4" fill="#FFF9EC"/>
-  <g class="st-ghost" fill="none" stroke="#F3C98E" stroke-width=".6" stroke-dasharray="1.3 1.3" opacity=".8">${ghosts.join('')}</g>
-  ${wedges.join('')}
-  <circle class="st-ctr-sh" cx="1.4" cy="1.6" r="${R1 - 1}"/>
-  <circle class="st-ctr" r="${R1 - 1}"/>
-  <g transform="translate(13 -44.5) rotate(28)"><path d="M0,0C-7,-6 -5,-16 2,-18C9,-12 8,-3 0,0Z" fill="#43C36A"/><path d="M0,0C-6,-5 -4,-14 2,-17" fill="none" stroke="#2B9B4C" stroke-width=".9" stroke-linecap="round"/><path d="M-1,1C-1,-2 0,-4 2,-6" fill="none" stroke="#2B9B4C" stroke-width="1.4" stroke-linecap="round"/></g>
+  <path d="${arc(R, 0, 359.95)}" class="st-track" fill="none" stroke-width="${W}" stroke-linecap="round"/>
+  ${prog}
+  <g transform="translate(${f1(kx)} ${f1(ky)})">${face(k, over)}</g>
  </svg>`;
 }
 
