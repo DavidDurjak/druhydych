@@ -11,6 +11,18 @@ const R = `ui-rounded,'SF Pro Rounded','Nunito','Sora',system-ui,sans-serif`;
 // tvrdý tieň nálepky: posunutý šikmo, bez rozmazania
 const HARD = (c, d = 5) => `${d}px ${d}px 0 ${c}`;
 
+
+// kresba na papieri (hviezdička, srdce, blesk, činka, bodka), veľmi jemne, ako potlač na hárku nálepiek
+const DOODLE = c => "url(\"data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='168' height='168' viewBox='0 0 168 168' fill='none' stroke='${c}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
+<path d='M24 18l3.4 7 7.6 1.1-5.5 5.4 1.3 7.6L24 35.5l-6.8 3.6 1.3-7.6L13 26.1l7.6-1.1z'/>
+<path d='M108 44c-4-8-16-6-16 3 0 7 10 12 16 17 6-5 16-10 16-17 0-9-12-11-16-3z'/>
+<path d='M60 104l-9 15h8l-3 13 11-17h-8z'/>
+<path d='M118 120h22M114 114v12M144 114v12M110 116v8M148 116v8'/>
+<circle cx='146' cy='34' r='4'/><circle cx='30' cy='140' r='3'/>
+<path d='M70 60c3-5 9-5 11 0M64 70c6 4 14 4 20 0'/>
+<path d='M140 78l2 5 5 .7-3.7 3.5.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.7-3.5 5-.7z'/>
+</svg>`) + "\")";
+
 const VARS = (S, D) => `
 ${S}{--bg:#F1ECFF;--bg-2:#E7E0FF;--card:#FFFFFF;--card-2:#F6F3FF;--line:rgba(32,26,61,.1);--text:#201A3D;--muted:#625C86;
  --accent:#E0A400;--accent-ink:#201A3D;--accent-2:#FF5E78;--protein:#1FC98F;--carbs:#3E9BFF;--fat:#FF9A3D;--danger:#F0405F;--track:#E4DEFA;
@@ -24,8 +36,8 @@ ${S}{--bg:#F1ECFF;--bg-2:#E7E0FF;--card:#FFFFFF;--card-2:#F6F3FF;--line:rgba(32,
  --mixb:#FFFFFF;--warm:#FFF1D1;--streak:#FFE7A3;--streak-t:#7A4D00;
  --dk:#201A3D;--dk-b:transparent;--pri:var(--yel);--pri-e:var(--yel-e);--pri-t:#201A3D;--pos:#0F9E6E;--tde:#F1ECFF;
  --p-pro:#DFFBF0;--p-pro-e:#8FE9C6;--p-car:#E1EFFF;--p-car-e:#9CC8FF;--p-fat:#FFEBD9;--p-fat-e:#FFC494;--p-vio:#EEE7FF;--p-vio-e:#CDB9FF;--p-red:#FFE3E8;--p-red-e:#FFA9B8;--p-yel:#FFF3C7;--p-yel-e:#FFD66B;
- --bgc:#F1ECFF;--bg1:radial-gradient(42% 30% at 92% 4%,rgba(255,107,133,.28),rgba(255,107,133,0) 70%);--bg2:radial-gradient(38% 26% at 4% 38%,rgba(255,200,61,.32),rgba(255,200,61,0) 70%);
- --bg3:radial-gradient(48% 32% at 85% 96%,rgba(100,181,255,.34),rgba(100,181,255,0) 70%);--bg4:#F1ECFF;
+ --bgc:#F1ECFF;--bg1:${DOODLE('rgba(32,26,61,.075)')} 0 0/168px 168px;--bg2:radial-gradient(42% 30% at 92% 4%,rgba(255,107,133,.3),rgba(255,107,133,0) 70%),radial-gradient(38% 26% at 4% 38%,rgba(255,200,61,.34),rgba(255,200,61,0) 70%);
+ --bg3:radial-gradient(48% 32% at 85% 96%,rgba(100,181,255,.36),rgba(100,181,255,0) 70%);--bg4:#F1ECFF;
  --ctr:#FFFFFF;--ctr2:#F6F3FF;--raw:#FFFFFF;--plate0:#FFFFFF;--plate1:#F6F3FF;--plate2:#E7E0FF;--plate-r:transparent;--arc0:#FFC83D;--arc1:#FF6B85;
  --wc-line:#8460E6;--wc-area:#B79CFF;--wc-glow:none;--wc-tag:#FFC83D;--wc-tag-t:#201A3D;color-scheme:light}
 ${D}{--bg:#17132B;--bg-2:#1E1838;--card:#262047;--card-2:#2F2856;--line:rgba(243,239,255,.08);--text:#F3EFFF;--muted:#A49DCB;
@@ -36,9 +48,9 @@ ${D}{--bg:#17132B;--bg-2:#1E1838;--card:#262047;--card-2:#2F2856;--line:rgba(243
  --well:#110D22;--seg-on:#3B3463;
  --mixb:#262047;--warm:#3A2F1C;--streak:#4A3A12;--streak-t:#FFD66B;
  --dk:#F3EFFF;--pos:#4FE3B0;--tde:#17132B;
- --p-pro:#163E33;--p-pro-e:#0C2A22;--p-car:#1A3352;--p-car-e:#0F2138;--p-fat:#3E2C17;--p-fat-e:#221709;--p-vio:#2F2558;--p-vio-e:#1C1538;--p-red:#4A2231;--p-red-e:#2E131E;--p-yel:#3D3520;--p-yel-e:#1F1A0C;
- --bgc:#17132B;--bg1:radial-gradient(42% 30% at 92% 4%,rgba(255,107,133,.16),rgba(255,107,133,0) 70%);--bg2:radial-gradient(38% 26% at 4% 38%,rgba(255,200,61,.14),rgba(255,200,61,0) 70%);
- --bg3:radial-gradient(48% 32% at 85% 96%,rgba(100,181,255,.18),rgba(100,181,255,0) 70%);--bg4:#17132B;
+ --p-pro:#163E33;--p-pro-e:#0C2A22;--p-car:#1A3352;--p-car-e:#0F2138;--p-fat:#4A2D14;--p-fat-e:#281607;--p-vio:#2F2558;--p-vio-e:#1C1538;--p-red:#4A2231;--p-red-e:#2E131E;--p-yel:#3D3520;--p-yel-e:#1F1A0C;
+ --bgc:#17132B;--bg1:${DOODLE('rgba(243,239,255,.06)')} 0 0/168px 168px;--bg2:radial-gradient(42% 30% at 92% 4%,rgba(255,107,133,.18),rgba(255,107,133,0) 70%),radial-gradient(38% 26% at 4% 38%,rgba(255,200,61,.15),rgba(255,200,61,0) 70%);
+ --bg3:radial-gradient(48% 32% at 85% 96%,rgba(100,181,255,.2),rgba(100,181,255,0) 70%);--bg4:#17132B;
  --ctr:#2A2350;--ctr2:#2F2856;--raw:#262047;--plate0:#2A2350;--plate1:#221C42;--plate2:#1A1535;--plate-r:transparent;--arc0:#FFC83D;--arc1:#FF6B85;
  --wc-line:#B79CFF;--wc-area:#8460E6;--wc-glow:none;--wc-tag:#FFC83D;--wc-tag-t:#201A3D;color-scheme:dark}`;
 
@@ -81,10 +93,11 @@ ${S} .wk-d .wk-l{font-weight:800!important}
 
 /* kruh kalórií: prstenec z farebných dielikov (kreslí ho skin.js podľa vzhľadu) */
 ${S} .hero-k{background:var(--gl-hero)!important}
-${S} .ck-ring .st-seg{stroke:var(--track)}
-${S} .ck-ring .st-ctr{fill:var(--ctr)}
-${S} .ck-ring .st-ctr-sh{fill:var(--sh)}
-${S} .hk-c b{font-size:46px!important;color:var(--t1)!important}
+${S} .ck-ring .st-back{fill:var(--paper)}${S} .ck-ring .st-back-sh{fill:var(--sh)}
+${S} .ck-ring .st-ctr{fill:var(--ctr)}${S} .ck-ring .st-ctr-sh{fill:rgba(170,80,0,.22)}
+${D} .ck-ring .st-ctr-sh{fill:rgba(0,0,0,.4)}
+${S} .hk-c b{font-size:40px!important;color:var(--t1)!important}
+${S} .hk-c span{font-size:12px!important}
 ${S} .hk-pc{${solid('yel')};border:0!important;font-weight:900!important;transform:rotate(-3deg);font-style:normal}
 ${S} .hero-k.over .hk-pc{${solid('cor')}}
 ${S} .hk-edit{background:var(--ink)!important;color:var(--yel)!important;border:0!important;box-shadow:${HARD('var(--sh-d)', 3)}!important;font-weight:800}
@@ -222,6 +235,22 @@ ${S} .fnq-cta{${solid('yel')};border:0!important;box-shadow:${HARD('var(--yel-e)
 ${S} .fnq-bar{background:var(--well)!important;box-shadow:none!important}
 ${S} .fnq-bar i,${S} .fnq-bar b,${S} .fnq-bar>*{background:var(--yel)!important}
 
+/* nadpisy ako nálepkový text so žltým posunutým tieňom */
+${S} .screen h1,${S} .tdh-g{text-shadow:3px 3px 0 var(--yel)}
+${D} .screen h1,${D} .tdh-g{text-shadow:3px 3px 0 rgba(255,200,61,.55)}
+/* týždeň: každý deň je malá okrúhla nálepka */
+${S} .wk-d:not(.hit):not(.now) .wk-r::before{content:'';position:absolute;inset:3px;border-radius:50%;z-index:0;background:var(--paper);box-shadow:2px 2px 0 var(--sh)}
+${S} .wk-d.hit .wk-r::before{inset:3px!important;box-shadow:2px 2px 0 var(--yel-e)!important}
+${S} .wk-d.now:not(.hit) .wk-r::before{box-shadow:none!important}
+${S} .wk-d .wk-r svg{z-index:1}
+${S} .wk-d.sel{background:none!important;box-shadow:none!important}
+${S} .wk-d.sel.now{background:var(--ink)!important}${D} .wk-d.sel.now{background:var(--yel)!important}
+/* makrá: pásik s pruhmi ako cukríková tyčinka */
+${S} .mt-b i{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.3) 0 5px,transparent 5px 10px)!important;box-shadow:none!important}
+/* karty: tenký svetlý lem hore, ako lesk nálepky */
+${S} .card,${S} .pg-card,${S} .tile,${S} .hero-k,${S} .pfx-hero{background-image:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,0) 18px)!important}
+${D} .card,${D} .pg-card,${D} .tile,${D} .hero-k,${D} .pfx-hero{background-image:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0) 18px)!important}
+
 /* Upraviť Dnes */
 ${S} .tde-r{border:0!important}
 ${S} .td-editlink{border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important;background:var(--gl)!important}
@@ -240,21 +269,51 @@ ${S} .pw-plan[aria-checked=true]{${tint('yel')}}
 ${S} .pw-ben i{border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important}
 `;
 
-// prstenec kalórií z 24 dielikov v piatich farbách nálepiek: zjedené dieliky sa rozsvietia, pri prekročení cieľa sčervenajú všetky
-const COL = ['#FFC83D', '#FF6B85', '#4FE3B0', '#64B5FF', '#B79CFF'];
+// Kruh kalórií ako nálepka pomaranča: koliesko pomaranča na bielom podklade nálepky s tvrdým tieňom. Kôra s pórmi ostáva vždy celá
+// (drží tvar kruhu), dieliky dužiny ubúdajú s tým, čo zješ (od vrchu v smere hodín). Po zjedených dielikoch ostanú blany.
+// Lístok na kôre, šťavnaté vlákna a lesk v každom dieliku. Pri prekročení cieľa kôra sčervená.
+const P = (r, a) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180)];
+const f1 = v => v.toFixed(2);
+let uid = 0;
 export function stickerRingSvg(pct) {
-  const k = Math.max(0, Math.min(1.2, pct / 100)), N = 24, over = k > 1.004, lit = over ? N : Math.round(k * N);
-  const r = 42, gap = 4.6, step = 360 / N, span = step - gap, p = (a) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180)];
-  const segs = [];
+  const k = Math.max(0, Math.min(1, pct / 100)), over = pct > 100.4, id = 'st' + (++uid);
+  const N = 12, gap = 3.2, step = 360 / N, R2 = 38.4, R1 = 27;
+  const eatenTo = -90 + k * 360; // uhol, po ktorý je zjedené
+  const wedges = [], ghosts = [];
   for (let i = 0; i < N; i++) {
-    const a0 = -90 + i * step + gap / 2, a1 = a0 + span, [x0, y0] = p(a0), [x1, y1] = p(a1);
-    const on = i < lit, c = over ? '#FF6B85' : COL[i % COL.length];
-    segs.push(`<path d="M${x0.toFixed(2)},${y0.toFixed(2)}A${r},${r} 0 0,1 ${x1.toFixed(2)},${y1.toFixed(2)}" class="${on ? 'st-on' : 'st-seg'}" ${on ? `stroke="${c}"` : ''} stroke-width="${on ? 8.2 : 6.4}" fill="none" stroke-linecap="round"/>`);
+    const c0 = -90 + i * step, a0 = c0 + gap / 2 * (R1 / R2), a1 = c0 + step - gap / 2 * (R1 / R2), b0 = c0 + gap / 2 * (R1 / R2) * (R2 / R1), b1 = c0 + step - gap / 2 * (R1 / R2) * (R2 / R1);
+    const mid = c0 + step / 2;
+    const [x0, y0] = P(R2, a0), [x1, y1] = P(R2, a1), [x2, y2] = P(R1, b1), [x3, y3] = P(R1, b0);
+    const d = `M${f1(x0)},${f1(y0)}A${R2},${R2} 0 0,1 ${f1(x1)},${f1(y1)}L${f1(x2)},${f1(y2)}A${R1},${R1} 0 0,0 ${f1(x3)},${f1(y3)}Z`;
+    const gone = k >= 0.999 || mid < eatenTo;
+    if (gone) { ghosts.push(`<path d="${d}"/>`); continue; }
+    // šťavnaté vlákna: 4 jemné svetlé čiary od stredu von, lesk pri vonkajšom okraji
+    const fibers = [0.25, 0.5, 0.75].map(t => { const a = a0 + (a1 - a0) * t, [fx, fy] = P(R1 + 1.5, a), [gx, gy] = P(R2 - 1.6, a); return `<path d="M${f1(fx)},${f1(fy)}L${f1(gx)},${f1(gy)}"/>`; }).join('');
+    const [hx, hy] = P(R2 - 2.6, mid - step * 0.18);
+    wedges.push(`<g><path d="${d}" fill="url(#${id}w)"/><g stroke="#FFE2B0" stroke-width=".55" stroke-linecap="round" opacity=".7">${fibers}</g><ellipse cx="${f1(hx)}" cy="${f1(hy)}" rx="2.3" ry="1.1" transform="rotate(${mid + 90} ${f1(hx)} ${f1(hy)})" fill="#fff" opacity=".55"/></g>`);
   }
+  // póry na kôre (deterministicky rozložené)
+  const pores = []; let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 70; i++) { const a = rnd() * 360, r = 41.2 + rnd() * 2.6, [x, y] = P(r, a); pores.push(`<circle cx="${f1(x)}" cy="${f1(y)}" r="${(0.35 + rnd() * 0.4).toFixed(2)}"/>`); }
+  const peel0 = over ? '#FF7A8A' : '#FFB84A', peel1 = over ? '#E8415F' : '#FF7F12';
   return `<svg class="ck-ring st-ring" viewBox="-50 -50 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-  <g>${segs.join('')}</g>
-  <circle class="st-ctr-sh" cx="2.2" cy="2.2" r="30"/>
-  <circle class="st-ctr" r="30"/>
+  <defs>
+   <radialGradient id="${id}p" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="${peel0}"/><stop offset="1" stop-color="${peel1}"/></radialGradient>
+   <radialGradient id="${id}w" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="39"><stop offset=".72" stop-color="#FFB13A"/><stop offset="1" stop-color="#FF8C1A"/></radialGradient>
+   <radialGradient id="${id}h" cx=".3" cy=".25" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle class="st-back-sh" cx="2.6" cy="2.8" r="47.4"/>
+  <circle class="st-back" r="47.4"/>
+  <circle r="44.3" fill="url(#${id}p)"/>
+  <g class="st-pores" fill="#B85A00" opacity=".22">${pores.join('')}</g>
+  <circle r="44.3" fill="url(#${id}h)"/>
+  <circle r="40.6" fill="#FFF4DA"/>
+  <circle r="38.4" fill="#FFF9EC"/>
+  <g class="st-ghost" fill="none" stroke="#F3C98E" stroke-width=".6" stroke-dasharray="1.3 1.3" opacity=".8">${ghosts.join('')}</g>
+  ${wedges.join('')}
+  <circle class="st-ctr-sh" cx="1.4" cy="1.6" r="${R1 - 1}"/>
+  <circle class="st-ctr" r="${R1 - 1}"/>
+  <g transform="translate(13 -44.5) rotate(28)"><path d="M0,0C-7,-6 -5,-16 2,-18C9,-12 8,-3 0,0Z" fill="#43C36A"/><path d="M0,0C-6,-5 -4,-14 2,-17" fill="none" stroke="#2B9B4C" stroke-width=".9" stroke-linecap="round"/><path d="M-1,1C-1,-2 0,-4 2,-6" fill="none" stroke="#2B9B4C" stroke-width="1.4" stroke-linecap="round"/></g>
  </svg>`;
 }
 

@@ -449,12 +449,16 @@ export function setSkin(v) {
 const pst = document.createElement('style'); pst.dataset.fwLight = '';
 pst.textContent = `.sk-sw{display:block;width:100%;height:54px;border-radius:12px;margin-bottom:8px}
 .sk-sw.c{background:linear-gradient(135deg,#F3F5F8 0 49%,#0B0E12 51%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
-.sk-sw.k{background:linear-gradient(135deg,#8FFFC6,#4AE9D6 49%,#0D2E2A 51%,#0B1A33);box-shadow:inset 0 0 0 2.5px #0D1117}
-.sk-sw.s{position:relative;overflow:hidden;background:linear-gradient(135deg,#F1ECFF 0 49%,#17132B 51%);box-shadow:inset 0 0 0 2.5px #0D1117}
-.sk-sw.s::before{content:'';position:absolute;left:14%;top:22%;width:36%;height:48%;border-radius:7px;background:#fff;box-shadow:3px 3px 0 rgba(32,26,61,.2);transform:rotate(-7deg)}
-.sk-sw.s::after{content:'';position:absolute;left:50%;top:30%;width:36%;height:44%;border-radius:7px;background:#FFC83D;box-shadow:3px 3px 0 #D99E00;transform:rotate(6deg)}`;
+.sk-sw.k{position:relative;background:linear-gradient(135deg,#8FFFC6,#4AE9D6 49%,#0D2E2A 51%,#0B1A33);box-shadow:inset 0 0 0 2.5px #0D1117}
+html .sk-sw .ck-ring{position:absolute!important;left:50%!important;top:50%!important;width:46px!important;height:46px!important;transform:translate(-50%,-50%);overflow:visible}
+.sk-sw .ck-ring .ck-p0,.sk-sw .ck-ring .ck-p1{stop-color:#F4FBF8}.sk-sw .ck-ring .ck-p2{stop-color:#CFE6DD}.sk-sw .ck-ring .ck-plate-r{stroke:rgba(255,255,255,.6)}
+.sk-sw .ck-ring .ck-a0{stop-color:#3EE6D0}.sk-sw .ck-ring .ck-a1{stop-color:#16B07A}.sk-sw .ck-ring .ck-track{stroke:rgba(7,30,40,.1)}.sk-sw .ck-ring .ck-knob{fill:#fff;stroke:#16B07A;stroke-width:1.7}
+.sk-sw .ck-ring .ck-rim2{stroke:rgba(7,30,40,.08)}.sk-sw .ck-ring .ck-ctr{fill:#fff}
+.sk-sw.s{position:relative;background:linear-gradient(135deg,#F1ECFF 0 49%,#17132B 51%);box-shadow:inset 0 0 0 2.5px #0D1117}
+.sk-sw.s::before{content:'';position:absolute;left:8%;top:14%;width:26%;height:30%;border-radius:5px;background:#FFC83D;box-shadow:2px 2px 0 #D99E00;transform:rotate(-9deg)}
+html .sk-sw.s .ck-ring{width:40px!important;height:40px!important}.sk-sw.s .st-back{fill:#fff}.sk-sw.s .st-back-sh{fill:rgba(32,26,61,.25)}.sk-sw.s .st-ctr{fill:#fff}.sk-sw.s .st-ctr-sh{fill:rgba(170,80,0,.22)}`;
 document.head.appendChild(pst);
-const SW = k => `<i class="sk-sw ${k}"></i>`;
+const SW = k => `<i class="sk-sw ${k}">${k === 'k' ? cookieSvg(38) : k === 's' ? stickerRingSvg(34) : ''}</i>`;
 function profileUi() {
   const card = document.querySelector('#fwTheme'); if (!card || card.querySelector('#fwSkin')) return;
   const box = document.createElement('div'); box.id = 'fwSkin'; box.style.margin = '10px 0 12px';
