@@ -235,6 +235,7 @@ export function physiqueCardHtml() {
 
 // ---------- hlavné okno ----------
 export async function openPhysique({ profile, onApply }) {
+  if (window.fwGate && !window.fwGate('physique_ai')) return; // predplatné: ponuka ešte pred fotením
   const age = profile.birth_year ? new Date().getFullYear() - Number(profile.birth_year) : 0;
   const bg = sheet('<div id="pxBody"><p class="muted small">Načítavam…</p></div>');
   const body = bg.querySelector('#pxBody');

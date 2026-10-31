@@ -273,6 +273,7 @@ const staples = () => ls.get(K_STAPLES, STAPLES_ON);
 
 export function openFridge(opts = {}) {
   if (!ctx.state?.profile) return;
+  if (!opts.manual && window.fwGate && !window.fwGate('fridge_scan')) return; // predplatné: ponuka ešte pred fotením
   close();
   S = fresh();
   root = document.createElement('div'); root.className = 'frg'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Čo uvarím z chladničky');

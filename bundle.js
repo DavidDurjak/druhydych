@@ -32,10 +32,11 @@ module.exports = async function bundle(OUT) {
     const res = await esbuild.build({
       entryPoints: ['./__entry.js'], bundle: true, format: 'esm', splitting: false, write: false,
       outfile: path.join(OUT, 'gt.js'), absWorkingDir: path.resolve(OUT),
-      metafile: true, minify: true, keepNames: true, legalComments: 'none', target: 'esnext', charset: 'utf8',
+      metafile: true, minify: true, sourcemap: 'external', sourcesContent: false, keepNames: true, legalComments: 'none', target: 'esnext', charset: 'utf8',
       plugins: [keep], logLevel: 'warning', logOverride: { 'duplicate-object-key': 'silent' },
     });
-    const code = res.outputFiles[0].text;
+    const code = res.outputFiles.find(f => f.path.endsWith('.js')).text;
+    const map = res.outputFiles.find(f => f.path.endsWith('.map'))?.text; // mapa riadkov: z hlásenia chyby (gt.js:1:48211) sa dá zistiť pôvodný súbor a riadok; prehliadač ju nesťahuje
     const hash = crypto.createHash('sha1').update(code).digest('hex').slice(0, 10);
 
     // index.html: namiesto 17 skriptov a ~110 modulepreload jeden skript (stiahne sa hneď v hlavičke, spustí sa na tom istom mieste ako predtým)
@@ -71,6 +72,7 @@ module.exports = async function bundle(OUT) {
     sw = sw.replace(m[0], `const ASSETS = [${list.join(', ')}];`).replace(/const CACHE = '([^']+)';/, (_, c) => `const CACHE = '${c}-${hash}${cssHash.slice(0, 4)}';`);
     // všetko sa zapíše až na konci, keď je hotové: pri chybe ostane public/ presne taký, aký bol (záložný spôsob v build.js)
     fs.writeFileSync(path.join(OUT, 'gt.js'), code);
+    if (map) fs.writeFileSync(path.join(OUT, 'gt.js.map'), map);
     if (out.css) fs.writeFileSync(path.join(OUT, 'gt.css'), out.css);
     fs.writeFileSync(swPath, sw);
     fs.writeFileSync(idxPath, html);

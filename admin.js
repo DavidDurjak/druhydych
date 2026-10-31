@@ -68,6 +68,15 @@ const CSS = `
 .af-li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
 .af-li:first-of-type { border-top: 0; }
 .af-li span { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ae-it { padding: 10px 0; border-top: 1px solid var(--line); }
+.ae-it:first-of-type { border-top: 0; }
+.ae-it .t { display: flex; gap: 10px; align-items: baseline; }
+.ae-it .t b { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; overflow-wrap: anywhere; }
+.ae-it .t strong { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ae-it small { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+.ae-it code { display: block; font-size: 11px; color: var(--muted); margin-top: 6px; padding: 7px 9px; border-radius: 9px; background: var(--bg-2); overflow-wrap: anywhere; white-space: pre-wrap; }
+.ae-it .new { display: inline-block; font-size: 11px; font-weight: 800; color: var(--danger, #FF5C7A); margin-left: 6px; }
+.ae-ok { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--muted); }
 `;
 function css() { if (!document.getElementById('v09css')) { const s = document.createElement('style'); s.id = 'v09css'; s.textContent = CSS; document.head.appendChild(s); } }
 
@@ -215,14 +224,46 @@ function funnelHtml(f) {
     </section>`;
 }
 
+
+// ---------- chyby v appke (js_err z track.js) ----------
+// Zoskupené podľa správy a miesta: koľkokrát, koľkým ľuďom (účty aj zariadenia pred prihlásením), kedy naposledy, na ktorej obrazovke.
+// „v aktuálnej verzii“ = chyba prišla aj z najnovšej nasadenej verzie, teda ešte nie je opravená.
+const SCR_N = s => { const k = String(s || '').replace(/^#\/?/, '') || 'dnes'; return SCR_L[k.split('/')[0]] || k; };
+function errorsHtml(rows) {
+  if (!rows) return '';
+  const g = new Map(); let latest = '', latestT = '';
+  for (const r of rows) {
+    const p = r.props || {};
+    if (p.v && p.v !== 'src' && r.ts > latestT) { latestT = r.ts; latest = p.v; }
+    const key = (p.m || '?') + '|' + (p.f || '') + '|' + (p.l || 0);
+    let x = g.get(key);
+    if (!x) g.set(key, x = { m: p.m || '?', f: p.f, l: p.l, st: p.st, n: 0, who: new Set(), scr: new Set(), vs: new Set(), last: r.ts, first: r.ts });
+    x.n++; x.who.add(r.user_id || r.did || r.sid); if (p.s) x.scr.add(SCR_N(p.s)); if (p.v) x.vs.add(p.v);
+    if (r.ts > x.last) x.last = r.ts; if (r.ts < x.first) x.first = r.ts; if (!x.st && p.st) x.st = p.st;
+  }
+  const list = [...g.values()].sort((a, b) => (b.who.size - a.who.size) || (b.last > a.last ? 1 : -1)).slice(0, 15);
+  const when = t => new Date(t).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const people = n => n === 1 ? '1 človek' : n < 5 ? `${n} ľudia` : `${n} ľudí`;
+  return `<section class="pg-card">
+      <div class="pg-row"><h3>Chyby v appke</h3><span class="pg-chip">${fDays} dní</span></div>
+      ${list.length ? list.map(x => `<div class="ae-it">
+        <div class="t"><b>${h(x.m)}${latest && x.vs.has(latest) ? '<span class="new">v aktuálnej verzii</span>' : ''}</b><strong>${nfmt(x.n)}×</strong></div>
+        <small>${people(x.who.size)} · naposledy ${when(x.last)}${x.scr.size ? ' · ' + h([...x.scr].slice(0, 3).join(', ')) : ''}</small>
+        ${x.f || x.st ? `<code>${h([x.f ? x.f + ':' + x.l : '', x.st || ''].filter(Boolean).join('\n'))}</code>` : ''}
+      </div>`).join('') : '<div class="ae-ok"><span>✅</span><span>Za toto obdobie appke nič nespadlo.</span></div>'}
+      <p class="af-note">Appka sama zapíše, keď jej niečo spadne (bez osobných údajov). Najvyššie sú chyby, ktoré zasiahli najviac ľudí.</p>
+    </section>`;
+}
+
 export async function renderAdmin() {
   css();
   if (!(await isAdmin())) { location.hash = '#/'; return; }
   $app().innerHTML = `<div class="screen"><h1>Admin</h1><div class="spinner"></div></div>${nav('#/admin')}`;
-  const [s, fb, fun] = await Promise.all([
+  const [s, fb, fun, errs] = await Promise.all([
     sb.rpc('admin_stats').then(must),
     sb.from('feedback').select('id,kind,message,screen,device,photo,status,created_at,user_id').order('created_at', { ascending: false }).limit(50).then(must),
     sb.rpc('admin_funnel', { p_days: fDays }).then(r => r.error ? null : r.data, () => null), // bez migrácie 20261030_funnel ostane prehľad ako predtým
+    sb.from('app_events').select('ts,user_id,did,sid,props').eq('name', 'js_err').gte('ts', new Date(Date.now() - fDays * 864e5).toISOString()).order('ts', { ascending: false }).limit(2000).then(r => r.error ? null : r.data, () => null),
   ]);
   const names = Object.fromEntries((s.people || []).map(p => [p.id, p.name || p.email]));
   const photos = fb.filter(f => f.photo).map(f => f.photo);
@@ -240,6 +281,8 @@ export async function renderAdmin() {
       <div><b>${pct(s.d1.ok, s.d1.n)}</b><span>vrátili sa na 2. deň (${s.d1.ok}/${s.d1.n})</span></div>
       <div><b>${pct(s.d7.ok, s.d7.n)}</b><span>aktívni po týždni (${s.d7.ok}/${s.d7.n})</span></div>
     </div>
+
+    ${errorsHtml(errs)}
 
     ${fun ? funnelHtml(fun) : ''}
 

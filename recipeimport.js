@@ -22,7 +22,7 @@ function addButtons() {
 }
 function mk() {
   const b = document.createElement('button'); b.type = 'button'; b.className = 'ri-btn'; b.textContent = '🔗 Import receptu z odkazu';
-  b.onclick = () => openImport(b);
+  b.onclick = () => { if (window.fwGate && !window.fwGate('recipe_import')) return; openImport(b); };
   return b;
 }
 new MutationObserver(addButtons).observe(document.body, { childList: true, subtree: true });

@@ -3,7 +3,8 @@
 // mode "recipes": potvrdené suroviny + cieľ a zvyšok dňa -> recepty s gramážou a makrami po surovinách.
 // Makrá receptu sa počítajú tu zo súčtu surovín (nie z odhadu AI pre celé jedlo) a kalórie sa kontrolujú cez 4/4/9.
 // Poradie receptov podľa toho, čo človeku dnes zostáva, robí appka. Fotky sa NEUKLADAJÚ.
-// AI: Claude Haiku, ak je nastavený ANTHROPIC_API_KEY, inak (a pri chybe) Gemini.
+// AI: rozpoznávanie fotky Claude Sonnet (presnejší na obraz), recepty Claude Haiku; záloha Gemini.
+// Spotreba tokenov sa zapisuje do tabuľky fridge_usage (na výpočet ceny na používateľa).
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -91,6 +92,7 @@ async function claude(images: string[], prompt: string, maxTokens: number, valid
   for (const m of models) {
     try {
       const body: any = { model: m, max_tokens: maxTokens, messages: [{ role: "user", content: [...images.map((d) => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: d } })), { type: "text", text: prompt }] }] };
+      // teplotu posielame len Haiku (novšie modely ju niekedy odmietnú)
       if (m.includes("haiku")) body.temperature = 0.4;
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", signal: AbortSignal.timeout(55000),
@@ -202,6 +204,19 @@ function cleanRecipes(j: any, servings: number, target = 0, available: string[] 
   }).filter((r: any) => r.name && r.ingredients.length >= 2 && r.per.kcal > 0 && r.steps.length);
 }
 
+// predplatné GainTrain Plus (v303): denný limit AI podľa plánu (app_config.billing). Kým je predplatné vypnuté, ai_take vždy povolí
+// a len počíta. Keď databáza funkciu ešte nemá alebo zlyhá, AI ide ďalej (radšej povoliť ako zablokovať).
+async function aiTake(db: any, uid: string, f: string): Promise<any> {
+  try { const { data, error } = await db.rpc("ai_take", { p_uid: uid, p_feature: f }); return error || !data ? { ok: true } : data; } catch (_) { return { ok: true }; }
+}
+const aiRefund = (db: any, uid: string, f: string) => db.rpc("ai_refund", { p_uid: uid, p_feature: f }).then(() => {}, () => {});
+const PAY_MSG: Record<string, string> = {
+  free_limit: "Dnešné AI použitia zadarmo sú minuté. Zajtra sa obnovia, s GainTrain Plus ich máš bez limitu.",
+  premium_only: "Táto funkcia je súčasťou GainTrain Plus.",
+  cap: "Dnes si túto funkciu použil už veľakrát. Zajtra sa limit obnoví.",
+};
+const paywallBody = (q: any, f: string) => ({ error: PAY_MSG[q.reason] || PAY_MSG.cap, paywall: true, feature: f, reason: q.reason, limit: q.limit });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   // servisný test bez prihlásenia (fotka chladničky z Wikimedia): len so servisným kľúčom, v kóde je iba jeho odtlačok (SHA-256)
@@ -242,6 +257,7 @@ Deno.serve(async (req) => {
   if (!GKEY && !AKEY) return json({ error: "AI zatiaľ nie je zapnutá." }, 503);
   const lang = LANGS[String(b.lang || "sk").toLowerCase().slice(0, 2)] || "Slovak";
   const goal = GOALS[b.goal] || GOALS.maintain;
+  if (ADMIN) { const q = await aiTake(ADMIN, u.user.id, "fridge_scan"); if (!q.ok) return json(paywallBody(q, "fridge_scan"), 402); } // predplatné
 
   if (b.mode === "detect") {
     const images = (Array.isArray(b.images) ? b.images : []).map(String).filter((x: string) => x && x.length <= MAX_B64).slice(0, 3);

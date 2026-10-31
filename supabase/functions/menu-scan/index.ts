@@ -20,6 +20,19 @@ Rules: keep dish names in the original menu language. "desc" and "note" in ${lan
 
 const num = (v: unknown, max: number) => { const n = Math.round(Number(v)); return Number.isFinite(n) && n >= 0 ? Math.min(n, max) : 0; };
 
+// predplatné GainTrain Plus (v303): denný limit AI podľa plánu (app_config.billing). Kým je predplatné vypnuté, ai_take vždy povolí
+// a len počíta. Keď databáza funkciu ešte nemá alebo zlyhá, AI ide ďalej (radšej povoliť ako zablokovať).
+async function aiTake(db: any, uid: string, f: string): Promise<any> {
+  try { const { data, error } = await db.rpc("ai_take", { p_uid: uid, p_feature: f }); return error || !data ? { ok: true } : data; } catch (_) { return { ok: true }; }
+}
+const aiRefund = (db: any, uid: string, f: string) => db.rpc("ai_refund", { p_uid: uid, p_feature: f }).then(() => {}, () => {});
+const PAY_MSG: Record<string, string> = {
+  free_limit: "Dnešné AI použitia zadarmo sú minuté. Zajtra sa obnovia, s GainTrain Plus ich máš bez limitu.",
+  premium_only: "Táto funkcia je súčasťou GainTrain Plus.",
+  cap: "Dnes si túto funkciu použil už veľakrát. Zajtra sa limit obnoví.",
+};
+const paywallBody = (q: any, f: string) => ({ error: PAY_MSG[q.reason] || PAY_MSG.cap, paywall: true, feature: f, reason: q.reason, limit: q.limit });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const user = createClient(SUPABASE_URL, ANON, { global: { headers: { Authorization: req.headers.get("Authorization") || "" } } });
@@ -34,6 +47,9 @@ Deno.serve(async (req) => {
   const image = String(b.image || "");
   if (!image || image.length > MAX_B64) return json({ error: "Fotka chýba alebo je príliš veľká." }, 400);
   if (!KEY) return json({ error: "AI zatiaľ nie je zapnutá." }, 503);
+  const svc = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const q = await aiTake(svc, u.user.id, "menu_scan"); // predplatné
+  if (!q.ok) return json(paywallBody(q, "menu_scan"), 402);
   const lc = String(b.lang || "sk").toLowerCase().slice(0, 2);
   const lang = LANGS[lc] || "Slovak";
   let quota = 0;
@@ -62,5 +78,6 @@ Deno.serve(async (req) => {
       return json({ ok: dishes.length > 0, note: String(j?.note || "").slice(0, 160), dishes });
     } catch (_) { /* ďalší model */ }
   }
+  await aiRefund(svc, u.user.id, "menu_scan");
   return json({ error: quota >= MODELS.length ? "AI je dočasne preťažená. Skús to o chvíľu." : "Menu sa nepodarilo prečítať. Skús ostrejšiu fotku." }, 502);
 });

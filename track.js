@@ -24,14 +24,23 @@ let uid = '';
 export function track(name, props = {}) {
   try {
     const q = jget(); q.push({ name: String(name).slice(0, 40), props, client_ts: new Date().toISOString(), sid, did });
-    jset(q); schedule(/^fn_|^google/.test(name) ? 2500 : 8000); // kvíz: ľudia odchádzajú rýchlo, preto sa odosiela skôr
+    jset(q); schedule(/^fn_|^google|^js_err/.test(name) ? 2500 : 8000); // kvíz: ľudia odchádzajú rýchlo, preto sa odosiela skôr
   } catch (_) { }
 }
 try { window.fwTrack = track; } catch (_) { }
 // udalosti, ktoré poslal kvíz ešte pred načítaním tohto modulu
 try { (window.__fwEvq || []).forEach(([n, p]) => track(n, p)); window.__fwEvq = null; } catch (_) { }
 
-let tmr = 0, busy = false, dead = false, anonDead = false;
+let tmr = 0, busy = false, dead = false, anonDead = false, anonErrDead = false;
+// pád ešte pred prihlásením (kvíz, registrácia): pošle sa samostatne, aby prípadné odmietnutie servera nezastavilo meranie kvízu
+async function anonErrs(q) {
+  const errs = q.filter(e => e.name === 'js_err').slice(0, 8);
+  if (!errs.length) return;
+  try {
+    const { error } = await db.sb.from('app_events').insert(errs.map(e => ({ name: e.name, props: { ...e.props, st: String(e.props?.st || '').slice(0, 120) }, client_ts: e.client_ts, sid: e.sid, did: e.did || did, user_id: null })));
+    if (error) anonErrDead = true; else jset(jget().filter(e => !errs.some(b => b.client_ts === e.client_ts && b.name === e.name && b.sid === e.sid)));
+  } catch (_) { anonErrDead = true; }
+}
 function schedule(ms = 8000) { if (!tmr) tmr = setTimeout(() => { tmr = 0; flush(); }, ms); }
 async function flush() {
   if (busy || dead || navigator.onLine === false) return;
@@ -39,8 +48,9 @@ async function flush() {
   try { await db.ready; const { data } = await db.sb.auth.getSession(); uid = data?.session?.user?.id || ''; } catch (_) { return; }
   // bez prihlásenia sa posielajú len anonymné udalosti kvízu; zvyšok počká v rade na prihlásenie
   const batch = (uid ? q : anonDead ? [] : q.filter(anonOk)).slice(0, 100);
-  if (!batch.length) return;
   busy = true;
+  if (!uid && !anonErrDead) await anonErrs(q);
+  if (!batch.length) { busy = false; return; }
   try {
     const rows = batch.map(e => uid ? { ...e, did: e.did || did, user_id: uid } : { name: e.name, props: e.props, client_ts: e.client_ts, sid: e.sid, did: e.did || did, user_id: null });
     const { error } = await db.sb.from('app_events').insert(rows);
@@ -51,7 +61,7 @@ async function flush() {
     }
     else if (/does not exist|schema cache|42P01|PGRST205/i.test(error.message + ' ' + error.code)) dead = true; // tabuľka ešte nie je: skúsi sa pri ďalšom otvorení
   } catch (_) { } finally { busy = false; }
-  const left = jget(); if (left.length && (uid || (!anonDead && left.some(anonOk)))) schedule(60000);
+  const left = jget(); if (left.length && (uid || (!anonDead && left.some(anonOk)) || (!anonErrDead && left.some(e => e.name === 'js_err')))) schedule(60000);
 }
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
 addEventListener('online', () => schedule(2000));
@@ -99,3 +109,32 @@ export function noteAdd(src) {
   agg.t = setTimeout(() => { const a = agg; agg = null; foodLogged(a.src, a.n); }, 1500);
 }
 try { window.fwNoteAdd = noteAdd; } catch (_) { }
+
+// v303 (hlásenie chýb): keď v appke niečo spadne, zapíše sa krátky záznam js_err (správa chyby, súbor, riadok, začiatok výpisu,
+// obrazovka a verzia). Žiadne údaje z formulárov ani texty jedál. V Admine sa chyby zoskupia, takže je vidno, čo padá a koľkým ľuďom.
+// Rovnaká chyba sa v jednej relácii pošle len raz a najviac 8 rôznych chýb za reláciu. Šum prehliadača a rozšírení sa ignoruje.
+const ver = (() => { try { const s = [...document.scripts].map(x => x.src).find(x => /gt\.js\?v=/.test(x)); return s ? s.split('v=')[1].slice(0, 10) : 'src'; } catch (_) { return ''; } })();
+const errSeen = new Set();
+const NOISE = /ResizeObserver loop|^Script error\.?$|chrome-extension:|moz-extension:|safari-(web-)?extension:|webkit-masked-url|Non-Error promise rejection|AbortError|The operation was aborted|Load failed$|Failed to fetch$|NetworkError when attempting|cancelled$|zrušen/i;
+function reportErr(kind, msg, file, line, col, stack) {
+  try {
+    msg = String(msg || '').replace(/\s+/g, ' ').trim().replace(/^Uncaught /, '').slice(0, 160);
+    if (!msg || NOISE.test(msg) || NOISE.test(String(file || '')) || NOISE.test(String(stack || ''))) return;
+    const key = msg + '|' + line;
+    if (errSeen.has(key) || errSeen.size >= 8) return; errSeen.add(key);
+    const f = String(file || '').split('/').pop().split('?')[0].slice(0, 40);
+    const st = String(stack || '').split('\n').map(s => s.trim()).filter(s => s && !s.includes(msg.slice(0, 30))).slice(0, 3)
+      .map(s => s.replace(/https?:\/\/[^/\s)]+\//g, '').replace(/\?v=[\w]+/g, '')).join(' | ').slice(0, 220);
+    track('js_err', { k: kind, m: msg, f, l: line || 0, c: col || 0, st, s: (location.hash || '#/').split('?')[0].slice(0, 30), v: ver, sa: matchMedia('(display-mode: standalone)').matches });
+  } catch (_) { }
+}
+addEventListener('error', e => {
+  if (e.target && e.target !== window) return; // nenačítaný obrázok a pod. nie je chyba appky
+  reportErr('err', e.message || e.error?.message, e.filename, e.lineno, e.colno, e.error?.stack);
+});
+addEventListener('unhandledrejection', e => {
+  const r = e.reason;
+  if (r && typeof r === 'object' && (r.code || r.status) && !r.stack) return; // odpoveď servera (Supabase), nie pád kódu
+  reportErr('rej', r?.message || (typeof r === 'string' ? r : ''), '', 0, 0, r?.stack);
+});
+try { window.fwErr = (m, extra) => reportErr('app', m, '', 0, 0, extra || ''); } catch (_) { }

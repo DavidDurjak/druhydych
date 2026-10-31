@@ -1,4 +1,4 @@
-// Fuelwind: AI analýza postavy z fotiek (len pre dospelých). Fotky sa NEUKLADAJÚ, ukladá sa iba výsledok.
+// GainTrain: AI analýza postavy z fotiek (len pre dospelých). Fotky sa NEUKLADAJÚ, ukladá sa iba výsledok.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -18,7 +18,7 @@ const LABEL: Record<string, string> = { shoulders: "predné a bočné ramená", 
 const LEVELS = ["začiatočník", "mierne pokročilý", "pokročilý", "elitný"];
 const VS = ["zaostáva", "vyvážené", "vedie"];
 
-const PROMPT = `Si skúsený kouč kulturistiky a fyziqu s praxou v posudzovaní postavy (štýl IFBB rozhodcu a zároveň osobného trénera) v slovenskej aplikácii Fuelwind. Dospelý používateľ poslal 1 až 6 fotiek postavy v pózach: spredu uvoľnene (front), spredu dvojitý biceps (frontbi), zboku (side), zozadu uvoľnene (back), zozadu dvojitý biceps (backbi), brucho a nohy (abs). Urob poctivé, presné hodnotenie každého svalu, ako by ho urobil kouč, ktorý podľa neho staví tréningový plán. Nechváľ zo slušnosti a nehaň zbytočne: skóre musí zodpovedať tomu, čo na fotke naozaj vidíš.
+const PROMPT = `Si skúsený kouč kulturistiky a fyziqu s praxou v posudzovaní postavy (štýl IFBB rozhodcu a zároveň osobného trénera) v slovenskej aplikácii GainTrain. Dospelý používateľ poslal 1 až 6 fotiek postavy v pózach: spredu uvoľnene (front), spredu dvojitý biceps (frontbi), zboku (side), zozadu uvoľnene (back), zozadu dvojitý biceps (backbi), brucho a nohy (abs). Urob poctivé, presné hodnotenie každého svalu, ako by ho urobil kouč, ktorý podľa neho staví tréningový plán. Nechváľ zo slušnosti a nehaň zbytočne: skóre musí zodpovedať tomu, čo na fotke naozaj vidíš.
 
 KROK 1, KVALITA. Fotka je použiteľná, len ak je na nej človek dostatočne osvetlený, ostrý, bez filtrov, s odhaleným vrchom tela (bez voľného oblečenia), a zachytáva potrebnú časť tela: pri pózach front, side a back celú postavu aspoň po kolená (na posúdenie lýtok po päty), pri frontbi, backbi a abs od hlavy aspoň po stehná. Ak ktorákoľvek fotka nie je použiteľná, v "issues" a v "photos" uveď presne prečo a čo opraviť (napr. "príliš tma", "rozmazané", "postava odrezaná pri kolenách", "voľné tričko skrýva siluetu", "silné protisvetlo"). Ak nie je použiteľná ani jedna, nastav usable na false a nič ďalšie nehodnoť. Ak na fotke nie je človek, alebo osoba vyzerá ako maloletá, nastav usable na false a uveď dôvod.
 
@@ -55,6 +55,19 @@ function parseAi(out: string): any | null {
   try { const a = out.indexOf("{"), b = out.lastIndexOf("}"); const j = JSON.parse(a >= 0 && b > a ? out.slice(a, b + 1) : "{}"); return j && typeof j === "object" && ("usable" in j) ? j : null; } catch (_) { return null; }
 }
 
+// predplatné GainTrain Plus (v303): denný limit AI podľa plánu (app_config.billing). Kým je predplatné vypnuté, ai_take vždy povolí
+// a len počíta. Keď databáza funkciu ešte nemá alebo zlyhá, AI ide ďalej (radšej povoliť ako zablokovať).
+async function aiTake(db: any, uid: string, f: string): Promise<any> {
+  try { const { data, error } = await db.rpc("ai_take", { p_uid: uid, p_feature: f }); return error || !data ? { ok: true } : data; } catch (_) { return { ok: true }; }
+}
+const aiRefund = (db: any, uid: string, f: string) => db.rpc("ai_refund", { p_uid: uid, p_feature: f }).then(() => {}, () => {});
+const PAY_MSG: Record<string, string> = {
+  free_limit: "Dnešné AI použitia zadarmo sú minuté. Zajtra sa obnovia, s GainTrain Plus ich máš bez limitu.",
+  premium_only: "Táto funkcia je súčasťou GainTrain Plus.",
+  cap: "Dnes si túto funkciu použil už veľakrát. Zajtra sa limit obnoví.",
+};
+const paywallBody = (q: any, f: string) => ({ error: PAY_MSG[q.reason] || PAY_MSG.cap, paywall: true, feature: f, reason: q.reason, limit: q.limit });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const auth = req.headers.get("Authorization") || "";
@@ -84,6 +97,8 @@ Deno.serve(async (req) => {
   const age = by ? new Date().getFullYear() - by : 0;
   if (!by || age < 18) return json({ error: "Analýza postavy je dostupná len pre dospelých. Doplň rok narodenia v profile.", }, 403);
   if ((count || 0) >= DAILY_LIMIT) return json({ error: "Dnes si už urobil veľa analýz. Skús to zajtra." }, 429);
+  const q = await aiTake(admin, uid, "physique_ai"); // predplatné
+  if (!q.ok) return json(paywallBody(q, "physique_ai"), 402);
   if (!KEY) return json({ error: "AI zatiaľ nie je zapnutá (chýba kľúč na serveri)." }, 503);
 
   const wt = Number(wl?.[0]?.weight_kg) || Number(prof?.start_weight) || 0, waist = Number(wl?.[0]?.waist_cm) || 0, hcm = Number(prof?.height_cm) || 0;
@@ -114,6 +129,7 @@ Deno.serve(async (req) => {
     } catch (e) { lastErr = String((e as Error).message); }
   }
   if (!ai) {
+    await aiRefund(admin, uid, "physique_ai");
     if (sawOutput) return json({ error: "AI vrátila nečitateľnú odpoveď. Skús to znova." }, 502);
     const quota = /quota/i.test(lastErr);
     return json({ error: quota ? "Dnešná kapacita AI je vyčerpaná. Skús to neskôr." : "AI je teraz vyťažená. Skús to o minútu." }, 502);

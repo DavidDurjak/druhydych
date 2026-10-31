@@ -103,6 +103,19 @@ function stemOf(search: string) {
 
 function num(v: unknown, lo = 0, hi = 5000) { const n = Number(v); return isFinite(n) ? Math.min(hi, Math.max(lo, n)) : 0; }
 
+// predplatné GainTrain Plus (v303): denný limit AI podľa plánu (app_config.billing). Kým je predplatné vypnuté, ai_take vždy povolí
+// a len počíta. Keď databáza funkciu ešte nemá alebo zlyhá, AI ide ďalej (radšej povoliť ako zablokovať).
+async function aiTake(db: any, uid: string, f: string): Promise<any> {
+  try { const { data, error } = await db.rpc("ai_take", { p_uid: uid, p_feature: f }); return error || !data ? { ok: true } : data; } catch (_) { return { ok: true }; }
+}
+const aiRefund = (db: any, uid: string, f: string) => db.rpc("ai_refund", { p_uid: uid, p_feature: f }).then(() => {}, () => {});
+const PAY_MSG: Record<string, string> = {
+  free_limit: "Dnešné AI použitia zadarmo sú minuté. Zajtra sa obnovia, s GainTrain Plus ich máš bez limitu.",
+  premium_only: "Táto funkcia je súčasťou GainTrain Plus.",
+  cap: "Dnes si túto funkciu použil už veľakrát. Zajtra sa limit obnoví.",
+};
+const paywallBody = (q: any, f: string) => ({ error: PAY_MSG[q.reason] || PAY_MSG.cap, paywall: true, feature: f, reason: q.reason, limit: q.limit });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const t0 = Date.now();
@@ -125,6 +138,8 @@ Deno.serve(async (req) => {
   if (!text && !image) return json({ error: "Napíš, čo si jedol, alebo pridaj fotku." }, 400);
   if (image.length > 4_000_000) return json({ error: "Fotka je príliš veľká." }, 413);
   const kind = image ? "photo" : "text";
+  const q = await aiTake(admin, uid, "ai_log"); // predplatné: denný limit AI zápisov
+  if (!q.ok) return json(paywallBody(q, "ai_log"), 402);
 
   // --- položky z databázy: spoločné pre AI, pamäť aj rýchlu cestu ---
   const matchItems = async (raw: any[], lim = 8) => Promise.all(raw.slice(0, MAX_ITEMS).map(async (it) => {
@@ -273,6 +288,7 @@ Deno.serve(async (req) => {
     ai = JSON.parse(a >= 0 && b > a ? out.slice(a, b + 1) : "{}");
   } catch (e) {
     bg(log({ kind, ok: false }));
+    bg(aiRefund(admin, uid, "ai_log")); // AI zlyhala: použitie sa nepočíta
     console.error("ai-log zlyhanie:", String((e as Error).message).slice(0, 300));
     const quota = /quota/i.test(String((e as Error).message));
     return json({ error: quota ? "Dnešná kapacita AI je vyčerpaná. Jedlo zatiaľ vyhľadaj ručne, AI bude čoskoro znova fungovať." : "AI je teraz vyťažená. Skús to o minútu, alebo jedlo vyhľadaj ručne." }, 502);

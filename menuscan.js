@@ -211,6 +211,7 @@ function inject() {
   b.className = 'ms-entry';
   b.innerHTML = `<i>${ICO}</i><div><b>Odfoť denné menu</b><span>AI ti z lístka vyberie jedlo podľa toho, čo ti dnes chýba</span></div><em>Nové</em><input type="file" accept="image/*" hidden>`;
   const inp = b.querySelector('input');
+  b.addEventListener('click', e => { if (e.target !== inp && window.fwGate && !window.fwGate('menu_scan')) e.preventDefault(); }, true); // predplatné: ponuka ešte pred fotením
   inp.onchange = () => { const f = inp.files?.[0]; inp.value = ''; if (f) open(f); };
   box.after(b);
 }
