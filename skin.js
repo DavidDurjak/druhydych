@@ -5,7 +5,7 @@
 // Tretí vzhľad „Nálepky“ (skin-sticker.js) používa rovnaké pravidlá obrazoviek, ale úplne iný základ: lila papier, matné nálepky s tvrdým tieňom, žltá, prstenec z dielikov namiesto sušienky.
 // Každý vzhľad má svetlú aj tmavú verziu. Riadi ich ten istý prepínač ako Klasický (Automaticky podľa telefónu / Svetlý / Tmavý).
 import { setMode } from './theme.js';
-import { stickerCss, stickerRingSvg, STICKER_META, STICKER_FONT } from './skin-sticker.js';
+import { stickerCss, stickerRingSvg, locoIconSvg, STICKER_META, STICKER_FONT } from './skin-sticker.js';
 
 const KEY = 'fw_skin', PREV = 'fw_skin_prev_mode';
 const dark = () => document.documentElement.dataset.theme === 'dark';
@@ -354,10 +354,14 @@ function paintRing() {
   document.querySelectorAll('#app .hk-ring').forEach(r => {
     const lv = Number(r.dataset.lv) || 0;
     const cur = r.querySelector(':scope > .ck-ring');
-    if (cur && cur.dataset.lv === String(lv)) return;
+    if (cur && cur.dataset.lv === String(lv) && H.dataset.skin !== 'sticker') return;
+    // Nálepky: vagóny podľa zapísaných jedál dňa (farba jedla z pilulky pod kruhom)
+    const meals = H.dataset.skin === 'sticker' ? [...(r.closest('.hero-k') || r.parentElement || document).querySelectorAll('.mbp.on')].map(m => getComputedStyle(m).getPropertyValue('--mc').trim()).filter(Boolean) : [];
+    const key = String(lv) + '|' + meals.join(',');
+    if (cur && cur.dataset.lv === key) return;
     cur?.remove();
-    r.insertAdjacentHTML('afterbegin', (H.dataset.skin === 'sticker' ? stickerRingSvg : cookieSvg)(lv));
-    r.querySelector(':scope > .ck-ring').dataset.lv = String(lv);
+    r.insertAdjacentHTML('afterbegin', H.dataset.skin === 'sticker' ? stickerRingSvg(lv, meals) : cookieSvg(lv));
+    r.querySelector(':scope > .ck-ring').dataset.lv = H.dataset.skin === 'sticker' ? key : String(lv);
   });
 }
 
@@ -470,10 +474,9 @@ pst.textContent = `.sk-sw{display:block;width:100%;height:54px;border-radius:12p
 .sk-sw .sk-ck{position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%) rotate(-12deg);overflow:visible}
 .sk-sw.s{position:relative;background:linear-gradient(135deg,#F1ECFF 0 49%,#17132B 51%);box-shadow:inset 0 0 0 2.5px #0D1117}
 .sk-sw.s::before{content:'';position:absolute;left:7%;top:12%;width:24%;height:28%;border-radius:5px;background:#FF6B85;box-shadow:2px 2px 0 #D4385A;transform:rotate(-9deg)}
-html .sk-sw.s .ck-ring{position:absolute!important;left:50%!important;top:50%!important;width:42px!important;height:42px!important;transform:translate(-50%,-50%);overflow:visible}
-.sk-sw.s .st-back{fill:#fff}.sk-sw.s .st-back-sh{fill:rgba(32,26,61,.25)}.sk-sw.s .st-track{stroke:#E4DEFA}`;
+.sk-sw .sk-loco{position:absolute;left:50%;top:50%;width:52px;height:40px;transform:translate(-50%,-50%) rotate(-8deg);overflow:visible}`;
 document.head.appendChild(pst);
-const SW = k => `<i class="sk-sw ${k}">${k === 'k' ? cookieIconSvg() : k === 's' ? stickerRingSvg(62) : ''}</i>`;
+const SW = k => `<i class="sk-sw ${k}">${k === 'k' ? cookieIconSvg() : k === 's' ? locoIconSvg() : ''}</i>`;
 function profileUi() {
   const card = document.querySelector('#fwTheme'); if (!card || card.querySelector('#fwSkin')) return;
   const box = document.createElement('div'); box.id = 'fwSkin'; box.style.margin = '10px 0 12px';

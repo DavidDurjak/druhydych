@@ -94,7 +94,9 @@ ${S} .wk-d .wk-l{font-weight:800!important}
 /* kruh kalórií: prstenec z farebných dielikov (kreslí ho skin.js podľa vzhľadu) */
 ${S} .hero-k{background:var(--gl-hero)!important}
 ${S} .ck-ring .st-back{fill:var(--paper)}${S} .ck-ring .st-back-sh{fill:var(--sh)}
-${S} .ck-ring .st-track{stroke:var(--track)}${D} .ck-ring .st-track{stroke:#3B3463}
+${S} .ck-ring .st-tie{stroke:#D9D2F3}${D} .ck-ring .st-tie{stroke:#3B3463}
+${S} .ck-ring .st-puff{fill:#DCD5F5}${D} .ck-ring .st-puff{fill:#5A5189}${S} .ck-ring .st-puff-r{fill:#FFB3C0}
+${S} .ck-ring .st-rail{stroke:#8F86BE}${D} .ck-ring .st-rail{stroke:#8F86BE}
 ${S} .hk-c b{font-size:44px!important;color:var(--t1)!important}
 ${S} .hk-pc{${solid('yel')};border:0!important;font-weight:900!important;transform:rotate(-3deg);font-style:normal}
 ${S} .hero-k.over .hk-pc{${solid('cor')}}
@@ -267,42 +269,53 @@ ${S} .pw-plan[aria-checked=true]{${tint('yel')}}
 ${S} .pw-ben i{border:0!important;box-shadow:${HARD('var(--sh)', 3)}!important}
 `;
 
-// Kruh kalórií ako nálepka: hrubý žltý prstenec s tvrdým tieňom (ako vystrihnutá nálepka), ktorý sa plní tým, čo zješ.
-// Na konci prstenca sedí malá nálepka smajlíka a putuje s ním. Výraz sa mení: na prázdno hladný, v polovici spokojný,
-// pri cieli šťastný s lícami, po prekročení cieľa prejedený (prstenec sčervená). Číslo kalórií ostáva v strede.
+// Kruh kalórií ako GainTrain: vlak na okrúhlej trati. Lokomotíva (nálepka) ide po koľajniciach podľa toho, koľko si zjedol,
+// za každé zapísané jedlo dňa sa pripojí vagón vo farbe toho jedla, za vlakom ostáva para, hore je stanica Cieľ.
+// Pri cieli lokomotíva stojí v stanici a sypú sa konfety; po prekročení cieľa ide ďalej a dymí načerveno. Číslo kalórií ostáva v strede.
 const P = (r, a) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180)];
 const f1 = v => v.toFixed(2);
 let uid = 0;
-function face(k, over) {
-  // tvár: žltá nálepka s bielym lemom a tieňom; oči, ústa, líca podľa stavu
-  const mouth = over ? `<path d="M-3.2,2.2q3.2,-2.4 6.4,0" fill="none" stroke="#5A3A00" stroke-width="1.1" stroke-linecap="round"/><path d="M-1.2,2.9q1.6,2.6 3.2,0.4" fill="#FF6B85"/>`
-    : k < 0.3 ? `<path d="M-2.8,2.4h5.6" fill="none" stroke="#5A3A00" stroke-width="1.1" stroke-linecap="round"/>`
-    : k < 0.7 ? `<path d="M-3,1.4q3,3.2 6,0" fill="none" stroke="#5A3A00" stroke-width="1.1" stroke-linecap="round"/>`
-    : `<path d="M-3.4,0.9q3.4,5 6.8,0z" fill="#5A3A00"/><path d="M-1.6,2.6q1.6,1.6 3.2,0" fill="#FF8AA0"/>`;
-  const eyes = over ? `<path d="M-3.6,-2.4l2,2m0,-2l-2,2M1.6,-2.4l2,2m0,-2l-2,2" fill="none" stroke="#5A3A00" stroke-width="1" stroke-linecap="round"/>`
-    : k >= 0.7 ? `<path d="M-3.8,-1.2q1.3,-2.2 2.6,0M1.2,-1.2q1.3,-2.2 2.6,0" fill="none" stroke="#5A3A00" stroke-width="1.1" stroke-linecap="round"/>`
-    : `<circle cx="-2.5" cy="-1.4" r=".95" fill="#5A3A00"/><circle cx="2.5" cy="-1.4" r=".95" fill="#5A3A00"/>`;
-  const cheeks = k >= 0.7 || over ? `<circle cx="-4.6" cy="1" r="1.3" fill="#FF8AA0" opacity=".7"/><circle cx="4.6" cy="1" r="1.3" fill="#FF8AA0" opacity=".7"/>` : '';
-  const star = (x, y, r, c) => `<path transform="translate(${x} ${y}) scale(${r})" d="M0,-1L.28,-.3 1,-.2 .45,.3 .6,1 0,.62 -.6,1 -.45,.3 -1,-.2 -.28,-.3Z" fill="${c}"/>`;
-  const spark = k >= 0.999 && !over ? star(-11.5, -6, 2.4, '#FFC83D') + star(11, -8.5, 1.8, '#FF6B85') + star(9.5, 8, 1.5, '#4FE3B0') : '';
-  return `<g transform="scale(1.12)"><circle r="8.6" fill="#201A3D" opacity=".2" cx="1.2" cy="1.4"/><circle r="8.6" fill="#fff"/><circle r="7.2" fill="${over ? '#FF9DAE' : '#FFC83D'}"/><circle r="7.2" fill="url(#stf)"/>${eyes}${mouth}${cheeks}</g>${spark}`;
-}
-export function stickerRingSvg(pct) {
-  const k = Math.max(0, Math.min(1, pct / 100)), over = pct > 100.4, id = 'st' + (++uid);
-  const R = 39.5, W = 9.5, a0 = -90, a1 = -90 + k * 360, full = k >= 0.999;
-  const arc = (r, b0, b1) => { if (b1 - b0 >= 359.9) return `M${f1(r)},0A${r},${r} 0 1,1 ${f1(-r)},0A${r},${r} 0 1,1 ${f1(r)},0`; const [x0, y0] = P(r, b0), [x1, y1] = P(r, b1); return `M${f1(x0)},${f1(y0)}A${r},${r} 0 ${b1 - b0 > 180 ? 1 : 0},1 ${f1(x1)},${f1(y1)}`; };
-  const col = over ? '#FF6B85' : '#FFC83D', colE = over ? '#C9405C' : '#D99E00';
-  const [kx, ky] = P(R, full ? a0 : a1);
-  const prog = k > 0.004 ? `<path d="${arc(R, a0, full ? a0 + 359.95 : a1)}" fill="none" stroke="${colE}" stroke-width="${W}" stroke-linecap="round" transform="translate(1.6 1.8)"/>
-  <path d="${arc(R, a0, full ? a0 + 359.95 : a1)}" fill="none" stroke="${col}" stroke-width="${W}" stroke-linecap="round"/>
-  <path d="${arc(R + 2.4, a0, full ? a0 + 359.95 : a1)}" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity=".55"/>` : '';
+// vagón v lokálnych súradniciach (stred na trati, x dopredu, y dole)
+const wagon = c => `<rect x="-5.2" y="-4.6" width="10.4" height="7.2" rx="2" fill="${c}"/><rect x="-5.2" y="-4.6" width="10.4" height="2.2" rx="1.5" fill="#fff" opacity=".35"/><rect x="-3.4" y="-3.2" width="2.6" height="2" rx=".6" fill="#fff" opacity=".8"/><rect x="0.8" y="-3.2" width="2.6" height="2" rx=".6" fill="#fff" opacity=".8"/><circle cx="-3" cy="3.3" r="1.5" fill="#201A3D"/><circle cx="3" cy="3.3" r="1.5" fill="#201A3D"/><circle cx="-3" cy="3.3" r=".55" fill="#fff"/><circle cx="3" cy="3.3" r=".55" fill="#fff"/>`;
+const loco = over => { const body = over ? '#FF6B85' : '#FFC83D', ink = '#201A3D'; return `
+<rect x="-9" y="0.4" width="18.5" height="2.6" rx="1" fill="${ink}"/>
+<rect x="-9" y="-5.4" width="12.5" height="6.6" rx="2.4" fill="${body}"/><rect x="-9" y="-5.4" width="12.5" height="2.4" rx="1.6" fill="#fff" opacity=".4"/>
+<rect x="-6.8" y="-9.6" width="3.2" height="4.6" rx=".8" fill="${over ? '#C9405C' : '#FF6B85'}"/><rect x="-7.6" y="-10.4" width="4.8" height="1.8" rx=".8" fill="${ink}"/>
+<rect x="2.6" y="-8.8" width="7.2" height="10" rx="1.8" fill="${ink}"/><rect x="3.8" y="-7.4" width="4.8" height="4.2" rx="1" fill="#fff"/>
+<circle cx="5.3" cy="-5.6" r=".8" fill="${ink}"/><circle cx="7.4" cy="-5.6" r=".8" fill="${ink}"/><path d="M5,-4.2q1.4,1.3 2.8,0" fill="none" stroke="${ink}" stroke-width=".7" stroke-linecap="round"/>
+<circle cx="10.3" cy="-3.2" r="1.3" fill="#FFF3C7" stroke="${ink}" stroke-width=".6"/><path d="M9.5,0.4L12.6,3.4H9.5Z" fill="${ink}"/>
+<circle cx="-5.6" cy="3.6" r="2.2" fill="${ink}"/><circle cx="-0.4" cy="3.6" r="2.2" fill="${ink}"/><circle cx="5.4" cy="3.6" r="2.2" fill="${ink}"/>
+<circle cx="-5.6" cy="3.6" r=".8" fill="#fff"/><circle cx="-0.4" cy="3.6" r=".8" fill="#fff"/><circle cx="5.4" cy="3.6" r=".8" fill="#fff"/>
+<path d="M-5.6,3.6H5.4" stroke="#fff" stroke-width=".7" opacity=".9"/>`; };
+// ikona do výberu vzhľadu: samotná lokomotíva ako nálepka
+export const locoIconSvg = () => `<svg class="sk-loco" viewBox="-14 -14 30 22" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><g transform="translate(1.2 1.2)" opacity=".2"><rect x="-9" y="-10.4" width="21.6" height="16.4" rx="3" fill="#201A3D"/></g>${loco(false)}</svg>`;
+
+export function stickerRingSvg(pct, meals = []) {
+  const k = Math.max(0, Math.min(1, pct / 100)), over = pct > 100.4, full = k >= 0.999, id = 'st' + (++uid);
+  const R = 39.8, a0 = -90, a1 = -90 + k * 360;
+  // koľajnice a podvaly
+  const ties = []; for (let i = 0; i < 60; i++) { const a = i * 6, [x0, y0] = P(R - 3.1, a), [x1, y1] = P(R + 3.1, a); ties.push(`M${f1(x0)},${f1(y0)}L${f1(x1)},${f1(y1)}`); }
+  // para za vlakom: obláčiky pozdĺž prejdenej cesty, čím ďalej od vlaku, tým menšie a priesvitnejšie
+  const puffs = []; const n = Math.min(14, Math.floor(k * 360 / 14));
+  for (let i = 1; i <= n; i++) { const a = a1 - i * 13 - 9, r = R + 6.5 + (i % 2) * 1.6, [x, y] = P(r, a), sz = 2.6 - i * 0.13; if (a < a0 - 2) break; puffs.push(`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(sz)}" class="${over ? 'st-puff-r' : 'st-puff'}" opacity="${(0.9 - i * 0.055).toFixed(2)}"/>`); }
+  // vagóny za lokomotívou (najviac 6), každý vo farbe jedla; na začiatku dňa bez jedla ich nie je
+  const cars = meals.slice(0, 6).map((c, i) => { const a = (full ? a0 + 360 : a1) - 19 - i * 13; if (a < a0 - 4 && !full) return ''; const [x, y] = P(R, a); return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(a + 90)})">${wagon(c)}</g>`; }).join('');
+  const [lx, ly] = P(R, full ? a0 + 360 : a1);
+  // stanica Cieľ nad traťou hore: strieška, stĺpik s vlajkou
+  const station = `<g transform="translate(0 -46)"><rect x="-6.5" y="-1.4" width="13" height="3.2" rx="1" fill="#fff" stroke="#201A3D" stroke-width=".8"/><path d="M-7.5,-1.2L0,-6.2L7.5,-1.2Z" fill="${full && !over ? '#4FE3B0' : '#FF6B85'}" stroke="#201A3D" stroke-width=".8" stroke-linejoin="round"/><path d="M0,-6.2V-11" stroke="#201A3D" stroke-width=".8"/><path d="M0,-11L4.6,-9.6L0,-8.2Z" fill="#FFC83D" stroke="#201A3D" stroke-width=".6" stroke-linejoin="round"/></g>`;
+  // konfety v cieli
+  const conf = full && !over ? [[-14, -38, '#FF6B85', 20], [12, -40, '#4FE3B0', -30], [-6, -32, '#64B5FF', 60], [18, -32, '#FFC83D', 10], [-18, -30, '#B79CFF', -50], [8, -30, '#FF6B85', 80]].map(([x, y, c, r]) => `<rect x="${x}" y="${y}" width="2.6" height="1.4" rx=".4" fill="${c}" transform="rotate(${r} ${x} ${y})"/>`).join('') : '';
   return `<svg class="ck-ring st-ring" viewBox="-50 -50 100 100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-  <defs><radialGradient id="stf" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
   <circle class="st-back-sh" cx="2.6" cy="2.8" r="47.4"/>
   <circle class="st-back" r="47.4"/>
-  <path d="${arc(R, 0, 359.95)}" class="st-track" fill="none" stroke-width="${W}" stroke-linecap="round"/>
-  ${prog}
-  <g transform="translate(${f1(kx)} ${f1(ky)})">${face(k, over)}</g>
+  ${k > 0.004 ? `<path d="${(() => { const [x0, y0] = P(R, a0), [x1, y1] = P(R, full ? a0 + 359.95 : a1); return `M${f1(x0)},${f1(y0)}A${R},${R} 0 ${k * 360 > 180 ? 1 : 0},1 ${f1(x1)},${f1(y1)}`; })()}" fill="none" stroke="${over ? '#FF6B85' : '#FFC83D'}" stroke-width="8.4" stroke-linecap="round" opacity=".35"/>` : ''}
+  <path d="${ties.join('')}" class="st-tie" fill="none" stroke-width="1.6" stroke-linecap="round"/>
+  <circle r="${R - 2.1}" class="st-rail" fill="none" stroke-width=".9"/><circle r="${R + 2.1}" class="st-rail" fill="none" stroke-width=".9"/>
+  ${station}
+  <g class="st-steam">${puffs.join('')}</g>
+  ${cars}
+  <g transform="translate(${f1(lx)} ${f1(ly)}) rotate(${f1((full ? a0 + 360 : a1) + 90)})"><g transform="scale(1.22)">${loco(over)}</g></g>
+  ${conf}
  </svg>`;
 }
 
