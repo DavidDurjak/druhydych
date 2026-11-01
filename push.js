@@ -87,7 +87,7 @@ export async function renderReminders() {
   const rows = [
     ['weigh', 'Ranné váženie', '⚖️'], ['breakfast', 'Raňajky', '🍳'], ['brunch', 'Desiata', '🥪'], ['lunch', 'Obed', '🍲'], ['afternoon', 'Olovrant', '🥨'], ['dinner', 'Večera', '🍽️'], ['late', 'Druhá večera', '🌙'], ['training', 'Tréning', '🏋️'], ['checkin', 'Večerný check-in', '📝'],
   ];
-  const toggles = [['water_on', 'Voda (11:00, 14:00, 17:00, len ak chýba)', '💧'], ['photo_on', 'Týždenná fotka (nedeľa 10:00)', '📸'], ['streak_on', 'Streak v ohrození (21:30)', '🔥'], ['summary_on', 'Večerné zhrnutie dňa (20:30)', '📊']];
+  const toggles = [['water_on', 'Voda (11:00, 14:00, 17:00, len ak chýba)', '💧'], ['photo_on', 'Týždenná fotka (nedeľa 10:00)', '📸'], ['streak_on', 'Streak v ohrození (21:30)', '🔥'], ['summary_on', 'Večerné zhrnutie dňa (20:30)', '📊'], ['friends_on', 'Pochvaly od kamarátov', '💪']];
   const t5 = v => (v || '').slice(0, 5);
   $app().innerHTML = `<div class="screen">
     <div class="topbar"><h1>Pripomienky</h1></div>
@@ -101,7 +101,7 @@ export async function renderReminders() {
       ${rows.map(([k, lbl, ic]) => `<div class="rrow"><label class="sw"><input type="checkbox" name="${k}_on" ${s[k + '_on'] ? 'checked' : ''}><i></i></label><span class="rl">${ic} ${lbl}</span><input class="input tm" type="time" name="${k}" value="${t5(s[k])}"></div>`).join('')}
       <div class="rrow"><label class="sw"><input type="checkbox" name="supp_on" id="suppOn" ${s.supp_on ? 'checked' : ''}><i></i></label><span class="rl">💊 Suplementy</span><input class="input tm" type="time" name="supp" value="${t5(s.supp)}"></div>
       <div id="suppBox" ${s.supp_on ? '' : 'hidden'}><p class="supp-note">Čo berieš? Pripomienka ich vymenuje. Kreatín funguje len pri každodennom užívaní, preto sa oplatí.</p><div class="supp-items">${SUPPS.map(([k, l]) => `<label class="schip"><input type="checkbox" name="supp_item" value="${k}" hidden ${(s.supp_items || []).includes(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
-      ${toggles.map(([k, lbl, ic]) => `<div class="rrow"><label class="sw"><input type="checkbox" name="${k}" ${s[k] ? 'checked' : ''}><i></i></label><span class="rl">${ic} ${lbl}</span></div>`).join('')}
+      ${toggles.map(([k, lbl, ic]) => `<div class="rrow"><label class="sw"><input type="checkbox" name="${k}" ${s[k] !== false ? 'checked' : ''}><i></i></label><span class="rl">${ic} ${lbl}</span></div>`).join('')}
       <button class="btn primary mt" type="submit">Uložiť</button>
     </form>
     ${sub ? '<div class="card"><h3 class="mb">Chodia ti notifikácie?</h3><p class="muted small mb">Pošleme ti jednu skúšobnú do minúty. Ak nepríde, skontroluj v nastaveniach iPhonu, či má Fuelwind povolené upozornenia.</p><button class="btn sm" id="test">Poslať skúšobnú notifikáciu</button></div>' : ''}
@@ -111,7 +111,7 @@ export async function renderReminders() {
   $app().querySelector('#suppOn').onchange = e => { $app().querySelector('#suppBox').hidden = !e.target.checked; };
   $app().querySelector('#rf').onsubmit = async e => {
     e.preventDefault(); const f = new FormData(e.target); const out = { user_id: uid, tz: s.tz };
-    ['enabled', 'breakfast_on', 'brunch_on', 'lunch_on', 'afternoon_on', 'dinner_on', 'late_on', 'weigh_on', 'checkin_on', 'training_on', 'water_on', 'photo_on', 'streak_on', 'summary_on'].forEach(k => out[k] = f.get(k) === 'on');
+    ['enabled', 'breakfast_on', 'brunch_on', 'lunch_on', 'afternoon_on', 'dinner_on', 'late_on', 'weigh_on', 'checkin_on', 'training_on', 'water_on', 'photo_on', 'streak_on', 'summary_on', 'friends_on'].forEach(k => out[k] = f.get(k) === 'on');
     ['breakfast', 'brunch', 'lunch', 'afternoon', 'dinner', 'late', 'weigh', 'checkin', 'training'].forEach(k => out[k] = f.get(k) || DEFAULTS[k]);
     out.supp_on = f.get('supp_on') === 'on'; out.supp = f.get('supp') || DEFAULTS.supp;
     out.supp_items = f.getAll('supp_item'); if (out.supp_on && !out.supp_items.length) out.supp_items = ['kreatin'];

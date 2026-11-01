@@ -273,6 +273,14 @@ async function addByCode(code) {
 }
 
 // ---------- pozvánkový odkaz #/kamarat/KÓD ----------
+// odkaz z notifikácie o pochvale: #/kamarati otvorí okno Kamaráti nad obrazovkou Dnes
+function grabOpen() {
+  if (!/^#\/kamarati\b/.test(location.hash || '')) return false;
+  history.replaceState(null, '', location.pathname + '#/');
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+  pendOpen = true; return true;
+}
+let pendOpen = false;
 function grabInvite() {
   const m = /^#\/kamarat\/([A-Za-z0-9]{6})\b/.exec(location.hash || '');
   if (!m) return;
@@ -294,11 +302,12 @@ async function processInvite() {
 // ---------- karta na obrazovke Dnes ----------
 if (typeof document !== 'undefined') {
   const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
-  grabInvite();
+  grabInvite(); grabOpen();
   const root = document.getElementById('app');
   const seen = new WeakSet();
   const inject = async () => {
     processInvite();
+    if (pendOpen && ctx.state?.profile?.onboarded) { pendOpen = false; setTimeout(openFriends, 300); }
     if (!root || !ctx.state?.profile?.onboarded) return;
     const meals = root.querySelector('.screen.td .meals');
     if (!meals || seen.has(meals) || root.querySelector('#fw-friends')) return;
@@ -326,5 +335,5 @@ if (typeof document !== 'undefined') {
     } catch (_) { /* karta ostane s výzvou */ }
   };
   if (root) new MutationObserver(() => inject()).observe(root, { childList: true, subtree: true });
-  window.addEventListener('hashchange', () => { if (/^#\/kamarat\//.test(location.hash)) grabInvite(); });
+  window.addEventListener('hashchange', () => { if (/^#\/kamarat\//.test(location.hash)) grabInvite(); else if (grabOpen()) inject(); });
 }
