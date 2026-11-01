@@ -31,7 +31,7 @@ ${S}{--bg:#ECEBEF;--bg-2:#E2E1E7;--card:#FFFFFF;--card-2:#F4F3F8;--line:rgba(20,
  --ctr:#FFFFFF;--ctr2:#F4F3F8;--raw:#FFFFFF;--plate0:#FFFFFF;--plate1:#F4F3F8;--plate2:#E2E1E7;--plate-r:transparent;--arc0:#FFB3E6;--arc1:#C8B6FF;
  --wc-line:#C94DA8;--wc-area:#FFB3E6;--wc-glow:none;--wc-tag:#15131E;--wc-tag-t:#fff;color-scheme:light}
 ${D}{--bg:#131318;--bg-2:#E8E6F0;--card:#F7F6FA;--card-2:#ECEBF2;--line:rgba(20,18,30,.1);--text:#15131E;--muted:#6A6880;
- --accent:#FFB3E6;--accent-ink:#15131E;--accent-2:#FFC98A;--protein:#2ED38F;--carbs:#4D93FF;--fat:#FFB347;--danger:#FF5C78;--track:#DDDBE4;
+ --accent:#C94DA8;--accent-ink:#15131E;--accent-2:#FFC98A;--protein:#2ED38F;--carbs:#4D93FF;--fat:#FFB347;--danger:#FF5C78;--track:#DDDBE4;
  --ink:#15131E;--t1:#15131E;--t2:#2E2B3F;--t3:#6A6880;--tbg:#F2F0F7;
  --paper:#F7F6FA;--paper-2:#ECEBF2;--cut:#FFFFFF;--sh:rgba(0,0,0,.5);--sh-d:rgba(0,0,0,.7);
  --gl:#F7F6FA;--gl-in:#ECEBF2;--gl-hero:#FAF9FC;--gl-soft:#F7F6FA;
@@ -51,6 +51,17 @@ const holo = (deg = 135) => `background:${HOLO(deg)}!important;color:#15131E!imp
 const GLOSS = `linear-gradient(165deg,rgba(255,255,255,.75) 0%,rgba(255,255,255,0) 38%)`;
 
 const EXTRA = (S, D) => `
+/* v315: priesvitné karty, ktoré ležali priamo na pozadí (sken stroja, analýza postavy), sú tiež nálepky; v tmavom režime je obsah kariet svetlý (data-lc v theme.js) */
+${S} .mc-btn,${S} .px-card{background:var(--gl)!important;background-image:${GLOSS}!important;box-shadow:var(--puff)!important;border:0!important;color:var(--text)!important}
+${S} .px-card b,${S} .mc-btn b{color:var(--text)!important}
+${D} .fw-net,${D} .fw-net *{color:#F2F0F7!important}${D} .fw-net button{background:rgba(255,255,255,.14)!important}
+${D} .hk-minis .ms b{color:var(--text)!important}
+${S} .screen .row.between > .seg > button:not(.on){color:var(--muted)!important}
+${D} .pfx-ini:not(.has){color:#C94DA8!important}
+${D} .pfx-foot,${D} .pfx-foot b{color:#B9B6CC!important}
+/* Avatar štúdio je v tmavom režime svetlý papier, aby sedel tmavý text */
+${D} .avs{--bg:#ECEBEF;background:#ECEBEF!important;color:var(--text)!important}
+${D} .pw-fine,${D} .pw-later{color:#B9B6CC!important}
 /* bez skla a rozmazania: každá karta je nafúknutá lesklá nálepka s vyseknutým bielym okrajom */
 ${S} #app *,${S} .sheet-bg *,${S} .qa-ov,${S} .tde-s,${S} .nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 ${S} .card,${S} .mtile,${S} .ml,${S} .pg-card,${S} .tile,${S} .tip,${S} .shop-card,${S} .fr-card,${S} .rp-card,${S} .wc-card,${S} .qk-b,${S} .ci,${S} .ck-c{border-radius:24px!important}

@@ -4,7 +4,9 @@
 // Hlavné farby appky (pozadie, karty, text, akcent) majú ručne vyladené svetlé hodnoty v index.html.
 const KEY = 'fw_theme';
 const H = document.documentElement;
-const P = 'html[data-theme=light]';
+// data-lc: svetlý obsah v tmavom režime (Nálepky majú aj v tmavom režime biele karty), prevedie sa ako svetlý režim
+const P = 'html:is([data-theme=light],[data-lc])';
+const lightish = () => H.dataset.theme === 'light' || H.hasAttribute('data-lc');
 const OWN = new Set(['--bg', '--bg-2', '--card', '--card-2', '--line', '--text', '--muted', '--accent', '--accent-ink', '--accent-2', '--protein', '--carbs', '--fat', '--danger', '--fx-o', '--fx-i', '--fx-glow']);
 
 export function getMode() { try { return localStorage.getItem(KEY) || 'auto'; } catch (_) { return 'auto'; } }
@@ -129,6 +131,7 @@ function splitSel(sel) {
 }
 function scope(sel) {
   return splitSel(sel).map(s => {
+    s = s.replace(/^html\[data-theme=light\]/, 'html'); // ručné pravidlá svetlého režimu platia aj pre svetlý obsah (data-lc)
     if (/^:root\b/.test(s)) return P + s.slice(5);
     if (/^html\b/.test(s)) return P + s.slice(4);
     return `${P} ${s}`;
@@ -203,12 +206,13 @@ function apply() {
   H.dataset.theme = t;
   H.style.background = '';
   setMeta(t);
-  if (t === 'light') {
+  if (H.dataset.skin === 'sticker' && t === 'dark') H.setAttribute('data-lc', ''); else H.removeAttribute('data-lc');
+  if (lightish()) {
     processSheets();
     scanInline(document.body);
     if (!obs) {
       obs = new MutationObserver(recs => {
-        if (H.dataset.theme !== 'light') return;
+        if (!lightish()) return;
         let sheets = false;
         for (const r of recs) {
           if (r.type === 'attributes') { if (r.target.nodeType === 1) fixInline(r.target); continue; }
@@ -226,7 +230,9 @@ function apply() {
 export function setMode(m) { try { localStorage.setItem(KEY, m); } catch (_) { } apply(); }
 mq.addEventListener?.('change', () => { if (getMode() === 'auto') apply(); });
 apply();
-window.addEventListener('load', () => { if (H.dataset.theme === 'light') processSheets(); });
+window.addEventListener('load', () => { if (lightish()) processSheets(); });
+// pri zmene vzhľadu (Nálepky a iné) sa prepočíta, či treba svetlý obsah
+new MutationObserver(() => { const want = H.dataset.skin === 'sticker' && H.dataset.theme === 'dark'; if (want !== H.hasAttribute('data-lc')) apply(); }).observe(H, { attributes: true, attributeFilter: ['data-skin'] });
 
 // ---------- výber v Profile ----------
 const LABEL = { auto: 'Automaticky', light: 'Svetlý', dark: 'Tmavý' };

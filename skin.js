@@ -485,12 +485,14 @@ pst.textContent = `.sk-sw{display:block;width:100%;height:54px;border-radius:12p
 .sk-sw.c{background:linear-gradient(135deg,#F3F5F8 0 49%,#0B0E12 51%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .sk-sw.k{position:relative;background:linear-gradient(135deg,#8FFFC6,#4AE9D6 49%,#0D2E2A 51%,#0B1A33);box-shadow:inset 0 0 0 2.5px #0D1117}
 .sk-sw .sk-ck{position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%) rotate(-12deg);overflow:visible}
-.sk-sw.s{position:relative;background:linear-gradient(135deg,#ECEBEF 0 49%,#131318 51%);box-shadow:inset 0 0 0 2.5px #0D1117}
-.sk-sw.s::before{content:'';position:absolute;left:9%;top:16%;width:24%;height:26%;border-radius:6px;background:#fff;box-shadow:0 0 0 1.5px #fff,2px 3px 6px rgba(0,0,0,.35);transform:rotate(-10deg)}
-.sk-sw .sk-holo{position:absolute;left:50%;top:50%;width:42px;height:42px;transform:translate(-50%,-50%);overflow:visible}
+.sk-sw.s{position:relative;overflow:hidden;background:linear-gradient(165deg,rgba(255,255,255,.65) 0%,rgba(255,255,255,0) 42%),linear-gradient(120deg,#FF9AD8 0%,#FFE08A 30%,#8FF0E8 58%,#B8A4FF 82%,#FF9AD8 100%);box-shadow:inset 0 0 0 2.5px #0D1117}
+.sk-sw.s::before{content:'★';position:absolute;left:8%;top:12%;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;line-height:1;color:#fff;background:linear-gradient(160deg,#FF6FB8,#C94DA8);box-shadow:0 0 0 2px #fff,1px 3px 5px rgba(20,18,30,.35);transform:rotate(-14deg)}
+.sk-sw.s::after{content:'GT';position:absolute;right:7%;bottom:13%;padding:3px 7px;border-radius:99px;font:900 9px/1 Inter,system-ui,sans-serif;letter-spacing:.04em;color:#FFE08A;background:#15131E;box-shadow:0 0 0 2px #fff,1px 3px 5px rgba(20,18,30,.35);transform:rotate(9deg)}
+.sk-sw .sk-r{position:absolute;left:50%;top:50%;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%) rotate(-8deg);background:radial-gradient(circle,#fff 0 40%,transparent 41%),conic-gradient(from -90deg,#FF5FB0,#FFC94D,#2FD9C6,#7E62F2,#FF5FB0);box-shadow:0 0 0 2.5px #fff,0 4px 8px -2px rgba(20,18,30,.45)}
+.sk-sw .sk-r::after{content:'';position:absolute;left:7px;top:5px;width:9px;height:5px;border-radius:50%;background:rgba(255,255,255,.75);transform:rotate(-25deg)}
 .sk-sw .sk-holo .st-back{fill:#F7F6FA}.sk-sw .sk-holo .st-cut{fill:#fff}.sk-sw .sk-holo .st-track{stroke:#DDDBE4}`;
 document.head.appendChild(pst);
-const SW = k => `<i class="sk-sw ${k}">${k === 'k' ? cookieIconSvg() : k === 's' ? holoIconSvg() : ''}</i>`;
+const SW = k => `<i class="sk-sw ${k}">${k === 'k' ? cookieIconSvg() : k === 's' ? '<b class="sk-r"></b>' : ''}</i>`;
 function profileUi() {
   const card = document.querySelector('#fwTheme'); if (!card || card.querySelector('#fwSkin')) return;
   const box = document.createElement('div'); box.id = 'fwSkin'; box.style.margin = '10px 0 12px';
