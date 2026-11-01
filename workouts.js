@@ -94,11 +94,13 @@ export const EXERCISES = Object.fromEntries([
 export const MUSCLE_LABEL = { chest: 'Hrudník', back: 'Chrbát', shoulders: 'Ramená', reardelt: 'Zadné ramená', biceps: 'Biceps', triceps: 'Triceps', quads: 'Kvadricepsy', hams: 'Zadné stehná', glutes: 'Zadok', calves: 'Lýtka', core: 'Brucho' };
 
 export const LEVELS = {
-  beginner: { label: 'Začiatočník', desc: 'Do 6 mesiacov pravidelného cvičenia. Menej sérií, viac technikou a pomalý nárast váh.', blockWeeks: 8 },
+  beginner: { label: 'Začiatočník', desc: 'Do roka pravidelného cvičenia. Menej sérií, viac technikou a pomalý nárast váh.', blockWeeks: 8 },
+  // stredne pokročilý sa v appke už nevyberá (v307); ostáva len pre staršie plány, kým sa neprevedú na pokročilý
   intermediate: { label: 'Stredne pokročilý', desc: '6 mesiacov až 2 roky pravidelného cvičenia. Dva tréningy na sval týždenne a rastúci objem v bloku.', blockWeeks: 6 },
-  advanced: { label: 'Pokročilý', desc: 'Viac ako 2 roky poctivého cvičenia. Vyšší objem, bližšie k zlyhaniu a kratšie bloky.', blockWeeks: 5 },
+  advanced: { label: 'Pokročilý', desc: '1 až 4 roky pravidelného cvičenia. Vyšší objem, bližšie k zlyhaniu a kratšie bloky.', blockWeeks: 5 },
   elite: { label: 'Elite', desc: 'Viac ako 4 roky cvičenia alebo príprava na súťaž. Najvyšší objem, 5 až 6 dní, špecializačné bloky na slabé partie a riadená únava.', blockWeeks: 8, minDays: 5 },
 };
+export const LEVEL_PICK = ['beginner', 'advanced', 'elite'];
 export const MIN_DAYS = { beginner: 2, intermediate: 2, advanced: 3, elite: 5 };
 // Prioritné partie pre špecializačné bloky (úroveň Elite)
 export const PRIORITY = { chest: ['Hrudník', ['chest']], back: ['Chrbát', ['back']], shoulders: ['Ramená', ['shoulders', 'reardelt']], arms: ['Ruky', ['biceps', 'triceps']], quads: ['Kvadricepsy', ['quads']], posterior: ['Zadok a zadné stehná', ['glutes', 'hams']], calves: ['Lýtka', ['calves']] };
@@ -220,7 +222,7 @@ const r25 = v => Math.max(5, Math.round(v / 2.5) * 2.5);
 export function recommendLevel(monthsTraining) {
   const m = Number(monthsTraining);
   if (!(m >= 0)) return 'beginner';
-  return m < 6 ? 'beginner' : m < 24 ? 'intermediate' : 'advanced';
+  return m < 12 ? 'beginner' : m < 48 ? 'advanced' : 'elite';
 }
 
 function age(birthYear) { const y = Number(birthYear); return y > 1900 ? new Date().getFullYear() - y : null; }

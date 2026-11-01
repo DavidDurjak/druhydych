@@ -100,15 +100,15 @@ const CSS = `
 .fx-setup #lvl button.on .lv-t small{max-height:90px;opacity:1;margin-top:4px}
 .lv-bars{display:flex;gap:3px;align-items:flex-end;height:20px}
 .lv-bars i{width:5px;border-radius:3px;background:rgba(255,255,255,.14)}
-.lv-bars i:nth-child(1){height:7px}.lv-bars i:nth-child(2){height:11px}.lv-bars i:nth-child(3){height:15px}.lv-bars i:nth-child(4){height:20px}
+.lv-bars i:nth-child(1){height:8px}.lv-bars i:nth-child(2){height:14px}.lv-bars i:nth-child(3){height:20px}
 .lv-bars i.on{background:linear-gradient(180deg,#7CFFB2,#5BB8FF)}
 .fx-setup #lvl button.on,.fx-setup #eseg button.on,.fx-setup #mseg button.on{border:1.5px solid transparent;
   background:linear-gradient(135deg,#17262A,#161D29) padding-box,linear-gradient(135deg,#7CFFB2,#5BB8FF) border-box;box-shadow:0 12px 30px rgba(124,255,178,.14)}
 .fx-setup #lvl button.on .lv-ic{background:linear-gradient(135deg,rgba(124,255,178,.32),rgba(91,184,255,.26))}
-.fx-setup #dseg,.fx-setup #eseg,.fx-setup #mseg{background:none;border:0;padding:0;gap:10px}
-.fx-setup #dseg button{flex:1;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:20px;background:var(--card);border:1px solid var(--line);color:var(--muted);transition:transform .18s,background .25s,box-shadow .25s,color .2s}
-.fx-setup #dseg button b{font-size:24px;line-height:1;letter-spacing:-.03em;color:var(--text)}
-.fx-setup #dseg button small{font-size:11.5px;font-weight:600}
+.fx-setup #dseg,.fx-setup #eseg,.fx-setup #mseg{background:none;border:0;padding:0;gap:10px}.fx-setup #dseg{gap:8px}
+.fx-setup #dseg button{flex:1;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:16px;background:var(--card);border:1px solid var(--line);color:var(--muted);transition:transform .18s,background .25s,box-shadow .25s,color .2s}
+.fx-setup #dseg button b{font-size:19px;line-height:1;letter-spacing:-.03em;color:var(--text)}
+.fx-setup #dseg button small{font-size:10.5px;font-weight:600}
 .fx-setup #dseg button.on{background:linear-gradient(145deg,#8DFFC0,#4FD8E0);border-color:transparent;color:#06301A;box-shadow:0 12px 26px rgba(124,255,178,.32);transform:translateY(-2px)}
 .fx-setup #dseg button.on b{color:#04261A}
 .fx-setup #eseg{display:grid;grid-template-columns:1fr 1fr}
@@ -320,7 +320,7 @@ function confetti(count = 140) {
 const setText = (el, t) => { if (el && el.textContent !== t) el.textContent = t; };
 const dayType = t => /^(Nohy|Dolná)/.test(t) ? 'low' : /^(Horná|Ramená|Tlaky|Ťahy)/.test(t) ? 'up' : 'full';
 const TYPE_EMO = { low: '🦵', up: '💪', full: '🔥' };
-const LV = { beginner: ['🌱', 1], intermediate: ['⚡', 2], advanced: ['🔥', 3], elite: ['👑', 4] };
+const LV = { beginner: ['🌱', 1], intermediate: ['⚡', 2], advanced: ['🔥', 2], elite: ['👑', 3] };
 const EQ = { gym: ['🏋️', 'Posilňovňa', 'Stroje, činky, kladky'], home: ['🏠', 'Doma', 'Jednoručky a lavica'] };
 const EM = { balanced: ['Vyvážene', 'Celé telo'], upper: ['Horná časť', 'Hrudník, chrbát, ruky'], lower: ['Zadok a nohy', 'Spodok tela'] };
 const BODY = '<svg class="fx-body" viewBox="0 0 60 100" aria-hidden="true"><circle class="hd" cx="30" cy="10" r="7"/><rect class="u" x="19" y="19" width="22" height="29" rx="8"/><rect class="u" x="9" y="21" width="8" height="27" rx="4"/><rect class="u" x="43" y="21" width="8" height="27" rx="4"/><rect class="l" x="19" y="45" width="22" height="14" rx="6"/><rect class="l" x="20" y="56" width="9" height="38" rx="4.5"/><rect class="l" x="31" y="56" width="9" height="38" rx="4.5"/></svg>';
@@ -335,7 +335,7 @@ function setupFx() {
   setText($('#dwrap', scr)?.previousElementSibling, 'Koľko dní v týždni chceš cvičiť?');
   setText($('#eseg', scr)?.previousElementSibling, 'Kde cvičíš?');
   setText($('#mseg', scr).previousElementSibling, 'Na čo dať dôraz?');
-  $$('#lvl [data-k]', scr).forEach(b => { const [ic, n] = LV[b.dataset.k] || ['', 0]; once(b, `<span class="lv-ic">${ic}</span><span class="lv-t">${b.innerHTML}</span><span class="lv-bars">${[1, 2, 3, 4].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`); });
+  $$('#lvl [data-k]', scr).forEach(b => { const [ic, n] = LV[b.dataset.k] || ['', 0]; once(b, `<span class="lv-ic">${ic}</span><span class="lv-t">${b.innerHTML}</span><span class="lv-bars">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`); });
   $$('#dseg [data-k]', scr).forEach(b => { const n = Number(b.dataset.k); once(b, `<b>${n}</b><small>${n >= 5 ? 'dní' : 'dni'}</small>`); });
   $$('#eseg [data-k]', scr).forEach(b => { const e = EQ[b.dataset.k]; if (e) once(b, `<span class="eq-ic">${e[0]}</span><b>${e[1]}</b><small>${e[2]}</small>`); });
   $$('#mseg [data-k]', scr).forEach(b => { const e = EM[b.dataset.k]; if (e) once(b, `${BODY}<b>${e[0]}</b><small>${e[1]}</small>`); });

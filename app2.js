@@ -2,7 +2,7 @@
 import * as db from './data.js';
 import { sb } from './data.js';
 import * as calc from './calc.js';
-import { contestPhase, peakProtocol, PEAK_RISK, generatePlan, nextDay, EXERCISES, LEVELS, EMPHASIS, MUSCLE_LABEL, MIN_DAYS, PRIORITY, SOURCES, alternatives } from './workouts.js';
+import { contestPhase, peakProtocol, PEAK_RISK, generatePlan, nextDay, EXERCISES, LEVELS, LEVEL_PICK, EMPHASIS, MUSCLE_LABEL, MIN_DAYS, PRIORITY, SOURCES, alternatives } from './workouts.js';
 import { ctx } from './app.js';
 import * as rp from './report.js';
 import { physiqueCardHtml, openPhysique } from './physique.js';
@@ -95,6 +95,8 @@ export async function renderTraining() {
   if (!plan) return renderPlanSetup();
   // bez Plus: plán na mieru sa vymení za hotový plán od trénerky (parametre ostanú uložené, po zaplatení sa vráti)
   if (plan.meta?.v === 2 && !isPremium() && await confirmedFree()) { const t = await toTemplate(plan, p).catch(() => null); if (t) { plan = t; toast(`Plán na mieru je súčasťou Plus. Máš hotový plán od ${LAURA.gen}.`); } }
+  // stredne pokročilý už nie je: starší plán sa raz prevedie na pokročilý (rovnaký blok, týždeň v rámci kratšieho bloku)
+  if (plan.meta?.v === 2 && plan.meta.params?.level === 'intermediate') { try { await regen(plan, { level: 'advanced', week: Math.min(plan.meta.week || 1, LEVELS.advanced.blockWeeks) }, plan.meta.startedAt); } catch (_) { } }
   await refreshPlan(plan, p);
   const ws = calc.weekStart();
   const weekDone = logs.filter(l => l.done && l.date >= ws).length;
@@ -401,7 +403,7 @@ async function renderPlanSetup(opts = {}) {
   if (!isPremium()) return renderTemplateSetup(opts);
   const old = await db.getPlan(p.id).catch(() => null);
   const op = old?.meta?.v === 3 ? (old.meta.prev || { level: old.meta.params?.level, equipment: old.meta.params?.place, days: old.meta.params?.days }) : (old?.meta?.params || {});
-  let level = op.level || 'beginner', equipment = op.equipment || 'gym';
+  let level = op.level === 'intermediate' ? 'advanced' : (LEVEL_PICK.includes(op.level) ? op.level : 'beginner'), equipment = op.equipment || 'gym';
   let days = Math.max(MIN_DAYS[level], Math.min(6, op.days || p.training_days || 3));
   let emphasis = op.emphasis || (p.sex === 'f' ? 'lower' : 'balanced');
   let priority = Array.isArray(op.priority) ? op.priority.slice(0, 2) : [];
@@ -417,7 +419,7 @@ async function renderPlanSetup(opts = {}) {
   };
   const seg = (id, items, cur) => `<div class="seg" id="${id}">${items.map(([k, t]) => `<button data-k="${k}" class="${String(k) === String(cur) ? 'on' : ''}">${t}</button>`).join('')}</div>`;
   const dayItems = () => [2, 3, 4, 5, 6].filter(n => n >= MIN_DAYS[level]).map(n => [n, n]);
-  const lvlHtml = () => Object.entries(LEVELS).map(([k, v]) => `<button data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('');
+  const lvlHtml = () => LEVEL_PICK.map(k => [k, LEVELS[k]]).map(([k, v]) => `<button data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('');
   const prioHtml = () => `<span>Prioritné partie pre špecializačný blok (až 2)</span><div class="chips" id="prio">${Object.entries(PRIORITY).map(([k, v]) => `<button type="button" data-k="${k}" class="${priority.includes(k) ? 'on' : ''}">${v[0]}</button>`).join('')}</div>`;
   $app().innerHTML = `<div class="screen">
     <h1 class="mb">Tvoj plán</h1>
