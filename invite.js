@@ -10,7 +10,7 @@ if (orig) {
     try {
       const u = link();
       if (d && d.files && d.files.length && !d.url && u && !String(d.text || '').includes('#/kamarat/')) {
-        d = { ...d, text: `${d.text ? d.text + '. ' : ''}Pridaj sa a porovnajme sa vo Fuelwind: ${u}` };
+        d = { ...d, text: `${d.text ? d.text + '. ' : ''}Pridaj sa a porovnajme sa v GainTrain: ${u}` };
       }
     } catch (_) { /* zdieľanie ide ďalej bez odkazu */ }
     return orig(d);

@@ -240,7 +240,7 @@ function html(p, admin) {
 </section>
 <div class="pfx-tiles">
   ${tile({ href: '#/spravy', i: 'chat', c: 'sky', t: 'Správy', s: 'Od kouča a tímu', badge: '0' })}
-  ${tile({ a: 'invite', i: 'invite', c: 'mint', t: 'Pozvi kamaráta', s: code ? `Tvoj kód ${code}` : 'Porovnajte sa spolu' })}
+  ${tile({ a: 'invite', i: 'invite', c: 'mint', t: 'Kamaráti', s: 'Rebríček, výzva týždňa a pozvánka' })}
   ${tile({ a: 'shop', i: 'cart', c: 'amber', t: 'Nákupný zoznam', s: 'Z tvojho plánu na 7 dní' })}
   ${tile({ href: '#/report', i: 'chart', c: 'violet', t: 'Týždenný report', s: 'Skóre a rozbor týždňa' })}
 </div>
@@ -307,7 +307,7 @@ async function invite(p) {
   if (!p.friend_code) { location.hash = '#/'; return; }
   const url = `${location.origin}${location.pathname}#/kamarat/${p.friend_code}`;
   try {
-    if (navigator.share) await navigator.share({ title: 'Fuelwind', text: 'Pridaj sa ku mne vo Fuelwind a porovnajme sa.', url });
+    if (navigator.share) await navigator.share({ title: 'GainTrain', text: 'Pridaj sa ku mne v GainTrain a porovnajme sa.', url });
     else { await navigator.clipboard.writeText(url); ctx.toast('Odkaz skopírovaný'); }
   } catch (e) { if (e?.name !== 'AbortError') ctx.toast('Nepodarilo sa zdieľať', true); }
 }
@@ -357,7 +357,7 @@ function build(screen) {
     const b = e.target.closest('[data-a]'); if (!b) return;
     const a = b.dataset.a;
     if (a === 'rename') renameSheet(box, p);
-    else if (a === 'invite') invite(p);
+    else if (a === 'invite') { if (window.fwFriends) window.fwFriends(); else invite(p); }
     else if (a === 'logout') logoutSheet(screen);
     else if (a === 'delete') deleteSheet();
     else if (a === 'shop') { try { (await import('./shopping.js')).openShopping(7); } catch (_) { ctx.toast('Zoznam sa nepodarilo otvoriť', true); } }
@@ -367,7 +367,7 @@ function build(screen) {
   // hľadanie (ako na Instagrame): hore pod nadpisom; bez diakritiky, hľadá v nastaveniach aj v kartách, ktoré pridávajú iné časti appky (Tréner, Vzhľad, Jazyk)
   const fold = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // ďalšie slová pre karty, ktoré pridávajú iné časti appky
-  const alias = txt => (/vzhlad/.test(txt) ? ' tema farby rezim skin dark light' : '') + (/jazyk/.test(txt) ? ' language preklad' : '') + (/trener/.test(txt) ? ' kouc coach' : '');
+  const alias = txt => (/vzhlad/.test(txt) ? ' tema farby rezim skin dark light' : '') + (/jazyk/.test(txt) ? ' language preklad' : '') + (/trener/.test(txt) ? ' kouc coach' : '') + (/kamarat/.test(txt) ? ' priatelia priatel vyzva rebricek pozvanka pozvat friends' : '');
   q.addEventListener('input', () => {
     const t = fold(q.value.trim());
     box.querySelectorAll('.pfx-g').forEach(g => {
@@ -375,7 +375,11 @@ function build(screen) {
       g.querySelectorAll('.pfx-r').forEach(r => { const s = !t || fold(r.dataset.k).includes(t); r.hidden = !s; any = any || s; });
       g.hidden = !any; g.previousElementSibling.hidden = !any;
     });
-    box.querySelector('.pfx-tiles').hidden = !!t; box.querySelector('.pfx-hero').hidden = !!t; box.querySelector('.pfx-plan').hidden = !!t;
+    // dlaždice (Kamaráti, Nákupný zoznam…): pri hľadaní ostanú len tie, ktoré sedia
+    const tiles = box.querySelector('.pfx-tiles'); let tileHit = false;
+    [...tiles.children].forEach(el => { const txt = fold(el.textContent); const hit = !t || (txt + alias(txt)).includes(t); el.hidden = !hit; tileHit = tileHit || (!!t && hit); });
+    tiles.hidden = !!t && !tileHit;
+    box.querySelector('.pfx-hero').hidden = !!t; box.querySelector('.pfx-plan').hidden = !!t;
     // karty mimo zoznamu nastavení: pri hľadaní ostanú len tie, ktorých text sedí
     let extra = false;
     const others = [...screen.children, ...box.children].filter(el => el !== box && !el.matches('nav,.nav,script,style,h1,h2,.pfx-s,.pfx-g,.pfx-none,.pfx-foot,.pfx-tiles,.pfx-hero,.pfx-plan'));
@@ -385,7 +389,7 @@ function build(screen) {
       if (!hit && !el.hidden) { el.hidden = true; el.dataset.pfxHid = '1'; } else if (hit && el.dataset.pfxHid) { el.hidden = false; delete el.dataset.pfxHid; }
       extra = extra || (hit && el.getClientRects().length > 0);
     });
-    const vis = [...box.querySelectorAll('.pfx-r')].some(r => !r.hidden) || extra;
+    const vis = [...box.querySelectorAll('.pfx-r')].some(r => !r.hidden) || extra || tileHit;
     none.hidden = vis;
   });
   let shown = null;
