@@ -173,13 +173,15 @@ Deno.serve(async (req) => {
       if (/nsfw|safety|flagged/i.test(lastErr)) blocked = true;
     } catch (e) { lastErr = String((e as Error).message); console.error("avatar cf", lastErr.slice(0, 160)); }
   }
-  for (const m of (KEY && !blocked ? MODELS : [])) {
+  // Gemini ako záloha len so samostatným kľúčom na obrázky (bežný kľúč obrázky zadarmo nekreslí)
+  const gKey = Deno.env.get("GEMINI_IMAGE_KEY") || (CF_ACC && CF_TOKEN ? "" : KEY);
+  for (const m of (gKey && !blocked ? MODELS : [])) {
     if (Date.now() - t0 > 100000) break;
     for (const withCfg of [true, false]) {
       try {
         const gc: Record<string, unknown> = { responseModalities: ["IMAGE"] };
         if (withCfg) gc.imageConfig = { aspectRatio: "1:1" };
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${KEY}`, {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${gKey}`, {
           method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(90000),
           body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: gc }),
         });
