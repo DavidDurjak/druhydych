@@ -30,7 +30,7 @@ ${S}{--bg:#ECEBEF;--bg-2:#E2E1E7;--card:#FFFFFF;--card-2:#F4F3F8;--line:rgba(20,
  --bgc:#ECEBEF;--bg1:${GRAIN(.07)} 0 0/160px 160px;--bg2:radial-gradient(60% 40% at 100% 0%,rgba(255,179,230,.25),transparent 70%);--bg3:radial-gradient(60% 40% at 0% 100%,rgba(166,243,240,.28),transparent 70%);--bg4:#ECEBEF;
  --ctr:#FFFFFF;--ctr2:#F4F3F8;--raw:#FFFFFF;--plate0:#FFFFFF;--plate1:#F4F3F8;--plate2:#E2E1E7;--plate-r:transparent;--arc0:#FFB3E6;--arc1:#C8B6FF;
  --wc-line:#C94DA8;--wc-area:#FFB3E6;--wc-glow:none;--wc-tag:#15131E;--wc-tag-t:#fff;color-scheme:light}
-${D}{--bg:#131318;--bg-2:#1A1A21;--card:#F7F6FA;--card-2:#ECEBF2;--line:rgba(20,18,30,.1);--text:#15131E;--muted:#6A6880;
+${D}{--bg:#131318;--bg-2:#E8E6F0;--card:#F7F6FA;--card-2:#ECEBF2;--line:rgba(20,18,30,.1);--text:#15131E;--muted:#6A6880;
  --accent:#FFB3E6;--accent-ink:#15131E;--accent-2:#FFC98A;--protein:#2ED38F;--carbs:#4D93FF;--fat:#FFB347;--danger:#FF5C78;--track:#DDDBE4;
  --ink:#15131E;--t1:#15131E;--t2:#2E2B3F;--t3:#6A6880;--tbg:#F2F0F7;
  --paper:#F7F6FA;--paper-2:#ECEBF2;--cut:#FFFFFF;--sh:rgba(0,0,0,.5);--sh-d:rgba(0,0,0,.7);
@@ -240,6 +240,22 @@ ${S} .rh .rh-sort button,${S} .rh .rh-chips span{background:var(--gl-in)!importa
 ${S} .rh .ri-btn,${S} .ri-btn{color:var(--t1)!important;border-color:var(--track)!important}
 ${S} .rh .rh-cats button{color:var(--t2)!important}
 ${S} .sheet .del,${S} .sheet [data-x]{background:var(--gl-in)!important;color:var(--t1)!important;border:0!important}
+/* Profil: meno a čísla v hrdinovi */
+${S} .pfx-name,${S} .pfx-name span,${S} .pfx-st b{color:var(--t1)!important}${S} .pfx-st span,${S} .pfx-mail{color:var(--t3)!important}
+/* prvky s vlastným tmavým podkladom vnútri bielych kariet (voľby cieľov, kategórie správy, jazyky kariet) */
+${S} .gl-mode button,${S} .fb-kinds button,${S} .dxl button{background:var(--gl)!important;color:var(--t1)!important;border:0!important;box-shadow:var(--puffin)!important}
+${S} .gl-mode button.on,${S} .fb-kinds button.on,${S} .dxl button.on{${holo()}}
+${S} .gl-mode button.on *,${S} .fb-kinds button.on *,${S} .dxl button.on *{color:#15131E!important}
+${S} .gl-mode button span{color:var(--t3)!important}${S} .gl-mode button.on span{color:#3B3463!important}
+/* fólia žije: farby sa pomaly presúvajú ako svetlo na skutočnej holografickej nálepke; na kruhu sa dúha točí.
+   Pri obmedzenom pohybe (nastavenie telefónu) sa nič nehýbe. */
+${S} .btn.primary,${S} .hk-pc,${S} .tdh-streak,${S} .nav a.on .ic,${S} .qa-fab,${S} .lvl button.on,${S} .fnq-cta,${S} .pw-go,${S} .pw-tag,${S} .tr-chip.on,${S} .tr-bub.me,${S} .fnq-o[aria-checked=true],${S} .pfx-chip.lv,${S} .gt-sub i,${S} .ms-entry em,${S} .frg-entry em,${S} .fx-on .seg button.on,${S} .rh .rh-cuis button.on,${S} .rh .rh-sort button.on,${S} .pw-plan[aria-checked=true]{background-size:230% 230%!important;animation:stFoil 7s ease-in-out infinite}
+${S} .wk-d.hit .wk-r::before,${S} .pfx-xb i,${S} .fnq-bar>*{animation:stFoilSpin 9s linear infinite}
+${S} .ck-ring .st-foil{animation:stHue 12s linear infinite;transform-origin:center}
+@keyframes stFoil{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes stFoilSpin{to{filter:hue-rotate(360deg)}}
+@keyframes stHue{to{filter:hue-rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){${S} *{animation:none!important}}
 /* Upraviť Dnes */
 ${S} .tde-r{border:0!important}
 ${S} .td-editlink{border:0!important;box-shadow:var(--puffin)!important;background:var(--gl)!important}
@@ -290,7 +306,7 @@ export function stickerRingSvg(pct) {
   <circle class="st-back" r="45.6"/>
   <circle r="45.6" fill="url(#${id}g)"/>
   <circle class="st-track" r="${R}" fill="none" stroke-width="${W}"/>
-  ${k > 0.004 ? `<g>${cap(a0, over ? '#FF9DB0' : '#FFB3E6')}${segs.join('')}${cap(full ? a0 : a1, over ? '#FF6B85' : colAt(k))}</g>
+  ${k > 0.004 ? `<g class="${over ? '' : 'st-foil'}">${cap(a0, over ? '#FF9DB0' : '#FFB3E6')}${segs.join('')}${cap(full ? a0 : a1, over ? '#FF6B85' : colAt(k))}</g>
   <path d="${full ? arc(R, -90, 269.9) : arc(R, a0, a1)}" fill="none" stroke="#fff" stroke-width="${W}" stroke-linecap="round" opacity=".35" transform="translate(-1.2 -1.6)" style="mix-blend-mode:screen"/>
   <path d="${full ? arc(R + 2.2, -90, 269.9) : arc(R + 2.2, a0, a1)}" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".7"/>
   <circle cx="${f1(ex)}" cy="${f1(ey)}" r="3.4" fill="#fff"/><circle cx="${f1(ex)}" cy="${f1(ey)}" r="1.6" fill="#15131E"/>` : ''}
