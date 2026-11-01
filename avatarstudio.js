@@ -124,15 +124,15 @@ async function squareJpeg(src, N, q = 0.88) {
   g.drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, N, N);
   return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/jpeg', q));
 }
-// selfie: zmenšiť dlhšiu stranu na 1024 (stačí na podobu, menej dát)
+// selfie: zmenšiť dlhšiu stranu pod 512 (AI modely berú referenčný obrázok do 512 bodov)
 async function shrink(file) {
   const url = URL.createObjectURL(file);
   try {
     const img = await loadImg(url);
-    const k = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight));
+    const k = Math.min(1, 500 / Math.max(img.naturalWidth, img.naturalHeight));
     const cv = document.createElement('canvas'); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
     cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.85));
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
     return { b64: await toB64(blob), url: cv.toDataURL('image/jpeg', 0.6) };
   } finally { URL.revokeObjectURL(url); }
 }
@@ -273,8 +273,10 @@ export function openAvatarStudio() {
       if (!d?.image) throw new Error(d?.error || 'Avatara sa nepodarilo vytvoriť. Skús to znova.');
       // pre úpravy a uloženie držíme štvorcový JPEG 768 bodov
       const blob = await squareJpeg(`data:${d.mime || 'image/png'};base64,${d.image}`, 768, 0.9);
-      const b64 = await toB64(blob);
-      const v = { url: 'data:image/jpeg;base64,' + b64, b64, o: { ...st.o }, selfie: edit ? base.selfie : (base?.selfie || st.selfie) };
+      const url = URL.createObjectURL(blob);
+      const b64 = await toB64(await squareJpeg(url, 500, 0.9)); // menšia kópia ako podklad pre úpravy
+      URL.revokeObjectURL(url);
+      const v = { url: 'data:image/jpeg;base64,' + await toB64(blob), b64, o: { ...st.o }, selfie: edit ? base.selfie : (base?.selfie || st.selfie) };
       // vybraná voľba „Ako na fotke“ ostáva v novej verzii ako základ
       st.vers.push(v); if (st.vers.length > 8) st.vers.shift(); st.sel = st.vers.length - 1;
       try { navigator.vibrate?.(15); } catch (_) { }

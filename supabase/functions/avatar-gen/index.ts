@@ -10,6 +10,10 @@ const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 // obrázky môžu ísť cez samostatný kľúč z projektu so zapnutou platbou (GEMINI_IMAGE_KEY), ostatné AI ostáva na pôvodnom kľúči
 const KEY = Deno.env.get("GEMINI_IMAGE_KEY") || Deno.env.get("GEMINI_API_KEY") || "";
 const MODELS = [...new Set([Deno.env.get("AVATAR_MODEL") || "gemini-3.1-flash-image-preview", "gemini-3.1-flash-image", "gemini-2.5-flash-image"])];
+// Cloudflare Workers AI (FLUX.2 klein): denne zadarmo cca 90 avatarov, potom zlomky centu; ak je nastavený, ide prvý
+const CF_ACC = Deno.env.get("CF_ACCOUNT_ID") || "";
+const CF_TOKEN = Deno.env.get("CF_AI_TOKEN") || "";
+const CF_MODEL = Deno.env.get("CF_AVATAR_MODEL") || "@cf/black-forest-labs/flux-2-klein-4b";
 const DAILY = Number(Deno.env.get("AVATAR_DAILY") || 8);
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
@@ -129,7 +133,7 @@ Deno.serve(async (req) => {
   const changed = (Array.isArray(body.changed) ? body.changed : []).map(String).filter((k) => k === "style" || k in LABEL_EN).slice(0, 20);
   const mode: "new" | "selfie" | "edit" = prev ? "edit" : selfie ? "selfie" : "new";
   if (mode === "new" && !o.gender) return json({ error: "Vyber, či je avatar muž alebo žena." }, 400);
-  if (!KEY) return json({ error: "AI zatiaľ nie je zapnutá (chýba kľúč na serveri)." }, 503);
+  if (!KEY && !(CF_ACC && CF_TOKEN)) return json({ error: "AI zatiaľ nie je zapnutá (chýba kľúč na serveri)." }, 503);
 
   // limit
   let take: any = { ok: true, used: 1 };
@@ -147,7 +151,29 @@ Deno.serve(async (req) => {
 
   const t0 = Date.now();
   let lastErr = "", blocked = false;
-  for (const m of MODELS) {
+  if (CF_ACC && CF_TOKEN) {
+    try {
+      const fd = new FormData();
+      fd.append("prompt", prompt + (mode === "new" ? "" : "\nThe reference image is input_image_0."));
+      fd.append("width", "768"); fd.append("height", "768");
+      const ref = mode === "edit" ? prev : mode === "selfie" ? selfie : "";
+      if (ref) fd.append("input_image_0", new Blob([Uint8Array.from(atob(ref), (c) => c.charCodeAt(0))], { type: "image/jpeg" }), "ref.jpg");
+      const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${CF_ACC}/ai/run/${CF_MODEL}`, { method: "POST", headers: { Authorization: `Bearer ${CF_TOKEN}` }, body: fd, signal: AbortSignal.timeout(90000) });
+      const ct = r.headers.get("content-type") || "";
+      if (r.ok && ct.startsWith("image/")) {
+        const buf = new Uint8Array(await r.arrayBuffer()); let bin = ""; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+        console.log("avatar ok cf", mode, Date.now() - t0, "ms");
+        return json({ image: btoa(bin), mime: ct, left, model: CF_MODEL });
+      }
+      const j = await r.json().catch(() => null);
+      const img = j?.result?.image || j?.image;
+      if (r.ok && img) { console.log("avatar ok cf", mode, Date.now() - t0, "ms"); return json({ image: img, mime: "image/png", left, model: CF_MODEL }); }
+      lastErr = JSON.stringify(j?.errors || j || r.status).slice(0, 300);
+      console.error("avatar cf", r.status, lastErr);
+      if (/nsfw|safety|flagged/i.test(lastErr)) blocked = true;
+    } catch (e) { lastErr = String((e as Error).message); console.error("avatar cf", lastErr.slice(0, 160)); }
+  }
+  for (const m of (KEY && !blocked ? MODELS : [])) {
     if (Date.now() - t0 > 100000) break;
     for (const withCfg of [true, false]) {
       try {
@@ -182,6 +208,6 @@ Deno.serve(async (req) => {
   }
   await refund();
   if (blocked) return json({ error: mode === "selfie" ? "Z tejto fotky sa avatar nedá spraviť. Skús inú fotku, kde je dobre vidno tvoju tvár." : "Tento avatar sa nepodarilo vytvoriť. Skús zmeniť niektorú voľbu." , left: left + 1 }, 422);
-  const quota = /quota|exhausted|billing/i.test(lastErr);
+  const quota = /quota|exhausted|billing|4006|daily free allocation/i.test(lastErr);
   return json({ error: quota ? "Kapacita AI na obrázky je dnes vyčerpaná. Skús to neskôr." : "AI je teraz vyťažená. Skús to o chvíľu.", left: left + 1 }, 502);
 });
