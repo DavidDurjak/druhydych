@@ -235,6 +235,15 @@ ${S} .fnq-link b{color:var(--t1)!important}
 
 /* Klienti: štítok Pozor vo svetlom režime tmavší, aby bol čitateľný na skle */
 ${S}:not([data-theme=dark]) .ko-c.warn .ko-id span{color:#A35F12!important;background:rgba(223,163,103,.22)!important}
+/* Objav v appke: každá karta má vlastnú farbu (jedálniček mätová, návyky jantárová, zdravie ružová), ikona je plná farebná dlaždica */
+${S} .screen.td .dc-t{background:radial-gradient(130% 100% at 100% 0%,color-mix(in srgb,var(--c,var(--accent)) 34%,transparent),transparent 62%),linear-gradient(165deg,color-mix(in srgb,var(--c,var(--accent)) 16%,var(--gl)),var(--gl) 70%)!important;
+ border:1px solid color-mix(in srgb,var(--c,var(--accent)) 38%,transparent)!important;box-shadow:var(--gl-sh),0 14px 30px -18px color-mix(in srgb,var(--c,var(--accent)) 70%,transparent)!important}
+${S} .screen.td .dc-t .dc-i.vi{width:46px;height:46px;border-radius:15px;color:#fff!important;background:linear-gradient(145deg,color-mix(in srgb,var(--c) 75%,#fff),var(--c) 55%,color-mix(in srgb,var(--c) 70%,#000))!important;border:0!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 18px -8px var(--c)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+${S} .screen.td .dc-t .dc-i.vi svg{stroke-width:2.2}
+${D} .screen.td .dc-t .dc-i.vi{color:#0B1512!important}
+${S} .screen.td .dc-t b{color:var(--t1)!important}${S} .screen.td .dc-t small{color:var(--t2)!important;opacity:.85}
+${S} .screen.td .dc-t .dc-x{color:var(--t3)!important}
 /* spodné panely (Nové jedlo, Recepty, Len kalórie...): nepriesvitný podklad, cez ktorý nepresvitá obrazovka pod ním */
 ${S} .sheet-bg{background:rgba(0,0,0,.6)!important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 ${S} .sheet{background:var(--tde)!important;border-top:var(--gl-b)!important;box-shadow:0 -20px 50px -20px rgba(0,0,0,.6)!important;-webkit-backdrop-filter:blur(24px) saturate(1.3);backdrop-filter:blur(24px) saturate(1.3)}

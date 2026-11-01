@@ -256,6 +256,13 @@ ${S} .ck-ring .st-foil{animation:stHue 12s linear infinite;transform-origin:cent
 @keyframes stFoilSpin{to{filter:hue-rotate(360deg)}}
 @keyframes stHue{to{filter:hue-rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){${S} *{animation:none!important}}
+/* Objav v appke: farebné nafúknuté nálepky, ikona ako plná farebná nálepka s bielym okrajom */
+${S} .screen.td .dc-t{${puff('linear-gradient(170deg,#fff 0%,color-mix(in srgb,var(--c,#C94DA8) 26%,#fff) 100%)', 'color-mix(in srgb,var(--c,#C94DA8) 22%,transparent)')};border:0!important}
+${S} .screen.td .dc-t .dc-i.vi{color:#fff!important;background:linear-gradient(150deg,color-mix(in srgb,var(--c) 70%,#fff),var(--c))!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.55),0 0 0 2.5px #fff,0 6px 12px -5px color-mix(in srgb,var(--c) 80%,#000)!important;transform:rotate(-4deg)}
+${S} .screen.td .dc-t:nth-child(2n) .dc-i.vi{transform:rotate(4deg)}
+${D} .screen.td .dc-t .dc-i.vi{color:#15131E!important}
+${S} .screen.td .dc-t b,${S} .screen.td .dc-t small{color:#15131E!important}${S} .screen.td .dc-t small{opacity:.7}
+${S} .screen.td .dc-t::after{display:none!important}
 /* Upraviť Dnes */
 ${S} .tde-r{border:0!important}
 ${S} .td-editlink{border:0!important;box-shadow:var(--puffin)!important;background:var(--gl)!important}
