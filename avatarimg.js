@@ -1,4 +1,4 @@
-// Profilová fotka (v312): fotka z galérie alebo realistický 3D avatar z Avaturnu, oboje uložené ako obrázok v priečinku avatars.
+// Profilová fotka (v312): fotka z galérie alebo avatar z Avatar štúdia, oboje uložené ako obrázok v priečinku avatars.
 // Keď fotka nie je, zobrazia sa farebné iniciály (rieši volajúci).
 const OK = /^https:\/\/uxzwqyjbzkcveoxsdqdv\.supabase\.co\/storage\/v1\/object\/public\/avatars\//;
 export function avatarInner(p = {}, size = 40) {

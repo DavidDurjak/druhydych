@@ -1,6 +1,6 @@
 // Profilová fotka (v312). Ťuknutím na koliesko v Profile sa otvorí okno s dvoma možnosťami:
 //   * Nahrať fotku: galéria, fotoaparát alebo súbory (telefón ponúkne sám), posun a priblíženie v kruhu, zmenšenie na 512 px
-//   * Realistický 3D avatar (Avaturn): selfie alebo hotová postava, vlasy, oblečenie, okuliare; z hotového avatara sa spraví portrét
+//   * Avatar štúdio (avatarstudio.js): vlastný editor ako v Messengeri, avatara nakreslí AI z volieb, voliteľne podľa tvojej fotky
 // Výsledok je vždy obrázok v priečinku avatars/<id>/<náhodný názov>.jpg (adresa sa nedá uhádnuť) a jeho adresa v profiles.avatar_url.
 import { sb } from './data.js';
 import { ctx } from './app.js';
@@ -40,7 +40,7 @@ async function saveProfile(patch) {
 const pathOf = url => { const m = /\/storage\/v1\/object\/public\/avatars\/(.+)$/.exec(url || ''); return m ? decodeURIComponent(m[1]) : null; };
 async function removeOldPhoto(url) { const p = pathOf(url); if (p) { try { await sb.storage.from('avatars').remove([p]); } catch (_) { } } }
 
-// nahrá hotový štvorcový obrázok (JPEG) ako profilovku; použije ho aj Avaturn
+// nahrá hotový štvorcový obrázok (JPEG) ako profilovku; použije ho aj Avatar štúdio
 export async function uploadAvatarBlob(blob) {
   const me = ctx.state.profile;
   const rnd = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)).replace(/-/g, '');
@@ -68,17 +68,16 @@ export function openAvatar() {
     body.innerHTML = `<div class="avm-h"><h3>Profilová fotka</h3><button class="avm-x" data-x aria-label="Zavrieť">×</button></div>
       <div class="avm-pv"><div>${avatarInner(me, 136) || h(initials(me.name))}</div></div>
       <button class="avm-opt" type="button" data-pick><i>📷</i><div><b>Nahrať fotku</b><small>Z galérie, fotoaparátu alebo súborov</small></div><span>›</span></button>
-      <button class="avm-opt pro" type="button" data-avaturn><i>🧍</i><div><b>Realistický 3D avatar</b><small>Odfoť sa alebo vyber postavu, potom uprav vlasy, oblečenie a doplnky</small></div><span>›</span></button>
-      <p class="avm-note">3D avatara vytvára služba Avaturn. Ak sa v nej odfotíš, selfie spracuje ona. Do appky sa uloží len hotový portrét.</p>
+      <button class="avm-opt pro" type="button" data-studio><i>✨</i><div><b>Vytvoriť avatara</b><small>Realistický avatar podľa teba: pleť, vlasy, brada, oblečenie aj pozadie</small></div><span>›</span></button>
       ${me.avatar_url ? '<button class="avm-rm" type="button" data-rm>Odstrániť fotku</button>' : ''}
       <input type="file" accept="image/*" data-file hidden>`;
     body.querySelector('[data-x]').onclick = close;
     const file = body.querySelector('[data-file]');
     body.querySelector('[data-pick]').onclick = () => file.click();
     file.onchange = () => { const f = file.files?.[0]; if (f) cropper(f); };
-    body.querySelector('[data-avaturn]').onclick = async () => {
+    body.querySelector('[data-studio]').onclick = async () => {
       close();
-      try { (await import('./avaturn.js')).openAvaturn(); } catch (_) { ctx.toast('Editor avatara sa nepodarilo otvoriť', true); }
+      try { (await import('./avatarstudio.js')).openAvatarStudio(); } catch (_) { ctx.toast('Avatar štúdio sa nepodarilo otvoriť', true); }
     };
     body.querySelector('[data-rm]')?.addEventListener('click', async () => {
       try { const old = me.avatar_url; await saveProfile({ avatar_url: null }); if (old) removeOldPhoto(old); ctx.toast('Fotka odstránená'); close(); }
