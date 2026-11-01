@@ -213,13 +213,13 @@ function build(scr) {
   $$('.card.ex', scr).forEach(card => {
     const id = $('.set', card)?.dataset.ex;
     const ex = EXERCISES[id];
-    const key = id === 'cardio' ? 'cardio' : Object.entries(ex?.m || {}).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const key = id === 'cardio' ? 'cardio' : (Object.entries(ex?.m || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || card.dataset.mk);
     const [col, emo] = GROUP[key] || GROUP.quads;
     card.style.setProperty('--mc', col);
     const exh = $('.exh', card);
     if (exh) exh.insertAdjacentHTML('afterbegin', `<div class="fx-ic"><span>${emo}</span></div>`);
     const exn = $('.exn', card);
-    if (exn && ex) exn.insertAdjacentHTML('afterbegin', `<span class="fx-tag"></span>`), exn.querySelector('.fx-tag').textContent = ex.muscle;
+    if (exn && (ex || card.dataset.mus)) exn.insertAdjacentHTML('afterbegin', `<span class="fx-tag"></span>`), exn.querySelector('.fx-tag').textContent = ex ? ex.muscle : card.dataset.mus;
     exh?.insertAdjacentHTML('afterend', '<div class="fx-bar"><i></i></div>');
     const exm = $('.exm', card); if (exm) exm.innerHTML = exm.innerHTML.replace(/(\d)\.(\d)/g, '$1,$2');
   });

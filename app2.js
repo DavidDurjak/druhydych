@@ -7,6 +7,8 @@ import { ctx } from './app.js';
 import * as rp from './report.js';
 import { physiqueCardHtml, openPhysique } from './physique.js';
 import * as U from './units.js';
+import { isPremium, paywall, confirmedFree } from './billing.js';
+import { buildTemplate, templateOptions, templateLevel, templateGoal, TLEVELS, GOAL_TXT, LAURA } from './laura-plans.js';
 
 // ctx sa naplní až po načítaní app.js, preto lenivé gettery
 const $app = () => ctx.$app;
@@ -89,13 +91,17 @@ function shrink(file, max, q) {
 // ---------- TRÉNING ----------
 export async function renderTraining() {
   const p = state.profile, uid = p.id;
-  const [plan, logs, lastKg] = await Promise.all([db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.today(), -60)), db.lastWeights(uid)]);
+  let [plan, logs, lastKg] = await Promise.all([db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.today(), -60)), db.lastWeights(uid)]);
   if (!plan) return renderPlanSetup();
+  // bez Plus: plán na mieru sa vymení za hotový plán od trénerky (parametre ostanú uložené, po zaplatení sa vráti)
+  if (plan.meta?.v === 2 && !isPremium() && await confirmedFree()) { const t = await toTemplate(plan, p).catch(() => null); if (t) { plan = t; toast(`Plán na mieru je súčasťou Plus. Máš hotový plán od ${LAURA.gen}.`); } }
   await refreshPlan(plan, p);
   const ws = calc.weekStart();
   const weekDone = logs.filter(l => l.done && l.date >= ws).length;
   const todayLog = logs.find(l => l.date === state.date);
-  const dayNo = todayLog ? todayLog.plan_day : nextDay(plan, logs);
+  // po zmene plánu (napr. z 5 dní na 4) môže dnešný záznam ukazovať na deň, ktorý v novom pláne nie je
+  let dayNo = todayLog ? todayLog.plan_day : nextDay(plan, logs);
+  if (!(dayNo >= 1 && dayNo <= plan.days.length)) dayNo = 1;
   const day = plan.days[dayNo - 1];
   const have = todayLog?.sets?.length ? todayLog.sets : [];
   const sets = day.exercises.flatMap(e => { const mine = have.filter(s => s.ex === e.id); return mine.length ? mine : Array.from({ length: e.sets }, (_, i) => ({ ex: e.id, set: i + 1, kg: lastKg[e.id] || '', reps: '', done: false })); });
@@ -116,13 +122,13 @@ export async function renderTraining() {
       <div class="row between"><h2>${h(day.name)}</h2>${todayLog?.done ? '<span class="chip" style="background:#12332A;color:var(--accent)">Hotovo</span>' : ''}</div>
       <p class="muted small">${day.exercises.map(e => e.muscle).filter((v, i, a) => a.indexOf(v) === i).join(' · ')}</p>
     </div>
-    ${day.exercises.map(e => `<div class="card ex">
+    ${day.exercises.map(e => `<div class="card ex"${e.mk ? ` data-mk="${e.mk}" data-mus="${h(e.muscle)}"` : ''}>
       <div class="exh"><div class="exn"><h3>${h(e.name)}</h3>${exMeta(e, lastKg[e.id])}</div>${plan.meta?.v === 2 && e.id !== 'cardio' && e.reps ? `<button class="swapbtn" data-swap="${e.id}" aria-label="Vymeniť cvik" title="Vymeniť cvik">⇄</button>` : ''}</div>
       ${exCue(e)}
       ${e.reps ? `<div class="setsh"><span></span><span>${U.wUnit()}</span><span>opakovania</span><span></span></div>` : ''}
       <div class="sets">${sets.filter(s => s.ex === e.id).map(s => `<div class="set ${s.done ? 'done' : ''}" data-ex="${e.id}" data-set="${s.set}">
         <span class="setno">${s.set}</span>
-        ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="${e.startKg && !lastKg[e.id] ? U.inW(e.startKg) : U.wUnit()}" value="${U.inW(s.kg)}" data-f="kg" aria-label="Váha v ${U.wUnit() === 'lb' ? 'librách' : 'kg'}, séria ${s.set}"><input class="input sm" inputmode="numeric" placeholder="${h(e.reps)}" value="${s.reps ?? ''}" data-f="reps" aria-label="Opakovania, séria ${s.set}">` : `<span class="muted small" style="grid-column:2/4">${Math.round(e.seconds / 60)} min</span>`}
+        ${e.reps ? `<input class="input sm" inputmode="decimal" placeholder="${e.startKg && !lastKg[e.id] ? U.inW(e.startKg) : U.wUnit()}" value="${U.inW(s.kg)}" data-f="kg" aria-label="Váha v ${U.wUnit() === 'lb' ? 'librách' : 'kg'}, séria ${s.set}"><input class="input sm" inputmode="numeric" placeholder="${h(e.repsBySet?.[s.set - 1] ?? e.reps)}" value="${s.reps ?? ''}" data-f="reps" aria-label="Opakovania, séria ${s.set}">` : `<span class="muted small" style="grid-column:2/4">${Math.round(e.seconds / 60)} min</span>`}
         <button class="chk" data-chk aria-label="Hotovo">✓</button></div>`).join('')}</div>
     </div>`).join('')}
     <div class="row" style="gap:8px"><button class="btn primary" id="finish">${todayLog?.done ? 'Uložiť zmeny' : 'Ukončiť tréning'}</button><button class="btn sm ghost" id="replan">Nový plán</button></div>
@@ -160,6 +166,7 @@ export async function renderTraining() {
   $app().querySelector('#peakLock')?.addEventListener('click', () => savePeakAck(plan, false));
   $app().querySelector('#physOpen')?.addEventListener('click', () => openPhysique({ profile: p, onApply: hint => renderPlanSetup({ hint }) }));
   const up = $app().querySelector('#upgradePlan'); if (up) up.onclick = () => renderPlanSetup();
+  $app().querySelector('#customPlan')?.addEventListener('click', () => { if (isPremium()) renderPlanSetup({ custom: true }); else paywall({ feature: 'custom_plan', reason: 'premium_only' }); });
   $app().querySelectorAll('[data-swap]').forEach(b => b.onclick = () => openSwap(plan, day.exercises.find(x => x.id === b.dataset.swap), todayLog));
   $app().querySelector('#deloadNow')?.addEventListener('click', () => forceWeek(plan, 'deload'));
   $app().querySelector('#skipDeload')?.addEventListener('click', () => forceWeek(plan, 'skip'));
@@ -276,8 +283,33 @@ async function refreshPlan(plan, p) {
   } catch (_) { /* ostane aktuálny plán */ }
 }
 const RIR_TXT = r => r >= 4 ? 'veľmi ľahko, 4 opakovania v rezerve' : r === 3 ? '3 opakovania v rezerve' : r === 2 ? '2 opakovania v rezerve' : r === 1 ? '1 opakovanie v rezerve' : 'do zlyhania';
+// Hotový plán od trénerky (bez Plus): kto má Plus, dostane ponuku plánu na mieru
+function templateInfo(plan) {
+  const m = plan.meta, prem = isPremium();
+  const days = plan.days.filter(d => d.exercises.some(e => e.role !== 'cardio')).length;
+  return `<div class="card plan-info tp-info">
+    <div class="row between"><b>Plán od ${h(LAURA.gen)}</b><span class="chip tp-chip">${h(TLEVELS[m.params?.level]?.label || '')}</span></div>
+    <p class="small" style="margin:6px 0 0">${days}× týždenne${m.aerobicDay ? ' + aeróbna aktivita' : ''}, cieľ ${h(GOAL_TXT[m.params?.goal] || '')}${m.params?.place === 'home' ? ', doma' : ''}. Odporúčané dni: ${h(m.schedule || '')}.</p>
+    ${m.fallback === 'level' ? '<p class="small muted" style="margin:6px 0 0">Pre pokročilých zatiaľ nie je domáca verzia, preto máš začiatočnícky domáci plán. Ak chceš viac, zvýš váhy a skráť pauzy.</p>' : ''}
+    ${m.note ? `<p class="small muted" style="margin:6px 0 0">${h(m.note)}</p>` : ''}
+    ${prem
+      ? `<div class="tp-up"><div><b>Máš Plus: plán na mieru</b><small>Podľa tvojej výšky, váhy a veku, s váhami na štart. Týždenne sa vyvíja a po bloku obmení cviky.</small></div><button class="btn sm primary" id="customPlan" type="button">Zostaviť</button></div>`
+      : `<div class="tp-up"><div><b>Plán na mieru</b><small>Podľa tvojej postavy, s váhami na štart, týždenne sa vyvíja. Súčasť GainTrain Plus.</small></div><button class="btn sm primary" id="customPlan" type="button">✦ Plus</button></div>`}
+  </div>`;
+}
+// Z plánu na mieru spraví hotový plán od trénerky s rovnakými parametrami; pôvodné nastavenie ostane v meta.prev
+async function toTemplate(plan, p) {
+  const op = plan.meta?.params || {};
+  const t = buildTemplate({ sex: p.sex, level: templateLevel(op.level), goal: templateGoal(p.goal), place: op.equipment === 'home' ? 'home' : 'gym', days: op.days || p.training_days || 3 });
+  if (!t) return null;
+  t.meta.prev = op; t.meta.startedAt = calc.today();
+  const saved = await db.savePlan(p.id, t);
+  if (saved?.id) { const { error } = await sb.from('workout_plans').update({ meta: t.meta }).eq('id', saved.id); if (error) throw new Error(error.message); }
+  return { ...saved, meta: t.meta };
+}
 function planInfo(plan) {
   const m = plan.meta;
+  if (m?.v === 3) return templateInfo(plan);
   if (!m || m.v !== 2) return `<div class="card" style="border-color:rgba(124,255,178,.35)"><p class="small">Toto je starší plán. Nový plán sa prispôsobí tvojej úrovni, cieľu a vybaveniu a týždenne sa vyvíja.</p><button class="btn sm primary" id="upgradePlan" style="margin-top:8px">Vytvoriť plán na mieru</button></div>`;
   const vol = m.volume || {};
   const rows = Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 30 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
@@ -307,20 +339,68 @@ function exMeta(e, last) {
   }
   return `<p class="exm">${bits.join(' · ')}</p>`;
 }
-const exCue = e => e.cue ? `<details class="excue"><summary>Ako na to</summary><p>${h(e.cue)}</p></details>` : '';
+const exCue = e => (e.cue ? `<details class="excue"><summary>Ako na to</summary><p>${h(e.cue)}</p></details>` : '') + (e.note ? `<p class="exnote">${h(e.note)}</p>` : '');
 if (typeof document !== 'undefined') {
   const st = document.createElement('style');
   st.textContent = `.plan-info{margin-bottom:12px}.vrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0}.vrow span{flex:0 0 96px;color:var(--muted)}.vrow i{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.vrow i b{display:block;height:100%;background:var(--accent)}.vrow em{flex:0 0 28px;text-align:right;font-style:normal}.swapbtn{margin:0 0 8px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer}.alt{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.alt b{display:block;font-size:14.5px}.alt small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}.chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;font-size:13.5px;cursor:pointer}.chips button.on{border-color:var(--accent);background:rgba(124,255,178,.12)}.lvl{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.lvl button{text-align:left;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card-2);color:var(--text);font:inherit;cursor:pointer}.lvl button.on{border-color:var(--accent);background:rgba(124,255,178,.10)}.lvl button b{display:block;font-size:15px}.lvl button small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}`;
   document.head.appendChild(st);
   const st2 = document.createElement('style');
-  st2.textContent = `.ex .exh{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.ex .exn{min-width:0}.ex .exn h3{font-size:16px;line-height:1.25;margin:0}.ex .exm{margin:3px 0 0;color:var(--muted);font-size:13px;line-height:1.4}.ex .exm b{color:var(--accent);font-weight:700}.ex .swapbtn{flex:none;width:38px;height:38px;margin:0;padding:0;display:grid;place-items:center;border-radius:12px;font-size:17px;line-height:1}.ex .excue{margin:8px 0 0}.ex .excue summary{cursor:pointer;color:var(--muted);font-size:13px}.ex .excue p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.ex .setsh,.ex .set{display:grid;grid-template-columns:30px 1fr 1fr 48px;gap:8px;align-items:center}.ex .setsh{margin-top:12px;color:var(--muted);font-size:11.5px;text-align:center}.ex .sets{margin-top:6px;gap:8px}.ex .input.sm{height:46px;padding:0 8px;font-size:17px;text-align:center}.ex .chk{width:48px;height:46px;border-radius:12px;font-size:16px}.pv h3{margin:0 0 8px}.pvr{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.35}.pvr:first-of-type{border-top:0}.pvr span{min-width:0}.pvr b{flex:none;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}`;
+  st2.textContent = `.ex .exh{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.ex .exn{min-width:0}.ex .exn h3{font-size:16px;line-height:1.25;margin:0}.ex .exm{margin:3px 0 0;color:var(--muted);font-size:13px;line-height:1.4}.ex .exm b{color:var(--accent);font-weight:700}.ex .swapbtn{flex:none;width:38px;height:38px;margin:0;padding:0;display:grid;place-items:center;border-radius:12px;font-size:17px;line-height:1}.ex .excue{margin:8px 0 0}.ex .excue summary{cursor:pointer;color:var(--muted);font-size:13px}.ex .excue p{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.ex .setsh,.ex .set{display:grid;grid-template-columns:30px 1fr 1fr 48px;gap:8px;align-items:center}.ex .setsh{margin-top:12px;color:var(--muted);font-size:11.5px;text-align:center}.ex .sets{margin-top:6px;gap:8px}.ex .input.sm{height:46px;padding:0 8px;font-size:17px;text-align:center}.ex .chk{width:48px;height:46px;border-radius:12px;font-size:16px}.pv h3{margin:0 0 8px}.pvr{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.35}.pvr:first-of-type{border-top:0}.pvr span{min-width:0}.pvr b{flex:none;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}.pvr small{display:block;color:var(--muted);font-size:12px;margin-top:1px}.ex .exnote{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.4}
+.tp-chip{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}.tp-up{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--text) 4%,transparent)}.tp-up div{flex:1;min-width:0}.tp-up b{display:block;font-size:14.5px}.tp-up small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}.tp-up .btn{flex:none}
+.tp-lock{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 16px;margin-bottom:12px;border-radius:18px;border:1px solid var(--line);background:radial-gradient(120% 120% at 100% 0%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 60%),var(--card);color:inherit;font:inherit;cursor:pointer}.tp-lock i{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-size:19px;background:var(--accent);color:var(--accent-ink,#06210f)}.tp-lock div{flex:1;min-width:0}.tp-lock b{display:block;font-size:15px}.tp-lock small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}.tp-lock span{color:var(--muted);font-size:20px}
+.tp-by{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:12px;border-radius:18px;background:var(--card);border:1px solid var(--line)}.tp-by i{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:17px;background:color-mix(in srgb,var(--accent) 22%,var(--card));color:var(--accent)}.tp-by b{display:block;font-size:15px}.tp-by small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}`;
   document.head.appendChild(st2);
 }
 const EMPH_HINT = { balanced: 'Rovnomerne celé telo.', upper: 'Viac sérií na hrudník, chrbát, ramená a ruky.', lower: 'Viac sérií na stehná, zadok a lýtka.' };
-async function renderPlanSetup(opts = {}) {
+// Bez Plus: hotový plán od trénerky podľa úrovne, miesta a počtu dní. Cieľ a pohlavie sú z profilu.
+async function renderTemplateSetup(opts = {}) {
   const p = state.profile;
   const old = await db.getPlan(p.id).catch(() => null);
-  const op = old?.meta?.params || {};
+  const op = old?.meta?.v === 3 ? old.meta.params : (old?.meta?.params ? { level: templateLevel(old.meta.params.level), place: old.meta.params.equipment, days: old.meta.params.days } : {});
+  let level = TLEVELS[op.level] ? op.level : 'beginner', place = op.place === 'home' ? 'home' : 'gym';
+  let days = Number(op.days || p.training_days || 3);
+  const goal = templateGoal(p.goal);
+  const seg = (id, items, cur) => `<div class="seg" id="${id}">${items.map(([k, t]) => `<button type="button" data-k="${k}" class="${String(k) === String(cur) ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+  const opts4 = () => templateOptions({ sex: p.sex, level, goal, place });
+  const pick = () => { const { list } = opts4(); if (!list.length) return null; if (!list.some(t => t.days === days)) days = list.slice().sort((a, b) => Math.abs(a.days - days) - Math.abs(b.days - days) || a.days - b.days)[0].days; return buildTemplate({ sex: p.sex, level, goal, place, days }); };
+  const draw = () => {
+    const pl = pick(); const root = $app();
+    root.querySelector('#dwrap').innerHTML = seg('dseg', opts4().list.map(t => [t.days, `${t.days}×`]), days); bindDays();
+    if (!pl) { root.querySelector('#planPrev').innerHTML = '<div class="card"><p class="small">Pre túto kombináciu zatiaľ plán nie je.</p></div>'; return; }
+    const m = pl.meta;
+    root.querySelector('#planPrev').innerHTML = `<div class="card plan-info"><b>${h(pl.name)}</b><p class="small" style="margin:6px 0 0">Odporúčané dni: ${h(m.schedule)}.${m.fallback === 'level' ? ' Pre pokročilých zatiaľ nie je domáca verzia, toto je začiatočnícky domáci plán.' : ''}${m.note ? ' ' + h(m.note) : ''}</p></div>` +
+      pl.days.map(d => `<div class="card pv"><h3>${h(d.name)}</h3>${d.exercises.map(e => `<div class="pvr"><span>${h(e.name)}${e.note ? `<small>${h(e.note)}</small>` : ''}</span><b>${e.reps ? e.sets + ' × ' + e.reps : (e.sets > 1 ? e.sets + ' × ' : '') + Math.round(e.seconds / 60) + ' min'}</b></div>`).join('')}</div>`).join('');
+  };
+  $app().innerHTML = `<div class="screen">
+    <h1 class="mb">Tvoj plán</h1>
+    <div class="tp-by"><i>${h(LAURA.name[0])}</i><div><b>Hotový plán od ${h(LAURA.gen)}</b><small>Overený rozpis podľa tvojho cieľa (${h(GOAL_TXT[goal])}), úrovne a miesta cvičenia. Série a opakovania máš dané, váhy si zapisuješ sám.</small></div></div>
+    <button class="tp-lock" type="button" id="customPlan"><i>✦</i><div><b>Plán na mieru s GainTrain Plus</b><small>Podľa tvojej výšky, váhy a veku, s váhami na štart. Týždenne sa vyvíja, po bloku obmení cviky a cviky si môžeš vymeniť.</small></div><span>›</span></button>
+    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${Object.entries(TLEVELS).map(([k, v]) => `<button type="button" data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('')}</div></div>
+    <div class="field"><span>Kde cvičíš</span>${seg('eseg', [['gym', 'Posilňovňa'], ['home', 'Doma']], place)}</div>
+    <div class="field"><span>Dní tréningu v týždni</span><div id="dwrap"></div></div>
+    <div id="planPrev"></div>
+    <button class="btn primary" id="save">Použiť tento plán</button>
+  </div>${nav('#/trening')}`;
+  const root = () => $app();
+  const bindDays = () => root().querySelectorAll('#dseg [data-k]').forEach(b => b.onclick = () => { days = Number(b.dataset.k); draw(); });
+  root().querySelectorAll('#lvl [data-k]').forEach(b => b.onclick = () => { level = b.dataset.k; root().querySelectorAll('#lvl [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  root().querySelectorAll('#eseg [data-k]').forEach(b => b.onclick = () => { place = b.dataset.k; root().querySelectorAll('#eseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  root().querySelector('#customPlan').onclick = () => paywall({ feature: 'custom_plan', reason: 'premium_only' });
+  draw();
+  root().querySelector('#save').onclick = async () => {
+    const pl = pick(); if (!pl) return;
+    pl.meta.startedAt = calc.today(); if (old?.meta?.v === 2) pl.meta.prev = old.meta.params; else if (old?.meta?.prev) pl.meta.prev = old.meta.prev;
+    const saved = await db.savePlan(p.id, pl);
+    if (saved?.id) { const { error } = await sb.from('workout_plans').update({ meta: pl.meta }).eq('id', saved.id); if (error) throw new Error(error.message); }
+    if (p.training_days !== days) state.profile = await db.upsertProfile({ id: p.id, training_days: days });
+    toast('Plán uložený'); renderTraining();
+  };
+}
+async function renderPlanSetup(opts = {}) {
+  const p = state.profile;
+  if (!isPremium()) return renderTemplateSetup(opts);
+  const old = await db.getPlan(p.id).catch(() => null);
+  const op = old?.meta?.v === 3 ? (old.meta.prev || { level: old.meta.params?.level, equipment: old.meta.params?.place, days: old.meta.params?.days }) : (old?.meta?.params || {});
   let level = op.level || 'beginner', equipment = op.equipment || 'gym';
   let days = Math.max(MIN_DAYS[level], Math.min(6, op.days || p.training_days || 3));
   let emphasis = op.emphasis || (p.sex === 'f' ? 'lower' : 'balanced');

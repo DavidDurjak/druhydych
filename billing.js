@@ -39,10 +39,12 @@ function set(d) {
   try { dispatchEvent(new CustomEvent('fw-ent', { detail: ent })); } catch (_) { }
 }
 export const isPremium = () => !ent.on || !!ent.premium;
+// bez Plus podľa čerstvej odpovede servera (nie len z uloženej kópie): pre kroky, ktoré niečo menia, napr. výmenu plánu
+export async function confirmedFree() { await load(); return lastLoad > 0 && !!ent.on && !ent.premium; }
 export const left = f => { if (!ent.on) return Infinity; const l = ent.limits?.[f]; if (l == null) return Infinity; return Math.max(0, l - (ent.used?.[f] || 0)); };
 
 // funkcie len s predplatným: ponuka hneď pri ťuknutí na vstup, aby človek zbytočne nefotil
-const PREMIUM_ONLY = { menu_scan: 'Odfoť denné menu', fridge_scan: 'Čo uvarím z chladničky', physique_ai: 'AI analýza postavy', recipe_import: 'Import receptu z odkazu' };
+const PREMIUM_ONLY = { menu_scan: 'Odfoť denné menu', fridge_scan: 'Čo uvarím z chladničky', physique_ai: 'AI analýza postavy', recipe_import: 'Import receptu z odkazu', custom_plan: 'Tréningový plán na mieru' };
 export function gate(feature) {
   if (isPremium() || left(feature) > 0) return true;
   paywall({ feature, reason: (ent.limits?.[feature] ?? 1) === 0 ? 'premium_only' : 'free_limit' });
@@ -115,6 +117,7 @@ const CSS = `
 function css() { if (document.getElementById('pwCss')) return; const s = document.createElement('style'); s.id = 'pwCss'; s.textContent = CSS; document.head.appendChild(s); }
 
 const BEN = [
+  ['🏋️', 'Tréningový plán na mieru', 'Podľa tvojej postavy a cieľa, s váhami na štart. Týždenne sa vyvíja'],
   ['📸', 'AI zápis bez limitu', 'Odfoť tanier, nadiktuj alebo napíš, koľkokrát chceš'],
   ['💬', 'AI kouč kedykoľvek', 'Poradí s jedlom, tréningom aj keď sa zasekneš'],
   ['🍽️', 'Denné menu a chladnička', 'AI vyberie z lístka a navrhne recepty z toho, čo máš doma'],
@@ -126,6 +129,7 @@ const WHY = {
   cap: () => 'Dnes si túto funkciu použil už veľakrát. Zajtra sa limit obnoví.',
 };
 const eur = v => v == null ? '' : Number(v).toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+const mo = p => Number(p.months) || (p.id === 'year' ? 12 : p.id === 'quarter' || p.id === 'q' ? 3 : 1);
 const days = t => Math.max(0, Math.ceil((new Date(t) - Date.now()) / 864e5));
 const dLabel = n => n === 1 ? '1 deň' : n >= 2 && n <= 4 ? `${n} dni` : `${n} dní`;
 
@@ -153,14 +157,14 @@ export function paywall(info = {}) {
       <span class="pw-tag">✦ GainTrain Plus</span>
       <h1 class="pw-h">${isSub ? 'Máš GainTrain Plus' : 'Celá appka, bez limitov'}</h1>
       <p class="pw-sub">${isSub ? (ent.cancel ? `Predplatné skončí ${new Date(ent.period_end).toLocaleDateString('sk-SK')}. Dovtedy máš všetko.` : `Obnoví sa ${new Date(ent.period_end).toLocaleDateString('sk-SK')}.`)
-      : trial != null ? `Skúšobná doba: ešte ${dLabel(trial)} máš všetko zadarmo.` : 'Zapisovanie jedla, ciele a tréning ostávajú zadarmo. Plus pridá AI bez obmedzení.'}</p>
+      : trial != null ? `Skúšobná doba: ešte ${dLabel(trial)} máš všetko zadarmo.` : 'Zapisovanie jedla, ciele a hotový tréningový plán ostávajú zadarmo. Plus pridá plán na mieru a AI bez obmedzení.'}</p>
       ${why ? `<p class="pw-why">${h(why)}</p>` : ''}
     </div>
     <ul class="pw-ben">${BEN.map(([i, t, s]) => `<li><i>${i}</i><div><b>${t}</b><small>${s}</small></div></li>`).join('')}</ul>
     ${isSub ? `<button class="pw-go" type="button" data-portal>Spravovať predplatné</button><p class="pw-fine">Zmena karty, faktúry a zrušenie cez zabezpečený portál Stripe.</p>`
       : plans.length ? `<div class="pw-plans" role="radiogroup" aria-label="Plán">${plans.map(p => `<button class="pw-plan" type="button" role="radio" aria-checked="${p.id === pick}" data-plan="${h(p.id)}">
           ${p.badge || (p.id === 'year' && save > 0) ? `<span class="bd">${h(p.id === 'year' && save > 0 ? `Ušetríš ${save} %` : p.badge)}</span>` : ''}
-          <span class="r"></span><span class="n"><b>${h(p.name)}</b><small>${p.id === 'year' && p.price ? `${eur(p.price / 12)} mesačne` : p.note ? h(p.note) : 'zrušíš kedykoľvek'}</small></span>
+          <span class="r"></span><span class="n"><b>${h(p.name)}</b><small>${mo(p) > 1 && p.price ? `${eur(p.price / mo(p))} mesačne` : p.note ? h(p.note) : 'zrušíš kedykoľvek'}</small></span>
           <span class="p"><b>${p.price != null ? eur(p.price) : '–'}</b><small>${p.period ? '/ ' + h(p.period) : ''}</small></span></button>`).join('')}</div>
         <button class="pw-go" type="button" data-buy>Pokračovať</button>
         <p class="pw-fine">Platba kartou, Apple Pay alebo Google Pay cez Stripe. Zrušíš kedykoľvek v Profile, predplatné potom dobehne do konca obdobia. <a href="/podmienky.html" target="_blank" rel="noopener">Podmienky</a></p>`

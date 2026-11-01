@@ -74,7 +74,7 @@ function prep(card) {
   const exh = $('.exh', card); if (!exh) return;
   card.dataset.tf = '1';
   const id = $('.set', card)?.dataset.ex, ex = EXERCISES[id];
-  const key = id === 'cardio' ? 'cardio' : Object.entries(ex?.m || {}).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const key = id === 'cardio' ? 'cardio' : (Object.entries(ex?.m || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || card.dataset.mk);
   const ic = $('.fx-ic span', card); if (ic && EMO[key]) ic.textContent = EMO[key];
   // telo karty (návod, série) do zbaliteľného obalu
   const body = document.createElement('div'); body.className = 'tf-body';

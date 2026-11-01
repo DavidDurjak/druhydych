@@ -35,6 +35,7 @@ async function enhance(screen) {
     const rd = today ? RD.readinessOf(ci, logs, date) : null;
     const tired = !!rd && rd.level !== 'g';
     const day = plan?.days?.[dayNo - 1]; if (!day) return;
+    if (plan.meta?.v === 3) return; // hotový plán od trénerky (bez Plus): bez odporúčaní váh na mieru
     const deload = !!plan.meta?.deload;
     const recs = []; let cut = 0, total = 0;
     cards.forEach(card => {
