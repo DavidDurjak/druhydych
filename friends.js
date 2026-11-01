@@ -12,6 +12,7 @@ const CSS = `
 .fr-card{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 14px;padding:13px 14px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(124,255,178,.10),rgba(124,255,178,.02));color:var(--text);font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fr-card:active{transform:scale(.985)}
 .fr-card>span{font-size:24px}.fr-card div{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.fr-card b{font-size:15px}.fr-card small{font-size:12.5px;color:var(--muted)}.fr-card i{font-style:normal;font-size:22px;color:var(--muted)}
+.fr-card.fr-new small{color:var(--accent);font-weight:700}
 .fr-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.fr-h h3{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em}.fr-h small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .fr-h .del{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--bg-2,var(--card-2));color:var(--text);font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer}
 .fr-av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#0B1512;background:var(--c,#7CFFB2);letter-spacing:-.01em}
@@ -55,6 +56,27 @@ const CSS = `
 .fr-join summary::-webkit-details-marker{display:none}.fr-join summary::after{content:'›';font-size:20px;color:var(--muted);transition:transform .2s}.fr-join[open] summary::after{transform:rotate(90deg)}
 .fr-join .fr-add{display:flex;gap:8px;padding:0 16px 16px;align-items:stretch}.fr-join .fr-add button{width:auto;flex:0 0 auto;padding:0 20px}.fr-join .fr-add input{width:0;flex:1 1 0;min-width:0;text-transform:uppercase;letter-spacing:.12em;font-family:ui-monospace,Menlo,monospace}
 .fr-note{display:flex;gap:8px;font-size:12px;color:var(--muted);line-height:1.5;margin:14px 2px 0}.fr-note i{font-style:normal}
+/* tréningy kamarátov */
+.fr-feed{margin:0 0 18px}
+.fr-it{padding:14px;border-radius:20px;border:1px solid var(--line);background:var(--card-2);margin-bottom:8px}
+.fr-it-h{display:flex;align-items:center;gap:10px}.fr-it-h div{flex:1;min-width:0}.fr-it-h b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fr-it-h small{display:block;font-size:12px;color:var(--muted)}
+.fr-it-t{margin:10px 0 0;font-size:16px;font-weight:800;letter-spacing:-.01em;line-height:1.25}
+.fr-it-s{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.fr-it-s span{font-size:12.5px;font-weight:600;padding:5px 9px;border-radius:99px;background:color-mix(in srgb,var(--text) 7%,transparent);font-variant-numeric:tabular-nums}
+.fr-it-f{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}.fr-it-f small{font-size:12.5px;color:var(--muted);min-width:0}
+.fr-kd{flex:none;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-size:14px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,background .2s}
+.fr-kd:active{transform:scale(.92)}.fr-kd.on{border-color:transparent;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
+.fr-kd.pop i{animation:frPop .45s cubic-bezier(.3,1.6,.5,1)}.fr-kd i{font-style:normal;display:inline-block}
+@keyframes frPop{0%{transform:scale(1)}40%{transform:scale(1.5) rotate(-12deg)}100%{transform:scale(1)}}
+.fr-it.me .fr-it-f small{color:var(--accent);font-weight:600}
+.fr-opt{padding:16px;border-radius:20px;margin-bottom:10px;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 12%,transparent),transparent),var(--card-2)}
+.fr-opt b{display:block;font-size:15.5px;font-weight:800}.fr-opt p{margin:4px 0 12px;font-size:13px;line-height:1.45;color:var(--muted)}.fr-opt .fr-btns button{flex:1 1 0}
+.fr-more{display:block;width:100%;padding:10px;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.fr-tg{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:14px 16px;border-radius:18px;border:1px solid var(--line);background:var(--card-2);font-size:14px;font-weight:600}
+.fr-tg small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:2px}
+.fr-sw{flex:none;position:relative;width:48px;height:28px;border-radius:99px;background:color-mix(in srgb,var(--text) 16%,transparent);border:0;cursor:pointer;transition:background .2s}
+.fr-sw::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.fr-sw[aria-checked=true]{background:var(--accent)}.fr-sw[aria-checked=true]::after{transform:translateX(20px)}
+@media (prefers-reduced-motion:reduce){.fr-kd.pop i{animation:none}}
 .fr-empty{text-align:center;padding:20px 12px;border-radius:18px;border:1px dashed var(--line);color:var(--muted);font-size:13.5px;line-height:1.5}.fr-empty b{display:block;font-size:16px;color:var(--text);margin-bottom:4px}
 `;
 
@@ -126,6 +148,49 @@ function challengeHtml(d, h) {
     <p>${h(ch.text)}${solo ? ' Pozvi kamaráta a pretekajte sa.' : ''}</p>${body}${last}</div>`;
 }
 
+// ---------- tréningy kamarátov a pochvala ----------
+const KSEEN = 'fw_kudo_seen';
+let fdCache = null, fdAt = 0;
+async function feed(force) {
+  if (!force && fdCache && Date.now() - fdAt < 30000) return fdCache;
+  const { data, error } = await sb.rpc('friends_feed', { p_limit: 30 });
+  if (error) throw error;
+  fdCache = Array.isArray(data) ? data : []; fdAt = Date.now();
+  return fdCache;
+}
+const WD = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'];
+function whenTxt(d) {
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const [y, m, dd] = String(d).split('-').map(Number); const x = new Date(y, m - 1, dd);
+  const diff = Math.round((t - x) / 86400000);
+  return diff <= 0 ? 'dnes' : diff === 1 ? 'včera' : `${WD[x.getDay()]} ${dd}. ${m}.`;
+}
+const fmtKg = v => Number(v).toLocaleString('sk-SK');
+const names2 = a => a.length === 1 ? a[0] : a.length === 2 ? `${a[0]} a ${a[1]}` : `${a[0]}, ${a[1]} a ďalší`;
+function itemHtml(it, h) {
+  const stats = [];
+  if (it.duration_min > 0) stats.push(`⏱ ${it.duration_min} min`);
+  if (it.sets > 0) stats.push(`${it.sets} ${it.sets === 1 ? 'séria' : it.sets <= 4 ? 'série' : 'sérií'}`);
+  if (it.volume > 0) stats.push(`${fmtKg(it.volume)} kg objem`);
+  const by = (it.by || []).map(firstName);
+  const foot = it.me
+    ? `<small>${it.kudos ? `💪 ${h(names2(by))} ${it.kudos > 1 ? 'ťa pochválili' : 'ťa pochválil(a)'}` : 'Zatiaľ bez pochvaly'}</small>`
+    : `<small>${it.kudos ? `${it.kudos}× pochvala` : ''}</small><button class="fr-kd${it.mine ? ' on' : ''}" data-kd="${it.id}" aria-pressed="${it.mine ? 'true' : 'false'}" aria-label="Pochváliť ${h(firstName(it.name))}"><i>💪</i>${it.mine ? 'Pochválené' : 'Pochváliť'}</button>`;
+  return `<div class="fr-it${it.me ? ' me' : ''}"><div class="fr-it-h">${av(h, it.name || 'Ty', it.me)}<div><b>${it.me ? 'Ty' : h(it.name || 'Kamarát')}</b><small>${whenTxt(it.date)} · ${it.me ? 'tvoj tréning' : (it.sex === 'f' ? 'odcvičila tréning' : 'odcvičil tréning')}</small></div></div>
+    <div class="fr-it-t">${h(it.day_name || 'Tréning')}</div>${stats.length ? `<div class="fr-it-s">${stats.map(x => `<span>${x}</span>`).join('')}</div>` : ''}
+    <div class="fr-it-f">${foot}</div></div>`;
+}
+function feedHtml(items, me, others, h, all) {
+  if (items == null) return ''; // tréningy ešte nie sú zapnuté na serveri
+  const optIn = me.share_workouts == null && others
+    ? `<div class="fr-opt"><b>Ukáž kamarátom svoje tréningy</b><p>Uvidia názov tréningu, dĺžku, počet sérií a objem a môžu ťa pochváliť. Nikdy nie jedlo, kalórie ani váhu.</p><div class="fr-btns"><button class="btn primary" data-share="1">Zdieľať</button><button class="btn ghost" data-share="0">Teraz nie</button></div></div>` : '';
+  const shown = all ? items : items.slice(0, 5);
+  const friendsAny = items.some(i => !i.me);
+  const list = shown.length ? shown.map(i => itemHtml(i, h)).join('') : '';
+  const empty = !friendsAny ? `<div class="fr-empty"><b>${others ? 'Zatiaľ ticho' : 'Tréningy kamarátov'}</b>${others ? 'Keď kamarát odcvičí tréning a zdieľa ho, uvidíš ho tu a môžeš ho pochváliť.' : 'Pozvi kamaráta a uvidíte navzájom svoje tréningy.'}</div>` : '';
+  return `<div class="fr-feed"><div class="fr-sec"><b>Tréningy</b><small>posledných 14 dní</small></div>${optIn}${list}${items.length > shown.length ? `<button class="fr-more" data-more>Zobraziť všetky (${items.length})</button>` : ''}${empty}</div>`;
+}
+
 function linkFor(code) { return `${location.origin}${location.pathname}#/kamarat/${code}`; }
 
 async function openFriends() {
@@ -134,14 +199,17 @@ async function openFriends() {
   if (!me) return;
   let code = me.friend_code || '';
   if (!code) { try { const { data } = await sb.from('profiles').select('friend_code').eq('id', me.id).maybeSingle(); code = data?.friend_code || ''; me.friend_code = code; } catch (_) { /* bez kódu */ } }
-  const bg = ctx.sheet('<div class="fr-h"><div><h3>Kamaráti</h3><small>Týždenná výzva a rebríček s ľuďmi, ktorých poznáš</small></div><button class="del" data-x aria-label="Zavrieť">×</button></div><div id="frBody"><p class="fr-sub">Načítavam…</p></div>');
+  const bg = ctx.sheet('<div class="fr-h"><div><h3>Kamaráti</h3><small>Výzva, tréningy a rebríček s ľuďmi, ktorých poznáš</small></div><button class="del" data-x aria-label="Zavrieť">×</button></div><div id="frBody"><p class="fr-sub">Načítavam…</p></div>');
   bg.querySelector('[data-x]').onclick = () => bg.remove();
   const body = bg.querySelector('#frBody');
+  let showAll = false;
   const draw = async (force) => {
-    let rows = [], chd = null;
-    try { [rows, chd] = await Promise.all([board(force), challengeData(force).catch(() => null)]); } catch (e) { body.innerHTML = '<p class="fr-sub">Tabuľku sa nepodarilo načítať. Skús to o chvíľu.</p>'; return; }
+    let rows = [], chd = null, items = null;
+    try { [rows, chd, items] = await Promise.all([board(force), challengeData(force).catch(() => null), feed(force).catch(() => null)]); } catch (e) { body.innerHTML = '<p class="fr-sub">Tabuľku sa nepodarilo načítať. Skús to o chvíľu.</p>'; return; }
     const others = rows.filter(r => !r.me).length;
+    if (items) { const lk = items.filter(i => i.me && i.last_kudo).map(i => i.last_kudo).sort().pop(); if (lk) ls.set(KSEEN, lk); }
     body.innerHTML = `${challengeHtml(chd, h)}
+      ${feedHtml(items, me, others, h, showAll)}
       <div class="fr-sec"><b>Rebríček</b><small>posledných 7 dní</small></div>
       ${others ? rows.map((r, i) => `<div class="fr-row${r.me ? ' me' : ''}"><div class="fr-rk${i < 3 ? ' g' + (i + 1) : ''}">${i + 1}</div>${av(h, r.name || 'Ty', r.me)}
         <div class="fr-n"><b>${h(r.name || 'Kamarát')}${r.me ? ' (ty)' : ''}</b><div class="fr-st"><span>📝 ${r.logged} ${days(r.logged)}</span><span>🎯 ${r.ontarget} v cieli</span><span>🏋️ ${r.workouts}</span></div></div>
@@ -152,7 +220,26 @@ async function openFriends() {
         <div class="fr-btns"><button class="btn primary" id="frShare">Poslať pozvánku</button><button class="btn ghost" id="frCopy">Kopírovať kód</button></div></div>
       <details class="fr-join"><summary>Mám kód od kamaráta</summary>
         <div class="fr-add"><input class="input" id="frIn" maxlength="6" placeholder="ABC123" autocapitalize="characters" autocomplete="off"><button class="btn primary" id="frAdd">Pridať</button></div></details>
-      <p class="fr-note"><i>🔒</i><span>Kamaráti vidia len počty dní so zápisom, dní v cieli a tréningov. Nikdy nevidia tvoje kalórie, jedlá ani váhu.</span></p>`;
+      ${items ? `<div class="fr-tg"><div>Zdieľať moje tréningy<small>Kamaráti uvidia odcvičené tréningy a môžu ťa pochváliť</small></div><button class="fr-sw" role="switch" aria-checked="${me.share_workouts ? 'true' : 'false'}" aria-label="Zdieľať moje tréningy s kamarátmi" data-sw></button></div>` : ''}
+      <p class="fr-note"><i>🔒</i><span>Kamaráti vidia počty dní so zápisom, dní v cieli a tréningov${me.share_workouts ? ' a tvoje odcvičené tréningy' : ''}. Nikdy nevidia tvoje kalórie, jedlá ani váhu.</span></p>`;
+    const setShare = async v => {
+      try { const { error } = await sb.from('profiles').update({ share_workouts: v }).eq('id', me.id); if (error) throw error; me.share_workouts = v; ctx.toast(v ? 'Kamaráti uvidia tvoje tréningy' : 'Tvoje tréningy sú skryté'); fdCache = null; await draw(true); }
+      catch (_) { ctx.toast('Nepodarilo sa uložiť', true); }
+    };
+    body.querySelectorAll('[data-share]').forEach(b => b.onclick = () => setShare(b.dataset.share === '1'));
+    body.querySelector('[data-sw]')?.addEventListener('click', () => setShare(!me.share_workouts));
+    body.querySelector('[data-more]')?.addEventListener('click', () => { showAll = true; draw(false); });
+    body.querySelectorAll('[data-kd]').forEach(b => b.onclick = async () => {
+      const id = Number(b.dataset.kd), it = (items || []).find(x => x.id === id); if (!it || b.disabled) return;
+      const on = !it.mine; it.mine = on; it.kudos = Math.max(0, (it.kudos || 0) + (on ? 1 : -1));
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.lastChild.textContent = on ? 'Pochválené' : 'Pochváliť';
+      const sm = b.previousElementSibling; if (sm) sm.textContent = it.kudos ? `${it.kudos}× pochvala` : '';
+      if (on) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); try { navigator.vibrate?.(15); } catch (_) { } }
+      b.disabled = true;
+      try { const { error } = await sb.rpc('give_kudos', { p_log: id, p_on: on }); if (error) throw error; }
+      catch (e) { it.mine = !on; it.kudos = Math.max(0, it.kudos + (on ? -1 : 1)); ctx.toast(e.message || 'Nepodarilo sa', true); draw(false); }
+      finally { b.disabled = false; }
+    });
     const text = `Pridaj sa a porovnajme sa v GainTrain. Každý týždeň uvidíme, kto zapisoval, trafil kalórie a trénoval viac. Odkaz: ${linkFor(code)} (kód ${code})`;
     body.querySelector('#frShare').onclick = async () => {
       try {
@@ -221,7 +308,7 @@ if (typeof document !== 'undefined') {
     b.onclick = openFriends;
     meals.after(b);
     try {
-      const [rows, chd] = await Promise.all([board(false), challengeData(false).catch(() => null)]);
+      const [rows, chd, items] = await Promise.all([board(false), challengeData(false).catch(() => null), feed(false).catch(() => null)]);
       const others = rows.filter(r => !r.me).length;
       const cm = chd?.cur?.week_start ? (() => { const ch = challengeFor(chd.cur.week_start), mine = (chd.cur.rows || []).find(r => r.me); return mine ? `${ch.title}: ${Math.min(mine[ch.key] || 0, ch.goal)}/${ch.goal}` : ''; })() : '';
       if (b.isConnected) {
@@ -229,6 +316,12 @@ if (typeof document !== 'undefined') {
         const base = others ? `${pos}. miesto z ${rows.length} · ${mine?.points || 0} bodov` : 'Pridaj sa a porovnajme sa: pošli pozvánku';
         b.querySelector('b').textContent = 'Kamaráti';
         b.querySelector('small').textContent = cm ? (others ? `${pos}. miesto z ${rows.length} · výzva ${cm}` : `Výzva týždňa ${cm} · pozvi kamaráta`) : base;
+        // nová pochvala za môj tréning: ukáže sa na karte, kým okno neotvorím
+        const seen = ls.get(KSEEN) || '';
+        const fresh = (items || []).filter(i => i.me && i.last_kudo && i.last_kudo > seen);
+        if (fresh.length) { const who = [...new Set(fresh.flatMap(i => (i.by || []).map(firstName)))]; b.querySelector('small').textContent = `💪 ${names2(who)} ${who.length > 1 ? 'ťa pochválili' : 'ťa pochválil(a)'} za tréning`; b.classList.add('fr-new'); }
+        const fi = (items || []).find(i => !i.me && !i.mine);
+        if (!fresh.length && fi) b.querySelector('small').textContent = `${firstName(fi.name)} ${whenTxt(fi.date)} ${fi.sex === 'f' ? 'odcvičila tréning · pochváľ ju' : 'odcvičil tréning · pochváľ ho'}`;
       }
     } catch (_) { /* karta ostane s výzvou */ }
   };
