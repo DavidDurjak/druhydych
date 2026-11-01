@@ -69,10 +69,10 @@ function workingKg(card) {
 }
 
 function decorate(card) {
-  if (card.dataset.lp) return;
+  if (card.dataset.lpd) return;
   const setEl = $('.set[data-ex]', card); if (!setEl) return;
   const ex = EXERCISES[setEl.dataset.ex]; if (!ex || !$('[data-f=kg]', card)) return;
-  card.dataset.lp = '1';
+  card.dataset.lpd = '1'; // značka „karta už má tlačidlá“; nesmie byť data-lp, inak by klik kdekoľvek v karte (aj ✓ série) zachytil handler tlačidiel
   const btns = [];
   if (weighted(ex)) btns.push('<button type="button" class="lp-btn" data-lp="wu">🔥 Rozcvičovacie série</button>');
   if (isBarbell(ex)) btns.push('<button type="button" class="lp-btn" data-lp="pl">🏋️ Kotúče</button>');
@@ -83,7 +83,7 @@ function decorate(card) {
 }
 
 document.addEventListener('click', e => {
-  const b = e.target.closest?.('[data-lp]'); if (!b) return;
+  const b = e.target.closest?.('button[data-lp]'); if (!b) return;
   e.preventDefault(); e.stopPropagation();
   const card = b.closest('.card.ex'), ex = EXERCISES[$('.set[data-ex]', card)?.dataset.ex];
   const old = $('.lp-box', card), kind = b.dataset.lp;

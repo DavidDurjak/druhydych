@@ -71,7 +71,8 @@ const CSS = `
 .fx-rest .rt{display:flex;align-items:center;gap:12px}
 .fx-rest b{font-size:28px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;min-width:74px}
 .fx-rest small{display:block;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:12px}
-.fx-rest .rb{margin-left:auto;display:flex;gap:6px}
+.fx-rest .rb{margin-left:auto;display:flex;gap:6px;flex:none}
+.fx-rest{box-sizing:border-box}.fx-rest .rt>div:nth-child(2){flex:1;min-width:0}.fx-rest .rt>div:nth-child(2) small{max-width:none}.fx-rest b{flex:none}
 .fx-rest button{white-space:nowrap;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#fff;border-radius:12px;padding:9px 12px;font-weight:700;font-size:13px;cursor:pointer}
 .fx-rest .pb{height:4px;border-radius:99px;background:rgba(255,255,255,.1);margin-top:10px;overflow:hidden}
 .fx-rest .pb i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#7CFFB2,#5BB8FF);transform-origin:left;transition:transform .25s linear}
