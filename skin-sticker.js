@@ -228,6 +228,18 @@ ${S} .fnq-bar{background:var(--well)!important;box-shadow:none!important}${D} .f
 ${S} .fnq-bar i,${S} .fnq-bar b,${S} .fnq-bar>*{background:${HOLO(90)}!important}
 ${S} .fnq-link{color:var(--tbg)!important}${S} .fnq-link b{color:var(--tbg)!important}${S} .fnq-back{color:var(--tbg)!important}
 
+/* spodné panely: matný nepriesvitný podklad, biely vysek hore ako nálepka */
+${S} .sheet-bg{background:rgba(0,0,0,.65)!important}
+${S} .sheet{background:var(--paper)!important;color:var(--t1)!important;border-top:2.5px solid #fff!important;border-radius:26px 26px 0 0!important;box-shadow:0 -20px 50px -20px rgba(0,0,0,.7)!important}
+${S} .sheet .ck-c,${S} .sheet .card{box-shadow:var(--puffin)!important}
+/* recepty: polia a štítky na bielom paneli */
+${S} .rh .rh-q,${S} .sheet .input,${S} .sheet textarea{background:var(--gl-in)!important;color:var(--t1)!important}
+${S} .rh .rh-cats button.on{background:var(--ink)!important;color:#fff!important;border-color:var(--ink)!important}
+${S} .rh .rh-cuis button.on,${S} .rh .rh-sort button.on{background:${HOLO(120)}!important;color:#15131E!important;box-shadow:none!important}
+${S} .rh .rh-sort button,${S} .rh .rh-chips span{background:var(--gl-in)!important;color:var(--t2)!important}
+${S} .rh .ri-btn,${S} .ri-btn{color:var(--t1)!important;border-color:var(--track)!important}
+${S} .rh .rh-cats button{color:var(--t2)!important}
+${S} .sheet .del,${S} .sheet [data-x]{background:var(--gl-in)!important;color:var(--t1)!important;border:0!important}
 /* Upraviť Dnes */
 ${S} .tde-r{border:0!important}
 ${S} .td-editlink{border:0!important;box-shadow:var(--puffin)!important;background:var(--gl)!important}

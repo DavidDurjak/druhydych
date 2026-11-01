@@ -140,6 +140,11 @@ ${S} .seg .on *,${S} .pg-per button.on *{color:var(--t1)!important}
 /* Jedlo: vybraná časť dňa má svoju farbu (raňajky oranžová, obed červená...), nie jednotnú */
 ${S} #mealseg button.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mc) 20%,var(--mixb)),color-mix(in srgb,var(--mc) 42%,var(--mixb)))!important;color:var(--t1)!important;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--mc) 75%,transparent),0 10px 18px -10px var(--mc)!important}
 ${S} #mealseg button.on *{color:var(--t1)!important}
+/* Tréning: dni plánu (D1, D2...) sú samostatné pilulky ako v Klasickom, vybraný deň má hlavnú farbu vzhľadu */
+${S} .fx-on .seg{background:transparent!important;box-shadow:none!important;border:0!important}
+${S} .fx-on .seg button{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important;color:var(--t2)!important;border-radius:14px!important}
+${S} .fx-on .seg button.on{background:var(--pri)!important;color:var(--pri-t)!important;border-color:transparent!important;box-shadow:0 10px 20px -10px rgba(0,0,0,.5)!important;transform:translateY(-1px)!important}
+${S} .fx-on .seg button.on *{color:var(--pri-t)!important}
 /* Pokrok: posuvný výber obdobia, aktívna je pilulka pod tlačidlom */
 ${S} .pgx-per::before{background:var(--seg-on)!important;box-shadow:var(--seg-on-sh)!important}
 ${S} .pgx-per button.on{background:transparent!important;box-shadow:none!important}
@@ -230,6 +235,9 @@ ${S} .fnq-link b{color:var(--t1)!important}
 
 /* Klienti: štítok Pozor vo svetlom režime tmavší, aby bol čitateľný na skle */
 ${S}:not([data-theme=dark]) .ko-c.warn .ko-id span{color:#A35F12!important;background:rgba(223,163,103,.22)!important}
+/* spodné panely (Nové jedlo, Recepty, Len kalórie...): nepriesvitný podklad, cez ktorý nepresvitá obrazovka pod ním */
+${S} .sheet-bg{background:rgba(0,0,0,.6)!important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+${S} .sheet{background:var(--tde)!important;border-top:var(--gl-b)!important;box-shadow:0 -20px 50px -20px rgba(0,0,0,.6)!important;-webkit-backdrop-filter:blur(24px) saturate(1.3);backdrop-filter:blur(24px) saturate(1.3)}
 /* panel Upraviť Dnes */
 ${S} .tde-s{background:var(--tde)!important;-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
 ${S} .tde-r{background:var(--gl)!important;border:var(--gl-b)!important;box-shadow:var(--gl-sh)!important}
