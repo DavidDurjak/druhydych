@@ -60,8 +60,8 @@ const CSS = `
 .avs-pv{position:relative;width:min(58vw,250px);aspect-ratio:1;border-radius:50%;overflow:hidden;background:var(--avbg,linear-gradient(160deg,#145c3f,#06120d));box-shadow:0 24px 50px -24px rgba(0,0,0,.6),0 0 0 4px var(--card),0 0 0 5px var(--line);transition:background .3s}
 .avs-pv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:avsPop .45s cubic-bezier(.2,.9,.25,1.2) both}
 @keyframes avsPop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
-.avs-sil{position:absolute;inset:0;display:grid;place-items:end center}
-.avs-sil svg{width:78%;height:auto;display:block}
+.avs-sil{position:absolute;inset:0}
+.avs-sil svg{width:100%;height:100%;display:block}
 .avs-busy{position:absolute;inset:0;display:grid;place-items:center;background:rgba(6,10,8,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 .avs-busy::before{content:'';position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 70%,var(--accent) 88%,transparent 100%);-webkit-mask:radial-gradient(circle,transparent calc(50% - 5px),#000 calc(50% - 4px));mask:radial-gradient(circle,transparent calc(50% - 5px),#000 calc(50% - 4px));animation:avsSpin 1.1s linear infinite}
 @keyframes avsSpin{to{transform:rotate(360deg)}}
@@ -111,7 +111,7 @@ const CSS = `
 @media (prefers-reduced-motion:reduce){.avs,.avs-pv img,.avs-busy::before{animation:none}}
 `;
 
-const SIL = `<svg viewBox="0 0 200 170" aria-hidden="true"><defs><linearGradient id="avsG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset="1" stop-color="#fff" stop-opacity=".1"/></linearGradient></defs><circle cx="100" cy="64" r="38" fill="url(#avsG)"/><path d="M22 170c4-44 38-66 78-66s74 22 78 66z" fill="url(#avsG)"/></svg>`;
+const SIL = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="39" r="17" fill="#fff" fill-opacity=".38"/><ellipse cx="50" cy="101" rx="35" ry="36" fill="#fff" fill-opacity=".38"/></svg>`;
 
 const toB64 = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
 function loadImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }

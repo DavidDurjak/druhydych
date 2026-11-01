@@ -7,7 +7,8 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
-const KEY = Deno.env.get("GEMINI_API_KEY") || "";
+// obrázky môžu ísť cez samostatný kľúč z projektu so zapnutou platbou (GEMINI_IMAGE_KEY), ostatné AI ostáva na pôvodnom kľúči
+const KEY = Deno.env.get("GEMINI_IMAGE_KEY") || Deno.env.get("GEMINI_API_KEY") || "";
 const MODELS = [...new Set([Deno.env.get("AVATAR_MODEL") || "gemini-3.1-flash-image-preview", "gemini-3.1-flash-image", "gemini-2.5-flash-image"])];
 const DAILY = Number(Deno.env.get("AVATAR_DAILY") || 8);
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
