@@ -8,6 +8,8 @@ import { exportMine } from './mydata.js';
 import { APP_VERSION } from './admin.js';
 import * as U from './units.js';
 import { tr } from './i18n.js';
+import { avatarInner } from './avatarimg.js';
+import { openAvatar } from './avatarmaker.js';
 
 const root = document.getElementById('app');
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -53,6 +55,8 @@ const CSS = `
 .pfx-ring .trk{stroke:rgba(255,255,255,.09)}
 .pfx-ring .fl{stroke:url(#pfxg);stroke-dasharray:0 100;transition:stroke-dasharray 1.1s cubic-bezier(.2,.8,.2,1) .15s;filter:drop-shadow(0 0 5px rgba(255,181,71,.45))}
 .pfx-ini{position:absolute;inset:9px;border-radius:50%;display:grid;place-items:center;font-size:27px;font-weight:800;letter-spacing:-.02em;color:var(--accent);background:radial-gradient(120% 120% at 30% 15%,#2a3d34,#131b17);box-shadow:inset 0 0 0 1px rgba(124,255,178,.22)}
+.pfx-ini{border:0;padding:0;font-family:inherit;cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent}.pfx-ini.has{background:none;box-shadow:none}.pfx-ini:active{transform:scale(.96)}
+.pfx-cam{position:absolute;left:-2px;bottom:2px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#0B1512;background:var(--accent,#7CFFB2);border:3px solid #151a21;pointer-events:none}
 .pfx-lv{position:absolute;right:-3px;bottom:-3px;min-width:30px;height:30px;padding:0 6px;border-radius:99px;display:grid;place-items:center;font-size:14px;font-weight:800;color:#3A2400;background:radial-gradient(circle at 30% 25%,#FFE08A,#FFB547 60%,#B9741A);border:3px solid #151a21;box-shadow:0 4px 12px rgba(255,181,71,.35)}
 .pfx-lv.pop{animation:pfxPop .8s cubic-bezier(.2,1.5,.4,1) .9s both}
 @keyframes pfxPop{0%{transform:scale(.4);opacity:0}100%{transform:none;opacity:1}}
@@ -161,6 +165,7 @@ async function loadStats(p) {
 }
 
 // ---------- pomocné ----------
+const CAM = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 const initials = n => { const w = String(n || '').trim().split(/\s+/).filter(Boolean); return ((w[0]?.[0] || '?') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); };
 const COL = {
   mint: ['#7CFFB2', 'rgba(124,255,178,.14)'], rose: ['#FF7A93', 'rgba(255,92,122,.15)'], violet: ['#B79CFF', 'rgba(150,120,255,.17)'], sky: ['#6FC4FF', 'rgba(91,184,255,.15)'],
@@ -221,7 +226,7 @@ function html(p, admin) {
   <div class="pfx-hd">
     <div class="pfx-av">
       <svg class="pfx-ring" viewBox="0 0 100 100"><defs><linearGradient id="pfxg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE08A"/><stop offset="1" stop-color="#FFA53A"/></linearGradient></defs><circle class="trk" cx="50" cy="50" r="46"/><circle class="fl" cx="50" cy="50" r="46" pathLength="100"/></svg>
-      <span class="pfx-ini">${h(initials(p.name))}</span><b class="pfx-lv" data-lv>1</b>
+      <button class="pfx-ini${p.avatar_url ? ' has' : ''}" type="button" data-a="avatar" aria-label="Zmeniť profilovú fotku">${avatarInner(p, 74) || h(initials(p.name))}</button><b class="pfx-lv" data-lv>1</b><span class="pfx-cam" aria-hidden="true">${CAM}</span>
     </div>
     <div class="pfx-id">
       <button class="pfx-name" type="button" data-a="rename" aria-label="Zmeniť meno"><span>${h(p.name || 'Bez mena')}</span>${ic('pen')}</button>
@@ -295,7 +300,7 @@ function renameSheet(box, p) {
       if (error) throw new Error(error.message);
       p.name = name;
       box.querySelector('.pfx-name span').textContent = name;
-      box.querySelector('.pfx-ini').textContent = initials(name);
+      if (!p.avatar_url) box.querySelector('.pfx-ini').textContent = initials(name);
       bg.remove(); ctx.toast('Meno uložené');
     } catch (e) { ok.disabled = false; ctx.toast(e.message || 'Meno sa nepodarilo uložiť', true); }
   };
@@ -348,6 +353,10 @@ function deleteSheet() {
   };
 }
 const bound = new WeakSet();
+window.addEventListener('fw-avatar', () => {
+  const p = ctx.state?.profile, el = document.querySelector('.pfx-root .pfx-ini'); if (!p || !el) return;
+  const inner = avatarInner(p, 74); el.classList.toggle('has', !!inner); el.innerHTML = inner || ctx.h(initials(p.name));
+});
 function build(screen) {
   const p = ctx.state?.profile; if (!p) return;
   const box = document.createElement('div'); box.className = 'pfx-root';
@@ -357,6 +366,7 @@ function build(screen) {
     const b = e.target.closest('[data-a]'); if (!b) return;
     const a = b.dataset.a;
     if (a === 'rename') renameSheet(box, p);
+    else if (a === 'avatar') openAvatar();
     else if (a === 'invite') { if (window.fwFriends) window.fwFriends(); else invite(p); }
     else if (a === 'logout') logoutSheet(screen);
     else if (a === 'delete') deleteSheet();

@@ -12,7 +12,7 @@ const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
 async function purgeUser(admin: ReturnType<typeof createClient>, uid: string) {
-  for (const bucket of ["progress-photos", "feedback", "trainer-photos", "trainer-proofs"]) {
+  for (const bucket of ["progress-photos", "feedback", "trainer-photos", "trainer-proofs", "avatars"]) {
     for (let i = 0; i < 20; i++) {
       const { data, error } = await admin.storage.from(bucket).list(uid, { limit: 100 });
       if (error || !data || !data.length) break;

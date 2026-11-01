@@ -6,6 +6,7 @@ import { sb } from './data.js';
 import { ctx } from './app.js';
 import { EXERCISES } from './workouts.js';
 import { allTemplates } from './laura-plans.js';
+import { avatarInner } from './avatarimg.js';
 
 const ls = { get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) { /* nič */ } }, del: k => { try { localStorage.removeItem(k); } catch (_) { /* nič */ } } };
 const PEND = 'fw_fr_pending';
@@ -18,6 +19,7 @@ const CSS = `
 .fr-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.fr-h h3{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em}.fr-h small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .fr-h .del{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--bg-2,var(--card-2));color:var(--text);font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer}
 .fr-av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#0B1512;background:var(--c,#7CFFB2);letter-spacing:-.01em}
+.fr-av.has{background:none;overflow:hidden;padding:0}.fr-av.has>*{width:100%;height:100%}
 .fr-av.me{box-shadow:0 0 0 2px var(--bg-2,#0B1512),0 0 0 4px var(--accent)}
 /* výzva týždňa */
 .fr-ch{position:relative;margin:0 0 18px;padding:16px;border-radius:22px;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
@@ -120,14 +122,21 @@ const AVC = ['#7CFFB2', '#FFC857', '#FF8FB1', '#8EC5FF', '#C9A7FF', '#FFAE7A', '
 const initials = n => String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
 const avColor = n => { let x = 0; for (const c of String(n || '')) x = (x * 31 + c.charCodeAt(0)) >>> 0; return AVC[x % AVC.length]; };
 const firstName = n => String(n || 'Kamarát').trim().split(/\s+/)[0];
-const av = (h, name, me) => `<span class="fr-av${me ? ' me' : ''}" style="--c:${avColor(name)}">${h(initials(name))}</span>`;
+// fotka alebo avatar človeka (z rebríčka, tréningov alebo profilu); inak farebné iniciály
+const AVM = {};
+const remember = (list, key = 'id', auth = true) => (list || []).forEach(r => { const id = r && r[key]; if (!id) return; if (auth || r.avatar_url || !AVM[id]) AVM[id] = { avatar_url: r.avatar_url || null }; });
+const av = (h, name, me, uid) => {
+  const mine = me ? ctx.state?.profile : null;
+  const inner = avatarInner(mine && mine.avatar_url ? mine : (uid && AVM[uid]) || {}, 64);
+  return inner ? `<span class="fr-av has${me ? ' me' : ''}">${inner}</span>` : `<span class="fr-av${me ? ' me' : ''}" style="--c:${avColor(name)}">${h(initials(name))}</span>`;
+};
 
 let cache = null, cacheAt = 0;
 async function board(force) {
   if (!force && cache && Date.now() - cacheAt < 30000) return cache;
   const { data, error } = await sb.rpc('friends_board');
   if (error) throw error;
-  cache = Array.isArray(data) ? data : []; cacheAt = Date.now();
+  cache = Array.isArray(data) ? data : []; cacheAt = Date.now(); remember(cache);
   return cache;
 }
 
@@ -157,7 +166,7 @@ function challengeHtml(d, h, profOn) {
   const ch = challengeFor(d.cur.week_start);
   const left = Math.round((parseDay(d.cur.week_end) - parseDay(d.cur.today)) / 86400000) + 1;
   const goal = ch.goal;
-  const bar = (name, val, g, me, full, uid) => `<div class="fr-pr${me ? ' me' : ''}"${uid && profOn ? ` data-uid="${h(uid)}"` : ''}>${full !== false ? av(h, full || name, me) : ''}<span>${h(name)}</span><i><b style="width:${Math.min(100, g ? val / g * 100 : 0)}%"></b></i><em class="${val >= g ? 'ok' : ''}">${val >= g ? '✓ ' : ''}${val}/${g}</em></div>`;
+  const bar = (name, val, g, me, full, uid) => `<div class="fr-pr${me ? ' me' : ''}"${uid && profOn ? ` data-uid="${h(uid)}"` : ''}>${full !== false ? av(h, full || name, me, uid) : ''}<span>${h(name)}</span><i><b style="width:${Math.min(100, g ? val / g * 100 : 0)}%"></b></i><em class="${val >= g ? 'ok' : ''}">${val >= g ? '✓ ' : ''}${val}/${g}</em></div>`;
   const sorted = rows.slice().sort((a, b) => (b[ch.key] - a[ch.key]) || (b.me - a.me) || String(a.name).localeCompare(String(b.name)));
   const solo = rows.length === 1;
   let body;
@@ -189,7 +198,7 @@ async function feed(force) {
   if (!force && fdCache && Date.now() - fdAt < 30000) return fdCache;
   const { data, error } = await sb.rpc('friends_feed', { p_limit: 30 });
   if (error) throw error;
-  fdCache = Array.isArray(data) ? data : []; fdAt = Date.now();
+  fdCache = Array.isArray(data) ? data : []; fdAt = Date.now(); remember(fdCache, 'user_id', false);
   return fdCache;
 }
 const WD = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So'];
@@ -211,7 +220,7 @@ function itemHtml(it, h, inProfile) {
     ? `<small>${it.kudos ? `💪 ${h(names2(by))} ${it.kudos > 1 ? 'ťa pochválili' : 'ťa pochválil(a)'}` : 'Zatiaľ bez pochvaly'}</small>`
     : `<small>${it.kudos ? `${it.kudos}× pochvala` : ''}</small><button class="fr-kd${it.mine ? ' on' : ''}" data-kd="${it.id}" aria-pressed="${it.mine ? 'true' : 'false'}" aria-label="Pochváliť ${h(firstName(it.name))}"><i>💪</i>${it.mine ? 'Pochválené' : 'Pochváliť'}</button>`;
   const head = inProfile ? `<small class="fr-it-d">${whenTxt(it.date)}</small>`
-    : `<div class="fr-it-h"${it.user_id ? ` data-uid="${h(it.user_id)}"` : ''}>${av(h, it.name || 'Ty', it.me)}<div><b class="notranslate">${it.me ? 'Ty' : h(it.name || 'Kamarát')}</b><small>${whenTxt(it.date)} · ${it.me ? 'tvoj tréning' : (it.sex === 'f' ? 'odcvičila tréning' : 'odcvičil tréning')}</small></div></div>`;
+    : `<div class="fr-it-h"${it.user_id ? ` data-uid="${h(it.user_id)}"` : ''}>${av(h, it.name || 'Ty', it.me, it.user_id)}<div><b class="notranslate">${it.me ? 'Ty' : h(it.name || 'Kamarát')}</b><small>${whenTxt(it.date)} · ${it.me ? 'tvoj tréning' : (it.sex === 'f' ? 'odcvičila tréning' : 'odcvičil tréning')}</small></div></div>`;
   return `<div class="fr-it${it.me ? ' me' : ''}">${head}
     <div class="fr-it-t${inProfile ? ' np' : ''}">${h(it.day_name || 'Tréning')}</div>${stats.length ? `<div class="fr-it-s">${stats.map(x => `<span>${x}</span>`).join('')}</div>` : ''}
     <div class="fr-it-f">${foot}</div></div>`;
@@ -265,7 +274,7 @@ function profileHtml(pf, h, meProfile) {
   const wk = pf.week || {};
   const sub = pf.me ? '' : pf.since ? `Kamaráti od ${dShort(pf.since)}` : '';
   let html = `<div class="fp-top"><button class="fp-back" data-back>‹ Kamaráti</button><button class="del fp-x" data-close aria-label="Zavrieť">×</button></div>
-    <div class="fp-hero" style="--c:${avColor(nm)}">${av(h, nm, pf.me)}<div><h4 class="notranslate">${h(nm)}</h4>${sub ? `<small>${sub}</small>` : ''}${pf.me ? '<span class="fp-me">Takto ťa vidia kamaráti</span>' : ''}</div></div>
+    <div class="fp-hero" style="--c:${avColor(nm)}">${av(h, nm, pf.me, pf.id)}<div><h4 class="notranslate">${h(nm)}</h4>${sub ? `<small>${sub}</small>` : ''}${pf.me ? '<span class="fp-me">Takto ťa vidia kamaráti</span>' : ''}</div></div>
     <div class="fp-st">
       <div><i>🔥</i><b>${pf.streak || 0}</b><small>${(pf.streak || 0) === 1 ? 'deň' : (pf.streak || 0) >= 2 && (pf.streak || 0) <= 4 ? 'dni' : 'dní'} so zápisom v rade</small></div>
       <div><i>🏋️</i><b>${pf.month_workouts || 0}</b><small>${(pf.month_workouts || 0) === 1 ? 'tréning' : (pf.month_workouts || 0) >= 2 && (pf.month_workouts || 0) <= 4 ? 'tréningy' : 'tréningov'} za 30 dní</small></div>
@@ -315,7 +324,7 @@ async function openFriends() {
   const openProfile = async (uid) => {
     body.innerHTML = '<p class="fr-sub">Načítavam…</p>'; sheetEl.scrollTop = 0;
     let pf;
-    try { const { data, error } = await sb.rpc('friend_profile', { p_user: uid }); if (error) throw error; pf = data; }
+    try { const { data, error } = await sb.rpc('friend_profile', { p_user: uid }); if (error) throw error; pf = data; remember([pf]); }
     catch (e) { sheetEl.classList.remove('fp-on'); body.innerHTML = `<button class="fp-back" data-back>‹ Kamaráti</button><p class="fr-sub">${h(e.message || 'Profil sa nepodarilo načítať.')}</p>`; body.querySelector('[data-back]').onclick = () => draw(true); return; }
     const paint = () => {
       sheetEl.classList.add('fp-on');
@@ -346,7 +355,7 @@ async function openFriends() {
     body.innerHTML = `${challengeHtml(chd, h, !!items)}
       ${feedHtml(items, me, others, h, showAll)}
       <div class="fr-sec"><b>Rebríček</b><small>posledných 7 dní</small></div>
-      ${others ? rows.map((r, i) => `<div class="fr-row${r.me ? ' me' : ''}"${r.id && items ? ` data-uid="${h(r.id)}" role="button" tabindex="0" aria-label="Profil: ${h(r.name || 'Kamarát')}"` : ''}><div class="fr-rk${i < 3 ? ' g' + (i + 1) : ''}">${i + 1}</div>${av(h, r.name || 'Ty', r.me)}
+      ${others ? rows.map((r, i) => `<div class="fr-row${r.me ? ' me' : ''}"${r.id && items ? ` data-uid="${h(r.id)}" role="button" tabindex="0" aria-label="Profil: ${h(r.name || 'Kamarát')}"` : ''}><div class="fr-rk${i < 3 ? ' g' + (i + 1) : ''}">${i + 1}</div>${av(h, r.name || 'Ty', r.me, r.id)}
         <div class="fr-n"><b class="notranslate">${h(r.name || 'Kamarát')}${r.me ? ' (ty)' : ''}</b><div class="fr-st"><span>📝 ${r.logged} ${days(r.logged)}</span><span>🎯 ${r.ontarget} v cieli</span><span>🏋️ ${r.workouts}</span></div></div>
         <div class="fr-p">${r.points}<small>bodov</small></div></div>`).join('') + '<p class="fr-how">Body: 10 za deň so zápisom, 10 za deň v cieli kalórií, 10 za deň s bielkovinami, 20 za tréning.</p>'
         : `<div class="fr-empty"><b>Zatiaľ si tu sám</b>Pozvi kamaráta. Keď zadá tvoj kód alebo otvorí odkaz, uvidíte sa navzájom v rebríčku.</div>`}
