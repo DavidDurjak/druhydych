@@ -2,6 +2,8 @@
 // Podpis sa overí tajomstvom STRIPE_WEBHOOK_SECRET; stav sa zapíše do tabuľky subscriptions, appka ho číta cez my_entitlement().
 // V Stripe: Developers → Webhooks → endpoint https://<projekt>.supabase.co/functions/v1/billing-webhook, udalosti:
 // checkout.session.completed, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted
+// v314: jedna karta = jedna skúšobná doba. Pri predplatnom v skúšobnej dobe sa pozrie odtlačok karty (card.fingerprint, nie číslo karty);
+// keď ju už mal iný účet, skúšobná doba sa hneď ukončí a Stripe stiahne platbu. Kto si kúpi vlastné predplatné, vypadne z cudzej rodiny.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const URL_ = Deno.env.get("SUPABASE_URL")!;
@@ -20,10 +22,32 @@ async function verify(raw: string, header: string) {
   const hex = Array.from(mac, (b) => b.toString(16).padStart(2, "0")).join("");
   return sigs.some((s) => s.length === hex.length && [...s].reduce((d, c, i) => d | (c.charCodeAt(0) ^ hex.charCodeAt(i)), 0) === 0);
 }
-async function getSub(id: string) {
-  const r = await fetch("https://api.stripe.com/v1/subscriptions/" + id, { headers: { Authorization: `Bearer ${STRIPE}`, "Stripe-Version": "2024-06-20" } });
+async function api(path: string, params?: Record<string, string>) {
+  const r = await fetch("https://api.stripe.com/v1/" + path, {
+    method: params ? "POST" : "GET",
+    headers: { Authorization: `Bearer ${STRIPE}`, "Stripe-Version": "2024-06-20", ...(params ? { "Content-Type": "application/x-www-form-urlencoded" } : {}) },
+    body: params ? new URLSearchParams(params).toString() : undefined,
+  });
   if (!r.ok) throw new Error("Stripe " + r.status);
   return await r.json();
+}
+const getSub = (id: string) => api("subscriptions/" + id);
+
+// jedna karta = jedna skúšobná doba; vráti true, keď sa skúšobná doba ukončila
+async function trialGuard(admin: ReturnType<typeof createClient>, sub: Record<string, any>, uid: string) {
+  if (sub.status !== "trialing") return false;
+  const full = await api(`subscriptions/${sub.id}?expand[]=default_payment_method`);
+  let fp = full?.default_payment_method?.card?.fingerprint;
+  if (!fp) { const c = await api(`customers/${sub.customer}?expand[]=invoice_settings.default_payment_method`); fp = c?.invoice_settings?.default_payment_method?.card?.fingerprint; }
+  if (!fp) return false;
+  const { data: seen } = await admin.from("trial_cards").select("user_id").eq("fingerprint", fp).maybeSingle();
+  if (seen && seen.user_id && seen.user_id !== uid) {
+    await api("subscriptions/" + sub.id, { trial_end: "now", proration_behavior: "none" });
+    await admin.from("app_events").insert({ user_id: uid, name: "trial_card_reused", props: {} }).then(() => {}, () => {});
+    return true;
+  }
+  if (!seen) await admin.from("trial_cards").insert({ fingerprint: fp, user_id: uid }).then(() => {}, () => {});
+  return false;
 }
 
 Deno.serve(async (req) => {
@@ -57,6 +81,12 @@ Deno.serve(async (req) => {
       cancel_at_period_end: !!sub.cancel_at_period_end, stripe_customer_id: sub.customer, stripe_subscription_id: sub.id, updated_at: at,
     });
     if (error) throw new Error(error.message);
+    if (["active", "trialing"].includes(status)) {
+      await admin.from("sub_members").delete().eq("member_id", uid).then(() => {}, () => {});
+      if (ev.type === "checkout.session.completed" || ev.type === "customer.subscription.created") {
+        try { await trialGuard(admin, sub, uid); } catch (e) { console.error("trial guard", e); }
+      }
+    }
     await admin.from("app_events").insert({ user_id: uid, name: "sub_" + status, props: { plan, ev: ev.type } }).then(() => {}, () => {});
     return new Response("ok");
   } catch (e) {

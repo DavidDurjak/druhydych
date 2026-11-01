@@ -64,3 +64,5 @@ new MutationObserver(run).observe(document.documentElement, { childList: true, s
 run();
 
 import('./friends.js').catch(() => { /* bez kamarátov */ });
+
+import('./ads.js').catch(() => { /* bez reklám */ });

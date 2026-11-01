@@ -47,6 +47,8 @@ a{color:var(--accent)}
 <li><b>Kamaráti a správy:</b> kód kamaráta, zoznam kamarátov, pochvaly a správy v appke. Kamaráti vidia len počty dní so zápisom, dní v cieli a tréningov. Ak si v okne Kamaráti zapneš zdieľanie tréningov, uvidia aj tvoje odcvičené tréningy (dátum, názov, dĺžku, počet sérií a objem), kalendár tréningov a najlepšie výkony na cvikoch (váha a opakovania). V profile kamaráta je aj séria dní so zápisom. Kalórie, jedlá ani váhu nevidia nikdy. Zdieľanie môžeš kedykoľvek vypnúť.</li>
 <li><b>Notifikácie:</b> technický kľúč tvojho zariadenia, ak povolíš upozornenia.</li>
 <li><b>Používanie appky:</b> anonymné merania (otvorenie, obrazovky, čas zápisu jedla, ktoré kroky úvodného kvízu si videl) a hľadané jedlá, ktoré sme v databáze nenašli. Zariadenie má na to náhodný identifikátor, ktorý neobsahuje meno ani e-mail; pred registráciou ukladáme len to, ktorý krok kvízu sa zobrazil, a doménu odkazu, z ktorého si prišiel, nie tvoje odpovede. Slúži to na vylepšovanie appky a databázy jedál.</li>
+<li><b>Predplatné:</b> stav predplatného, plán a dátum obnovy. Platbu spracúva Stripe, číslo karty nikdy nevidíme. Od Stripe si ukladáme len anonymný odtlačok karty (nie číslo karty), aby sa skúšobná doba nedala zneužívať opakovanými účtami. Ak si v Duo alebo Rodine, majiteľ predplatného vidí tvoje meno v zozname členov.</li>
+<li><b>Reklamy:</b> ak nemáš predplatné a reklamy sú zapnuté, zobrazuje ich Google AdSense. Google môže na to používať cookies a podobné technológie; či môžu byť reklamy prispôsobené tebe, rozhodneš v okne so súhlasom, ktoré sa ukáže pri prvom zobrazení. Súhlas môžeš kedykoľvek zmeniť.</li>
 <li><b>Technické údaje:</b> typ zariadenia a verzia appky, ktoré sa pošlú, keď nám napíšeš správu z appky.</li>
 </ul>
 
@@ -56,6 +58,8 @@ a{color:var(--accent)}
 <li>Aby appka počítala kalórie, makrá, pokrok a ponúkala ti jedlá a tréning (plnenie zmluvy).</li>
 <li>Aby fungovali funkcie, ktoré si zapneš: AI zápis jedla, AI kouč, hodnotenie postavy, notifikácie, hodinky (tvoj súhlas).</li>
 <li>Aby sme opravili chyby a zabezpečili appku (oprávnený záujem).</li>
+<li>Aby sa skúšobná doba predplatného nedala zneužívať (oprávnený záujem, ochrana pred podvodmi; len odtlačok karty od Stripe, uchovávame ho, kým existuje účet, najviac 3 roky).</li>
+<li>Aby sme mohli zobrazovať reklamy ľuďom bez predplatného (prispôsobené reklamy len s tvojím súhlasom).</li>
 <li>Aby sme videli, kde je appka pre nových ľudí zbytočne zložitá, a zjednodušili ju (oprávnený záujem, len anonymné merania).</li>
 </ul>
 
@@ -68,7 +72,9 @@ a{color:var(--accent)}
 <li><b>Supabase</b> (databáza, prihlasovanie a úložisko fotiek),</li>
 <li><b>Vercel</b> (hosting appky),</li>
 <li><b>Brevo</b> (odosielanie e-mailov, napríklad na obnovu hesla),</li>
-<li><b>Google</b> (AI funkcie, pozri vyššie),</li>
+<li><b>Google</b> (AI funkcie, pozri vyššie, a reklamy Google AdSense pre ľudí bez predplatného),</li>
+<li><b>Cloudflare</b> (kreslenie avatarov v Avatar štúdiu),</li>
+<li><b>Stripe</b> (platby predplatného; údaje o karte spracúva len Stripe),</li>
 <li><b>Open Food Facts</b> (vyhľadávanie potravín podľa čiarového kódu, posiela sa len kód produktu).</li>
 </ul>
 <p>Niektorí z nich môžu údaje spracúvať aj mimo EÚ. V takom prípade sa spoliehame na zmluvné záruky, ktoré od nich vyžadujeme (štandardné zmluvné doložky).</p>
