@@ -30,13 +30,17 @@ module.exports = async function bundle(OUT) {
       return undefined;
     }); } };
     const res = await esbuild.build({
-      entryPoints: ['./__entry.js'], bundle: true, format: 'esm', splitting: false, write: false,
-      outfile: path.join(OUT, 'gt.js'), absWorkingDir: path.resolve(OUT),
+      // v331: rozdelenie na časti. Moduly načítané až keď treba (import()) idú do vlastných súborov v chunks/,
+      // takže telefón pri štarte stiahne a spracuje len jadro; zvyšok sa dotiahne na pozadí alebo pri otvorení funkcie
+      entryPoints: { gt: './__entry.js' }, bundle: true, format: 'esm', splitting: true, write: false,
+      outdir: path.resolve(OUT), entryNames: '[name]', chunkNames: 'chunks/[name]-[hash]', absWorkingDir: path.resolve(OUT),
       metafile: true, minify: true, sourcemap: 'external', sourcesContent: false, keepNames: true, legalComments: 'none', target: 'esnext', charset: 'utf8',
       plugins: [keep], logLevel: 'warning', logOverride: { 'duplicate-object-key': 'silent' },
     });
-    const code = res.outputFiles.find(f => f.path.endsWith('.js')).text;
-    const map = res.outputFiles.find(f => f.path.endsWith('.map'))?.text; // mapa riadkov: z hlásenia chyby (gt.js:1:48211) sa dá zistiť pôvodný súbor a riadok; prehliadač ju nesťahuje
+    const isEntry = f => path.basename(f.path) === 'gt.js';
+    const code = res.outputFiles.find(isEntry).text;
+    const map = res.outputFiles.find(f => path.basename(f.path) === 'gt.js.map')?.text;
+    const chunks = res.outputFiles.filter(f => !isEntry(f) && f.path.includes(`${path.sep}chunks${path.sep}`)); // mapa riadkov: z hlásenia chyby (gt.js:1:48211) sa dá zistiť pôvodný súbor a riadok; prehliadač ju nesťahuje
     const hash = crypto.createHash('sha1').update(code).digest('hex').slice(0, 10);
 
     // index.html: namiesto 17 skriptov a ~110 modulepreload jeden skript (stiahne sa hneď v hlavičke, spustí sa na tom istom mieste ako predtým)
@@ -67,16 +71,21 @@ module.exports = async function bundle(OUT) {
     const inBundle = new Set(Object.keys(res.metafile.inputs).map(f => f.replace(/^\.\//, '')));
     const list = m[1].split(',').map(s => s.trim()).filter(Boolean).filter(s => { const f = s.replace(/^'\.\/|'$/g, ''); return !inBundle.has(f) && !(cssHash && sheets.includes(f)); });
     list.splice(2, 0, `'./gt.js?v=${hash}'`, ...(cssHash ? [`'./gt.css?v=${cssHash}'`] : []));
+    // časti appky sa predcachujú tiež (po inštalácii fungujú aj offline), sťahujú sa však až po štarte, nie pred ním
+    chunks.filter(f => f.path.endsWith('.js')).forEach(f => list.push(`'./chunks/${path.basename(f.path)}'`));
     // knižnica Supabase sa predcachuje tiež (appka sa tak otvorí aj offline hneď po aktualizácii), len ak pri nasadení naozaj vznikla
     if (fs.existsSync(path.join(OUT, 'vendor/supabase.mjs')) && !list.includes("'./vendor/supabase.mjs'")) list.splice(3, 0, "'./vendor/supabase.mjs'");
     sw = sw.replace(m[0], `const ASSETS = [${list.join(', ')}];`).replace(/const CACHE = '([^']+)';/, (_, c) => `const CACHE = '${c}-${hash}${cssHash.slice(0, 4)}';`);
     // všetko sa zapíše až na konci, keď je hotové: pri chybe ostane public/ presne taký, aký bol (záložný spôsob v build.js)
     fs.writeFileSync(path.join(OUT, 'gt.js'), code);
+    fs.rmSync(path.join(OUT, 'chunks'), { recursive: true, force: true }); fs.mkdirSync(path.join(OUT, 'chunks'), { recursive: true });
+    for (const f of chunks) fs.writeFileSync(path.join(OUT, 'chunks', path.basename(f.path)), f.contents);
     if (map) fs.writeFileSync(path.join(OUT, 'gt.js.map'), map);
     if (out.css) fs.writeFileSync(path.join(OUT, 'gt.css'), out.css);
     fs.writeFileSync(swPath, sw);
     fs.writeFileSync(idxPath, html);
-    console.log(`balík ok: gt.js ${(code.length / 1024).toFixed(0)} kB, ${inBundle.size} modulov, ${list.length} súborov v cache`);
+    const chunkKb = chunks.filter(f => f.path.endsWith('.js')).reduce((a, f) => a + f.contents.length, 0) / 1024;
+    console.log(`balík ok: gt.js ${(Buffer.byteLength(code) / 1024).toFixed(0)} kB pri štarte, ${chunks.filter(f => f.path.endsWith('.js')).length} častí na neskôr (${chunkKb.toFixed(0)} kB), ${inBundle.size} modulov, ${list.length} súborov v cache`);
     return true;
   } catch (e) {
     console.warn('balík preskočený:', String(e && e.message || e).slice(0, 500));

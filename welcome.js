@@ -66,3 +66,5 @@ run();
 import('./friends.js').catch(() => { /* bez kamarátov */ });
 
 import('./ads.js').catch(() => { /* bez reklám */ });
+// tréningy naživo (pozvánky na Dnes, v Tréneroch a Klientoch) a karta Beh: načítajú sa chvíľu po štarte, nebrzdia prvé otvorenie
+setTimeout(() => { import('./groupcalls.js').catch(() => { }); import('./run.js').catch(() => { }); }, 1200);

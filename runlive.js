@@ -6,6 +6,7 @@ import { ctx } from './app.js';
 import * as db from './data.js';
 import * as RL from './runlib.js';
 import { mapIn, leaflet } from './runmap.js';
+import { tr, currentLang } from './i18n.js';
 
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const toast = (...a) => ctx.toast(...a);
@@ -15,11 +16,27 @@ let S = null, ui = null, timers = [], watchId = null, wake = null, audio = null,
 // ---------- hlas a zvuky ----------
 let voiceOn = (() => { try { return localStorage.getItem('gt_run_voice') !== '0'; } catch (_) { return true; } })();
 let skVoice = null;
-function pickVoice() { try { const vs = speechSynthesis.getVoices(); skVoice = vs.find(v => /^sk/i.test(v.lang)) || vs.find(v => /^cs/i.test(v.lang)) || null; } catch (_) { } }
+// hlas v jazyku appky: slovenčina priamo, ostatné jazyky cez slovník prekladov (ak preklad ešte nie je, zaznie len pípnutie)
+const LNG = () => { try { return currentLang() || 'sk'; } catch (_) { return 'sk'; } };
+function pickVoice() {
+  try {
+    const vs = speechSynthesis.getVoices(), l = LNG().split('-')[0];
+    skVoice = l === 'sk' ? (vs.find(v => /^sk/i.test(v.lang)) || vs.find(v => /^cs/i.test(v.lang)) || null) : (vs.find(v => v.lang.toLowerCase().startsWith(l)) || null);
+  } catch (_) { }
+}
 try { speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); } catch (_) { }
 function say(t) {
   if (!voiceOn || !window.speechSynthesis) return;
-  try { const u = new SpeechSynthesisUtterance(t); u.lang = skVoice?.lang || 'sk-SK'; if (skVoice) u.voice = skVoice; u.rate = 1.02; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (_) { }
+  const l = LNG();
+  if (l !== 'sk') { const x = tr(t); if (!x) return; t = x; }
+  try { const u = new SpeechSynthesisUtterance(t); u.lang = skVoice?.lang || (l === 'sk' ? 'sk-SK' : l); if (skVoice) u.voice = skVoice; u.rate = 1.02; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (_) { }
+}
+// pred behom si vyžiadame preklady hlášok, aby boli počas behu pripravené
+function warmVoice() {
+  if (LNG() === 'sk') return;
+  ['Beh začal. Veľa šťastia.', 'Prechádzka začala', 'Pauza', 'Pokračujeme', 'Hlas zapnutý', 'Hotovo! Dnešný tréning je za tebou. Si super.', 'Intervaly sú hotové. Pokračuj voľne alebo ukonči.',
+    `${sayKm(1)}. Čas ${sayMin(330)}. Tento kilometer za ${sayMin(330)}.`, `${sayKm(2)}. Čas ${sayMin(660)}. Tento kilometer za ${sayMin(330)}.`, `${sayKm(5)}. Čas ${sayMin(1650)}. Tento kilometer za ${sayMin(330)}.`,
+    ...Object.values(RL.STEP_L).flatMap(x => [`${x}, ${sayMin(60)}.`, `${x}, ${sayMin(90)}.`, `${x}, 400 metrov.`])].forEach(x => { try { tr(x); } catch (_) { } });
 }
 function beep(f = 880, d = 0.12) {
   try {
@@ -136,7 +153,7 @@ export function start(opts) {
   const k = RL.K(opts.kind);
   S = { kind: opts.kind, startedAt: 0, pauseAcc: 0, pausedAt: 0, auto: false, pts: [], alts: [], dist: 0, lastFix: null, splitsAt: 1000, splits: [], lastSplitT: 0,
     steps: opts.steps || null, stepIdx: 0, stepT0: 0, laps: [], speed: opts.speed || 10, incline: 0, gaps: 0, route: opts.route || null, prog: opts.prog || null, meta: opts.meta || {}, acc: null, lastMoveT: 0 };
-  build(k);
+  build(k); warmVoice();
   if (k.gps) gpsWarm(); else ready();
 }
 export function resume(x) {

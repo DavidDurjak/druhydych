@@ -75,10 +75,15 @@ Deno.serve(async (req) => {
   else if (r.ok) r = await dj("/rooms/" + room, { method: "POST", body: JSON.stringify({ properties: { exp, max_participants: props.max_participants } }) });
   if (!r.ok) { console.error("daily room", r.status, (await r.text()).slice(0, 200)); return json({ error: "Miestnosť sa nepodarilo otvoriť. Skús to znova." }, 502); }
 
-  const tr = await dj("/meeting-tokens", { method: "POST", body: JSON.stringify({ properties: {
+  // jazyk obrazovky hovoru podľa appky (Daily nevie po slovensky, vtedy angličtina)
+  const DL: Record<string, string> = { da: "da", de: "de", en: "en", es: "es", fi: "fi", fr: "fr", it: "it", ja: "jp", ka: "ka", nl: "nl", no: "no", pl: "pl", pt: "pt", "pt-br": "pt-BR", ru: "ru", sv: "sv", tr: "tr" };
+  const lang = DL[String(body.lang || "").toLowerCase()] || DL[String(body.lang || "").toLowerCase().split("-")[0]] || "en";
+  const tokenProps: Record<string, unknown> = {
     room_name: room, user_name: String(name).slice(0, 40), user_id: me, exp, is_owner: owner,
-    enable_screenshare: owner, start_audio_off: !owner, start_video_off: false,
-  } }) });
+    enable_screenshare: owner, start_audio_off: !owner, start_video_off: false, lang,
+  };
+  let tr = await dj("/meeting-tokens", { method: "POST", body: JSON.stringify({ properties: tokenProps }) });
+  if (tr.status === 400) { delete tokenProps.lang; tr = await dj("/meeting-tokens", { method: "POST", body: JSON.stringify({ properties: tokenProps }) }); }
   const tj = await tr.json().catch(() => null);
   if (!tr.ok || !tj?.token) { console.error("daily token", tr.status, JSON.stringify(tj).slice(0, 200)); return json({ error: "Miestnosť sa nepodarilo otvoriť. Skús to znova." }, 502); }
 

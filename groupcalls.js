@@ -5,6 +5,7 @@
 // Dáta: tabuľky group_sessions a group_invites, funkcie gs_* (supabase/migrations/20261102_group_live.sql). Bez tabuliek sa nič z toho neukáže.
 import { ctx } from './app.js';
 import * as db from './data.js';
+import { currentLang } from './i18n.js';
 
 const $app = () => ctx.$app;
 const st = () => ctx.state;
@@ -560,7 +561,7 @@ async function join(id, btn) {
   const close = () => { clearInterval(timer); box.remove(); try { wake?.release(); } catch (_) { } wake = null; if (location.hash.startsWith('#/zive')) render(location.hash.split('/')[2]); };
   box.querySelector('#glLeave').onclick = close;
   try {
-    const { data, error } = await db.sb.functions.invoke('gs-room', { body: { session: id } });
+    const { data, error } = await db.sb.functions.invoke('gs-room', { body: { session: id, lang: (() => { try { return currentLang(); } catch (_) { return 'sk'; } })() } });
     let msg = data?.error; if (!msg && error?.context?.json) msg = (await error.context.json().catch(() => null))?.error;
     if (error || !data?.url) throw new Error(msg || 'Do tréningu sa nepodarilo pripojiť.');
     if (!box.isConnected) return;
@@ -649,3 +650,4 @@ let qd = 0;
 const app = document.getElementById('app');
 if (app) new MutationObserver(() => { if (qd) return; qd = requestAnimationFrame(() => { qd = 0; css(); chatLinks(); decorate(); }); }).observe(app, { childList: true, subtree: true });
 addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cache = null; });
+try { css(); chatLinks(); decorate(); } catch (_) { /* appka sa ešte načítava */ }

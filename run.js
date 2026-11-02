@@ -594,3 +594,4 @@ let q = 0;
 const app = document.getElementById('app');
 if (app) new MutationObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; entry(); }); }).observe(app, { childList: true, subtree: true });
 addEventListener('hashchange', () => { if ((location.hash || '').startsWith('#/trening') && !cache && !missing && st().profile) runs().then(() => { document.querySelector('.rn-entry')?.remove(); entry(); }).catch(() => { }); });
+try { entry(); } catch (_) { }
