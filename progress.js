@@ -128,7 +128,6 @@ function kcalBars(days, daily, target) {
   const maPath = mp.length >= 2 ? smooth(mp) : '';
   return `<div class="pgx-bw" data-bars='${JSON.stringify(data)}' data-t="${target}"><svg class="pgx-bars" viewBox="0 0 ${W} ${H}">
     <line x1="0" x2="${W}" y1="${y(target).toFixed(1)}" y2="${y(target).toFixed(1)}" class="pgx-goal"/>
-    <text x="${W}" y="${(y(target) - 4).toFixed(1)}" text-anchor="end" class="pgx-ax">cieľ ${Number(target).toLocaleString('sk-SK')}</text>
     <defs><linearGradient id="pgxb-ok" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent)" stop-opacity=".45"/></linearGradient>
       <linearGradient id="pgxb-over" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent-2)"/><stop offset="1" stop-color="var(--accent-2)" stop-opacity=".45"/></linearGradient>
       <linearGradient id="pgxb-under" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5BB8FF"/><stop offset="1" stop-color="#5BB8FF" stop-opacity=".45"/></linearGradient></defs>
@@ -308,7 +307,7 @@ export async function renderProgress() {
       <div class="pgx-kpis"><div><b>${logged.length ? `<span data-to="${Math.round(avgK)}">0</span>` : '–'}</b><span>priemer kcal</span></div><div><b>${Number(T).toLocaleString('sk-SK')}</b><span>cieľ kcal</span></div><div><b><span data-to="${logged.length}">0</span><small>/${days.length}</small></b><span>zapísané dni</span></div></div>
       ${kcalBars(period === 'all' && days.length > 42 ? days.slice(-42) : days, daily, T)}
       <p class="pgx-read">Ťukni na stĺpec a uvidíš presné číslo za deň.</p>
-      <div class="pg-legend"><span><i class="b-ok"></i>v cieli</span><span><i class="b-over"></i>nad</span><span><i class="b-under"></i>pod</span></div>
+      <div class="pg-legend"><span><i class="b-ok"></i>v cieli</span><span><i class="b-over"></i>nad</span><span><i class="b-under"></i>pod</span><span><i class="l-goal"></i>cieľ ${Number(T).toLocaleString('sk-SK')}</span>${logged.length >= 2 ? '<span><i class="l-ma"></i>priemer 7 dní</span>' : ''}</div>
     </section>
 
     <section class="pg-card pgx-anim">
