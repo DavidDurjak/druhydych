@@ -18,6 +18,7 @@ import * as crd from './cards.js';
 import * as hb from './habits.js';
 import * as tr from './trainers.js';
 import * as glv from './groupcalls.js';
+import * as runv from './run.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -71,6 +72,7 @@ function nav(active) {
 function groupOf(path) {
   const p = String(path || '#/').split('?')[0] || '#/';
   if (p.startsWith('#/kouc/')) return '#/kouc';
+  if (p === '#/beh' || p.startsWith('#/beh/')) return '#/trening';
   if (p === '#/zive' || p.startsWith('#/zive/')) return state.trainer?.approved && state.profile?.role !== 'coach' ? '#/kouc' : '#/treneri';
   if (p.startsWith('#/trener/')) return state.trainer?.approved && state.profile?.role !== 'coach' ? '#/profil' : '#/treneri';
   const trv = state.profile?.role === 'coach' || state.trainer?.approved;
@@ -208,6 +210,8 @@ async function routeInner(my) {
   if (tm) fn = tm[1] === 'chat' ? () => tr.renderChat(tm[2]) : () => tr.renderTrainer(tm[2]);
   const zm = path.match(/^#\/zive(?:\/([0-9a-f-]{36}))?$/);
   if (zm) fn = () => glv.render(zm[1]);
+  const bm = path.match(/^#\/beh(?:\/(.+))?$/);
+  if (bm) fn = () => runv.render(bm[1]);
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
   if (!fn) { fn = td.renderToday; if (path !== '#/') { history.replaceState(null, '', '#/'); path = '#/'; state.curPath = path; } }

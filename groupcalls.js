@@ -153,7 +153,7 @@ const CSS = `
 .zv-chip.inv{background:#FF3B4E;color:#fff}
 .zv-join{flex:none;display:inline-flex;align-items:center;gap:7px;border:0;border-radius:99px;padding:10px 14px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;background:#FF3B4E;color:#fff;box-shadow:0 8px 20px -10px #FF3B4E}
 .zv-join svg{width:18px;height:18px}
-.zv-empty{text-align:center;padding:34px 18px;border-radius:24px;border:1px dashed var(--line);color:var(--muted);font-size:14px;line-height:1.5}
+.zv-empty{text-align:center;padding:34px 18px;border-radius:24px;border:1px dashed var(--line);background:var(--card);color:var(--muted);font-size:14px;line-height:1.5}
 .zv-empty b{display:block;color:var(--text);font-size:17px;margin-bottom:6px}
 .zv-empty .zv-emo{font-size:38px;display:block;margin-bottom:10px}
 /* detail */
