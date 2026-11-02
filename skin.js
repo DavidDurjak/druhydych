@@ -406,7 +406,7 @@ function scanCards() {
       const w = el.offsetWidth, h = el.offsetHeight;
       if (!w || !h) return; // ešte nevykreslené: skúsime pri ďalšom prechode
       seen.add(el);
-      if (el.closest('.nav,.ck-ring,.hk-ring')) return;
+      if (el.closest('.nav,.ck-ring,.hk-ring,[data-noskin]')) return; // data-noskin: vlastný vzhľad (napr. tréningy naživo)
       if (w < 84 || h < 42 || w > vw * 0.95) return;
       if (el.matches(MANUAL)) return;
       const cs = getComputedStyle(el);

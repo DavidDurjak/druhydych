@@ -17,6 +17,7 @@ import * as gls from './glucose.js';
 import * as crd from './cards.js';
 import * as hb from './habits.js';
 import * as tr from './trainers.js';
+import * as glv from './groupcalls.js';
 
 const $app = document.getElementById('app');
 const state = { session: null, profile: null, date: calc.today() };
@@ -70,6 +71,7 @@ function nav(active) {
 function groupOf(path) {
   const p = String(path || '#/').split('?')[0] || '#/';
   if (p.startsWith('#/kouc/')) return '#/kouc';
+  if (p === '#/zive' || p.startsWith('#/zive/')) return state.trainer?.approved && state.profile?.role !== 'coach' ? '#/kouc' : '#/treneri';
   if (p.startsWith('#/trener/')) return state.trainer?.approved && state.profile?.role !== 'coach' ? '#/profil' : '#/treneri';
   const trv = state.profile?.role === 'coach' || state.trainer?.approved;
   if (trv && (p.startsWith('#/chat/') || (p === '#/report' && /[?&]u=/.test(location.hash)))) return '#/kouc'; // tréner pri klientovi ostáva v záložke Klienti
@@ -204,6 +206,8 @@ async function routeInner(my) {
   let fn = views[path];
   const tm = path.match(/^#\/(trener|chat)\/([^/]+)$/);
   if (tm) fn = tm[1] === 'chat' ? () => tr.renderChat(tm[2]) : () => tr.renderTrainer(tm[2]);
+  const zm = path.match(/^#\/zive(?:\/([0-9a-f-]{36}))?$/);
+  if (zm) fn = () => glv.render(zm[1]);
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
   if (!fn) { fn = td.renderToday; if (path !== '#/') { history.replaceState(null, '', '#/'); path = '#/'; state.curPath = path; } }
