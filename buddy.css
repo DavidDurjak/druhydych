@@ -85,3 +85,4 @@ body.bd-open .bd-fab { display: none !important; }
 .hk-edit i .gt-ic{width:13px;height:13px;vertical-align:-2px;opacity:.75}
 .wx-goal .gt-ic{width:13px;height:13px;opacity:.7}
 .wx-undo .gt-ic{width:14px;height:14px;opacity:.85}
+.bd-panel.bd-kb .bd-foot{padding-bottom:10px}

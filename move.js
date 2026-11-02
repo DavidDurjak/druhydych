@@ -161,6 +161,7 @@ export async function openMove(date) {
     const col = getComputedStyle(sh).backgroundColor;
     bg.style.background = kb ? col : ''; bg.style.boxShadow = kb ? `0 ${Math.round(vv.height)}px 0 0 ${col}` : '';
     sh.style.height = kb ? vv.height + 'px' : ''; sh.style.borderRadius = kb ? '0' : '';
+    sh.style.paddingBottom = kb ? '4px' : ''; // spodný okraj pre domovskú lištu iPhonu tu netreba, zoznam ide až po klávesnicu
   };
   vv?.addEventListener('resize', fit); vv?.addEventListener('scroll', fit);
   let group = recent().length ? 'recent' : 'all';
