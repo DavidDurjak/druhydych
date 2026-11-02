@@ -70,8 +70,14 @@ export async function dayMove(uid, date) {
 }
 
 const CSS = `
+.sheet.mv-sheet{height:88vh;height:88dvh;max-height:none;overflow:hidden;display:flex;flex-direction:column}
+.mv-sheet>.mv{flex:1;min-height:0;display:flex;flex-direction:column}
+.mv-sheet .mv-top{flex:none;max-height:46%;overflow:auto;overscroll-behavior:contain}
+.mv-sheet .mv.srch .mv-top{display:none}
+.mv-sheet .mv-q,.mv-sheet .mv-g,.mv-sheet h2{flex:none}
+.mv-sheet .mv-list{flex:1;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .mv h2{margin:0 0 4px;font-size:24px;letter-spacing:-.03em}
-.mv>p{margin:0 0 12px;color:var(--muted);font-size:13.5px;line-height:1.45}
+.mv>p,.mv-top>p{margin:0 0 12px;color:var(--muted);font-size:13.5px;line-height:1.45}
 .mv-sum{display:flex;align-items:center;gap:12px;padding:14px;border-radius:20px;margin:0 0 12px;background:linear-gradient(130deg,color-mix(in srgb,#FF7A45 22%,var(--card)),color-mix(in srgb,#FF3B6B 14%,var(--card)));border:1px solid color-mix(in srgb,#FF7A45 30%,transparent)}
 .mv-sum b{font-size:30px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
 .mv-sum span{font-size:12.5px;color:var(--muted);display:block;margin-top:3px}
@@ -134,9 +140,26 @@ export async function openMove(date) {
   css();
   const uid = st().profile.id;
   date = date || st().date || new Date().toISOString().slice(0, 10);
-  const bg = ctx.sheet(`<div class="mv"><h2>Pohyb</h2><p>Šport, kardio aj bežné aktivity. Behy zo sekcie Beh sa započítajú samy.</p><div id="mvDay"><div class="spinner"></div></div>
-    <input class="mv-q" id="mvQ" type="search" placeholder="Hľadať aktivitu (napr. hokej, bicykel)" autocomplete="off">
+  // pevná výška okna: pri písaní sa nič neposúva, vyhľadávanie ostáva hore a mení sa len zoznam pod ním
+  const bg = ctx.sheet(`<div class="mv"><h2>Pohyb</h2><div class="mv-top"><p>Šport, kardio aj bežné aktivity. Behy zo sekcie Beh sa započítajú samy.</p><div id="mvDay"><div class="spinner"></div></div></div>
+    <input class="mv-q" id="mvQ" type="search" placeholder="Hľadať aktivitu (napr. hokej, bicykel)" autocomplete="off" enterkeyhint="search">
     <div class="mv-g" id="mvG"></div><div class="mv-list" id="mvL"></div></div>`);
+  bg.querySelector('.sheet')?.classList.add('mv-sheet');
+  const mv = bg.querySelector('.mv'), qi = bg.querySelector('#mvQ');
+  const srch = on => { mv.classList.toggle('srch', on); if (on) bg.querySelector('#mvL').scrollTop = 0; };
+  qi.addEventListener('focus', () => srch(true));
+  qi.addEventListener('blur', () => setTimeout(() => { if (!qi.value.trim()) srch(false); }, 150));
+  qi.addEventListener('keydown', e => { if (e.key === 'Enter') qi.blur(); });
+  // otvorená klávesnica v iPhone: okno sa zmestí presne nad ňu (nič neposkakuje a vidíš, čo píšeš)
+  const vv = window.visualViewport, sh = bg.querySelector('.sheet');
+  const fit = () => {
+    if (!bg.isConnected) { vv?.removeEventListener('resize', fit); vv?.removeEventListener('scroll', fit); return; }
+    if (!vv) return;
+    const kb = window.innerHeight - vv.height > 120;
+    bg.style.top = kb ? vv.offsetTop + 'px' : ''; bg.style.height = kb ? vv.height + 'px' : ''; bg.style.bottom = kb ? 'auto' : '';
+    sh.style.height = kb ? Math.max(260, vv.height - 10) + 'px' : '';
+  };
+  vv?.addEventListener('resize', fit); vv?.addEventListener('scroll', fit);
   let group = recent().length ? 'recent' : 'all';
   const drawList = () => {
     const q = norm(bg.querySelector('#mvQ').value.trim());
