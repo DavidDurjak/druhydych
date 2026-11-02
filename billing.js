@@ -45,7 +45,7 @@ export async function confirmedFree() { await load(); return lastLoad > 0 && !!e
 export const left = f => { if (!ent.on) return Infinity; const l = ent.limits?.[f]; if (l == null) return Infinity; return Math.max(0, l - (ent.used?.[f] || 0)); };
 
 // funkcie len s predplatným: ponuka hneď pri ťuknutí na vstup, aby človek zbytočne nefotil
-const PREMIUM_ONLY = { menu_scan: 'Odfoť denné menu', fridge_scan: 'Čo uvarím z chladničky', physique_ai: 'AI analýza postavy', recipe_import: 'Import receptu z odkazu', custom_plan: 'Tréningový plán na mieru' };
+const PREMIUM_ONLY = { menu_scan: 'Odfoť denné menu', fridge_scan: 'Čo uvarím z chladničky', physique_ai: 'AI analýza postavy', recipe_import: 'Import receptu z odkazu', custom_plan: 'Tréningový plán na mieru', crossfit: 'CrossFit plán od Laury' };
 export function gate(feature) {
   if (isPremium() || left(feature) > 0) return true;
   paywall({ feature, reason: (ent.limits?.[feature] ?? 1) === 0 ? 'premium_only' : 'free_limit' });

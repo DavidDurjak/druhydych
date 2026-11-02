@@ -7,6 +7,7 @@ import * as db from './data.js';
 import * as RL from './runlib.js';
 import { mapIn } from './runmap.js';
 import * as live from './runlive.js';
+import { isPremium } from './billing.js';
 
 const $app = () => ctx.$app;
 const st = () => ctx.state;
@@ -165,6 +166,7 @@ const CSS = `
 .rn-entry,.rn-entry b,.rn-entry span,.rn-go,.rn-go b,.rn-go span{color:#06140C!important}
 .rn-go i{color:#3BF08F!important}
 .rn-empty b{color:var(--text)!important}
+.rn-entry.cf{margin-top:-2px;background:linear-gradient(125deg,#FFB347,#FF7A1A 60%,#FF4E2E);box-shadow:0 14px 30px -18px #FF7A1A}
 .rn-entry:after{content:"›";margin-left:auto;font-size:28px;font-weight:700;opacity:.6}
 `;
 function css() { if (document.getElementById('rnCss')) return; const s = document.createElement('style'); s.id = 'rnCss'; s.dataset.fwLight = ''; s.textContent = CSS; document.head.appendChild(s); }
@@ -201,7 +203,8 @@ async function entry() {
   if (path !== '#/trening') return;
   const scr = document.querySelector('#app .screen'); if (!scr || scr.querySelector('.rn-entry')) return;
   // len pri výbere úrovne (Začiatočník, Pokročilý, Elite) v nastavení plánu, nie na obrazovke s tréningom
-  const anchor = scr.querySelector('#lvl')?.closest('.field') || scr.querySelector('#lvl');
+  // aj pri rozbehnutom pláne: v dolnej časti obrazovky (Nástroje plánu)
+  const anchor = scr.querySelector('#lvl')?.closest('.field') || scr.querySelector('#lvl') || scr.querySelector('.tf-tools > h3');
   if (!anchor) return;
   entryBusy = true;
   try {
@@ -211,6 +214,9 @@ async function entry() {
     const a = document.createElement('a'); a.className = 'rn-entry'; a.href = '#/beh'; a.dataset.noskin = '';
     a.innerHTML = `<span class="e">🏃</span><div><b>Beh</b><span>${h(sub)}</span></div>`;
     anchor.after(a);
+    const c = document.createElement('a'); c.className = 'rn-entry cf'; c.href = '#/crossfit'; c.dataset.noskin = '';
+    c.innerHTML = `<span class="e">🔥</span><div><b>CrossFit</b><span>${isPremium() ? 'Kruhové tréningy vonku aj vnútri' : '🔒 Plus · kruhové tréningy vonku aj vnútri'}</span></div>`;
+    a.after(c);
   } finally { entryBusy = false; }
 }
 

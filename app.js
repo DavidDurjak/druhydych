@@ -70,7 +70,7 @@ function nav(active) {
 function groupOf(path) {
   const p = String(path || '#/').split('?')[0] || '#/';
   if (p.startsWith('#/kouc/')) return '#/kouc';
-  if (p === '#/beh' || p.startsWith('#/beh/')) return '#/trening';
+  if (p === '#/beh' || p.startsWith('#/beh/') || p === '#/crossfit') return '#/trening';
   if (p === '#/zive' || p.startsWith('#/zive/')) return state.trainer?.approved && state.profile?.role !== 'coach' ? '#/kouc' : '#/treneri';
   if (p.startsWith('#/trener/')) return state.trainer?.approved && state.profile?.role !== 'coach' ? '#/profil' : '#/treneri';
   const trv = state.profile?.role === 'coach' || state.trainer?.approved;
@@ -210,6 +210,7 @@ async function routeInner(my) {
   if (zm) fn = () => import('./groupcalls.js').then(m => m.render(zm[1])); // načíta sa až keď treba
   const bm = path.match(/^#\/beh(?:\/(.+))?$/);
   if (bm) fn = () => import('./run.js').then(m => m.render(bm[1]));
+  if (path === '#/crossfit') fn = () => import('./crossfit.js').then(m => m.render());
   const m = path.match(/^#\/kouc\/([^/]+)(\/fotky)?$/);
   if (m) fn = m[2] ? () => v2.renderPhotos(m[1], true) : () => v2.renderCoachDetail(m[1]);
   if (!fn) { fn = td.renderToday; if (path !== '#/') { history.replaceState(null, '', '#/'); path = '#/'; state.curPath = path; } }
