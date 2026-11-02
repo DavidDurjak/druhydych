@@ -351,7 +351,7 @@ function profileCard() {
   if (!ent.on) return;
   const scr = document.querySelector('#app .screen'); if (!scr) return;
   css();
-  const anchor = scr.querySelector('.pfx-plan') || scr.querySelector('a.btn[href="#/ciele"]'); if (!anchor || scr.querySelector('.gt-sub')) return;
+  const anchor = scr.querySelector('.pfx-tiles') || scr.querySelector('a.btn[href="#/ciele"]'); if (!anchor || scr.querySelector('.gt-sub')) return;
   const tr = ent.reason === 'trial' && ent.trial_end ? days(ent.trial_end) : null;
   const fy = ent.offer === 'first_year' && ent.offers?.first_year?.price;
   const [t, s] = ent.reason === 'sub' ? ['GainTrain Plus', ent.trialing ? `Skúšobná doba, prvá platba ${new Date(ent.period_end).toLocaleDateString('sk-SK')}` : ent.cancel ? `Aktívne do ${new Date(ent.period_end).toLocaleDateString('sk-SK')}` : 'Aktívne, spravovať predplatné']

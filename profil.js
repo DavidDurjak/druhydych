@@ -237,12 +237,6 @@ function html(p, admin) {
   <div class="pfx-xp"><div class="pfx-xb"><i data-xb></i></div><p data-xt>Počítam tvoj postup</p></div>
   <div class="pfx-st"><div><b data-n="days">0</b><span>dní so zápisom</span></div><div><b data-n="best">0</b><span>najlepšia séria</span></div><div><b data-n="badges">0</b><span data-bl>odznakov</span></div></div>
 </section>
-<section class="pfx-plan">
-  <div class="pfx-ph"><h3>Tvoj plán</h3><span class="pfx-goal">${h(goal)}</span><a href="#/ciele">Upraviť</a></div>
-  <div class="pfx-pb"><div class="pfx-kc"><b>${kc ? nf(kc) : '0'}</b><span>kcal denne</span></div><div class="pfx-wt"><b data-wt>${p.start_weight ? U.fmtWU(p.start_weight) : '0 ' + U.wUnit()}</b><span data-wd>${p.start_date ? 'od ' + h(calc.fmtDate(p.start_date)) : ''}</span></div></div>
-  <div class="pfx-mb">${[['--protein', sh[0]], ['--carbs', sh[1]], ['--fat', sh[2]]].map(([c, v]) => `<i style="flex:${Math.max(v, 1)};background:var(${c})"></i>`).join('')}</div>
-  <div class="pfx-ml"><div><b>${nf(pr)} g</b><i style="background:var(--protein)"></i>Bielkoviny</div><div><b>${nf(ca)} g</b><i style="background:var(--carbs)"></i>Sacharidy</div><div><b>${nf(fa)} g</b><i style="background:var(--fat)"></i>Tuky</div></div>
-</section>
 <div class="pfx-tiles">
   ${tile({ href: '#/spravy', i: 'chat', c: 'sky', t: 'Správy', s: 'Od kouča a tímu', badge: '0' })}
   ${tile({ a: 'invite', i: 'invite', c: 'mint', t: 'Kamaráti', s: 'Rebríček, výzva týždňa a pozvánka' })}
@@ -273,7 +267,7 @@ function fill(box, p, d) {
   countUp(box.querySelector('[data-bc]'), ev.have);
   // váha: posledný záznam oproti štartu
   const last = weights[weights.length - 1], sw = Number(p.start_weight) || 0;
-  if (last) {
+  if (last && box.querySelector('[data-wt]')) { // karta Tvoj plán bola z Profilu odstránená (v315)
     const w = Number(last.weight_kg), dlt = sw ? w - sw : 0;
     box.querySelector('[data-wt]').textContent = U.fmtWU(w);
     const wd = box.querySelector('[data-wd]');
@@ -389,7 +383,7 @@ function build(screen) {
     const tiles = box.querySelector('.pfx-tiles'); let tileHit = false;
     [...tiles.children].forEach(el => { const txt = fold(el.textContent); const hit = !t || (txt + alias(txt)).includes(t); el.hidden = !hit; tileHit = tileHit || (!!t && hit); });
     tiles.hidden = !!t && !tileHit;
-    box.querySelector('.pfx-hero').hidden = !!t; box.querySelector('.pfx-plan').hidden = !!t;
+    box.querySelector('.pfx-hero').hidden = !!t;
     // karty mimo zoznamu nastavení: pri hľadaní ostanú len tie, ktorých text sedí
     let extra = false;
     const others = [...screen.children, ...box.children].filter(el => el !== box && !el.matches('nav,.nav,script,style,h1,h2,.pfx-s,.pfx-g,.pfx-none,.pfx-foot,.pfx-tiles,.pfx-hero,.pfx-plan'));
