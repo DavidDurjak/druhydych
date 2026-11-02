@@ -195,7 +195,7 @@ async function openHistory() {
 async function renderChat() {
   const b = buddy();
   curAv = avatarSvg(b, 34, { anim: true });
-  panel.querySelector('.bd-head').innerHTML = `${avatarSvg(b, 44, { anim: true })}<div class="bd-hn"><b>${esc(b.name)}</b><span>AI pomocník a kouč</span></div><button class="bd-hbtn" aria-label="História rozhovorov" title="História rozhovorov">🕘</button><button class="bd-edit" aria-label="Upraviť postavičku">✎</button><button class="bd-x" aria-label="Zavrieť">×</button>`;
+  panel.querySelector('.bd-head').innerHTML = `${avatarSvg(b, 44, { anim: true })}<div class="bd-hn"><b>${esc(b.name)}</b><span>AI pomocník a kouč</span></div><button class="bd-hbtn" aria-label="História rozhovorov" title="História rozhovorov"><svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3.5 4.5V9H8M12 7.5V12l3 2"/></svg></button><button class="bd-edit" aria-label="Upraviť postavičku" title="Upraviť postavičku"><svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 8.5l3 3"/></svg></button><button class="bd-x" aria-label="Zavrieť"><svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
   panel.querySelector('.bd-x').onclick = closeChat;
   panel.querySelector('.bd-edit').onclick = () => setup(false);
   panel.querySelector('.bd-hbtn').onclick = openHistory;
@@ -239,7 +239,7 @@ function openChat() {
   document.body.appendChild(panel);
   document.body.classList.add('bd-open');
   if (!ctx.state.profile.buddy) {
-    panel.querySelector('.bd-head').innerHTML = `<div class="bd-hn"><b>Zoznámte sa</b><span>vyber si pomocníka a daj mu meno</span></div><button class="bd-x" aria-label="Zavrieť">×</button>`;
+    panel.querySelector('.bd-head').innerHTML = `<div class="bd-hn"><b>Zoznámte sa</b><span>vyber si pomocníka a daj mu meno</span></div><button class="bd-x" aria-label="Zavrieť"><svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
     panel.querySelector('.bd-x').onclick = closeChat;
     setup(true);
   } else renderChat();
@@ -247,3 +247,26 @@ function openChat() {
 function closeChat() { panel?.remove(); panel = null; opened = false; document.body.classList.remove('bd-open'); }
 
 if (root) { new MutationObserver(showFab).observe(root, { childList: true, subtree: true }); showFab(); }
+
+// v327: otvorená klávesnica v iPhone. Panel pomocníka sa prispôsobí viditeľnej časti obrazovky (nad klávesnicou),
+// aby pod poľom na písanie nepresvital obsah appky a lišta klávesnice nadväzovala priamo na chat.
+(() => {
+  const vv = window.visualViewport; if (!vv) return;
+  const fit = () => {
+    const p = document.querySelector('.bd-panel'); if (!p) return;
+    const card = p.querySelector('.bd-card');
+    const kb = window.innerHeight - vv.height > 120; // klávesnica je hore
+    if (kb) {
+      p.style.top = vv.offsetTop + 'px'; p.style.height = vv.height + 'px'; p.style.bottom = 'auto';
+      p.style.background = 'var(--bg, #0b0e12)';
+      if (card) { card.style.height = Math.max(240, vv.height - 8) + 'px'; card.style.borderRadius = '0'; }
+      p.classList.add('bd-kb');
+    } else if (p.classList.contains('bd-kb')) {
+      p.style.top = p.style.height = p.style.bottom = p.style.background = '';
+      if (card) { card.style.height = card.style.borderRadius = ''; }
+      p.classList.remove('bd-kb');
+    }
+  };
+  vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit);
+  document.addEventListener('focusin', () => setTimeout(fit, 60)); document.addEventListener('focusout', () => setTimeout(fit, 120));
+})();

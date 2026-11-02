@@ -281,7 +281,7 @@ export async function renderToday() {
     ${unread.length ? `<a class="card accent link" href="${st.trainer?.approved ? '#/chat/' + lastMsg.from_user : '#/spravy'}"><div class="row between"><div><h3>${st.trainer?.approved ? 'Nová správa' : 'Správa od kouča'}</h3><p class="small mt" style="color:var(--text)">${h(lastMsg.body.slice(0, 120))}${lastMsg.body.length > 120 ? '…' : ''}</p></div><span class="chip" style="background:var(--accent);color:var(--accent-ink)">${unread.length}</span></div></a>` : ''}
     ${firstCard || backCard}
     <section class="hero-k ${over ? 'over' : ''}">
-      <div class="hk-top"><span class="hk-t">${isFuture ? 'Plán dňa' : 'Dnešný cieľ'}</span><a class="hk-edit" href="#/ciele" aria-label="Upraviť ciele">${p.target_kcal} kcal<i>✎</i></a></div>
+      <div class="hk-top"><span class="hk-t">${isFuture ? 'Plán dňa' : 'Dnešný cieľ'}</span><a class="hk-edit" href="#/ciele" aria-label="Upraviť ciele">${p.target_kcal} kcal<i><svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 8.5l3 3"/></svg></i></a></div>
       <div class="hk-ring" style="--lv:0" data-lv="${Math.max(0, Math.min(100, goalPct))}">
         <div class="breath"><i class="lq"><b class="w1"></b><b class="w2"></b></i></div>
         ${rings}

@@ -92,7 +92,7 @@ function inject() {
   const head = document.querySelector('.bd-panel .bd-head'), h = head?.querySelector('.bd-hbtn');
   if (!h || head.querySelector('.cm')) return;
   const b = document.createElement('button'); b.className = 'bd-hbtn cm'; b.type = 'button';
-  b.setAttribute('aria-label', 'Čo o tebe viem'); b.title = 'Čo o tebe viem'; b.textContent = '🧠';
+  b.setAttribute('aria-label', 'Čo o tebe viem'); b.title = 'Čo o tebe viem'; b.innerHTML = '<svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="3"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16.2c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14.5 10h3.5M14.5 13.5h3.5"/></svg>';
   b.onclick = open; h.before(b);
 }
 new MutationObserver(inject).observe(document.body, { childList: true, subtree: true });

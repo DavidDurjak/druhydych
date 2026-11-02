@@ -282,7 +282,19 @@ Deno.serve(async (req) => {
     if (mode !== "opener") await aiRefund(admin, uid, "coach_chat");
     return json({ error: res.quota ? "Pomocník je dočasne preťažený (kapacita AI). Skús to o chvíľu." : "Pomocník teraz neodpovedal. Skús to o minútu." }, 502);
   }
-  const reply = String(res.j.reply).slice(0, 3500).trim();
+  let reply = String(res.j.reply).slice(0, 3500).trim();
+  // meno na začiatku každej odpovede pôsobí neprirodzene: v chate ho zo začiatku vždy odstránime (napr. "David, ..." alebo "Super, Dávid! ...")
+  const nm = String(ctx.profil?.meno || "").trim().split(/\s+/)[0] || "";
+  if (mode === "chat" && nm.length >= 2) {
+    const stem = nm.normalize("NFD").replace(/\p{M}/gu, "").slice(0, Math.max(3, nm.length - 2)).toLowerCase();
+    const m = reply.match(/^((?:\p{L}+[,!]?\s+){0,1})(\p{L}+)\s*[,!]\s*/u);
+    if (m && m[2].normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().startsWith(stem)) {
+      const lead = m[1].trim().replace(/[,!]$/, ""), bang = /!/.test(m[0].slice(m[1].length));
+      let rest = reply.slice(m[0].length);
+      if (!lead || bang) rest = rest.charAt(0).toUpperCase() + rest.slice(1);
+      reply = lead ? lead + (bang ? "! " : ", ") + rest : rest;
+    }
+  }
   const chips = cleanChips(res.j.chips);
   const action = cleanAction(res.j.action);
 

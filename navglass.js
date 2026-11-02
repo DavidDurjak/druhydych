@@ -64,10 +64,11 @@ function render() {
   const nav = L.nav; if (!nav || !nav.isConnected) return;
   const lens = nav.querySelector('.nav-lens'); if (!lens) return;
   const w = slot(nav), n = items(nav).length;
-  // kapsula je o kúsok širšia ako záložka (ako v iOS), stred ostáva na stred záložky
-  const pad = Math.min(16, w * 0.3);
-  lens.style.width = (w + pad) + 'px';
-  const x = Math.max(-1, Math.min(n * w - (w + pad) + 1, L.pos * w - pad / 2)); // na krajoch sa kapsula zmestí do lišty
+  // v pokoji má kapsula presne šírku záložky (s malou medzerou), nikdy nezasahuje do susednej ani na krajoch;
+  // nafúkne sa až pri dotyku alebo prechode (--sx, --sy), ako v iOS
+  const gap = Math.min(4, w * 0.05);
+  lens.style.width = (w - gap * 2) + 'px';
+  const x = L.pos * w + gap;
   lens.style.setProperty('--x', x.toFixed(2) + 'px');
   lens.style.setProperty('--sx', L.sx.toFixed(4)); lens.style.setProperty('--sy', L.sy.toFixed(4)); lens.style.setProperty('--gl', L.gl.toFixed(3));
   // lupa: ikona a popis pod bublinou sa zväčšia podľa toho, ako blízko je stred bubliny a ako je nafúknutá

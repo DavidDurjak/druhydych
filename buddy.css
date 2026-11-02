@@ -74,3 +74,14 @@ body.bd-open .bd-fab { display: none !important; }
 @keyframes bdfloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1px; } }
 /* pohupovanie o 1 px vyradene: animacia casti SVG nutila prepocet rozlozenia 60x za sekundu na kazdej obrazovke */
 @media (prefers-reduced-motion: reduce) { .bd-typing i { animation: none; opacity: .6; } .bd-anim .bd-fig, .bd-anim .bd-eyes { animation: none; } }
+
+/* v327: ikony v hlavičke pomocníka a ceruzky v appke ako jednotné čiarové ikony (nie emoji) */
+.gt-ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.bd-head .bd-hbtn,.bd-head .bd-edit,.bd-head .bd-x{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;padding:0;font-size:0;color:var(--text);
+  background:color-mix(in srgb,var(--text) 7%,transparent);border:0;cursor:pointer;transition:background .15s,transform .12s}
+.bd-head .bd-hbtn:active,.bd-head .bd-edit:active,.bd-head .bd-x:active{transform:scale(.92)}
+.bd-head .bd-hbtn .gt-ic,.bd-head .bd-edit .gt-ic,.bd-head .bd-x .gt-ic{width:19px;height:19px;opacity:.85}
+.bd-head .bd-hbtn+.bd-hbtn,.bd-head .bd-hbtn+.bd-edit,.bd-head .bd-edit+.bd-x{margin-left:6px}
+.hk-edit i .gt-ic{width:13px;height:13px;vertical-align:-2px;opacity:.75}
+.wx-goal .gt-ic{width:13px;height:13px;opacity:.7}
+.wx-undo .gt-ic{width:14px;height:14px;opacity:.85}

@@ -69,6 +69,7 @@ const CSS = `
 .wx-ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12.5px;color:var(--muted);min-height:30px}
 .wx-undo{-webkit-appearance:none;appearance:none;border:0;background:rgba(255,255,255,.07);color:var(--text);border-radius:99px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .wx-undo:disabled{opacity:.3}
+.wx-undo{display:inline-flex;align-items:center;gap:6px}.wx-goal{display:inline-flex;align-items:center;gap:6px}
 .wx-btns{display:flex;gap:6px;flex:none}
 .wx-hint{font-size:11.5px;color:var(--muted);text-align:center;margin:6px 0 0;opacity:.8}
 .wx-sh h3{margin:0 0 2px}.wx-sh .wx-sub{color:var(--muted);font-size:13px;margin:0}
@@ -89,7 +90,7 @@ export function waterHtml({ ml, goalMl }) {
   const ticks = [];
   for (let m = 500; m < goalMl; m += 500) ticks.push(TK((Y0 - m / goalMl * H).toFixed(1)));
   return `<section class="wx${ml >= goalMl ? ' done' : ''}" id="wx">
-    <div class="wx-h"><h3>💧 Pitný režim</h3><a class="wx-goal" href="#/ciele">cieľ <b>${fmtL(goalMl)} l</b> ✎</a></div>
+    <div class="wx-h"><h3>💧 Pitný režim</h3><a class="wx-goal" href="#/ciele">cieľ <b>${fmtL(goalMl)} l</b><svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 8.5l3 3"/></svg></a></div>
     <div class="wx-main">
       <button class="wx-bt" data-wx="250" aria-label="Pridať pohár vody">
         <svg viewBox="0 0 100 184" aria-hidden="true"><defs><clipPath id="wxc"><path d="${BOT}"/></clipPath>
@@ -121,7 +122,7 @@ export function waterHtml({ ml, goalMl }) {
     <div class="wx-chips">${CHIPS.map(([n, l]) => `<button class="wx-chip${n === 250 ? ' pri' : ''}" data-wx="${n}"><b>+${n}</b><span>${l}</span></button>`).join('')}<button class="wx-chip" data-wxo><b>Iné</b><span>množstvo</span></button></div>
     <div class="wx-wk" id="wxW"></div>
     <p class="wx-hint">Ťukni na deň: uprav vypité, na budúci deň si naplánuj cieľ</p>
-    <div class="wx-ft"><span id="wxS"></span><span class="wx-btns"><button class="wx-undo" id="wxE">✎ Upraviť</button><button class="wx-undo" id="wxU" disabled>↶ Späť</button></span></div>
+    <div class="wx-ft"><span id="wxS"></span><span class="wx-btns"><button class="wx-undo" id="wxE"><svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 8.5l3 3"/></svg>Upraviť</button><button class="wx-undo" id="wxU" disabled><svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Späť</button></span></div>
   </section>`;
 }
 
@@ -306,7 +307,7 @@ export function bindWater(root, { uid, date, goalMl: baseGoal, ml, isToday, isFu
   if (isFuture) { // budúci deň: pridávanie vody vypnuté, Upraviť naplánuje cieľ dňa
     el.classList.add('fut');
     el.querySelectorAll('[data-wx],[data-wxo]').forEach(b => { b.disabled = true; b.tabIndex = -1; });
-    const e = q('#wxE'); if (e) e.textContent = '✎ Naplánovať cieľ';
+    const e = q('#wxE'); if (e) e.innerHTML = '<svg class="gt-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 8.5l3 3"/></svg>Naplánovať cieľ';
     const u = q('#wxU'); if (u) u.hidden = true;
   }
   el.querySelectorAll('[data-wx]').forEach(b => b.onclick = () => add(Number(b.dataset.wx)));
