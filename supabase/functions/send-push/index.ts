@@ -1,5 +1,6 @@
 // Fuelwind: odosielanie web push notifikácií z fronty push_queue
 // Volá sa každých 5 minút (pg_cron -> pg_net). Kľúče sú v Supabase Vault.
+// v4: localized texty (tréningy naživo) sa neprekladajú, ⟦…⟧ ostane bez prekladu.
 // v3: notifikácie v jazyku používateľa (profiles.lang). Texty sa píšu po slovensky a prekladajú sa cez spoločný slovník
 // appky (funkcia i18n, tabuľka i18n): čísla sa nahradia {0}, {1}…, takže sa ten istý text prekladá len raz pre všetkých.
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -7,10 +8,12 @@ import webpush from "npm:web-push@3.6.7";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const NUM = /\d+(?:[.,]\d+)?/g;
+// čísla a text v ⟦⟧ (názov tréningu, meno) sa neprekladajú: nahradia sa {0}, {1}…
+const NUM = /⟦([^⟧]*)⟧|\d+(?:[.,]\d+)?/g;
+const plain = (s: string) => String(s || "").replace(/[⟦⟧]/g, "");
 
 // "3 z 8 pohárov" -> { t: "{0} z {1} pohárov", n: ["3", "8"] }
-function tmpl(s: string) { const n: string[] = []; const t = String(s || "").replace(NUM, (m) => `{${n.push(m) - 1}}`); return { t, n }; }
+function tmpl(s: string) { const n: string[] = []; const t = String(s || "").replace(NUM, (m, lit) => `{${n.push(lit ?? m) - 1}}`); return { t, n }; }
 const fill = (t: string, n: string[]) => t.replace(/\{(\d+)\}/g, (_, i) => n[Number(i)] ?? "");
 
 async function translate(lang: string, strings: string[]): Promise<Record<string, string>> {
@@ -65,8 +68,8 @@ Deno.serve(async (req) => {
   const byLang: Record<string, { id: number; tt: { t: string; n: string[] }; tb: { t: string; n: string[] } }[]> = {};
   for (const q of queue) {
     const lang = langOf[q.user_id] || "sk";
-    texts.set(q.id, { title: q.title, body: q.body });
-    if (lang === "sk") continue;
+    texts.set(q.id, { title: plain(q.title), body: plain(q.body) });
+    if (lang === "sk" || q.localized) continue; // localized = text už je v jazyku používateľa
     (byLang[lang] ||= []).push({ id: q.id, tt: tmpl(q.title), tb: tmpl(q.body) });
   }
   for (const [lang, items] of Object.entries(byLang)) {

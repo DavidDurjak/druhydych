@@ -6,6 +6,13 @@ import * as db from './data.js';
 
 const $app = () => ctx.$app;
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// pozvánka na tréning naživo: odkaz #/zive/<id> sa zobrazí ako tlačidlo
+const ZIVE = /\n?#\/zive\/([0-9a-f-]{36})\s*$/i;
+function bubBody(body) {
+  const m = String(body || '').match(ZIVE);
+  if (!m) return h(body);
+  return `${h(String(body).replace(ZIVE, ''))}<a class="zv-inv" href="#/zive/${m[1]}">🎥 Otvoriť tréning naživo</a>`;
+}
 const toast = (...a) => ctx.toast(...a);
 const nav = (...a) => ctx.nav(...a);
 const me = () => ctx.state.profile;
@@ -585,7 +592,7 @@ export async function renderChat(otherId) {
   const title = names[otherId]?.display_name || (await db.sb.from('trainer_clients').select('client_name').eq('client_id', otherId).eq('trainer_id', uid).maybeSingle().then(r => r.data?.client_name).catch(() => null)) || 'Správy';
   await db.markRead(msgs.filter(m => m.to_user === uid && !m.read_at).map(m => m.id)).catch(() => { });
   $app().innerHTML = `<div class="screen"><div class="tr-top"><h1>${h(title)}</h1><button class="btn sm primary" id="trCall" type="button">Videohovor</button></div>
-    <div class="tr-chat">${msgs.length ? msgs.map(m => `<div class="tr-bub${m.from_user === uid ? ' me' : ''}">${h(m.body)}<small>${fmtDate(m.created_at)}</small></div>`).join('') : '<div class="tr-empty"><b>Zatiaľ nič</b>Napíš prvú správu.</div>'}</div>
+    <div class="tr-chat">${msgs.length ? msgs.map(m => `<div class="tr-bub${m.from_user === uid ? ' me' : ''}">${bubBody(m.body)}<small>${fmtDate(m.created_at)}</small></div>`).join('') : '<div class="tr-empty"><b>Zatiaľ nič</b>Napíš prvú správu.</div>'}</div>
     <form id="trF" class="card"><textarea class="input" name="b" rows="2" maxlength="1000" placeholder="Napíš správu"></textarea><button class="btn sm primary mt" type="submit">Odoslať</button></form></div>${nav('#/chat/' + otherId)}`;
   $app().querySelector('#trCall').onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; const t0 = btn.textContent; btn.textContent = 'Pripájam…';
