@@ -200,6 +200,9 @@ async function entry() {
   const path = (location.hash || '#/').split('?')[0];
   if (path !== '#/trening') return;
   const scr = document.querySelector('#app .screen'); if (!scr || scr.querySelector('.rn-entry')) return;
+  // len pri výbere úrovne (Začiatočník, Pokročilý, Elite) v nastavení plánu, nie na obrazovke s tréningom
+  const anchor = scr.querySelector('#lvl')?.closest('.field') || scr.querySelector('#lvl');
+  if (!anchor) return;
   entryBusy = true;
   try {
     css();
@@ -207,8 +210,7 @@ async function entry() {
     if (cache) { const ws = weekStart(); const w = cache.filter(r => new Date(r.started_at) >= ws); if (w.length) sub = `Tento týždeň ${RL.km(sum(w, r => r.distance_m), 1)} km · ${plural(w.length, 'aktivita', 'aktivity', 'aktivít')}`; }
     const a = document.createElement('a'); a.className = 'rn-entry'; a.href = '#/beh'; a.dataset.noskin = '';
     a.innerHTML = `<span class="e">🏃</span><div><b>Beh</b><span>${h(sub)}</span></div>`;
-    const anchor = scr.querySelector('.tp-hero,.today-train,.dn-hero') || [...scr.children].find(e => e.matches('.card,section,div') && e.offsetHeight > 150);
-    if (anchor) anchor.after(a); else scr.appendChild(a);
+    anchor.after(a);
   } finally { entryBusy = false; }
 }
 

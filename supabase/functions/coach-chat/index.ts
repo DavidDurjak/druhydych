@@ -88,11 +88,44 @@ async function habitsContext(admin: any, uid: string, today: string) {
   } catch (_) { return null; }
 }
 
+// beh a tréningy naživo: zhrnutie pre kouča (tabuľky nemusia existovať, vtedy null)
+const RUN_KIND: Record<string, string> = { outdoor: "beh vonku", treadmill: "beh na páse", track: "dráha", runwalk: "beh a chôdza", walk: "prechádzka" };
+async function runsContext(admin: any, uid: string) {
+  try {
+    const from = new Date(Date.now() - 42 * 864e5).toISOString();
+    const [rr, gg, pp] = await Promise.all([
+      admin.from("runs").select("kind,started_at,distance_m,duration_s,best").eq("user_id", uid).gte("started_at", from).order("started_at", { ascending: false }).limit(25),
+      admin.from("run_goals").select("kind,target").eq("user_id", uid),
+      admin.from("run_program").select("done").eq("user_id", uid).maybeSingle(),
+    ]);
+    const runs = rr.data || [];
+    const pace = (s: number, m: number) => m > 0 ? `${Math.floor(s / (m / 1000) / 60)}:${String(Math.round(s / (m / 1000) % 60) % 60).padStart(2, "0")}/km` : null;
+    const best: Record<string, number> = {};
+    runs.forEach((r: any) => Object.entries(r.best || {}).forEach(([d, s]) => { if (!best[d] || (s as number) < best[d]) best[d] = s as number; }));
+    const out: any = {
+      posledne_aktivity: runs.slice(0, 8).map((r: any) => `${dayStr(new Date(r.started_at))} ${RUN_KIND[r.kind] || r.kind} ${(Number(r.distance_m) / 1000).toFixed(1)} km za ${Math.round(r.duration_s / 60)} min${pace(r.duration_s, Number(r.distance_m)) ? ", tempo " + pace(r.duration_s, Number(r.distance_m)) : ""}`),
+      km_6_tyzdnov: Math.round(runs.filter((r: any) => r.kind !== "walk").reduce((a: number, r: any) => a + Number(r.distance_m || 0), 0) / 100) / 10,
+      najlepsie_casy_s: Object.keys(best).length ? best : undefined,
+      bezecke_ciele: (gg.data || []).map((g: any) => `${g.kind} ${g.target}`),
+      od_gauca_k_5km: pp.data ? `${(pp.data.done || []).length} z 24 tréningov` : undefined,
+    };
+    if (!runs.length && !out.bezecke_ciele.length && !pp.data) return null;
+    return out;
+  } catch (_) { return null; }
+}
+async function liveContext(admin: any, uid: string) {
+  try {
+    const { data } = await admin.from("group_invites").select("rsvp,group_sessions!inner(title,starts_at,duration_min,status)").eq("client_id", uid).gte("group_sessions.starts_at", new Date(Date.now() - 3 * 36e5).toISOString()).limit(5);
+    const xs = (data || []).filter((x: any) => x.group_sessions?.status === "scheduled");
+    return xs.length ? xs.map((x: any) => `${x.group_sessions.title}, ${new Date(x.group_sessions.starts_at).toLocaleString("sk-SK", { timeZone: tz, weekday: "long", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}, odpoveď: ${({ going: "ide", declined: "nejde", invited: "ešte neodpovedal" } as any)[x.rsvp] || x.rsvp}`) : null;
+  } catch (_) { return null; }
+}
+
 async function buildContext(admin: any, uid: string) {
   const today = dayStr();
   const from28 = dayStr(new Date(Date.now() - 28 * 864e5));
   const from7 = dayStr(new Date(Date.now() - 7 * 864e5));
-  const [pr, fl, wl, ck, wo, pl, navyky] = await Promise.all([
+  const [pr, fl, wl, ck, wo, pl, navyky, beh, nazivo] = await Promise.all([
     admin.from("profiles").select("name,sex,birth_year,height_cm,start_weight,start_date,goal,activity,training_days,gym,target_kcal,target_protein,target_carbs,target_fat,targets_mode,water_goal").eq("id", uid).single(),
     admin.from("food_logs").select("date,meal,name,grams,kcal,protein,carbs,fat").eq("user_id", uid).gte("date", from7).order("created_at"),
     admin.from("weight_logs").select("date,weight_kg,waist_cm").eq("user_id", uid).gte("date", from28).order("date"),
@@ -100,6 +133,8 @@ async function buildContext(admin: any, uid: string) {
     admin.from("workout_logs").select("date,day_name,done").eq("user_id", uid).gte("date", from28).order("date"),
     admin.from("workout_plans").select("name,days").eq("user_id", uid).eq("active", true).limit(1),
     habitsContext(admin, uid, today),
+    runsContext(admin, uid),
+    liveContext(admin, uid),
   ]);
   const p = pr.data || {};
   const foods = fl.data || [];
@@ -126,6 +161,8 @@ async function buildContext(admin: any, uid: string) {
     treningy_28d: { odtrenovane: workouts.length, posledne: workouts.slice(-4).map((x: any) => `${x.date} ${x.day_name || ""}`.trim()) },
     plan: planRow ? { nazov: planRow.name, dni: JSON.stringify(planRow.days).slice(0, 1800) } : null,
     navyky: navyky || undefined,
+    beh: beh || undefined,
+    treningy_nazivo: nazivo || undefined,
   };
 }
 
