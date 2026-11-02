@@ -197,8 +197,10 @@ ${S} textarea:focus,${S} .input:focus{box-shadow:inset 0 0 0 2px #C94DA8!importa
 ${S} .nav{background:var(--ink)!important;border:0!important;box-shadow:0 0 0 2.5px #fff,0 16px 30px -14px var(--sh-d)!important}
 ${S} .nav a{color:#8F8CA6!important}
 ${S} .nav a.on{color:#fff!important}
-${S} .nav a.on .ic{background:${HOLO()}!important;color:#15131E!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.8)!important;border-radius:12px!important}
-${S} .nav a.on .ic svg{color:#15131E!important}
+${S} .nav a.on .ic{background:none!important;box-shadow:none!important;animation:none!important}
+${S} .nav a.on .ic svg{color:#fff!important}
+/* sklenená bublina s holografickým nádychom (v319, ako tekuté sklo v iOS) */
+${S} .nav-lens{background-color:rgba(255,179,230,.16)!important}
 ${S} .qa-fab{${holo(150)};border:0!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 0 0 2.5px #fff,0 16px 28px -10px var(--sh-d)!important}
 ${S} .qa-fab svg{color:#15131E!important;stroke:#15131E!important}
 ${S} .bd-fab{box-shadow:0 0 0 2.5px #fff,0 12px 22px -10px var(--sh-d)!important}

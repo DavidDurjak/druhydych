@@ -161,9 +161,10 @@ ${S} textarea,${S} .input{background-color:var(--gl-soft)!important;border:var(-
 ${S} .nav{background:var(--dk)!important;border:1px solid var(--dk-b)!important;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 20px 40px -18px rgba(0,0,0,.7)!important}
 ${S} .nav a{color:#8A9B96!important}
 ${S} .nav a.on{color:#7CFFB2!important}
-${S} .nav a.on .ic{background:var(--ck-grad)!important;color:#07110F!important;box-shadow:0 8px 18px -8px rgba(62,230,208,.8),0 1px 0 rgba(255,255,255,.6) inset}
-${S} .nav a.on .ic svg{color:#07110F!important}
-${S} .nav-lens{display:none!important}
+${S} .nav a.on .ic{background:none!important;box-shadow:none!important}
+${S} .nav a.on .ic svg{color:#7CFFB2!important}
+/* sklenená bublina s mätovým nádychom (v319, ako tekuté sklo v iOS) */
+${S} .nav-lens{background-color:rgba(124,255,178,.10)!important}
 ${S} .qa-fab{background:linear-gradient(140deg,#8FFFC6,#3EE6D0 55%,#5BB8FF)!important;border:0!important;color:#07110F!important;
  box-shadow:0 2px 0 rgba(255,255,255,.7) inset,0 -6px 14px rgba(0,80,120,.18) inset,0 16px 30px -10px rgba(24,150,160,.75)!important}
 ${S} .qa-fab svg{color:#07110F!important;stroke:#07110F}
