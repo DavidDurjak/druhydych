@@ -183,7 +183,8 @@ async function open() {
       ${pop(7, '<div class="qa-lb">Tréning</div>')}
       ${pop(8, `<div class="qa-g">
         <button class="qa-t" data-qa="train"><i>🏋️</i><span>Tréning<small>Tvoj plán</small></span></button>
-        <button class="qa-t" data-qa="machine"><i>📷</i><span>Skenuj stroj<small>Cvik a váhy</small></span></button></div>`)}
+        <button class="qa-t" data-qa="machine"><i>📷</i><span>Skenuj stroj<small>Cvik a váhy</small></span></button>
+        <button class="qa-t" data-qa="move"><i>⚽</i><span>Pohyb<small>Šport a aktivity</small></span></button></div>`)}
       ${pop(9, '<div class="qa-lb">Zdravie a návyky</div>')}
       ${pop(10, `<div class="qa-g">
         <button class="qa-t" data-qa="habits"><i>🔥</i><span>Návyky<small>Séria dní</small></span></button>
@@ -215,6 +216,7 @@ async function open() {
     if (a === 'text') return go('#/jedlo?meal=' + v + '&ai=1');
     if (a === 'meal') return go('#/jedlo?meal=' + v);
     if (a === 'q') return go('#/jedlo?meal=' + v + '&q=1');
+    if (a === 'move') return close(() => import('./move.js').then(m => m.openMove()));
     if (a === 'scan') return go('#/jedlo?meal=' + v + '&scan=1');
     if (a === 'weight') return go('#/vaha');
     if (a === 'checkin') return go('#/checkin');

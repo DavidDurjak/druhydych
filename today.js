@@ -125,6 +125,7 @@ export async function renderToday() {
   const pushP = isToday ? soft(push.pushPromptCard(), '') : Promise.resolve('');
   const actP = soft(hw.activityCard(uid, st.date), '');
   const weekP = isToday ? soft(ck.weekCardHtml(uid), '') : Promise.resolve('');
+  const moveP = isFuture ? Promise.resolve(null) : soft(import('./move.js').then(m => m.dayMove(uid, st.date).then(d => ({ ...d, bonus: m.bonusOf(d.kcal) }))), null);
   const [foods, weights, checkin, actDates, msgs, plan, wlogs, byDay] = await Promise.all([
     db.listFood(uid, st.date), weightsP, db.getCheckin(uid, st.date),
     db.activityDates(uid, fromAct), db.listMessages(uid), db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.weekStart(), -28)),
@@ -143,8 +144,10 @@ export async function renderToday() {
   const weekLogs = wlogs.filter(w => w.done && w.date >= calc.weekStart());
   const trainedToday = wlogs.some(w => w.done && w.date === st.date);
   const nd = plan ? plan.days[nextDay(plan, wlogs) - 1] : null;
-  const [adaptive, pushCard, actCard, weekCard] = await Promise.all([adaptP, pushP, actP, weekP]);
-  const left = p.target_kcal - sum.kcal, over = left < 0;
+  const [adaptive, pushCard, actCard, weekCard, move] = await Promise.all([adaptP, pushP, actP, weekP, moveP]);
+  // pohyb (šport, aktivity, behy) zvyšuje dnešný cieľ podľa nastavenia v okne Pohyb (predvolene o polovicu spálených kalórií)
+  const bonus = move?.bonus || 0, goalK = (p.target_kcal || 0) + bonus;
+  const left = goalK - sum.kcal, over = left < 0;
   const tip = insight({ p, sum, foods, water, waterGoal, strk, isToday, isFuture });
   // týždenný priemer (rozhoduje týždeň, nie jeden deň)
   const wkDays = Object.keys(byDay).filter(d => d !== st.date && d <= calc.today() && byDay[d]?.kcal > 0);
@@ -222,7 +225,7 @@ export async function renderToday() {
   };
   const rings = `<svg class="hk-rings" width="${RS}" height="${RS}" viewBox="0 0 ${RS} ${RS}" aria-hidden="true">
     <defs><linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${over ? '#B6B6FF' : '#7CFFB2'}"/><stop offset="1" stop-color="${over ? '#8C8CFF' : '#2FD3C0'}"/></linearGradient></defs>
-    ${ringLayer(116, 15, p.target_kcal ? sum.kcal / p.target_kcal : 0, 'url(#kg)', 'o0')}
+    ${ringLayer(116, 15, goalK ? sum.kcal / goalK : 0, 'url(#kg)', 'o0')}
     ${ringLayer(97, 8, p.target_protein ? sum.protein / p.target_protein : 0, MC.p, 'o1')}
     ${ringLayer(86, 8, p.target_carbs ? sum.carbs / p.target_carbs : 0, MC.c, 'o2')}
     ${ringLayer(75, 8, p.target_fat ? sum.fat / p.target_fat : 0, MC.f, 'o3')}
@@ -232,7 +235,7 @@ export async function renderToday() {
     const m = MEAL_META[k], kc = kcalOf(foods.filter(f => f.meal === k)), on = foods.some(f => f.meal === k);
     return `<a class="mbp ${on ? 'on' : ''}" style="--mc:${m.color}" href="#/jedlo?meal=${k}" aria-label="${m.label}${on ? ': zapísané' : ': pridať'}"><i>${on ? r0(kc) : '+'}</i><span>${m.label}</span></a>`;
   }).join('');
-  const goalPct = p.target_kcal ? Math.round(sum.kcal / p.target_kcal * 100) : 0;
+  const goalPct = goalK ? Math.round(sum.kcal / goalK * 100) : 0;
 
   const mealRows = f => `<li><span class="fi">${foodEmoji(f.name, f.meal)}</span><div class="fn" data-edit="${f.id}" role="button" tabindex="0"><b>${h(f.name)}</b><span>${f.portion ? `${Math.round(f.qty * 10) / 10}× ${h(f.portion)}, ` : ''}${r0(f.grams)} g</span></div><span class="fk">${r0(f.kcal)}</span><button class="del" data-del="${f.id}" aria-label="Zmazať">×</button></li>`;
   const mealCards = Object.entries(MEAL_META).map(([k, m]) => {
@@ -288,6 +291,7 @@ export async function renderToday() {
         <div class="hk-c"><b data-count="${Math.abs(r0(left))}">${Math.abs(r0(left))}</b><span>${over ? 'kcal nad cieľ' : 'kcal zostáva'}</span><em class="hk-pc">${goalPct} % cieľa</em></div>
       </div>
       <div class="hk-eat"><b data-count="${r0(sum.kcal)}">${r0(sum.kcal)}</b><span>${isFuture ? 'kcal naplánované' : 'kcal zjedené'}</span></div>
+      ${move && !move.missing ? `<div style="text-align:center"><button type="button" class="hk-move${move.kcal ? '' : ' empty'}" id="hkMove">${move.kcal ? `🔥 Pohyb <b>${r0(move.kcal)} kcal</b>${bonus ? `<small>+${bonus} do cieľa</small>` : ''}` : '🔥 Pridať pohyb alebo šport'}</button></div>` : ''}
       <div class="hk-meals">${mealStrip}</div>
       <div class="hk-macros">
         ${macroTile('Bielkoviny', sum.protein, p.target_protein, MC.p)}
@@ -382,6 +386,7 @@ export async function renderToday() {
   root.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await db.deleteFood(Number(b.dataset.del)); renderToday(); });
   bindWater(root, { uid, date: st.date, goalMl, ml: isFuture ? 0 : waterMl, isToday, isFuture });
   root.querySelector('#adaptYes')?.addEventListener('click', async () => { await v2.applyAdaptive(p, adaptive); toast(`Nový cieľ: ${adaptive.newKcal} kcal`); renderToday(); });
+  root.querySelector('#hkMove')?.addEventListener('click', () => import('./move.js').then(m => m.openMove(st.date)));
   root.querySelector('#adaptNo')?.addEventListener('click', async () => { await db.applyTarget(uid, { date: calc.today(), old_kcal: p.target_kcal, new_kcal: p.target_kcal, reason: 'Ponechané používateľom', avg_intake: adaptive.avg, trend_change: adaptive.ch }, {}); renderToday(); });
 }
 

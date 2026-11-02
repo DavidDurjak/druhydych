@@ -103,7 +103,7 @@ let navDown = null, navAt = 0;
 function navGo(a) {
   const href = a.getAttribute('href');
   if (!href) return;
-  a.closest('.nav')?.querySelectorAll('a').forEach(x => x.classList.toggle('on', x === a));
+  a.closest('.nav')?.querySelectorAll(':scope > a').forEach(x => x.classList.toggle('on', x === a));
   if (href === curPath() || (href === '#/' && curPath() === '#/')) {
     if (window.scrollY > 40) window.scrollTo({ top: 0, behavior: 'smooth' }); else route();
     return;

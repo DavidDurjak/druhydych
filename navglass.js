@@ -11,8 +11,10 @@ const CSS = `
 .nav a .ic{width:auto;height:26px;background:none!important;transition:transform .2s cubic-bezier(.3,1.5,.5,1)}
 .nav a.on{color:var(--accent)}
 .nav a.on .fl{fill:currentColor;fill-opacity:.2}
-.nav a.hot{color:#fff}.nav a.hot .ic{transform:scale(1.14)}
-.nav a.on.hot{color:var(--accent)}
+/* v328: zvýraznenie ako v iOS. Aktívna farba nie je na záložke, ale na kópii lišty (.nav-hl), ktorá je viditeľná len vo vnútri bubliny.
+   Keď bublina stojí medzi dvoma záložkami, každá je zafarbená presne toľko, koľko z nej bublina prekrýva. */
+.nav-hl{position:absolute;z-index:2;top:4px;bottom:4px;left:4px;right:4px;display:flex;pointer-events:none;will-change:clip-path}
+.nav-hl > a{pointer-events:none}
 /* v319: bublina ako tekuté sklo v iOS 26. Pohyb riadi pružina v JS (premenné --x, --sx, --sy, --gl):
    v pokoji jemná sklenená kapsula pod aktívnou záložkou; po dotyku sa nafúkne nad lištu, ťahá sa za prstom,
    pri rýchlom pohybe sa natiahne, okraje sa zalesknú dúhou a ikony pod ňou sa zväčšia ako pod lupou. */
@@ -55,7 +57,7 @@ setInterval(syncDay, 60000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncDay(); });
 let lastIdx = null, drag = null, dragEnd = 0;
 
-const items = nav => [...nav.querySelectorAll('a')];
+const items = nav => [...nav.querySelectorAll(':scope > a')];
 // ---------- pružina bubliny (jedna pre celú appku, lišta sa pri prepnutí obrazovky vykreslí nanovo a bublina pokračuje) ----------
 const RM = matchMedia('(prefers-reduced-motion: reduce)');
 const L = { nav: null, pos: 0, vel: 0, target: 0, press: 0, pressT: 0, sx: 1, sy: 1, gl: 0, raf: 0, last: 0, init: false };
@@ -63,6 +65,7 @@ const slot = nav => (nav.clientWidth - 8) / Math.max(1, items(nav).length);
 function render() {
   const nav = L.nav; if (!nav || !nav.isConnected) return;
   const lens = nav.querySelector('.nav-lens'); if (!lens) return;
+  const hl = nav.querySelector('.nav-hl');
   const w = slot(nav), n = items(nav).length;
   // v pokoji má kapsula presne šírku záložky (s malou medzerou), nikdy nezasahuje do susednej ani na krajoch;
   // nafúkne sa až pri dotyku alebo prechode (--sx, --sy), ako v iOS
@@ -70,18 +73,31 @@ function render() {
   lens.style.width = (w - gap * 2) + 'px';
   const x = L.pos * w + gap;
   lens.style.setProperty('--x', x.toFixed(2) + 'px');
+  // zafarbená kópia lišty je vidieť len v tvare bubliny (aj keď sa nafúkne)
+  if (hl) {
+    const lw = (w - gap * 2) * L.sx, left = x + (w - gap * 2) * (1 - L.sx) / 2, right = hl.clientWidth - left - lw;
+    const vh = hl.clientHeight * (L.sy - 1) / 2;
+    hl.style.clipPath = `inset(${(-vh).toFixed(1)}px ${right.toFixed(1)}px ${(-vh).toFixed(1)}px ${left.toFixed(1)}px round 999px)`;
+  }
   lens.style.setProperty('--sx', L.sx.toFixed(4)); lens.style.setProperty('--sy', L.sy.toFixed(4)); lens.style.setProperty('--gl', L.gl.toFixed(3));
   // lupa: ikona a popis pod bublinou sa zväčšia podľa toho, ako blízko je stred bubliny a ako je nafúknutá
   const amp = 0.2 * Math.min(1, L.press + Math.min(1, Math.abs(L.vel) / 6));
+  const hls = hl ? [...hl.children] : [];
   items(nav).forEach((a, k) => {
     const p = Math.max(0, 1 - Math.abs(k - L.pos));
     const sc = 1 + amp * p;
-    const ic = a.querySelector('.ic'), lb = a.querySelector('.lb');
     const t = sc > 1.001 ? `scale(${sc.toFixed(3)})` : '';
-    if (ic && ic.style.transform !== t) ic.style.transform = t;
-    if (lb && lb.style.transform !== t) lb.style.transform = t ? `translateY(${(-2 * amp * p).toFixed(2)}px) ${t}` : '';
+    const tl = t ? `translateY(${(-2 * amp * p).toFixed(2)}px) ${t}` : '';
+    for (const el of [a, hls[k]]) {
+      if (!el) continue;
+      const ic = el.querySelector('.ic'), lb = el.querySelector('.lb');
+      if (ic && ic.style.transform !== t) ic.style.transform = t;
+      if (lb && lb.style.transform !== tl) lb.style.transform = tl;
+    }
+    if (hl && a.classList.contains('on')) a.classList.remove('on'); // farbu aktívnej záložky kreslí len kópia v bubline
+    if (hls[k] && !hls[k].classList.contains('on')) hls[k].classList.add('on');
   });
-  if (n && !drag) { const i = Math.round(L.target); items(nav).forEach((a, k) => a.classList.toggle('on', k === i)); }
+  if (n) nav.querySelectorAll(':scope > a').forEach((a, k) => a.setAttribute('aria-current', k === Math.round(L.target) ? 'page' : 'false'));
 }
 function step(t) {
   const dt = Math.min(0.034, Math.max(0.001, (t - (L.last || t)) / 1000 || 0.016)); L.last = t;
@@ -109,7 +125,12 @@ function setup(nav) {
   const as = items(nav); if (!as.length) return;
   const home = nav.querySelector('a[href="#/"] .ic'); if (home) home.innerHTML = todayIcon();
   const lens = document.createElement('i'); lens.className = 'nav-lens'; nav.prepend(lens);
+  const hl = document.createElement('div'); hl.className = 'nav-hl'; hl.setAttribute('aria-hidden', 'true');
+  hl.innerHTML = as.map(a => `<a class="on" tabindex="-1">${a.innerHTML}</a>`).join('');
+  hl.querySelectorAll('[id]').forEach(x => x.removeAttribute('id'));
+  nav.appendChild(hl);
   const idx = Math.max(0, as.findIndex(a => a.classList.contains('on')));
+  if (home) { const h2 = hl.querySelector('a[href="#/"] .ic, a:first-child .ic'); if (h2 && as[0]?.getAttribute('href') === '#/') h2.innerHTML = todayIcon(); }
   L.nav = nav;
   if (!L.init) { L.init = true; L.pos = idx; L.vel = 0; } // inak bublina plynule pokračuje z miesta, kde bola na predošlej lište
   L.target = idx;
@@ -136,12 +157,12 @@ document.addEventListener('pointermove', e => {
   const { nav } = drag;
   if (!drag.on) {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) <= 10) return;
-    drag.on = true; nav.classList.add('drag'); drag.orig = items(nav).findIndex(a => a.classList.contains('on'));
+    drag.on = true; nav.classList.add('drag'); drag.orig = Math.round(L.target);
     try { nav.setPointerCapture(e.pointerId); } catch (_) { }
   }
   L.target = posAt(nav, e.clientX); kick();
   const i = Math.round(L.target);
-  if (i !== drag.idx) { drag.idx = i; items(nav).forEach((a, k) => { a.classList.toggle('hot', k === i); a.classList.toggle('on', k === i); }); try { navigator.vibrate?.(6); } catch (_) { } }
+  if (i !== drag.idx) { drag.idx = i; try { navigator.vibrate?.(6); } catch (_) { } }
 }, { passive: true });
 const finish = (e, cancel) => {
   if (!drag || e.pointerId !== drag.id) return;
@@ -150,11 +171,9 @@ const finish = (e, cancel) => {
   if (!on) return; // obyčajné ťuknutie rieši odkaz (nová obrazovka a bublina doputuje sama)
   dragEnd = Date.now(); nav.classList.remove('drag');
   const as = items(nav), cur = Math.max(0, orig ?? 0);
-  as.forEach(a => a.classList.remove('hot'));
-  if (cancel || idx == null) { L.target = cur; kick(); as.forEach((x, k) => x.classList.toggle('on', k === cur)); return; }
+  if (cancel || idx == null) { L.target = cur; kick(); return; }
   L.target = idx; kick(); lastIdx = idx;
   const a = as[idx], href = a.getAttribute('href');
-  as.forEach(x => x.classList.toggle('on', x === a));
   const here = (location.hash || '#/').split('?')[0];
   if (href === here) { if (window.scrollY > 40) window.scrollTo({ top: 0, behavior: 'smooth' }); }
   else location.hash = href;
