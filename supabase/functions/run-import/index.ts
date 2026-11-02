@@ -67,10 +67,10 @@ Deno.serve(async (req) => {
     catch { new URLSearchParams(raw).forEach((v, k) => { o[k.toLowerCase()] = v; }); }
   }
   const token = String(o.t || o.token || "").trim();
-  if (token.length < 20) return say("❌ Chýba token. Skopíruj adresu v appke: Beh → Prepojiť Apple Watch.", 400);
+  if (token.length < 20) return say("❌ Chýba token. Skopíruj adresu v appke: Beh → Z hodiniek → Automaticky cez iPhone.", 400);
   const sb = createClient(URL_, SERVICE);
   const { data: tk } = await sb.from("health_tokens").select("user_id").eq("token", token).maybeSingle();
-  if (!tk?.user_id) return say("❌ Neplatný token. Skopíruj novú adresu v appke: Beh → Prepojiť Apple Watch.", 400);
+  if (!tk?.user_id) return say("❌ Neplatný token. Skopíruj novú adresu v appke: Beh → Z hodiniek → Automaticky cez iPhone.", 400);
 
   const kind = kindOf(String(o.type || o.typ || ""));
   if (!kind) return say("ℹ️ Tento tréning nie je beh ani chôdza, do Behu sa nezapíše.");
