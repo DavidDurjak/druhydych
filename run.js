@@ -189,7 +189,7 @@ function runRow(r) {
   const k = RL.K(r.kind), d = new Date(r.started_at);
   const th = r.path?.length > 1 ? RL.thumb(r.path, 72, 60, 'var(--accent)', 3) : k.e;
   const showDist = r.distance_m > 0;
-  return `<a class="rn-run" href="#/beh/${r.id}"><span class="rn-th">${th}</span><div class="rn-rb"><b>${h(r.title || k.l)}</b><span>${DAYS[d.getDay()]} ${d.getDate()}. ${d.getMonth() + 1}. · ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} · ${k.l}${r.source === 'manual' ? ' · ručne' : ''}</span>
+  return `<a class="rn-run" href="#/beh/${r.id}"><span class="rn-th">${th}</span><div class="rn-rb"><b>${h(r.title || k.l)}</b><span>${DAYS[d.getDay()]} ${d.getDate()}. ${d.getMonth() + 1}. · ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')} · ${k.l}${r.source === 'manual' ? ' · ručne' : r.source === 'watch' ? ' · ⌚ hodinky' : ''}</span>
     <div>${showDist ? `<span>${RL.km(r.distance_m)}<small>km</small></span>` : ''}<span>${RL.dur(r.duration_s)}</span>${showDist ? `<span>${RL.pace(r.duration_s, r.distance_m)}<small>/km</small></span>` : ''}</div></div></a>`;
 }
 
@@ -251,11 +251,12 @@ async function hub() {
       <a class="rn-t" href="#/beh/p" style="--tc:#2BB673"><span class="ic">${IC.shoe}</span><b>Od gauča k 5 km</b><small>${pr ? `${pr.done.length}/24 tréningov` : 'Program pre začiatočníkov'}</small></a>
     </div>
     ${xs.length ? `<div class="rn-sec">Posledné aktivity<a href="#/beh/h">Všetky</a></div>${xs.slice(0, 3).map(runRow).join('')}` : ''}
-    <button class="btn ghost" id="rnMan" style="width:100%;margin-top:4px">Zapísať aktivitu ručne (napr. z hodiniek)</button>`;
+    <div class="rn-acts" style="margin-top:4px"><button class="btn" id="rnWatch">⌚ Apple Watch</button><button class="btn" id="rnMan">Zapísať ručne</button></div>`;
   const subt = wk.length ? `Tento týždeň ${RL.km(sum(wk, r => r.distance_m), 1)} km · ${plural(wk.length, 'aktivita', 'aktivity', 'aktivít')}${month.length ? ` · v ${MONTHS[new Date().getMonth()].replace(/r$/, 'ri').replace(/c$/, 'ci').replace(/l$/, 'li').replace(/j$/, 'ji').replace(/n$/, 'ni').replace(/t$/, 'te')} ${RL.km(sum(month, r => r.distance_m), 0)} km` : ''}` : 'Tento týždeň zatiaľ bez behu. Poďme na to!';
   $app().innerHTML = shell('Beh', h(subt), body);
   $app().querySelector('#rnGo').onclick = () => pickKind();
   $app().querySelector('#rnMan').onclick = () => manual();
+  $app().querySelector('#rnWatch').onclick = () => watchSheet();
   $app().querySelector('#rnRes')?.addEventListener('click', () => live.resume(res));
 }
 
@@ -337,6 +338,35 @@ function manual() {
     if (error) { toast('Nepodarilo sa uložiť.', true); e.currentTarget.disabled = false; return; }
     bg.remove(); cache = null; toast('Uložené.'); location.hash = '#/beh/' + data.id;
   };
+}
+
+// ---------- Apple Watch (Skratka po tréningu pošle beh do run-import) ----------
+const IMPORT_URL = 'https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/run-import';
+async function watchSheet() {
+  let token = '';
+  try { const { data } = await db.sb.rpc('health_token', { p_reset: false }); token = typeof data === 'string' ? data : data?.token || ''; } catch (_) { }
+  const url = token ? `${IMPORT_URL}?t=${token}` : '';
+  const body = `{"start": Začiatok, "end": Koniec, "km": Súčet, "type": Typ tréningu}`;
+  const bg = ctx.sheet(`<div class="rn"><h2 style="margin:0 0 4px">⌚ Behy z Apple Watch</h2>
+    <p class="muted" style="margin:0 0 10px;font-size:13.5px;line-height:1.45">Keď dobehneš s hodinkami, beh sa sám zapíše sem do Behu. Stačí raz nastaviť Skratku v iPhone, trvá to asi 5 minút.</p>
+    <span class="rn-lab">1. Tvoja osobná adresa (nikomu ju nedávaj)</span>
+    ${url ? `<div style="display:flex;gap:8px"><input class="rn-in" id="wU" readonly value="${h(url)}" style="font-size:12.5px"><button class="btn" id="wC" style="flex:none">Kopírovať</button></div>` : '<p class="muted small">Adresu sa nepodarilo načítať, skús to znova.</p>'}
+    <span class="rn-lab">2. V appke Skratky vytvor novú skratku „GainTrain beh“</span>
+    <ol style="margin:0;padding-left:20px;font-size:13.5px;line-height:1.55">
+      <li><b>Nájsť vzorky zo Zdravia</b>: typ <b>Tréningy</b>, zoradiť podľa dátumu začiatku, najnovšie prvé, limit 1.</li>
+      <li><b>Získať podrobnosti vzoriek zo Zdravia</b>: Dátum začiatku. Potom to isté pre <b>Dátum konca</b> a <b>Typ tréningu</b>.</li>
+      <li><b>Formátovať dátum</b> pre začiatok aj koniec: formát <b>ISO 8601</b>, s časom.</li>
+      <li><b>Nájsť vzorky zo Zdravia</b>: typ <b>Vzdialenosť chôdze a behu</b>, dátum začiatku je medzi začiatkom a koncom tréningu.</li>
+      <li><b>Vypočítať štatistiku</b>: Súčet.</li>
+      <li><b>Získať obsah URL</b>: tvoja adresa z bodu 1, metóda <b>POST</b>, telo žiadosti <b>JSON</b> s poľami <b>start</b>, <b>end</b>, <b>km</b> a <b>type</b> (vlož do nich premenné z krokov vyššie).</li>
+    </ol>
+    <span class="rn-lab">3. Nech sa spúšťa sama</span>
+    <p style="margin:0;font-size:13.5px;line-height:1.5">Skratky → Automatizácia → Nová → <b>Apple Watch tréning</b> → <b>Skončí</b> → Spustiť okamžite → skratka GainTrain beh. Ak túto možnosť nemáš, daj automatizáciu <b>Denne o 21:00</b>. Rovnaký beh sa nikdy nezapíše dvakrát.</p>
+    <p class="muted small" style="margin:12px 0 0">Bicykel a iné tréningy sa do Behu nezapíšu. Názvy akcií sa v rôznych verziách iOS môžu mierne líšiť.</p>
+    <button class="rn-start" id="wOk" style="margin-top:14px">Hotovo</button></div>`);
+  bg.querySelector('#wC')?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(url); toast('Adresa je skopírovaná.'); } catch (_) { bg.querySelector('#wU').select(); } });
+  bg.querySelector('#wOk').onclick = () => bg.remove();
+  void body;
 }
 
 // ---------- detail behu ----------
