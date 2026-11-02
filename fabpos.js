@@ -8,7 +8,8 @@ const ls = {
 const SIZE = 54, EDGE = 12;
 
 const CSS = `.bd-fab{width:${SIZE}px!important;height:${SIZE}px!important;touch-action:none;-webkit-user-select:none;user-select:none;transition:opacity .25s ease,transform .25s ease,left .2s ease,right .2s ease}
-.bd-fab svg{width:100%;height:100%;display:block;pointer-events:none}
+.bd-fab svg{width:100%;height:100%;display:block;pointer-events:none;border-radius:50%}
+.bd-fab{border-radius:50%!important;overflow:visible;background:none!important}
 .bd-fab.bd-dim{opacity:.28;transform:scale(.82)}
 .bd-fab.bd-drag{transition:none;transform:scale(1.08);opacity:1}`;
 if (!document.getElementById('fabpos-css')) { const s = document.createElement('style'); s.id = 'fabpos-css'; s.textContent = CSS; document.head.appendChild(s); }
