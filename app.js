@@ -203,7 +203,7 @@ async function routeInner(my) {
   }
   if (!state.profile?.onboarded && path !== '#/onboarding') { location.hash = '#/onboarding'; return; }
   const views = { '#/': td.renderToday, '#/pokrok': pg.renderProgress, '#/onboarding': renderOnboarding, '#/jedlo': fd.renderFood, '#/vaha': renderWeight, '#/checkin': renderCheckin, '#/kouc': v2.renderCoach, '#/profil': renderProfile,
-    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': hw.renderWatch, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals,
+    '#/fotky': () => v2.renderPhotos(), '#/trening': v2.renderTraining, '#/spravy': v2.renderMessages, '#/pripomienky': push.renderReminders, '#/report': rp.renderReport, '#/hodinky': () => { location.replace('#/profil'); }, '#/tyzden': ck.renderWeekCheckin, '#/admin': ad.renderAdmin, '#/napis': ad.renderFeedback, '#/ciele': gl.renderGoals,
     '#/rezim': dtm.renderDiet, '#/cukor': gls.renderGlucose, '#/cukor-sprava': gls.renderGlucoseReport, '#/karta': crd.renderCards, '#/navyky': hb.renderHabits, '#/treneri': tr.renderCatalog, '#/trener-profil': tr.renderTrainerEdit, '#/treneri-ziadosti': tr.renderTrainerApps };
   let fn = views[path];
   const tm = path.match(/^#\/(trener|chat)\/([^/]+)$/);
@@ -451,7 +451,6 @@ async function renderProfile() {
     </div>
     <a class="btn primary mb" href="#/ciele">🎯 Moje ciele: kalórie a makrá</a>
     <a class="btn mb" href="#/onboarding">Upraviť údaje (váha, výška, cieľ, aktivita)</a>
-    <a class="btn mb" href="#/hodinky">⌚ Hodinky a Apple Zdravie</a>
     <a class="btn mb" href="#/pripomienky">Pripomienky a notifikácie</a>
     <a class="btn mb" href="#/spravy">Správy</a>
     <a class="btn mb" href="#/napis">💬 Napíš nám: problém alebo nápad</a>

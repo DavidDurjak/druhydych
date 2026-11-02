@@ -268,13 +268,9 @@ export async function openSleep(uid, to) {
     <div class="spx-ins"><i>🍽️</i><div>Posledné väčšie jedlo do <b>${hm(mealBy)}</b>, kávu a energetické nápoje do 14:00.</div></div>
     <div class="spx-sec">Cieľ spánku</div>
     <div class="spx-goal">${[7, 7.5, 8, 8.5, 9].map(v => `<button type="button" data-g="${v}" class="${v === g ? 'on' : ''}">${String(v).replace('.', ',')} h</button>`).join('')}</div>
-    <div class="spx-sec">Hodinky a prstene</div>
-    <p class="small">Apple Watch, Garmin, Oura, Whoop, Samsung aj Fitbit zapisujú spánok do Zdravia v telefóne. Na iPhone sa odtiaľ spánok dostane sem cez prepojenie Zdravia, automaticky každé ráno.</p>
-    <div class="spx-dev"><span>Apple Watch</span><span>Garmin</span><span>Oura</span><span>Whoop</span><span>Samsung</span><span>Fitbit</span></div>
-    <div class="row mt" style="gap:8px"><a class="btn" href="#/hodinky" style="flex:1">Prepojiť hodinky</a><button class="btn primary" id="spEdit" style="flex:1">Zapísať noc</button></div>
+    <div class="row mt"><button class="btn primary" id="spEdit" style="flex:1">Zapísať noc</button></div>
   </div>`);
   bg.querySelector('[data-x]').onclick = () => bg.remove();
-  bg.querySelector('a[href="#/hodinky"]').addEventListener('click', () => bg.remove());
   bg.querySelector('#spEdit').onclick = () => { bg.remove(); editSheet(uid, to, nights.get(to)); };
   bg.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { setGoal(Number(b.dataset.g)); bg.remove(); refresh(); openSleep(uid, to); });
   try {

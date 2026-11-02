@@ -112,19 +112,24 @@ export function elevGain(alts) {
   for (const a of xs) { if (a - base > 1.5) { g += a - base; base = a; } else if (a < base) base = a; }
   return Math.round(g);
 }
-// farba úseku podľa tempa (rýchlo = zelená, pomaly = červená) relatívne k behu
-export function paceColors(p, n = 60) {
+// náročnosť úseku (0 ľahko → 1 najťažšie): tempo prepočítané na stúpanie (do kopca je rovnaké tempo ťažšie), relatívne k behu
+export function effortSegs(p, n = 60) {
   if (!p || p.length < 3) return [];
   const seg = [];
   const step = Math.max(1, Math.floor(p.length / n));
   for (let i = 0; i < p.length - 1; i += step) {
     const j = Math.min(p.length - 1, i + step), d = pathLen(p.slice(i, j + 1)), t = (p[j][2] ?? 0) - (p[i][2] ?? 0);
-    seg.push({ from: i, to: j, v: d > 0 && t > 0 ? d / t : 0 });
+    let v = d > 0 && t > 0 ? d / t : 0;
+    const a0 = p[i][3], a1 = p[j][3];
+    if (v && a0 != null && a1 != null && d > 15) { const g = Math.max(-0.25, Math.min(0.25, (a1 - a0) / d)) * 100; v *= g >= 0 ? 1 + 0.033 * g : 1 + 0.018 * g; }
+    seg.push({ from: i, to: j, v });
   }
   const vs = seg.map(s => s.v).filter(v => v > 0).sort((a, b) => a - b);
   const lo = vs[Math.floor(vs.length * 0.1)] || 0, hi = vs[Math.floor(vs.length * 0.9)] || 1;
   return seg.map(s => ({ ...s, q: hi > lo ? Math.max(0, Math.min(1, (s.v - lo) / (hi - lo))) : 0.5 }));
 }
+export const paceColors = effortSegs;
+export function effortColor(q) { return heat(1 - q); } // najťažšie = červená, ľahko = zelená
 export function heat(q) { // 0 pomaly (červená) → 1 rýchlo (zelená)
   const stops = [[255, 77, 94], [255, 176, 59], [255, 226, 74], [43, 214, 123]];
   const x = q * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(x)), f = x - i;

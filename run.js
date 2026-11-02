@@ -93,7 +93,7 @@ const CSS = `
 .rn-map{height:300px;border-radius:24px;overflow:hidden;margin:0 0 12px;background:color-mix(in srgb,var(--text) 6%,var(--card))}
 .rn-map .leaflet-container{width:100%;height:100%;background:transparent;font:inherit}
 .rn-leg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:-4px 4px 12px}
-.rn-leg i{flex:1;height:6px;border-radius:9px;background:linear-gradient(90deg,#FF4D5E,#FFB03B,#FFE24A,#2BD67B)}
+.rn-leg i{flex:1;height:6px;border-radius:9px;background:linear-gradient(90deg,#2BD67B,#FFE24A,#FFB03B,#FF4D5E)}
 .rn-title{margin:2px 0 2px;font-size:26px;letter-spacing:-.03em;line-height:1.1}
 .rn-date{margin:0 0 12px;color:var(--muted);font-size:13.5px}
 .rn-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}
@@ -353,7 +353,7 @@ async function detail(id) {
   const fast = Math.min(...paces), slow = Math.max(...paces);
   const hasMap = r.path?.length > 1;
   const body = `
-    ${hasMap ? '<div class="rn-map" id="rnMap"></div><div class="rn-leg">pomaly<i></i>rýchlo</div>' : ''}
+    ${hasMap ? '<div class="rn-map" id="rnMap"></div><div class="rn-leg">ľahšie<i></i>najťažšie</div>' : ''}
     <h2 class="rn-title">${h(r.title || k.l)}</h2>
     <p class="rn-date">${k.e} ${k.l} · ${d.toLocaleString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}${r.source === 'manual' ? ' · zapísané ručne' : ''}</p>
     ${prs.length ? `<div style="margin:0 0 8px">${prs.map(([dist, s]) => `<span class="rn-pr">🏆 Rekord ${PRN[dist] || dist} · ${RL.dur(s)}</span>`).join('')}</div>` : ''}

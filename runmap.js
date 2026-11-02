@@ -1,5 +1,5 @@
 // Beh: mapa (Leaflet z cdnjs + podklad OpenStreetMap, v tmavom režime prefarbený na tmavo). Načíta sa až keď treba mapu.
-import { paceColors, heat } from './runlib.js';
+import { effortSegs, effortColor } from './runlib.js';
 
 let loading = null;
 export function leaflet() {
@@ -38,7 +38,7 @@ export async function mapIn(el, { path, colored = true, ghost = null, interactiv
     const ll = path.map(q => [q[0], q[1]]);
     L.polyline(ll, { color: '#000', weight: 9, opacity: .25, lineCap: 'round', lineJoin: 'round' }).addTo(m);
     if (colored && path[0].length > 2) {
-      for (const s of paceColors(path)) L.polyline(ll.slice(s.from, s.to + 1), { color: heat(s.q), weight: 5.5, lineCap: 'round', lineJoin: 'round' }).addTo(m);
+      for (const s of effortSegs(path)) L.polyline(ll.slice(s.from, s.to + 1), { color: effortColor(s.q), weight: 5.5, lineCap: 'round', lineJoin: 'round' }).addTo(m);
     } else L.polyline(ll, { color, weight: 5.5, lineCap: 'round', lineJoin: 'round' }).addTo(m);
     const dot = (p, c) => L.circleMarker(p, { radius: 7, color: '#fff', weight: 3, fillColor: c, fillOpacity: 1 }).addTo(m);
     dot(ll[0], '#2BD67B'); dot(ll[ll.length - 1], '#FF4D5E');

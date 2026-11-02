@@ -213,7 +213,7 @@ function onFix(pos) {
   const t = moving();
   if (prev && fix.t - prev.t > 20000) { S.gaps++; } // medzera (displej bol zamknutý)
   if (prev && fix.t - prev.t <= 20000) S.dist += RL.dist([prev.lat, prev.lng], [fix.lat, fix.lng]);
-  S.pts.push([+fix.lat.toFixed(6), +fix.lng.toFixed(6), Math.round(t)]);
+  S.pts.push(fix.alt != null ? [+fix.lat.toFixed(6), +fix.lng.toFixed(6), Math.round(t), Math.round(fix.alt)] : [+fix.lat.toFixed(6), +fix.lng.toFixed(6), Math.round(t)]);
   if (fix.alt != null) S.alts.push(Math.round(fix.alt * 10) / 10);
   S.lastFix = fix; S.lastMoveT = fix.t;
   liveLine?.addLatLng([fix.lat, fix.lng]); liveMap?.panTo([fix.lat, fix.lng], { animate: true });

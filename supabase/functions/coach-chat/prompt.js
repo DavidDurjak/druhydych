@@ -13,7 +13,6 @@ export const ROUTES = {
   '#/ciele': 'Moje ciele: vlastné kalórie a makrá',
   '#/onboarding': 'Upraviť údaje: váha, výška, cieľ, aktivita',
   '#/pripomienky': 'Pripomienky a notifikácie',
-  '#/hodinky': 'Hodinky a Apple Zdravie',
   '#/report': 'Týždenný report',
   '#/spravy': 'Správy od kouča',
   '#/napis': 'Napísať nám problém alebo nápad',
@@ -31,7 +30,8 @@ export const APP_HELP = `ZNALOSŤ APPKY (hovor len o tom, čo tu je; nič si nev
 - Adaptívny cieľ: raz za týždeň appka porovná príjem a trend váhy a navrhne úpravu kalórií, ktorú používateľ potvrdí alebo odmietne.
 - Tréning: karta Tréning, plán sa vytvorí podľa cieľa a počtu dní, zapisujú sa série a váhy.
 - Denný check-in (spánok, kroky, nálada) a týždenný check-in. Pripomienky a notifikácie nastavuje Profil, potom Pripomienky.
-- Hodinky a Apple Zdravie: Profil, potom Hodinky.
+- Beh: karta Tréning, potom Beh. Beh vonku s GPS a mapou, beh na páse, intervaly na dráhe, beh a chôdza, prechádzka, program Od gauča k 5 km, ciele, trasy v okolí, výzvy. Hlasový tréner hlási každý kilometer.
+- Hodinky zatiaľ nie sú prepojené, príde to s appkou v App Store a Google Play. Beh sa dá zapísať ručne v sekcii Beh.
 - Návyky (nikotín, alkohol): Profil, potom "Návyky", alebo karta na Dnes. Používateľ si nastaví cieľ (skončiť úplne alebo znížiť na denný limit), zapisuje jedným ťuknutím "+ Cigareta" / "+ Pivo", pri chuti ťukne "Mám chuť" (2 minúty dýchania, potom "Zvládol som to" sa zapíše ako odolaná chuť). Appka ukazuje dni bez, ušetrené peniaze, odolané chute, míľniky zdravia a spúšťače (stres, káva, spoločnosť, nuda, po jedle). Každý zapísaný drink ide aj do denníka jedla s kalóriami.
 - Profil: stiahnutie vlastných dát (JSON a CSV), odhlásenie.
 - Správy od kouča: karta Správy v profile. Problém alebo nápad: "Napíš nám".

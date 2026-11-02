@@ -188,7 +188,6 @@ async function open() {
       ${pop(10, `<div class="qa-g">
         <button class="qa-t" data-qa="habits"><i>🔥</i><span>Návyky<small>Séria dní</small></span></button>
         <button class="qa-t" data-qa="sugar"><i>🩸</i><span>Cukor v krvi<small>Glukóza</small></span></button>
-        <button class="qa-t" data-qa="watch"><i>⌚</i><span>Hodinky<small>Apple Zdravie</small></span></button>
         <button class="qa-t" data-qa="week"><i>📅</i><span>Týždeň<small>Check-in a report</small></span></button></div>`)}
       ${pop(11, '<div class="qa-lb">Nastavenia</div>')}
       ${pop(12, `<div class="qa-g">

@@ -202,7 +202,6 @@ function html(p, admin) {
       { href: '#/navyky', i: 'shield', c: 'violet', t: 'Návyky', s: 'Nikotín a alkohol pod kontrolou', k: 'fajcenie vape alkohol' },
     ]],
     ['Pripojenia a upozornenia', [
-      { href: '#/hodinky', i: 'watch', c: 'teal', t: 'Hodinky a Apple Zdravie', s: 'Kroky, spánok a aktivita z hodiniek', k: 'garmin apple health kroky' },
       { href: '#/pripomienky', i: 'bell', c: 'amber', t: 'Pripomienky a notifikácie', s: 'Čo ti a kedy pripomenieme', k: 'notifikacie push upozornenia' },
     ]],
     ['Prehľady', [
