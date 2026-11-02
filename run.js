@@ -251,12 +251,11 @@ async function hub() {
       <a class="rn-t" href="#/beh/p" style="--tc:#2BB673"><span class="ic">${IC.shoe}</span><b>Od gauča k 5 km</b><small>${pr ? `${pr.done.length}/24 tréningov` : 'Program pre začiatočníkov'}</small></a>
     </div>
     ${xs.length ? `<div class="rn-sec">Posledné aktivity<a href="#/beh/h">Všetky</a></div>${xs.slice(0, 3).map(runRow).join('')}` : ''}
-    <div class="rn-acts" style="margin-top:4px"><button class="btn" id="rnWatch">⌚ Z hodiniek</button><button class="btn" id="rnMan">Zapísať ručne</button></div>`;
+    <button class="btn ghost" id="rnMan" style="width:100%;margin-top:4px">Zapísať aktivitu ručne</button>`;
   const subt = wk.length ? `Tento týždeň ${RL.km(sum(wk, r => r.distance_m), 1)} km · ${plural(wk.length, 'aktivita', 'aktivity', 'aktivít')}${month.length ? ` · v ${MONTHS[new Date().getMonth()].replace(/r$/, 'ri').replace(/c$/, 'ci').replace(/l$/, 'li').replace(/j$/, 'ji').replace(/n$/, 'ni').replace(/t$/, 'te')} ${RL.km(sum(month, r => r.distance_m), 0)} km` : ''}` : 'Tento týždeň zatiaľ bez behu. Poďme na to!';
   $app().innerHTML = shell('Beh', h(subt), body);
   $app().querySelector('#rnGo').onclick = () => pickKind();
   $app().querySelector('#rnMan').onclick = () => manual();
-  $app().querySelector('#rnWatch').onclick = () => watchHub();
   $app().querySelector('#rnRes')?.addEventListener('click', () => live.resume(res));
 }
 
@@ -316,7 +315,7 @@ function setupTreadmill() {
 }
 function manual() {
   const now = new Date(); const pad = n => String(n).padStart(2, '0');
-  const bg = ctx.sheet(`<div class="rn"><h2 style="margin:0 0 4px">Zapísať aktivitu</h2><p class="muted" style="margin:0 0 8px;font-size:13.5px">Napríklad beh z hodiniek alebo keď si appku nemal pri sebe.</p>
+  const bg = ctx.sheet(`<div class="rn"><h2 style="margin:0 0 4px">Zapísať aktivitu</h2><p class="muted" style="margin:0 0 8px;font-size:13.5px">Keď si appku pri behu nemal pri sebe.</p>
     <span class="rn-lab">Typ</span><div class="rn-chips" id="mK">${Object.entries(RL.KIND).map(([id, k], i) => `<button type="button" data-k="${id}" class="${i === 0 ? 'on' : ''}">${k.e} ${k.l.replace('Beh ', '').replace(/^vonku$/, 'Vonku')}</button>`).join('')}</div>
     <span class="rn-lab">Kedy</span><div style="display:flex;gap:8px"><input class="rn-in" type="date" id="mD" value="${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}"><input class="rn-in" type="time" id="mT" value="${pad(now.getHours())}:${pad(now.getMinutes())}" style="width:130px"></div>
     <span class="rn-lab">Vzdialenosť (km)</span><input class="rn-in" id="mKm" inputmode="decimal" placeholder="5,2">
@@ -338,120 +337,6 @@ function manual() {
     if (error) { toast('Nepodarilo sa uložiť.', true); e.currentTarget.disabled = false; return; }
     bg.remove(); cache = null; toast('Uložené.'); location.hash = '#/beh/' + data.id;
   };
-}
-
-// ---------- hodinky: rozcestník ----------
-function watchHub() {
-  const bg = ctx.sheet(`<div class="rn"><h2 style="margin:0 0 4px">⌚ Behy z hodiniek</h2>
-    <p class="muted" style="margin:0 0 12px;font-size:13.5px;line-height:1.45">Funguje s Apple Watch, Garmin, Polar, Suunto, Coros, Amazfit, Samsung aj ďalšími. Vyber, čo ti sedí.</p>
-    <button class="rn-kind" data-w="ios" style="--c1:#5B8CFF;--c2:#7A5CFF"><span class="e">📱</span><div><b>Automaticky cez iPhone</b><small>Apple Watch aj iné hodinky, ktoré sa synchronizujú do Zdravia (Garmin, Polar, Suunto, Coros…)</small></div></button>
-    <button class="rn-kind" data-w="file" style="--c1:#2BD67B;--c2:#12A0B8"><span class="e">📄</span><div><b>Nahrať súbor z hodiniek</b><small>GPX alebo TCX z Garmin Connect, Polar Flow, Suunto, Coros, Stravy. Aj s mapou trasy, na iPhone aj Androide.</small></div></button>
-    <button class="rn-kind" data-w="man" style="--c1:#F5A623;--c2:#F2643A"><span class="e">✍️</span><div><b>Zapísať ručne</b><small>Vzdialenosť a čas z displeja hodiniek</small></div></button></div>`);
-  bg.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { bg.remove(); ({ ios: watchSheet, file: importFile, man: manual })[b.dataset.w](); });
-}
-
-// ---------- súbor GPX / TCX ----------
-function parseTrack(text) {
-  const doc = new DOMParser().parseFromString(text, 'application/xml');
-  if (doc.querySelector('parsererror')) throw new Error('Súbor sa nedá prečítať. Potrebujeme GPX alebo TCX.');
-  const pts = [];
-  const gpx = [...doc.getElementsByTagName('trkpt')];
-  if (gpx.length) gpx.forEach(p => { const t = p.getElementsByTagName('time')[0]?.textContent, e = p.getElementsByTagName('ele')[0]?.textContent; pts.push({ lat: +p.getAttribute('lat'), lng: +p.getAttribute('lon'), t: t ? Date.parse(t) : NaN, ele: e != null ? +e : null }); });
-  else [...doc.getElementsByTagName('Trackpoint')].forEach(p => {
-    const la = p.getElementsByTagName('LatitudeDegrees')[0]?.textContent, lo = p.getElementsByTagName('LongitudeDegrees')[0]?.textContent, t = p.getElementsByTagName('Time')[0]?.textContent, e = p.getElementsByTagName('AltitudeMeters')[0]?.textContent, dm = p.getElementsByTagName('DistanceMeters')[0]?.textContent;
-    pts.push({ lat: la != null ? +la : NaN, lng: lo != null ? +lo : NaN, t: t ? Date.parse(t) : NaN, ele: e != null ? +e : null, dm: dm != null ? +dm : null });
-  });
-  const timed = pts.filter(p => !isNaN(p.t));
-  if (timed.length < 2) throw new Error('V súbore chýba záznam s časom. Exportuj aktivitu ako GPX alebo TCX.');
-  const geo = timed.filter(p => isFinite(p.lat) && isFinite(p.lng) && (p.lat || p.lng));
-  const t0 = timed[0].t, t1 = timed[timed.length - 1].t;
-  // čas v pohybe: bez prestávok (úseky dlhšie ako 20 s s rýchlosťou pod 0,5 m/s)
-  let moving = 0;
-  for (let i = 1; i < timed.length; i++) {
-    const a = timed[i - 1], b = timed[i], dt = (b.t - a.t) / 1000; if (dt <= 0) continue;
-    const d = isFinite(a.lat) && isFinite(b.lat) ? RL.dist([a.lat, a.lng], [b.lat, b.lng]) : (a.dm != null && b.dm != null ? b.dm - a.dm : 1);
-    if (dt <= 20 || d / dt > 0.5) moving += dt;
-  }
-  let movT = 0; const path = [];
-  for (let i = 0; i < geo.length; i++) {
-    if (i) { const dt = (geo[i].t - geo[i - 1].t) / 1000, d = RL.dist([geo[i - 1].lat, geo[i - 1].lng], [geo[i].lat, geo[i].lng]); if (dt > 0 && (dt <= 20 || d / dt > 0.5)) movT += dt; }
-    path.push([+geo[i].lat.toFixed(6), +geo[i].lng.toFixed(6), Math.round(movT)]);
-  }
-  const lastDm = [...pts].reverse().find(p => p.dm != null)?.dm;
-  const distance = path.length > 1 ? RL.pathLen(path) : (lastDm || 0);
-  const typeTxt = (doc.getElementsByTagName('type')[0]?.textContent || doc.getElementsByTagName('Activity')[0]?.getAttribute('Sport') || '').toLowerCase();
-  const kind = /walk|hik|chod/.test(typeTxt) ? 'walk' : /treadmill|indoor/.test(typeTxt) ? 'treadmill' : 'outdoor';
-  const name = doc.getElementsByTagName('name')[0]?.textContent?.trim() || '';
-  return { start: new Date(t0), elapsed: Math.round((t1 - t0) / 1000), moving: Math.round(moving), distance, path: RL.simplify(path, 1500), ele: RL.elevGain(geo.map(p => p.ele)), kind, name };
-}
-function importFile() {
-  const bg = ctx.sheet(`<div class="rn"><h2 style="margin:0 0 4px">📄 Nahrať súbor z hodiniek</h2>
-    <p class="muted" style="margin:0 0 10px;font-size:13.5px;line-height:1.45">Stiahni si aktivitu ako <b>GPX</b> alebo <b>TCX</b> a vyber ju tu. Beh sa zapíše aj s mapou, medzičasmi a rekordmi.</p>
-    <details class="rn-box" style="padding:12px 14px"><summary style="font-weight:700;cursor:pointer">Kde nájdem súbor?</summary><ul style="margin:10px 0 0;padding-left:18px;font-size:13.5px;line-height:1.55">
-      <li><b>Garmin Connect</b> (web): otvor aktivitu → ozubené koliesko → Exportovať do GPX.</li>
-      <li><b>Polar Flow</b>: aktivita → Exportovať reláciu → GPX alebo TCX.</li>
-      <li><b>Suunto</b>: aktivita → tri bodky → Exportovať GPX.</li>
-      <li><b>Coros</b>: aktivita → Zdieľať → Exportovať GPX.</li>
-      <li><b>Strava</b> (web): aktivita → tri bodky → Exportovať GPX.</li>
-      <li><b>Zepp (Amazfit)</b>, <b>Samsung Health</b>: cez export do Stravy, potom GPX zo Stravy.</li></ul></details>
-    <label class="rn-start" style="display:grid;place-items:center;margin-top:12px">Vybrať súbor<input type="file" id="fF" accept=".gpx,.tcx,application/gpx+xml,application/xml,text/xml" hidden></label>
-    <div id="fOut"></div></div>`);
-  bg.querySelector('#fF').onchange = async e => {
-    const f = e.target.files?.[0]; if (!f) return;
-    const out = bg.querySelector('#fOut');
-    if (f.size > 25e6) { toast('Súbor je príliš veľký.', true); return; }
-    let r; try { r = parseTrack(await f.text()); } catch (err) { out.innerHTML = `<div class="rn-sum" style="background:color-mix(in srgb,#FF4D5E 14%,transparent)">${h(err.message)}</div>`; return; }
-    if (r.start > new Date(Date.now() + 3600e3)) { toast('Dátum aktivity nesedí.', true); return; }
-    let kind = r.kind;
-    out.innerHTML = `<div class="rn-box" style="margin-top:12px;display:flex;gap:12px;align-items:center"><span class="rn-th">${r.path.length > 1 ? RL.thumb(r.path, 72, 60, 'var(--accent)', 3) : '🏃'}</span><div class="rn-rb"><b>${h(r.name || 'Aktivita z hodiniek')}</b><span>${r.start.toLocaleString('sk-SK', { weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-      <div><span>${RL.km(r.distance)}<small>km</small></span><span>${RL.dur(r.moving)}</span><span>${RL.pace(r.moving, r.distance)}<small>/km</small></span></div></div></div>
-      <span class="rn-lab">Typ</span><div class="rn-chips">${['outdoor', 'treadmill', 'walk', 'runwalk'].map(k => `<button type="button" data-k="${k}" class="${k === kind ? 'on' : ''}">${RL.K(k).e} ${RL.K(k).l}</button>`).join('')}</div>
-      <button class="rn-start" id="fGo" style="margin-top:14px">Uložiť do Behu</button>`;
-    out.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { kind = b.dataset.k; out.querySelectorAll('[data-k]').forEach(x => x.classList.toggle('on', x === b)); });
-    out.querySelector('#fGo').onclick = async ev => {
-      const btn = ev.currentTarget; btn.disabled = true; btn.textContent = 'Ukladám…';
-      const from = new Date(r.start.getTime() - 180e3).toISOString(), to = new Date(r.start.getTime() + 180e3).toISOString();
-      const { data: dup } = await db.sb.from('runs').select('id').eq('user_id', uid()).gte('started_at', from).lte('started_at', to).limit(1);
-      if (dup?.length) { bg.remove(); toast('Túto aktivitu už máš uloženú.'); location.hash = '#/beh/' + dup[0].id; return; }
-      const kg = Number(st().profile?.start_weight) || 72;
-      const hr = r.start.getHours(), tod = hr < 10 ? 'Ranný' : hr < 13 ? 'Dopoludňajší' : hr < 18 ? 'Popoludňajší' : 'Večerný';
-      const title = r.name && !/^(running|walking|run|walk|beh)$/i.test(r.name) ? r.name.slice(0, 80) : kind === 'walk' ? `${tod.replace(/ý$/, 'á')} prechádzka` : `${tod} beh`;
-      const hasPath = r.path.length > 1;
-      const { data, error } = await db.sb.from('runs').insert({ user_id: uid(), kind, source: 'watch', started_at: r.start.toISOString(), duration_s: Math.max(1, r.moving || r.elapsed), elapsed_s: r.elapsed, distance_m: Math.round(r.distance * 10) / 10,
-        elev_gain_m: r.ele, kcal: RL.kcal(kind, r.distance, kg), path: hasPath ? r.path : null, splits: hasPath ? RL.splits(r.path) : null, best: hasPath ? RL.bestEfforts(r.path) : null, title, meta: { from: 'file', file: f.name.slice(0, 80) } }).select('id').single();
-      if (error) { toast('Nepodarilo sa uložiť.', true); btn.disabled = false; btn.textContent = 'Uložiť do Behu'; return; }
-      bg.remove(); cache = null; toast('Aktivita je uložená.'); location.hash = '#/beh/' + data.id;
-    };
-  };
-}
-
-// ---------- Apple Watch a iné hodinky cez Zdravie (Skratka po tréningu pošle beh do run-import) ----------
-const IMPORT_URL = 'https://uxzwqyjbzkcveoxsdqdv.supabase.co/functions/v1/run-import';
-async function watchSheet() {
-  let token = '';
-  try { const { data } = await db.sb.rpc('health_token', { p_reset: false }); token = typeof data === 'string' ? data : data?.token || ''; } catch (_) { }
-  const url = token ? `${IMPORT_URL}?t=${token}` : '';
-  const body = `{"start": Začiatok, "end": Koniec, "km": Súčet, "type": Typ tréningu}`;
-  const bg = ctx.sheet(`<div class="rn"><h2 style="margin:0 0 4px">📱 Automaticky cez iPhone</h2>
-    <p class="muted" style="margin:0 0 10px;font-size:13.5px;line-height:1.45">Keď dobehneš s hodinkami, beh sa sám zapíše sem do Behu. Funguje s Apple Watch aj s hodinkami, ktoré sa synchronizujú do appky Zdravie. Pri Garmine to zapneš v Garmin Connect → Viac → Nastavenia → Pripojené appky → Apple Zdravie. Skratku nastavíš raz, trvá to asi 5 minút.</p>
-    <span class="rn-lab">1. Tvoja osobná adresa (nikomu ju nedávaj)</span>
-    ${url ? `<div style="display:flex;gap:8px"><input class="rn-in" id="wU" readonly value="${h(url)}" style="font-size:12.5px"><button class="btn" id="wC" style="flex:none">Kopírovať</button></div>` : '<p class="muted small">Adresu sa nepodarilo načítať, skús to znova.</p>'}
-    <span class="rn-lab">2. V appke Skratky vytvor novú skratku „GainTrain beh“</span>
-    <ol style="margin:0;padding-left:20px;font-size:13.5px;line-height:1.55">
-      <li><b>Nájsť vzorky zo Zdravia</b>: typ <b>Tréningy</b>, zoradiť podľa dátumu začiatku, najnovšie prvé, limit 1.</li>
-      <li><b>Získať podrobnosti vzoriek zo Zdravia</b>: Dátum začiatku. Potom to isté pre <b>Dátum konca</b> a <b>Typ tréningu</b>.</li>
-      <li><b>Formátovať dátum</b> pre začiatok aj koniec: formát <b>ISO 8601</b>, s časom.</li>
-      <li><b>Nájsť vzorky zo Zdravia</b>: typ <b>Vzdialenosť chôdze a behu</b>, dátum začiatku je medzi začiatkom a koncom tréningu.</li>
-      <li><b>Vypočítať štatistiku</b>: Súčet.</li>
-      <li><b>Získať obsah URL</b>: tvoja adresa z bodu 1, metóda <b>POST</b>, telo žiadosti <b>JSON</b> s poľami <b>start</b>, <b>end</b>, <b>km</b> a <b>type</b> (vlož do nich premenné z krokov vyššie).</li>
-    </ol>
-    <span class="rn-lab">3. Nech sa spúšťa sama</span>
-    <p style="margin:0;font-size:13.5px;line-height:1.5">Skratky → Automatizácia → Nová → <b>Apple Watch tréning</b> → <b>Skončí</b> → Spustiť okamžite → skratka GainTrain beh. Ak túto možnosť nemáš, daj automatizáciu <b>Denne o 21:00</b>. Rovnaký beh sa nikdy nezapíše dvakrát.</p>
-    <p class="muted small" style="margin:12px 0 0">Bicykel a iné tréningy sa do Behu nezapíšu. Názvy akcií sa v rôznych verziách iOS môžu mierne líšiť.</p>
-    <button class="rn-start" id="wOk" style="margin-top:14px">Hotovo</button></div>`);
-  bg.querySelector('#wC')?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(url); toast('Adresa je skopírovaná.'); } catch (_) { bg.querySelector('#wU').select(); } });
-  bg.querySelector('#wOk').onclick = () => bg.remove();
-  void body;
 }
 
 // ---------- detail behu ----------
