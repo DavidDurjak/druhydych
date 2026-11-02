@@ -345,7 +345,8 @@ function stepSeen(id, i) {
   try { sessionStorage.setItem('fw_fns', JSON.stringify([...seenSteps])); } catch (_) { /* nič */ }
   ev('fn_step', { s: id, i });
 }
-const unpre = () => document.documentElement.classList.remove('fnq-pre');
+// remove() zapíše atribút aj keď trieda chýba (a spustí tak všetky sledovače), preto len keď tam naozaj je
+const unpre = () => { const c = document.documentElement.classList; if (c.contains('fnq-pre')) c.remove('fnq-pre'); };
 function open(startAt = 0) {
   if (el) return;
   q = { ...fresh(), ...(jget(KEY) || {}) }; if (!q.diet || !Array.isArray(q.diet.diets)) q.diet = fresh().diet;

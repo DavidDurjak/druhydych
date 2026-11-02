@@ -111,7 +111,7 @@ function paint(scr) {
     const sp = $('.tf-st span', card), t = ss.length && d === ss.length ? '✓' : `${d}/${ss.length}`;
     if (sp && sp.textContent !== t) sp.textContent = t;
     const ln = $('.tf-line', card), html = line(card);
-    if (ln && ln.innerHTML !== html) ln.innerHTML = html;
+    if (ln && ln._html !== html) { ln._html = html; ln.innerHTML = html; }
     const next = open ? ss.find(s => !s.classList.contains('done')) : null;
     ss.forEach(s => s.classList.toggle('tf-next', s === next));
     const exh = $('.exh', card); if (exh) exh.setAttribute('aria-expanded', String(open));

@@ -334,7 +334,8 @@ function syncLink() {
   } else if (a !== scr.lastElementChild) scr.appendChild(a);
   const n = getLayout().hidden.filter(id => scr.querySelector(byId[id].sel)).length;
   const html = `${I.menu}<span>Upraviť Dnes${n ? ` · <em>${n} ${n === 1 ? 'skrytá karta' : n < 5 ? 'skryté karty' : 'skrytých kariet'}</em>` : ''}</span>`;
-  if (a.innerHTML !== html) a.innerHTML = html;
+  // porovnáva sa s naposledy zapísaným textom: innerHTML prehliadač vracia upravené (SVG), takže by sa prepisoval každú snímku dokola
+  if (a._html !== html) { a._html = html; a.innerHTML = html; }
 }
 if (app) {
   let q = 0;
