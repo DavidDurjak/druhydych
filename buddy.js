@@ -257,12 +257,14 @@ if (root) { new MutationObserver(showFab).observe(root, { childList: true, subtr
     const card = p.querySelector('.bd-card');
     const kb = window.innerHeight - vv.height > 120; // klávesnica je hore
     if (kb) {
+      const col = card ? getComputedStyle(card).backgroundColor : 'var(--bg, #0b0e12)';
       p.style.top = vv.offsetTop + 'px'; p.style.height = vv.height + 'px'; p.style.bottom = 'auto';
-      p.style.background = 'var(--bg, #0b0e12)';
-      if (card) { card.style.height = Math.max(240, vv.height - 8) + 'px'; card.style.borderRadius = '0'; }
+      // pod chatom (za priesvitnou lištou klávesnice) nesmie presvitať appka
+      p.style.background = col; p.style.boxShadow = `0 ${Math.round(vv.height)}px 0 0 ${col}`;
+      if (card) { card.style.height = vv.height + 'px'; card.style.borderRadius = '0'; }
       p.classList.add('bd-kb');
     } else if (p.classList.contains('bd-kb')) {
-      p.style.top = p.style.height = p.style.bottom = p.style.background = '';
+      p.style.top = p.style.height = p.style.bottom = p.style.background = p.style.boxShadow = '';
       if (card) { card.style.height = card.style.borderRadius = ''; }
       p.classList.remove('bd-kb');
     }

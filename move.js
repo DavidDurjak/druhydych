@@ -157,7 +157,10 @@ export async function openMove(date) {
     if (!vv) return;
     const kb = window.innerHeight - vv.height > 120;
     bg.style.top = kb ? vv.offsetTop + 'px' : ''; bg.style.height = kb ? vv.height + 'px' : ''; bg.style.bottom = kb ? 'auto' : '';
-    sh.style.height = kb ? Math.max(260, vv.height - 10) + 'px' : '';
+    // pod oknom (za priesvitnou lištou klávesnice) nesmie presvitať appka: plocha pod ním má farbu okna
+    const col = getComputedStyle(sh).backgroundColor;
+    bg.style.background = kb ? col : ''; bg.style.boxShadow = kb ? `0 ${Math.round(vv.height)}px 0 0 ${col}` : '';
+    sh.style.height = kb ? vv.height + 'px' : ''; sh.style.borderRadius = kb ? '0' : '';
   };
   vv?.addEventListener('resize', fit); vv?.addEventListener('scroll', fit);
   let group = recent().length ? 'recent' : 'all';
