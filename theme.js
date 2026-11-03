@@ -249,7 +249,7 @@ function profileUi() {
     card.querySelectorAll('[data-th]').forEach(b => b.onclick = () => { setMode(b.dataset.th); mark(); });
     mark();
   }
-  if (tiles) { if (card.previousElementSibling !== tiles) tiles.after(card); }
+  if (tiles) { if (!card.isConnected || card.parentElement !== tiles.parentElement) tiles.after(card); } // poradie v Profile spravuje profilelayout.js
   else if (!card.isConnected) outBtn.parentNode.insertBefore(card, outBtn);
 }
 // ručné doladenie svetlého režimu (tento štýl sa už ďalej neprevádza)

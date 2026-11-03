@@ -242,6 +242,11 @@ function joinBanner(kind) {
   return `<a class="${cl}" href="#/trener-profil"><div class="tx"><b>Si tréner?</b><small>Získaj klientov online cez GainTrain.</small></div><span class="go">Stať sa trénerom ›</span></a>`;
 }
 
+function joinLine() {
+  const own = ctx.state.trainer;
+  const [txt, go] = own?.status === 'pending' ? ['Tvoja žiadosť sa kontroluje', 'Otvoriť'] : own?.status === 'rejected' ? ['Žiadosť sme zamietli', 'Otvoriť'] : ['Si tréner?', 'Stať sa trénerom'];
+  return `<a class="tr-jl" href="#/trener-profil"><span>${txt}</span><b>${go} ›</b></a>`;
+}
 function joinPill() {
   const own = ctx.state.trainer;
   if (own?.approved) return '';
@@ -615,8 +620,8 @@ async function profileCard() {
   const clientPart = active && t
     ? `<a class="tr-card" href="#/trener/${t.user_id}">${avatar(t)}<div class="tr-body"><small class="muted">Môj tréner</small><div class="tr-name">${h(t.display_name)}${t.verified ? CHECK : ''}</div><div class="tr-hl">${h(t.headline || '')}</div></div></a>
        <div class="tr-row"><a class="btn sm primary" href="#/chat/${t.user_id}">Správy</a><button class="btn sm ghost" id="trEnd">Ukončiť spoluprácu</button></div>`
-    : `<h3 style="margin:0 0 4px">Tréner</h3><p class="tr-note" style="margin:0 0 10px">${pend ? 'Čaká sa na odpoveď trénera.' : 'Vyber si trénera, ktorý ťa povedie online, alebo zadaj kód od svojho trénera.'}</p>
-       <div class="tr-row"><a class="btn sm primary" href="#/treneri">Nájsť trénera</a><button class="btn sm ghost" id="trCode">Mám kód</button></div>`;
+    : `<div class="tr-cmp"><div class="tr-cmp-t"><b>Tréner</b><small>${pend ? 'Čaká sa na odpoveď trénera' : 'Vyber si trénera alebo zadaj kód'}</small></div>
+       <div class="tr-row"><a class="btn sm primary" href="#/treneri">Nájsť</a><button class="btn sm ghost" id="trCode">Mám kód</button></div></div>`;
   const ownPart = own?.approved ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm" href="#/kouc">Moji klienti</a><a class="btn sm ghost" href="#/trener-profil">Môj trénerský profil</a></div>`
     : '';
   // žiadosti trénerov schvaľuje admin appky (databáza: pravidlo „trainer profiles admin“)
@@ -624,7 +629,7 @@ async function profileCard() {
   const nApps = isAdm ? (await api().pending().catch(() => [])).length : 0;
   const st = own?.status === 'pending' ? '<p class="tr-note" style="margin-top:8px">Tvoja žiadosť o trénerský profil sa kontroluje.</p>' : own?.status === 'rejected' ? '<p class="tr-note" style="margin-top:8px">Tvoju žiadosť sme zamietli. Otvor profil a pozri dôvod.</p>' : '';
   const adm = isAdm ? `<div class="tr-row" style="margin-top:10px"><a class="btn sm ${nApps ? 'primary' : 'ghost'}" href="#/treneri-ziadosti">Žiadosti trénerov${nApps ? ` (${nApps})` : ''}</a></div>` : '';
-  return `<div class="card tr-me" id="trCard">${clientPart}${ownPart}${own?.approved ? '' : joinBanner('row')}${adm}</div>`;
+  return `<div class="card tr-me" id="trCard">${clientPart}${ownPart}${own?.approved ? '' : joinLine()}${adm}</div>`;
 }
 async function mountProfile() {
   if ((location.hash || '#/').split('?')[0] !== '#/profil') return;

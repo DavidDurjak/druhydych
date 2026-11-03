@@ -156,6 +156,7 @@ function openPicker() {
 function profileUi() {
   const theme = document.querySelector('#app #fwTheme');
   if (!theme) return;
+  if (theme.querySelector('.lg-wrap')) return; // jazyk je už vo Vzhľade (profilelayout.js)
   const had = document.querySelector('#fwLang');
   // karta ide vždy hneď pod Vzhľad (Profil si Vzhľad pri prekreslení presúva)
   if (had) { if (had.previousElementSibling !== theme) theme.after(had); return; }

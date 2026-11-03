@@ -427,7 +427,9 @@ function profileCard() {
   if (!ent.on) return;
   const scr = document.querySelector('#app .screen'); if (!scr) return;
   css();
-  const anchor = scr.querySelector('.pfx-tiles') || scr.querySelector('a.btn[href="#/ciele"]'); if (!anchor || scr.querySelector('.gt-sub')) return;
+  const tiles = scr.querySelector('.pfx-tiles');
+  scr.querySelectorAll('.gt-sub').forEach(x => { if (tiles && x.parentElement !== tiles.parentElement) x.remove(); }); // zablúdená karta mimo nového Profilu
+  const anchor = tiles || (scr.querySelector('.pfx-root') ? null : scr.querySelector('a.btn[href="#/ciele"]')); if (!anchor || scr.querySelector('.gt-sub')) return;
   const tr = ent.reason === 'trial' && ent.trial_end ? days(ent.trial_end) : null;
   const fy = ent.offer === 'first_year' && ent.offers?.first_year?.price;
   const [t, s] = ent.reason === 'sub' ? ['GainTrain Plus', ent.trialing ? `Skúšobná doba, prvá platba ${new Date(ent.period_end).toLocaleDateString('sk-SK')}` : ent.cancel ? `Aktívne do ${new Date(ent.period_end).toLocaleDateString('sk-SK')}` : 'Aktívne, spravovať predplatné']
@@ -437,7 +439,8 @@ function profileCard() {
           : ['Získaj GainTrain Plus', Number(ent.trial_offer_days) > 0 ? `${dLabel(Number(ent.trial_offer_days))} zadarmo${fy ? `, potom prvý rok za ${eur(fy)}` : ''}` : ent.offer === 'winback' ? `Vitaj späť: prvý rok za ${eur(ent.offers?.winback?.price || 29.99)}` : 'AI bez limitu, plán na mieru, bez reklám'];
   const b = document.createElement('div'); b.className = 'gt-sub'; b.setAttribute('role', 'button'); b.tabIndex = 0;
   b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); } };
-  b.innerHTML = `<i>✦</i><div><b>${t}</b><small>${s}</small></div><span>›</span>`;
+  const cta = ent.reason === 'sub' || ent.reason === 'member' || ent.reason === 'admin' || ent.reason === 'trainer' ? 'Spravovať' : tr != null ? 'Pokračovať' : Number(ent.trial_offer_days) > 0 ? 'Vyskúšať' : 'Odomknúť';
+  b.innerHTML = `<i>✦</i><div><b>${t}</b><small>${s}</small></div><em>${cta}</em>`;
   b.onclick = () => paywall({ from: 'profile' });
   anchor.parentNode.insertBefore(b, anchor);
 }
