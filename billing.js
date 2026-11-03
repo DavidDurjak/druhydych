@@ -115,6 +115,17 @@ const CSS = `
 .pw-plan .p s{display:block;color:var(--muted);font-size:12.5px}
 .pw-ppl{font-style:normal;font-size:12px;font-weight:700;color:var(--muted);margin-left:4px}
 .pw-code{align-self:center;margin-top:10px;background:none;border:0;color:var(--accent);font:inherit;font-size:13.5px;font-weight:700;padding:8px;cursor:pointer}
+.pw-cf{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:flex-end;background:color-mix(in srgb,#000 55%,transparent);animation:pwIn .22s ease both}
+.pw-cf>div{max-width:460px;width:100%;margin:0 auto;background:var(--bg);border-radius:24px 24px 0 0;padding:18px 20px calc(env(safe-area-inset-bottom) + 14px);border-top:1px solid var(--line);max-height:92%;overflow-y:auto}
+.pw-cf h2{margin:0 0 10px;font-size:19px;letter-spacing:-.01em}
+.pw-cf dl{margin:0 0 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.pw-cf dt{color:var(--muted)}.pw-cf dd{margin:0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.pw-cf .rn{margin:0 0 12px;font-size:13.5px;line-height:1.45}
+.pw-cf label{display:flex;gap:11px;align-items:flex-start;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-size:13px;line-height:1.45;cursor:pointer}
+.pw-cf input[type=checkbox]{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--accent)}
+.pw-cf .pw-go{width:100%;margin-top:12px}.pw-cf .pw-go:disabled{opacity:.4}
+.pw-cf .pw-later{width:100%}
+.pw-wd{margin-top:6px;background:none;border:0;color:var(--muted);font:inherit;font-size:12.5px;text-decoration:underline;text-underline-offset:3px;padding:8px;cursor:pointer}
 .pw-fine{margin:12px 0 0;text-align:center;color:var(--muted);font-size:12px;line-height:1.5}
 .pw-fine a{color:inherit}
 .pw-more{border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:700;padding:6px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
@@ -125,7 +136,7 @@ const CSS = `
 .pw-tl li:last-child{padding-bottom:0}.pw-tl li:last-child::after{display:none}
 .pw-tl li:last-child::before{background:var(--muted)}
 .pw-tl b{display:block;font-size:14.5px}.pw-tl small{color:var(--muted);font-size:12.5px}
-.pw-nopay{margin:8px 0 0;text-align:center;font-size:13.5px;font-weight:700;color:var(--accent)}
+.pw-nopay{margin:8px 0 0;text-align:center;font-size:12.5px;line-height:1.45;color:var(--muted)}
 .pw-err{margin:10px 0 0;text-align:center;color:var(--danger,#FF5C7A);font-size:13px}
 .pw-later{align-self:center;margin-top:6px;background:none;border:0;color:var(--muted);font:inherit;font-size:14px;padding:10px;cursor:pointer}
 .pw-st{margin:16px 0 0;padding:16px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
@@ -204,6 +215,8 @@ const WHY = {
 const eur = v => v == null ? '' : Number(v).toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const mo = p => Number(p.months) || (p.id === 'year' ? 12 : p.id === 'quarter' || p.id === 'q' ? 3 : 1);
 const days = t => Math.max(0, Math.ceil((new Date(t) - Date.now()) / 864e5));
+const CONSENT_V = '2026-11-04';
+const CONSENT_TEXT = 'Chcem, aby GainTrain Plus fungovalo hneď po objednávke, ešte pred uplynutím 14-dňovej lehoty na odstúpenie od zmluvy. Beriem na vedomie, že ak od zmluvy odstúpim, zaplatím pomernú časť ceny za dobu, počas ktorej som Plus používal.';
 const dLabel = n => n === 1 ? '1 deň' : n >= 2 && n <= 4 ? `${n} dni` : `${n} dní`;
 const seatsOf = p => Number(p?.seats) || 1;
 const pplLabel = n => n === 2 ? '2 ľudia' : `do ${n} ľudí`;
@@ -251,15 +264,17 @@ export function paywall(info = {}) {
   const fine = () => {
     const p = chosen(); if (!p) return '';
     const of = offerPrice(p), first = of ? of.price : p.price;
-    const tail = 'Zrušíš kedykoľvek v Profile.';
+    const tail = 'Obnovuje sa automaticky, kým ho nezrušíš. Zrušíš v Profile alebo odstúpiš od zmluvy do 14 dní.';
     return (trialDays > 0
       ? `${dLabel(trialDays)} zadarmo, potom ${eur(first)} ${of ? 'za prvý rok, ďalej ' + eur(p.price) + ' ročne' : 'za ' + h(p.period)}. `
       : of ? `${eur(first)} za prvý rok, potom ${eur(p.price)} ročne. ` : `${eur(p.price)} za ${h(p.period)}, obnovuje sa automaticky. `) + tail;
   };
+  const dateIn = n => new Date(Date.now() + n * 864e5).toLocaleDateString('sk-SK');
+  const firstPayLine = () => { const p = chosen(); if (!p) return ''; const of = offerPrice(p), first = of ? of.price : p.price; return trialDays > 0 ? `Skúška zadarmo, potom od ${dateIn(trialDays)} platíš ${eur(first)}. Zrušíš kedykoľvek.` : ''; };
   const timeline = () => {
     const p = chosen(); if (!p || !(trialDays > 0)) return '';
     const of = offerPrice(p), first = of ? of.price : p.price, rem = Math.max(1, trialDays - 3);
-    return `<ol class="pw-tl"><li><b>Dnes</b><small>Odomkneš všetko z Plus. Nič neplatíš.</small></li>${rem < trialDays ? `<li><b>Deň ${rem}</b><small>Pripomenieme ti, že skúška čoskoro končí.</small></li>` : ''}<li><b>Deň ${trialDays}</b><small>Prvá platba ${eur(first)}, ak predplatné nezrušíš.</small></li></ol>`;
+    return `<ol class="pw-tl"><li><b>Dnes</b><small>Odomkneš všetko z Plus, 0 €.</small></li>${rem < trialDays ? `<li><b>Deň ${rem}</b><small>Pripomenieme ti, že skúška čoskoro končí.</small></li>` : ''}<li><b>Deň ${trialDays}</b><small>Prvá platba ${eur(first)} a predplatné sa automaticky obnovuje, kým ho nezrušíš.</small></li></ol>`;
   };
   const drawPlans = () => {
     const list = who === 'solo' ? solo : group;
@@ -268,6 +283,7 @@ export function paywall(info = {}) {
     box.innerHTML = list.map(card).join('');
     box.querySelectorAll('[data-plan]').forEach(x => x.onclick = () => { pick = x.dataset.plan; drawPlans(); });
     const tl = el.querySelector('[data-tl]'); if (tl) tl.innerHTML = timeline();
+    const np = el.querySelector('[data-nopay]'); if (np) np.textContent = firstPayLine();
     const f = el.querySelector('[data-fine]'); if (f) f.innerHTML = fine() + ' <a href="/podmienky.html#predplatne" target="_blank" rel="noopener">Podmienky</a>';
     el.querySelectorAll('.pw-seg [data-who]').forEach(x => x.classList.toggle('on', x.dataset.who === who));
   };
@@ -294,11 +310,11 @@ export function paywall(info = {}) {
         : !isSub && !isMember ? `<div class="pw-st"><b>Predplatné pripravujeme</b><p>Čoskoro si ho tu budeš môcť zapnúť.</p></div>` : ''}
     </div>
     <div class="pw-foot">
-      ${isSub ? `${group1 ? '<button class="pw-go" type="button" data-family>Pozvať ľudí do predplatného</button>' : ''}<button class="pw-go${group1 ? ' alt' : ''}" type="button" data-portal>Spravovať predplatné</button><p class="pw-fine">Zmena karty, faktúry a zrušenie cez zabezpečený portál Stripe.</p>`
+      ${isSub ? `${group1 ? '<button class="pw-go" type="button" data-family>Pozvať ľudí do predplatného</button>' : ''}<button class="pw-go${group1 ? ' alt' : ''}" type="button" data-portal>Spravovať predplatné</button><p class="pw-fine">Zmena karty, faktúry a zrušenie cez zabezpečený portál Stripe.</p><button class="pw-wd" type="button" data-withdraw>Odstúpiť od zmluvy tu</button>`
         : isMember ? `<button class="pw-go alt" type="button" data-leave>Odísť z predplatného</button>`
           : buying ? `${group.length ? '<div class="pw-seg" role="tablist"><button type="button" data-who="solo">Pre mňa</button><button type="button" data-who="group">Duo a Rodina</button></div>' : ''}<div class="pw-pts" role="radiogroup" aria-label="Plán"></div>
             <button class="pw-go" type="button" data-buy>${ctaText()}</button>
-            ${trialDays > 0 ? '<p class="pw-nopay">✓ Teraz nič neplatíš. Zrušíš kedykoľvek.</p>' : ''}
+            ${trialDays > 0 ? '<p class="pw-nopay" data-nopay></p>' : ''}
             <p class="pw-fine" data-fine></p>` : ''}
       <p class="pw-err" hidden></p>
       <div class="pw-row"><button class="pw-later" type="button">${isSub || isMember ? 'Zavrieť' : 'Teraz nie'}</button></div>
@@ -313,8 +329,9 @@ export function paywall(info = {}) {
   drawPlans();
   try { if (buying && !info.preview) fetch(db.sb.functions.url + '/billing-checkout', { method: 'OPTIONS' }).catch(() => { }); } catch (_) { } // zahrej funkciu, nech platba naskočí rýchlejšie
   const err = m => { const e = el.querySelector('.pw-err'); e.textContent = m; e.hidden = !m; };
-  const go = async (fn, body, btn) => {
+  const go = async (fn, body, btn, errEl) => {
     if (info.preview) return;
+    const err = m => { const e = errEl || el.querySelector('.pw-err'); e.textContent = m; e.hidden = !m; };
     const label = btn.textContent; btn.disabled = true; btn.textContent = 'Otváram platbu…'; err('');
     try {
       const { data, error } = await db.sb.functions.invoke(fn, { body: { ...body, back: location.origin + location.pathname } });
@@ -325,8 +342,36 @@ export function paywall(info = {}) {
       location.href = data.url;
     } catch (e) { err(e.message); btn.disabled = false; btn.textContent = label; }
   };
-  el.querySelector('[data-buy]')?.addEventListener('click', e => go('billing-checkout', { plan: pick }, e.currentTarget));
+  // potvrdenie objednávky: zhrnutie, súhlas a tlačidlo s povinnosťou platby (§17 ods. 4 a 10 zákona 108/2024)
+  const confirmOrder = () => {
+    const p = chosen(); if (!p) return;
+    const of = offerPrice(p), first = of ? of.price : p.price;
+    const startPay = trialDays > 0 ? dateIn(trialDays) : 'dnes';
+    const cf = document.createElement('div'); cf.className = 'pw-cf'; cf.setAttribute('role', 'dialog'); cf.setAttribute('aria-label', 'Potvrdenie objednávky');
+    cf.innerHTML = `<div><h2>Skontroluj objednávku</h2>
+      <dl><dt>Plán</dt><dd>GainTrain Plus, ${h(String(p.name).toLowerCase())}</dd>
+      ${trialDays > 0 ? `<dt>Skúška</dt><dd>${dLabel(trialDays)} zadarmo</dd>` : ''}
+      <dt>Prvá platba</dt><dd>${eur(first)}, ${startPay}</dd>
+      ${of ? `<dt>Potom</dt><dd>${eur(p.price)} za ${h(p.period)}</dd>` : ''}</dl>
+      <p class="rn">Predplatné sa obnovuje automaticky za ${eur(p.price)} za ${h(p.period)}, kým ho nezrušíš. Zrušíš ho kedykoľvek v Profile. Podrobnosti sú v <a href="/podmienky.html#predplatne" target="_blank" rel="noopener">Podmienkach</a>.</p>
+      <label><input type="checkbox" data-agree><span>${h(CONSENT_TEXT)}</span></label>
+      <button class="pw-go" type="button" data-order disabled>Objednať s povinnosťou platby</button>
+      <p class="pw-err" hidden></p>
+      <button class="pw-later" type="button" data-back>Späť</button></div>`;
+    el.querySelector('.pw-in').style.position = 'relative'; el.querySelector('.pw-in').appendChild(cf);
+    const ok = cf.querySelector('[data-agree]'), ord = cf.querySelector('[data-order]');
+    ok.onchange = () => { ord.disabled = !ok.checked; };
+    cf.querySelector('[data-back]').onclick = () => cf.remove();
+    ord.onclick = async () => {
+      if (!ok.checked) return;
+      tk('pw_order_confirm', { plan: pick });
+      await go('billing-checkout', { plan: pick, consent: { ok: true, v: CONSENT_V, text: CONSENT_TEXT } }, ord, cf.querySelector('.pw-err'));
+    };
+    ok.focus();
+  };
+  el.querySelector('[data-buy]')?.addEventListener('click', confirmOrder);
   el.querySelector('[data-portal]')?.addEventListener('click', e => go('billing-portal', {}, e.currentTarget));
+  el.querySelector('[data-withdraw]')?.addEventListener('click', () => withdrawFlow(el, load));
   el.querySelector('[data-family]')?.addEventListener('click', () => { close(); familySheet(); });
   el.querySelector('[data-join]')?.addEventListener('click', () => { close(); familySheet({ join: true }); });
   el.querySelector('[data-leave]')?.addEventListener('click', async e => {
@@ -339,6 +384,44 @@ export function paywall(info = {}) {
   });
   el.tabIndex = -1; setTimeout(() => el.focus({ preventScroll: true }), 50); // čítačka obrazovky začne od nadpisu, bez rámčeka na tlačidle
 }
+// ---------- odstúpenie od zmluvy online (§20a): krok 1 "Odstúpiť od zmluvy tu", krok 2 "Potvrdiť odstúpenie od zmluvy" ----------
+function withdrawFlow(host, reload) {
+  css();
+  const d = new Date(ent.period_end || Date.now());
+  const em = (() => { try { return db.sb.auth.getUser().then(r => r?.data?.user?.email || ''); } catch (_) { return Promise.resolve(''); } })();
+  const cf = document.createElement('div'); cf.className = 'pw-cf'; cf.setAttribute('role', 'dialog'); cf.setAttribute('aria-label', 'Odstúpenie od zmluvy');
+  cf.innerHTML = `<div><h2>Odstúpiť od zmluvy</h2>
+    <p class="rn">Od zmluvy o GainTrain Plus môžeš odstúpiť do 14 dní od objednávky, bez udania dôvodu. Plus sa ti hneď vypne. Peniaze za nevyužitú časť zaplatenej doby ti vrátime na tú istú kartu, zadržíme len pomernú časť za dobu, počas ktorej si Plus používal.</p>
+    <dl><dt>Zmluva</dt><dd>GainTrain Plus</dd><dt>E-mail účtu</dt><dd data-em>…</dd></dl>
+    <button class="pw-go" type="button" data-wd-ok>Potvrdiť odstúpenie od zmluvy</button>
+    <p class="pw-err" hidden></p>
+    <button class="pw-later" type="button" data-back>Späť</button></div>`;
+  const inn = host.querySelector('.pw-in'); inn.style.position = 'relative'; inn.appendChild(cf);
+  em.then(v => { const x = cf.querySelector('[data-em]'); if (x) x.textContent = v || 'tvoj účet'; });
+  cf.querySelector('[data-back]').onclick = () => cf.remove();
+  const ok = cf.querySelector('[data-wd-ok]'), er = cf.querySelector('.pw-err');
+  ok.onclick = async () => {
+    ok.disabled = true; er.hidden = true; const lb = ok.textContent; ok.textContent = 'Odosielam…';
+    try {
+      const { data, error } = await db.sb.functions.invoke('billing-withdraw', { body: { confirm: true } });
+      let msg = data?.error || '';
+      if (error) { msg = error.message; try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch (_) { } }
+      if (!data || (!data.ok && !data.late)) throw new Error(/failed to send|fetch|network|load failed/i.test(msg) ? 'Bez internetu. Skús to znova.' : msg || 'Nepodarilo sa. Skús to znova.');
+      const when = new Date(data.at || data.requested_at || Date.now()).toLocaleString('sk-SK');
+      if (data.late) {
+        cf.querySelector('div').innerHTML = `<h2>Lehota už uplynula</h2><p class="rn">14 dní od objednávky už prešlo, preto sa od zmluvy odstúpiť nedá. Predplatné môžeš kedykoľvek zrušiť, platí do konca zaplatenej doby.</p><button class="pw-go" type="button" data-portal2>Spravovať predplatné</button><button class="pw-later" type="button" data-back>Zavrieť</button>`;
+        cf.querySelector('[data-back]').onclick = () => cf.remove();
+        cf.querySelector('[data-portal2]').onclick = e => { host.querySelector('[data-portal]')?.click(); };
+      } else {
+        const rf = data.refund_cents > 0 ? `Vrátime ti ${eur(data.refund_cents / 100)} na tvoju kartu, zvyčajne do 5 až 10 pracovných dní.` : 'Nič ti už nebudeme strhávať.';
+        cf.querySelector('div').innerHTML = `<h2>Odstúpenie potvrdené</h2><p class="rn">Odstúpenie od zmluvy o GainTrain Plus sme prijali ${h(when)}. Plus je vypnuté. ${rf}</p><p class="rn" style="color:var(--muted)">Tip: urob si snímku obrazovky, tento záznam si uložíme aj u nás.</p><button class="pw-go" type="button" data-back>Hotovo</button>`;
+        cf.querySelector('[data-back]').onclick = () => { cf.remove(); try { reload && reload(true); } catch (_) { } host.querySelector('.pw-later')?.click(); };
+        try { reload && reload(true); } catch (_) { }
+      }
+    } catch (e) { er.textContent = e.message; er.hidden = false; ok.disabled = false; ok.textContent = lb; }
+  };
+}
+try { window.fwWithdraw = () => { paywall({}); setTimeout(() => document.querySelector('[data-withdraw]')?.click(), 400); }; } catch (_) { }
 try { window.fwPaywall = paywall; } catch (_) { }
 
 // ---------- Duo a Rodina: pozvánka kódom a pridanie ----------

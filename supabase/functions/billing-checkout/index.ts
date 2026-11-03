@@ -53,6 +53,12 @@ Deno.serve(async (req) => {
   if ((!cfg.on && !(cfg.testers || []).includes(user.id)) || !STRIPE) return json({ error: "Predplatné ešte nie je spustené. Skús to o pár dní." }, 503);
   if (!plan || !(Number(plan.price) > 0)) return json({ error: "Tento plán nepoznáme. Zavri okno a skús to znova." }, 400);
 
+  // zákonný súhlas (§17 ods. 4 a 10 zákona 108/2024): bez zaznamenaného súhlasu sa platba neotvorí
+  const cons = body.consent;
+  if (!cons || cons.ok !== true || typeof cons.v !== "string" || cons.v.length > 40 || typeof cons.text !== "string" || cons.text.length < 40 || cons.text.length > 1500) {
+    return json({ error: "Aktualizuj appku (potiahni stránku nadol) a skús to znova." }, 400);
+  }
+
   try {
     const [{ data: sub }, { data: member }] = await Promise.all([
       admin.from("subscriptions").select("status,stripe_customer_id,updated_at").eq("user_id", user.id).maybeSingle(),
@@ -82,6 +88,9 @@ Deno.serve(async (req) => {
       const off = cents(plan.price) - cents(wb.price);
       discount = `GT_BACK_${plan.id}_${off}`.toUpperCase(); couponMake = () => makeCoupon(discount, { amount_off: String(off), name: "Vitaj späť" });
     }
+
+    const { error: ce } = await admin.from("order_consents").insert({ user_id: user.id, plan: plan.id, price: plan.price, trial_days: trialDays, text_version: cons.v, consent_text: cons.text });
+    if (ce) throw new Error("consent " + ce.message);
 
     const back = backUrl(body.back);
     const params: Record<string, string> = {
