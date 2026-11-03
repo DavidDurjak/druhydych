@@ -630,7 +630,7 @@ function injectJedlo() {
   if (!anchor || anchor.parentNode.querySelector('.frg-entry')) return;
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'frg-entry';
-  b.innerHTML = '<i>🧊</i><div><b>Čo uvarím z chladničky?</b><span>Odfoť chladničku a dostaneš recepty presne na tvoj cieľ</span></div><em>Nové</em>';
+  b.innerHTML = '<i>🧊</i><div><b>Čo uvarím z chladničky? <u class="ai-s">AI</u></b><span>Odfoť chladničku a dostaneš recepty presne na tvoj cieľ</span></div><em>Nové</em>';
   b.onclick = () => openFridge({ from: 'jedlo' });
   anchor.after(b);
 }

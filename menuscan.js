@@ -15,6 +15,8 @@ st.textContent = `
 .ms-entry i svg{width:23px;height:23px}
 .ms-entry b{display:block;font-size:15px;letter-spacing:-.01em}
 .ms-entry span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+.ms-entry .ai-s,.frg-entry .ai-s{display:inline-block;vertical-align:2px;margin-left:5px;padding:1px 5px;border-radius:6px;font-size:9px;font-weight:900;text-decoration:none;letter-spacing:.02em;background:linear-gradient(135deg,#7CFFB2,#5BB8FF);color:#0B0E12}
+.frg-entry b{font-size:15px!important;white-space:nowrap}.ms-entry .ai-s,.frg-entry .ai-s{margin-left:4px}
 .ms-entry em{margin-left:auto;flex:none;font-style:normal;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;color:#FFB547;background:color-mix(in srgb,#FFB547 14%,transparent)}
 .ms-load{display:grid;justify-items:center;gap:14px;padding:18px 4px 8px;text-align:center}
 .ms-ph{position:relative;width:min(260px,70vw);aspect-ratio:3/4;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
@@ -209,7 +211,7 @@ function inject() {
   if (!box || box.parentNode.querySelector('.ms-entry')) return;
   const b = document.createElement('label');
   b.className = 'ms-entry';
-  b.innerHTML = `<i>${ICO}</i><div><b>Odfoť denné menu</b><span>AI ti z lístka vyberie jedlo podľa toho, čo ti dnes chýba</span></div><em>Nové</em><input type="file" accept="image/*" hidden>`;
+  b.innerHTML = `<i>${ICO}</i><div><b>Odfoť denné menu <u class="ai-s">AI</u></b><span>AI ti z lístka vyberie jedlo podľa toho, čo ti dnes chýba</span></div><em>Nové</em><input type="file" accept="image/*" hidden>`;
   const inp = b.querySelector('input');
   b.addEventListener('click', e => { if (e.target !== inp && window.fwGate && !window.fwGate('menu_scan')) e.preventDefault(); }, true); // predplatné: ponuka ešte pred fotením
   inp.onchange = () => { const f = inp.files?.[0]; inp.value = ''; if (f) open(f); };

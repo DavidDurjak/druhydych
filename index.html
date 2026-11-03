@@ -220,7 +220,19 @@
   </script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+      // nová verzia sa nasadí hneď: keď sa po otvorení appky prevezme nový service worker, stránka sa raz sama obnoví
+      // (bez toho si ju človek všimol až na 2. alebo 3. otvorenie). Obnova sa preskočí, ak práve niečo píše.
+      const had = !!navigator.serviceWorker.controller;
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!had || reloaded) return; reloaded = true;
+        const a = document.activeElement, typing = a && /^(INPUT|TEXTAREA)$/.test(a.tagName);
+        let recent = false; try { recent = Date.now() - Number(sessionStorage.getItem('gt_upd') || 0) < 60000; } catch (_) { }
+        if (typing || recent) return;
+        try { sessionStorage.setItem('gt_upd', String(Date.now())); } catch (_) { }
+        location.reload();
+      });
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => { r.update().catch(() => {}); }).catch(() => {}));
     }
   </script>
 </body>
