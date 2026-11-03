@@ -140,8 +140,8 @@ const CSS = `
 .pw-top .pw-x{margin:0;flex:none}
 .pw-hero{margin:14px 0 0;padding:0;background:none;border:0;border-radius:0;overflow:visible}
 .pw-h{font-size:27px;margin:0 0 6px}.pw-sub{font-size:14.5px}
-.pw-ben{margin:16px 0 0;gap:9px}.pw-ben li{font-size:15px}.pw-ben i{width:30px;height:30px;border-radius:9px;font-size:15px}
-.pw-plans{margin:18px 0 0;gap:9px}.pw-plan{padding:13px 15px;border-radius:16px}.pw-plan .n .pw-noads{display:none}
+.pw-ben{margin:14px 0 0;gap:8px}.pw-ben li{font-size:15px}.pw-ben i{width:30px;height:30px;border-radius:9px;font-size:15px}
+.pw-plans{margin:16px 0 0;gap:8px}.pw-plan{padding:11px 14px;border-radius:16px}.pw-plan .n .pw-noads{display:none}
 .pw-who{margin:12px 0 0}
 .pw-code{margin-top:4px}
 @media (prefers-reduced-motion:reduce){.pw,.pw.out{animation:none}}
@@ -187,7 +187,7 @@ export function paywall(info = {}) {
   addEventListener('keydown', esc);
   const all = (info.plans || ent.plans || []).filter(p => p && p.id && p.price != null);
   const solo = all.filter(p => seatsOf(p) === 1), group = all.filter(p => seatsOf(p) > 1);
-  let who = 'solo', more = false, pick = (solo.find(p => p.id === 'year') || solo[0] || all[0])?.id;
+  let who = 'solo', pick = (solo.find(p => p.id === 'year') || solo[0] || all[0])?.id;
   const month = solo.find(p => p.id === 'month');
   const isSub = ent.reason === 'sub', isMember = ent.reason === 'member';
   const trialDays = Number(ent.trial_offer_days) || 0;
@@ -221,12 +221,10 @@ export function paywall(info = {}) {
     return `<ol class="pw-tl"><li><b>Dnes</b><small>Odomkneš všetko z Plus. Nič neplatíš.</small></li>${rem < trialDays ? `<li><b>Deň ${rem}</b><small>Pripomenieme ti, že skúška čoskoro končí.</small></li>` : ''}<li><b>Deň ${trialDays}</b><small>Prvá platba ${eur(first)}, ak predplatné nezrušíš.</small></li></ol>`;
   };
   const drawPlans = () => {
-    const main = solo.filter(p => p.id === 'year' || p.id === 'month');
-    const short = who === 'solo' && !more && main.length >= 2 && solo.length > main.length;
-    const list = who === 'solo' ? (short ? solo.filter(p => main.includes(p) || p.id === pick) : solo) : group;
+    const list = who === 'solo' ? solo : group;
     const box = el.querySelector('.pw-plans'); if (!box) return;
-    box.innerHTML = list.map(card).join('') + (short ? '<button class="pw-more" type="button" data-more>Ďalšie plány</button>' : '');
-    box.querySelector('[data-more]')?.addEventListener('click', () => { more = true; drawPlans(); });
+    box.innerHTML = list.map(card).join('');
+    box.querySelectorAll('[data-plan]').forEach(x => x.onclick = () => { pick = x.dataset.plan; drawPlans(); });
     const tl = el.querySelector('[data-tl]'); if (tl) tl.innerHTML = timeline();
     box.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { pick = b.dataset.plan; drawPlans(); });
     const f = el.querySelector('[data-fine]'); if (f) f.innerHTML = fine() + ' <a href="/podmienky.html#predplatne" target="_blank" rel="noopener">Podmienky</a>';
