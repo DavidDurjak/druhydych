@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   const { data: cfgRow } = await admin.from("app_config").select("value").eq("key", "billing").maybeSingle();
   const cfg = cfgRow?.value || {};
   const plan = (cfg.plans || []).find((p: { id: string }) => p.id === body.plan);
-  if (!cfg.on || !STRIPE) return json({ error: "Predplatné ešte nie je spustené. Skús to o pár dní." }, 503);
+  if ((!cfg.on && !(cfg.testers || []).includes(user.id)) || !STRIPE) return json({ error: "Predplatné ešte nie je spustené. Skús to o pár dní." }, 503);
   if (!plan || !(Number(plan.price) > 0)) return json({ error: "Tento plán nepoznáme. Zavri okno a skús to znova." }, 400);
 
   try {
