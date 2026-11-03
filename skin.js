@@ -534,3 +534,4 @@ if (app) {
   mo.observe(document.body, { childList: true }); // spodné panely sa vkladajú priamo do body
 }
 export { cookieSvg };
+try { window.fwSkinArt = { cookie: cookieIconSvg, holo: holoIconSvg }; } catch (_) { }

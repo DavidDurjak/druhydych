@@ -144,18 +144,55 @@ const CSS = `
 .pw-plans{margin:16px 0 0;gap:8px}.pw-plan{padding:11px 14px;border-radius:16px}.pw-plan .n .pw-noads{display:none}
 .pw-who{margin:12px 0 0}
 .pw-code{margin-top:4px}
+/* v343: úplný zoznam funkcií, plány v pevnej lište */
+.pw-feats{display:flex;flex-direction:column;gap:14px;margin:18px 0 0}
+.pw-fg h2{margin:0 0 7px 4px;font-size:13.5px;font-weight:800;color:var(--muted);letter-spacing:.01em}
+.pw-fg ul{list-style:none;margin:0;padding:4px 14px;border-radius:20px;background:var(--card);border:1px solid var(--line)}
+.pw-fg li{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.pw-fg li:last-child{border-bottom:0}
+.pw-fg li i{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-size:19px;background:color-mix(in srgb,var(--accent) 14%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line))}
+.pw-fg li b{display:block;font-size:15px;line-height:1.25}.pw-fg li small{display:block;margin-top:2px;color:var(--muted);font-size:12.5px;line-height:1.35}
+.pw-pts{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:8px;margin:2px 0 12px}
+.pw-pt{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;padding:15px 4px 10px;border-radius:16px;border:2px solid var(--line);background:var(--card);color:inherit;font:inherit;cursor:pointer;min-width:0;text-align:center}
+.pw-pt[aria-checked=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--card))}
+.pw-pt .nm{font-size:13.5px}.pw-pt .pr{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pw-pt .pr s{display:block;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.1}
+.pw-pt small{font-size:11.5px;color:var(--muted);line-height:1.25}
+.pw-pt .bd{position:absolute;top:-10px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--accent);color:var(--accent-ink,#06210f)}
+.pw-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pw-row .pw-later{margin:2px 0 0;padding:8px 6px}.pw-row .pw-grp{color:var(--accent);font-weight:700}
+.pw-foot .pw-go{margin-top:0}
 @media (prefers-reduced-motion:reduce){.pw,.pw.out{animation:none}}
 `;
 function css() { if (document.getElementById('pwCss')) return; const s = document.createElement('style'); s.id = 'pwCss'; s.textContent = CSS; document.head.appendChild(s); }
 
-const BEN = [
-  ['📸', 'AI zápis jedla fotkou a hlasom'],
-  ['💬', 'AI kouč kedykoľvek'],
-  ['🏋️', 'Tréningový plán na mieru'],
-  ['🍽️', 'Denné menu a recepty z chladničky'],
-  ['🎨', 'Vzhľady a CrossFit plán'],
-  ['🚫', 'Bez reklám'],
+// všetko, čo Plus odomyká (rovnaký zoznam sa používa na ponuke aj pri oslave)
+const FEATS = [
+  ['AI zápis a kouč', [
+    ['📸', 'Zápis jedla fotkou', 'Odfoť tanier a AI spočíta kalórie a makrá'],
+    ['🎙️', 'Zápis hlasom', 'Nadiktuj, čo si jedol, a je to zapísané'],
+    ['✍️', 'Zápis textom cez AI', 'Napíš „2 vajcia a toast“ a hotovo'],
+    ['🏷️', 'Sken tabuľky z obalu', 'Nutričné hodnoty priamo z fotky'],
+    ['💬', 'AI kouč', 'Poradí s jedlom aj tréningom a po zápise ti zhodnotí deň'],
+  ]],
+  ['Jedlo a recepty', [
+    ['🍽️', 'Odfoť denné menu', 'AI z lístka vyberie jedlo, ktoré ti dnes sedí'],
+    ['🧊', 'Čo uvarím z chladničky', 'Odfoť chladničku a dostaneš recepty na tvoj cieľ'],
+    ['🔗', 'Import receptov z odkazu', 'Recept z ľubovoľnej stránky zapíšeš jedným ťuknutím'],
+  ]],
+  ['Tréning a postava', [
+    ['🏋️', 'Tréningový plán na mieru', 'Podľa tvojej postavy a cieľa, s váhami na štart, týždenne sa vyvíja'],
+    ['🔥', 'CrossFit plán', 'Kruhové tréningy vonku aj vnútri s počítadlom kôl'],
+    ['📷', 'Sken stroja v posilňovni', 'Odfoť stroj a AI ti ukáže, ako na ňom cvičiť'],
+    ['💪', 'Analýza postavy', 'Pokrok z fotiek, partia po partii'],
+  ]],
+  ['Navyše', [
+    ['🎨', 'Vzhľady Cookie a Nálepky', 'Appka v štýle, aký ťa baví'],
+    ['🚫', 'Bez reklám', 'Nikde ťa nič nebude rušiť'],
+    ['👨‍👩‍👧', 'Duo a Rodina', 'Zdieľaj Plus s partnerom alebo rodinou'],
+  ]],
 ];
+const UNLOCKS = ['Zápis jedla fotkou, hlasom aj textom', 'AI kouč kedykoľvek', 'Denné menu a recepty z chladničky', 'Tréningový plán na mieru', 'CrossFit plán', 'Sken stroja a analýza postavy', 'Vzhľady Cookie a Nálepky', 'Bez reklám'];
 const WHY = {
   free_limit: f => `Dnešné AI ${f === 'coach_chat' ? 'správy' : 'zápisy'} zadarmo sú minuté. Zajtra sa obnovia, s Plus ich máš bez limitu.`,
   premium_only: f => `${PREMIUM_ONLY[f] || 'Táto funkcia'} je súčasťou GainTrain Plus.`,
@@ -197,13 +234,14 @@ export function paywall(info = {}) {
   const card = p => {
     const of = offerPrice(p), m = mo(p), n = seatsOf(p);
     const save = month && m > 1 ? Math.round((1 - (of ? of.price : p.price) / (month.price * m)) * 100) : 0;
-    const badge = of ? of.label : n === 1 && save >= 20 ? `Ušetríš ${save} %` : n > 1 ? '' : p.badge || '';
-    const sub = n > 1 ? `${eur(p.price / n / m)} na osobu mesačne` : m > 1 ? `${eur((of ? of.price : p.price) / m)} mesačne` : 'zrušíš kedykoľvek';
-    const after = of ? `potom ${eur(p.price)} / ${h(p.period)}` : '';
-    return `<button class="pw-plan" type="button" role="radio" aria-checked="${p.id === pick}" data-plan="${h(p.id)}">
+    const badge = of ? of.label : n === 1 && save >= 15 ? `-${save} %` : '';
+    const sub = n > 1 ? `${eur(p.price / n / m)} / osoba` : m > 1 ? `${eur((of ? of.price : p.price) / m)} / mes.` : 'zrušíš kedykoľvek';
+    const nm = n > 1 ? p.name : p.id === 'month' ? 'Mesačne' : p.id === 'year' ? 'Ročne' : p.name;
+    return `<button class="pw-pt" type="button" role="radio" aria-checked="${p.id === pick}" data-plan="${h(p.id)}">
       ${badge ? `<span class="bd">${h(badge)}</span>` : ''}
-      <span class="r"></span><span class="n"><b>${h(p.name)}${n > 1 ? ` <em class="pw-ppl">${pplLabel(n)}</em>` : ''}</b><small>${sub}</small><small class="pw-noads">Bez reklám${n > 1 ? ' pre všetkých' : ''}</small></span>
-      <span class="p">${of ? `<s>${eur(p.price)}</s>` : ''}<b>${eur(of ? of.price : p.price)}</b><small>${after || '/ ' + h(p.period)}</small></span></button>`;
+      <b class="nm">${h(nm)}</b>
+      <span class="pr">${of ? `<s>${eur(p.price)}</s>` : ''}${eur(of ? of.price : p.price)}</span>
+      <small>${sub}</small></button>`;
   };
   const chosen = () => all.find(p => p.id === pick);
   const ctaText = () => trialDays > 0 ? `Vyskúšať ${dLabel(trialDays)} zadarmo` : 'Pokračovať';
@@ -222,13 +260,13 @@ export function paywall(info = {}) {
   };
   const drawPlans = () => {
     const list = who === 'solo' ? solo : group;
-    const box = el.querySelector('.pw-plans'); if (!box) return;
+    const box = el.querySelector('.pw-pts'); if (!box) return;
+    box.style.setProperty('--n', String(Math.max(1, list.length)));
     box.innerHTML = list.map(card).join('');
     box.querySelectorAll('[data-plan]').forEach(x => x.onclick = () => { pick = x.dataset.plan; drawPlans(); });
     const tl = el.querySelector('[data-tl]'); if (tl) tl.innerHTML = timeline();
-    box.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { pick = b.dataset.plan; drawPlans(); });
     const f = el.querySelector('[data-fine]'); if (f) f.innerHTML = fine() + ' <a href="/podmienky.html#predplatne" target="_blank" rel="noopener">Podmienky</a>';
-    el.querySelectorAll('[data-who]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.who === who)));
+    const w = el.querySelector('[data-who]'); if (w) { w.dataset.who = who === 'solo' ? 'group' : 'solo'; w.textContent = who === 'solo' ? 'Duo a Rodina ›' : '‹ Len pre mňa'; }
   };
 
   const title = isSub ? 'Máš GainTrain Plus' : isMember ? 'Máš GainTrain Plus' : info.welcome ? 'Tvoj plán je hotový' : 'Odomkni celé GainTrain';
@@ -237,30 +275,30 @@ export function paywall(info = {}) {
       : trial != null ? `Skúšobná doba: ešte ${dLabel(trial)} máš všetko zadarmo.` : info.welcome ? (trialDays > 0 ? `Odomkni AI, kouča a plán na mieru. ${dLabel(trialDays)} zadarmo, teraz nič neplatíš.` : 'Odomkni AI, kouča a plán na mieru.') : 'Zapisovanie jedla a hotový plán ostávajú zadarmo.';
   const group1 = isSub && seatsOf(all.find(p => p.id === ent.plan)) > 1;
 
+  const featHtml = FEATS.map(([g, rows]) => `<section class="pw-fg"><h2>${g}</h2><ul>${rows.map(([i, t, s]) => `<li><i>${i}</i><div><b>${t}</b><small>${s}</small></div></li>`).join('')}</ul></section>`).join('');
   const hero = `<div class="pw-top"><span class="pw-tag">✦ GainTrain Plus</span><button class="pw-x" type="button" aria-label="Zavrieť">×</button></div>
     <div class="pw-hero">
       <h1 class="pw-h">${title}</h1>
       <p class="pw-sub">${subline}</p>
       ${why ? `<p class="pw-why">${h(why)}</p>` : ''}
     </div>
-    <ul class="pw-ben">${BEN.map(([i, t]) => `<li><i>${i}</i><span>${t}</span></li>`).join('')}</ul>`;
+    <div class="pw-feats">${featHtml}</div>`;
   const buying = !isSub && !isMember && all.length;
   el.innerHTML = `<div class="pw-in">
     <div class="pw-scroll">${hero}
-      ${buying ? `<div class="pw-plans" role="radiogroup" aria-label="Plán"></div>
-        ${group.length ? `<div class="pw-who" role="group" aria-label="Pre koho"><button type="button" data-who="solo" aria-pressed="true">Len pre mňa</button><button type="button" data-who="group" aria-pressed="false">Duo a Rodina</button></div>` : ''}
-        <div data-tl></div>
+      ${buying ? `<div data-tl></div>
         <button class="pw-code" type="button" data-join>Máš pozvánku do Duo alebo Rodiny? Zadaj kód</button>`
         : !isSub && !isMember ? `<div class="pw-st"><b>Predplatné pripravujeme</b><p>Čoskoro si ho tu budeš môcť zapnúť.</p></div>` : ''}
     </div>
     <div class="pw-foot">
       ${isSub ? `${group1 ? '<button class="pw-go" type="button" data-family>Pozvať ľudí do predplatného</button>' : ''}<button class="pw-go${group1 ? ' alt' : ''}" type="button" data-portal>Spravovať predplatné</button><p class="pw-fine">Zmena karty, faktúry a zrušenie cez zabezpečený portál Stripe.</p>`
         : isMember ? `<button class="pw-go alt" type="button" data-leave>Odísť z predplatného</button>`
-          : buying ? `<button class="pw-go" type="button" data-buy>${ctaText()}</button>
+          : buying ? `<div class="pw-pts" role="radiogroup" aria-label="Plán"></div>
+            <button class="pw-go" type="button" data-buy>${ctaText()}</button>
             ${trialDays > 0 ? '<p class="pw-nopay">✓ Teraz nič neplatíš. Zrušíš kedykoľvek.</p>' : ''}
             <p class="pw-fine" data-fine></p>` : ''}
       <p class="pw-err" hidden></p>
-      <button class="pw-later" type="button">${isSub || isMember ? 'Zavrieť' : 'Teraz nie'}</button>
+      <div class="pw-row"><button class="pw-later" type="button">${isSub || isMember ? 'Zavrieť' : 'Teraz nie'}</button>${buying && group.length ? '<button class="pw-later pw-grp" type="button" data-who="group">Duo a Rodina ›</button>' : ''}</div>
     </div>
   </div>`;
   el.querySelector('.pw-x').onclick = close; el.querySelector('.pw-later').onclick = () => { tk('pw_later', { f: info.feature || '' }); close(); };
@@ -403,54 +441,105 @@ const app = document.getElementById('app');
 if (app) new MutationObserver(() => { if (ent.on && (location.hash || '').startsWith('#/profil')) profileCard(); }).observe(app, { childList: true, subtree: true });
 addEventListener('fw-ent', () => { if ((location.hash || '').startsWith('#/profil')) profileCard(); });
 
-// ---------- oslava po kúpe: žiara, konfety a prehľad odomknutého ----------
+// ---------- oslava po kúpe: pre každý vzhľad (Klasický, Cookie, Nálepky) iná ----------
 const CELE = `
-.cel{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:radial-gradient(90% 60% at 50% 38%,color-mix(in srgb,var(--accent) 28%,transparent),transparent 70%),color-mix(in srgb,var(--bg) 96%,#000);color:var(--text);animation:celIn .4s ease both}
+.cel{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;overflow:auto;color:var(--text);animation:celIn .4s ease both}
 .cel.out{animation:celOut .35s ease both}
 @keyframes celIn{from{opacity:0}to{opacity:1}}@keyframes celOut{to{opacity:0;transform:scale(1.04)}}
-.cel canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.cel-in{position:relative;max-width:380px;width:100%;display:flex;flex-direction:column;align-items:center}
-.cel-orb{position:relative;width:132px;height:132px;border-radius:50%;display:grid;place-items:center;font-size:58px;line-height:1;color:var(--accent-ink,#06210f);background:linear-gradient(140deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff));box-shadow:0 18px 60px -10px color-mix(in srgb,var(--accent) 85%,transparent),inset 0 2px 0 rgba(255,255,255,.55);animation:celPop .75s cubic-bezier(.2,1.4,.4,1) .1s both}
-.cel-orb::before,.cel-orb::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);animation:celRing 1.9s ease-out .35s infinite}
-.cel-orb::after{animation-delay:1.1s}
+.cel canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.cel-in{position:relative;z-index:2;max-width:380px;width:100%;display:flex;flex-direction:column;align-items:center;margin:auto}
+.cel-h{margin:20px 0 6px;font-size:31px;line-height:1.1;font-weight:800;letter-spacing:-.02em;animation:celUp .6s ease .5s both}
+.cel-s{margin:0;color:var(--muted);font-size:14.5px;line-height:1.5;animation:celUp .6s ease .65s both}
+.cel-ul{list-style:none;margin:16px 0 0;padding:0;width:100%;display:flex;flex-direction:column;gap:6px;text-align:left}
+.cel-ul li{display:flex;align-items:center;gap:11px;padding:7px 12px;font-size:14.5px;font-weight:700;opacity:0;animation:celUp .45s ease both}
+.cel-ul i{position:relative;flex:none;width:26px;height:26px;display:grid;place-items:center;font-style:normal}
+.cel-ul i::before{content:'🔒';font-size:15px;position:absolute;animation:celLock .3s ease both;animation-delay:inherit}
+.cel-ul i::after{content:'✓';font-weight:900;font-size:15px;position:absolute;opacity:0;animation:celChk .35s cubic-bezier(.3,1.6,.5,1) both;animation-delay:inherit}
+@keyframes celLock{0%{opacity:1;transform:none}60%{opacity:1;transform:rotate(-14deg) scale(1.15)}100%{opacity:0;transform:scale(.3)}}
+@keyframes celChk{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:none}}
+.cel-go{margin-top:18px;width:100%;border:0;font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;padding:17px;animation:celUp .5s ease both}
+@keyframes celUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* klasický: mätová žiara, orb a prstence */
+.cel.k-classic{background:radial-gradient(90% 55% at 50% 30%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 70%),color-mix(in srgb,var(--bg) 96%,#000)}
+.k-classic .cel-orb{position:relative;width:128px;height:128px;border-radius:50%;display:grid;place-items:center;font-size:56px;color:var(--accent-ink,#06210f);background:linear-gradient(140deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff));box-shadow:0 18px 60px -10px color-mix(in srgb,var(--accent) 85%,transparent),inset 0 2px 0 rgba(255,255,255,.55);animation:celPop .8s cubic-bezier(.2,1.4,.4,1) both}
+.k-classic .cel-orb::before,.k-classic .cel-orb::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);animation:celRing 1.9s ease-out .35s infinite}
+.k-classic .cel-orb::after{animation-delay:1.1s}
 @keyframes celPop{from{transform:scale(.2) rotate(-40deg);opacity:0}to{transform:none;opacity:1}}
 @keyframes celRing{from{transform:scale(1);opacity:.65}to{transform:scale(2.1);opacity:0}}
-.cel-h{margin:30px 0 8px;font-size:31px;line-height:1.1;font-weight:800;letter-spacing:-.02em;animation:celUp .6s ease .45s both}
-.cel-s{margin:0;color:var(--muted);font-size:15px;line-height:1.5;animation:celUp .6s ease .6s both}
-.cel-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:22px 0 0}
-.cel-chips span{padding:8px 13px;border-radius:99px;font-size:13.5px;font-weight:700;background:var(--card);border:1px solid var(--line);animation:celUp .5s ease both}
-.cel-go{margin-top:30px;width:100%;border:0;border-radius:18px;padding:17px;font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;color:var(--accent-ink,#06210f);background:var(--accent);animation:celUp .5s ease 1.5s both}
-@keyframes celUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.k-classic .cel-ul li{background:var(--card);border:1px solid var(--line);border-radius:14px}
+.k-classic .cel-ul i::after{color:var(--accent)}
+.k-classic .cel-go{border-radius:18px;color:var(--accent-ink,#06210f);background:var(--accent)}
+/* cookie: hrubé čierne okraje, zahryznutá sušienka a omrvinky */
+.cel.k-cookie{background:#BDEFDD;--text:#0B1512;--muted:#2F4F47}
+.k-cookie .cel-art{width:124px;height:124px;animation:ckDrop .9s cubic-bezier(.3,1.5,.5,1) both,ckWob 2.4s ease-in-out 1s infinite;filter:drop-shadow(0 6px 0 rgba(0,0,0,.9))}
+.k-cookie .cel-art svg{width:100%;height:100%;display:block}
+@keyframes ckDrop{0%{transform:translateY(-70vh) rotate(-80deg) scale(.6);opacity:0}55%{opacity:1}100%{transform:none;opacity:1}}
+@keyframes ckWob{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg) translateY(-4px)}}
+.k-cookie .cel-h{font-weight:900;color:#0B1512;text-transform:none}
+.k-cookie .cel-ul li{background:#fff;border:2.5px solid #000;border-radius:14px;box-shadow:3px 3px 0 #000;color:#0B1512}
+.k-cookie .cel-ul i::after{color:#000;background:#7CFFB2;border:2px solid #000;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-size:13px;position:absolute}
+.k-cookie .cel-go{background:#000;color:#fff;border-radius:18px;border:3px solid #000;box-shadow:4px 4px 0 #16B07A}
+/* nálepky: nalepenie, holografický prstenec, hviezdy */
+.cel.k-sticker{background:#ECEBEF;--text:#15131E;--muted:#6A6880}
+.k-sticker .cel-art{width:132px;height:132px;background:#fff;border-radius:50%;padding:6px;box-sizing:border-box;box-shadow:0 0 0 5px #fff;animation:stSlap .7s cubic-bezier(.2,1.6,.4,1) both,stShine 3s linear 1s infinite;filter:drop-shadow(0 8px 0 rgba(21,19,30,.18))}
+.k-sticker .cel-art{position:relative}.k-sticker .cel-art svg{width:100%;height:100%;display:block}
+.k-sticker .cel-art::after{content:'✦';position:absolute;left:50%;top:50%;width:46%;height:46%;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;font-size:38px;color:#fff;background:linear-gradient(135deg,#C94DA8,#F08A3C)}
+@keyframes stSlap{0%{transform:scale(2.6) rotate(24deg);opacity:0}60%{opacity:1}100%{transform:rotate(-6deg)}}
+@keyframes stShine{0%,100%{filter:drop-shadow(0 8px 0 rgba(21,19,30,.18)) hue-rotate(0)}50%{filter:drop-shadow(0 8px 0 rgba(21,19,30,.18)) hue-rotate(60deg)}}
+.k-sticker .cel-h{display:inline-block;margin:26px 0 8px;padding:8px 16px;background:#fff;border-radius:16px;box-shadow:0 0 0 4px #fff,0 6px 0 4px rgba(21,19,30,.14);transform:rotate(-2deg);color:#15131E;font-size:26px}
+.k-sticker .cel-ul li{background:#fff;border-radius:14px;box-shadow:0 0 0 3px #fff,0 4px 0 3px rgba(21,19,30,.12);color:#15131E}
+.k-sticker .cel-ul li:nth-child(odd){transform:rotate(-.9deg)}.k-sticker .cel-ul li:nth-child(even){transform:rotate(.9deg)}
+.k-sticker .cel-ul i::after{color:#fff;background:linear-gradient(135deg,#C94DA8,#F08A3C);border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-size:13px;position:absolute}
+.k-sticker .cel-go{background:#15131E;color:#fff;border-radius:18px;box-shadow:0 0 0 3px #fff,0 5px 0 3px rgba(21,19,30,.18)}
 @media (prefers-reduced-motion:reduce){.cel,.cel *{animation-duration:.01s!important;animation-delay:0s!important;animation-iteration-count:1!important}}
 `;
-function confetti(cv) {
+function confetti(cv, mode) {
   if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
   const dpr = Math.min(2, devicePixelRatio || 1), W = cv.width = innerWidth * dpr, H = cv.height = innerHeight * dpr, g = cv.getContext('2d');
-  const cs = getComputedStyle(document.documentElement), ac = (cs.getPropertyValue('--accent') || '#7CFFB2').trim() || '#7CFFB2';
-  const cols = [ac, '#FFC857', '#FF8FB1', '#8C8CFF', '#FFFFFF', '#4AE9D6'];
-  const P = Array.from({ length: 110 }, () => ({ x: W / 2, y: H * .36, vx: (Math.random() - .5) * 17 * dpr, vy: (-Math.random() * 15 - 5) * dpr, s: (4 + Math.random() * 6) * dpr, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[(Math.random() * cols.length) | 0], w: Math.random() < .5 }));
+  const ac = (getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#7CFFB2').trim() || '#7CFFB2';
+  const sets = { classic: [ac, '#FFC857', '#FF8FB1', '#8C8CFF', '#FFFFFF', '#4AE9D6'], cookie: ['#C47F3D', '#92511F', '#E7A961', '#3A1E0C', '#F9D39A'], sticker: ['#C94DA8', '#F08A3C', '#2F7FF0', '#17B978', '#FFC98A', '#8C6CFF'] };
+  const cols = sets[mode] || sets.classic, N = mode === 'classic' ? 110 : 80, T = mode === 'classic' ? 3200 : 3800;
+  const P = Array.from({ length: N }, () => mode === 'classic'
+    ? { x: W / 2, y: H * .34, vx: (Math.random() - .5) * 17 * dpr, vy: (-Math.random() * 15 - 5) * dpr, s: (4 + Math.random() * 6) * dpr, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[(Math.random() * cols.length) | 0], w: Math.random() < .5 }
+    : { x: Math.random() * W, y: -Math.random() * H * .6, vx: (Math.random() - .5) * 2 * dpr, vy: (2 + Math.random() * 4) * dpr, s: (5 + Math.random() * (mode === 'sticker' ? 11 : 7)) * dpr, r: Math.random() * 6, vr: (Math.random() - .5) * .25, c: cols[(Math.random() * cols.length) | 0] });
+  const star = (s) => { g.beginPath(); for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5, r = i % 2 ? s * .45 : s; g.lineTo(Math.sin(a) * r, -Math.cos(a) * r); } g.closePath(); g.fill(); };
   const t0 = performance.now();
   (function f(t) {
-    const k = t - t0; if (k > 3200 || !cv.isConnected) return;
+    const k = t - t0; if (k > T || !cv.isConnected) return;
     g.clearRect(0, 0, W, H);
-    for (const p of P) { p.vy += .42 * dpr; p.vx *= .992; p.x += p.vx; p.y += p.vy; p.r += p.vr; g.save(); g.globalAlpha = Math.max(0, 1 - k / 3200); g.translate(p.x, p.y); g.rotate(p.r); g.fillStyle = p.c; p.w ? g.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2) : (g.beginPath(), g.arc(0, 0, p.s / 2.4, 0, 7), g.fill()); g.restore(); }
+    for (const p of P) {
+      p.vy += (mode === 'classic' ? .42 : .06) * dpr; p.vx *= .992; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      g.save(); g.globalAlpha = Math.max(0, 1 - k / T); g.translate(p.x, p.y); g.rotate(p.r); g.fillStyle = p.c;
+      if (mode === 'sticker') { g.lineWidth = 2 * dpr; g.strokeStyle = '#fff'; star(p.s / 1.6); g.strokeStyle = '#fff'; }
+      else if (mode === 'cookie') { g.beginPath(); g.arc(0, 0, p.s / 3, 0, 7); g.fill(); g.lineWidth = 1.5 * dpr; g.strokeStyle = '#000'; g.stroke(); }
+      else p.w ? g.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2) : (g.beginPath(), g.arc(0, 0, p.s / 2.4, 0, 7), g.fill());
+      g.restore();
+    }
     requestAnimationFrame(f);
   })(t0);
 }
-export function celebrate() {
+export function celebrate(force) {
   if (document.querySelector('.cel')) return;
   if (!document.getElementById('celCss')) { const s = document.createElement('style'); s.id = 'celCss'; s.textContent = CELE; document.head.appendChild(s); }
-  const el = document.createElement('div'); el.className = 'cel'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Vitaj v GainTrain Plus');
+  const sk = force || document.documentElement.dataset.skin;
+  const mode = sk === 'cookie' ? 'cookie' : sk === 'sticker' ? 'sticker' : 'classic';
+  const art = window.fwSkinArt || {};
+  const hero = mode === 'cookie' && art.cookie ? `<div class="cel-art" aria-hidden="true">${art.cookie()}</div>`
+    : mode === 'sticker' && art.holo ? `<div class="cel-art" aria-hidden="true">${art.holo()}</div>`
+    : '<div class="cel-orb" aria-hidden="true">✦</div>';
+  const el = document.createElement('div'); el.className = 'cel k-' + mode; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Vitaj v GainTrain Plus');
   const end = ent.period_end ? new Date(ent.period_end).toLocaleDateString('sk-SK') : '';
   const sub = ent.trialing && end ? `Skúšobná doba beží do ${end}. Prvá platba až potom, zrušíš kedykoľvek v Profile.` : 'Všetko je odomknuté. Ďakujeme, že nás podporuješ.';
-  const chips = ['AI zápis jedla', 'AI kouč', 'Plán na mieru', 'Menu a chladnička', 'Vzhľady', 'Bez reklám'];
-  el.innerHTML = `<canvas aria-hidden="true"></canvas><div class="cel-in"><div class="cel-orb" aria-hidden="true">✦</div><h1 class="cel-h">Vitaj v GainTrain Plus</h1><p class="cel-s">${sub}</p><div class="cel-chips">${chips.map((c, i) => `<span style="animation-delay:${.8 + i * .1}s">${c}</span>`).join('')}</div><button class="cel-go" type="button">Poďme na to</button></div>`;
+  const head = mode === 'cookie' ? 'Sušienka je tvoja!' : mode === 'sticker' ? 'Nalepené, si v Plus!' : 'Vitaj v GainTrain Plus';
+  el.innerHTML = `<canvas aria-hidden="true"></canvas><div class="cel-in">${hero}<h1 class="cel-h">${head}</h1><p class="cel-s">${sub}</p>
+    <ul class="cel-ul">${UNLOCKS.map((c, i) => { const d = (0.9 + i * 0.28).toFixed(2); return `<li style="animation-delay:${d}s"><i style="animation-delay:${(+d + 0.35).toFixed(2)}s"></i><span>${c}</span></li>`; }).join('')}</ul>
+    <button class="cel-go" type="button" style="animation-delay:${(0.9 + UNLOCKS.length * 0.28 + 0.4).toFixed(2)}s">Poďme na to</button></div>`;
   document.body.appendChild(el);
   try { navigator.vibrate && navigator.vibrate([18, 40, 18]); } catch (_) { }
-  confetti(el.querySelector('canvas'));
+  confetti(el.querySelector('canvas'), mode);
   const close = () => { if (!el.isConnected) return; el.classList.add('out'); setTimeout(() => el.remove(), 360); };
   el.querySelector('.cel-go').onclick = close;
-  setTimeout(close, 9000);
+  setTimeout(close, 14000);
 }
 try { window.fwCelebrate = celebrate; } catch (_) { }
 
