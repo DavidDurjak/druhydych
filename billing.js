@@ -403,6 +403,57 @@ const app = document.getElementById('app');
 if (app) new MutationObserver(() => { if (ent.on && (location.hash || '').startsWith('#/profil')) profileCard(); }).observe(app, { childList: true, subtree: true });
 addEventListener('fw-ent', () => { if ((location.hash || '').startsWith('#/profil')) profileCard(); });
 
+// ---------- oslava po kúpe: žiara, konfety a prehľad odomknutého ----------
+const CELE = `
+.cel{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;background:radial-gradient(90% 60% at 50% 38%,color-mix(in srgb,var(--accent) 28%,transparent),transparent 70%),color-mix(in srgb,var(--bg) 96%,#000);color:var(--text);animation:celIn .4s ease both}
+.cel.out{animation:celOut .35s ease both}
+@keyframes celIn{from{opacity:0}to{opacity:1}}@keyframes celOut{to{opacity:0;transform:scale(1.04)}}
+.cel canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cel-in{position:relative;max-width:380px;width:100%;display:flex;flex-direction:column;align-items:center}
+.cel-orb{position:relative;width:132px;height:132px;border-radius:50%;display:grid;place-items:center;font-size:58px;line-height:1;color:var(--accent-ink,#06210f);background:linear-gradient(140deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#fff));box-shadow:0 18px 60px -10px color-mix(in srgb,var(--accent) 85%,transparent),inset 0 2px 0 rgba(255,255,255,.55);animation:celPop .75s cubic-bezier(.2,1.4,.4,1) .1s both}
+.cel-orb::before,.cel-orb::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);animation:celRing 1.9s ease-out .35s infinite}
+.cel-orb::after{animation-delay:1.1s}
+@keyframes celPop{from{transform:scale(.2) rotate(-40deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes celRing{from{transform:scale(1);opacity:.65}to{transform:scale(2.1);opacity:0}}
+.cel-h{margin:30px 0 8px;font-size:31px;line-height:1.1;font-weight:800;letter-spacing:-.02em;animation:celUp .6s ease .45s both}
+.cel-s{margin:0;color:var(--muted);font-size:15px;line-height:1.5;animation:celUp .6s ease .6s both}
+.cel-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:22px 0 0}
+.cel-chips span{padding:8px 13px;border-radius:99px;font-size:13.5px;font-weight:700;background:var(--card);border:1px solid var(--line);animation:celUp .5s ease both}
+.cel-go{margin-top:30px;width:100%;border:0;border-radius:18px;padding:17px;font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;color:var(--accent-ink,#06210f);background:var(--accent);animation:celUp .5s ease 1.5s both}
+@keyframes celUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.cel,.cel *{animation-duration:.01s!important;animation-delay:0s!important;animation-iteration-count:1!important}}
+`;
+function confetti(cv) {
+  if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  const dpr = Math.min(2, devicePixelRatio || 1), W = cv.width = innerWidth * dpr, H = cv.height = innerHeight * dpr, g = cv.getContext('2d');
+  const cs = getComputedStyle(document.documentElement), ac = (cs.getPropertyValue('--accent') || '#7CFFB2').trim() || '#7CFFB2';
+  const cols = [ac, '#FFC857', '#FF8FB1', '#8C8CFF', '#FFFFFF', '#4AE9D6'];
+  const P = Array.from({ length: 110 }, () => ({ x: W / 2, y: H * .36, vx: (Math.random() - .5) * 17 * dpr, vy: (-Math.random() * 15 - 5) * dpr, s: (4 + Math.random() * 6) * dpr, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[(Math.random() * cols.length) | 0], w: Math.random() < .5 }));
+  const t0 = performance.now();
+  (function f(t) {
+    const k = t - t0; if (k > 3200 || !cv.isConnected) return;
+    g.clearRect(0, 0, W, H);
+    for (const p of P) { p.vy += .42 * dpr; p.vx *= .992; p.x += p.vx; p.y += p.vy; p.r += p.vr; g.save(); g.globalAlpha = Math.max(0, 1 - k / 3200); g.translate(p.x, p.y); g.rotate(p.r); g.fillStyle = p.c; p.w ? g.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2) : (g.beginPath(), g.arc(0, 0, p.s / 2.4, 0, 7), g.fill()); g.restore(); }
+    requestAnimationFrame(f);
+  })(t0);
+}
+export function celebrate() {
+  if (document.querySelector('.cel')) return;
+  if (!document.getElementById('celCss')) { const s = document.createElement('style'); s.id = 'celCss'; s.textContent = CELE; document.head.appendChild(s); }
+  const el = document.createElement('div'); el.className = 'cel'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Vitaj v GainTrain Plus');
+  const end = ent.period_end ? new Date(ent.period_end).toLocaleDateString('sk-SK') : '';
+  const sub = ent.trialing && end ? `Skúšobná doba beží do ${end}. Prvá platba až potom, zrušíš kedykoľvek v Profile.` : 'Všetko je odomknuté. Ďakujeme, že nás podporuješ.';
+  const chips = ['AI zápis jedla', 'AI kouč', 'Plán na mieru', 'Menu a chladnička', 'Vzhľady', 'Bez reklám'];
+  el.innerHTML = `<canvas aria-hidden="true"></canvas><div class="cel-in"><div class="cel-orb" aria-hidden="true">✦</div><h1 class="cel-h">Vitaj v GainTrain Plus</h1><p class="cel-s">${sub}</p><div class="cel-chips">${chips.map((c, i) => `<span style="animation-delay:${.8 + i * .1}s">${c}</span>`).join('')}</div><button class="cel-go" type="button">Poďme na to</button></div>`;
+  document.body.appendChild(el);
+  try { navigator.vibrate && navigator.vibrate([18, 40, 18]); } catch (_) { }
+  confetti(el.querySelector('canvas'));
+  const close = () => { if (!el.isConnected) return; el.classList.add('out'); setTimeout(() => el.remove(), 360); };
+  el.querySelector('.cel-go').onclick = close;
+  setTimeout(close, 9000);
+}
+try { window.fwCelebrate = celebrate; } catch (_) { }
+
 // ---------- návrat zo Stripe ----------
 try {
   const q = new URLSearchParams(location.search), b = q.get('billing');
@@ -410,8 +461,8 @@ try {
     history.replaceState(null, '', location.pathname + location.hash);
     db.ready.then(async () => {
       for (let i = 0; i < 6; i++) { await load(true); if (b !== 'ok' || ent.reason === 'sub') break; await new Promise(r => setTimeout(r, 1500)); } // webhook môže prísť o chvíľu neskôr
-      const t = document.createElement('div'); t.className = 'toast'; t.textContent = b === 'ok' ? (ent.reason === 'sub' ? 'Vitaj v GainTrain Plus' : 'Platba prebehla, predplatné sa o chvíľu zapne') : 'Platba bola zrušená';
-      document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+      if (b === 'ok' && ent.reason === 'sub') { try { location.hash = '#/'; } catch (_) { } celebrate(); }
+      else { const t = document.createElement('div'); t.className = 'toast'; t.textContent = b === 'ok' ? 'Platba prebehla, predplatné sa o chvíľu zapne' : 'Platba bola zrušená'; document.body.appendChild(t); setTimeout(() => t.remove(), 3500); }
       tk(b === 'ok' ? 'pw_paid' : 'pw_cancel');
     });
   }
