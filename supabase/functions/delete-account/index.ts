@@ -8,10 +8,23 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const URL_ = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
+const STRIPE = Deno.env.get("STRIPE_SECRET_KEY") || "";
+// predplatné GainTrain Plus: pri zmazaní účtu sa platenie vo Stripe hneď zruší (inak by sa karta ďalej strhávala)
+async function cancelStripe(admin: ReturnType<typeof createClient>, uid: string) {
+  try {
+    if (!STRIPE) return;
+    const { data } = await admin.from("subscriptions").select("stripe_subscription_id,status").eq("user_id", uid).maybeSingle();
+    const id = data?.stripe_subscription_id;
+    if (!id || !/^sub_[A-Za-z0-9]+$/.test(id) || data?.status === "canceled") return;
+    const r = await fetch("https://api.stripe.com/v1/subscriptions/" + id, { method: "DELETE", headers: { Authorization: `Bearer ${STRIPE}`, "Stripe-Version": "2024-06-20" } });
+    if (!r.ok && r.status !== 404) console.error("stripe cancel", uid, r.status);
+  } catch (e) { console.error("stripe cancel", uid, String((e as Error).message).slice(0, 120)); }
+}
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
 async function purgeUser(admin: ReturnType<typeof createClient>, uid: string) {
+  await cancelStripe(admin, uid); // poistka: ak sa zrušenie pri žiadosti nepodarilo
   for (const bucket of ["progress-photos", "feedback", "trainer-photos", "trainer-proofs", "avatars"]) {
     for (let i = 0; i < 20; i++) {
       const { data, error } = await admin.storage.from(bucket).list(uid, { limit: 100 });
@@ -52,5 +65,7 @@ Deno.serve(async (req) => {
   const user = createClient(URL_, ANON, { global: { headers: { Authorization: auth } } });
   const { data, error } = await user.rpc("request_account_deletion");
   if (error) { console.error("schedule", error.message.slice(0, 200)); return json({ error: "Účet sa nepodarilo zmazať. Skús to znova alebo nám napíš." }, 500); }
+  const { data: u } = await user.auth.getUser();
+  if (u?.user?.id) await cancelStripe(admin, u.user.id);
   return json({ ok: true, purge_at: data });
 });
