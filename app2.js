@@ -159,7 +159,7 @@ export async function renderTraining() {
     await db.upsertWorkoutLog({ user_id: uid, date: state.date, plan_day: dayNo, day_name: day.name, sets: s, done: true });
     toast(`Tréning hotový. ${s.filter(x => x.done).length} sérií.`); renderTraining();
   };
-  $app().querySelector('#replan').onclick = () => renderPlanSetup();
+  $app().querySelector('#replan').onclick = () => renderPlanSetup({ fresh: true });
   $app().querySelector('#contestDate')?.addEventListener('change', e => saveContest(plan, e.target.value));
   $app().querySelector('#contestClear')?.addEventListener('click', () => saveContest(plan, ''));
   const chks = [...$app().querySelectorAll('[data-peakchk]')], unlock = $app().querySelector('#peakUnlock');
@@ -361,12 +361,16 @@ async function renderTemplateSetup(opts = {}) {
   const op = old?.meta?.v === 3 ? old.meta.params : (old?.meta?.params ? { level: templateLevel(old.meta.params.level), place: old.meta.params.equipment, days: old.meta.params.days } : {});
   let level = TLEVELS[op.level] ? op.level : 'beginner', place = op.place === 'home' ? 'home' : 'gym';
   let days = Number(op.days || p.training_days || 3);
+  if (opts.fresh) level = null; // nový plán: úroveň si človek vyberie sám, nič sa neuloží, kým nestlačí Použiť
   const goal = templateGoal(p.goal);
   const seg = (id, items, cur) => `<div class="seg" id="${id}">${items.map(([k, t]) => `<button type="button" data-k="${k}" class="${String(k) === String(cur) ? 'on' : ''}">${t}</button>`).join('')}</div>`;
   const opts4 = () => templateOptions({ sex: p.sex, level, goal, place });
-  const pick = () => { const { list } = opts4(); if (!list.length) return null; if (!list.some(t => t.days === days)) days = list.slice().sort((a, b) => Math.abs(a.days - days) - Math.abs(b.days - days) || a.days - b.days)[0].days; return buildTemplate({ sex: p.sex, level, goal, place, days }); };
+  const pick = () => { if (!level) return null; const { list } = opts4(); if (!list.length) return null; if (!list.some(t => t.days === days)) days = list.slice().sort((a, b) => Math.abs(a.days - days) - Math.abs(b.days - days) || a.days - b.days)[0].days; return buildTemplate({ sex: p.sex, level, goal, place, days }); };
   const draw = () => {
-    const pl = pick(); const root = $app();
+    const root = $app(); const sv = root.querySelector('#save');
+    if (!level) { root.querySelector('#dwrap').innerHTML = ''; root.querySelector('#planPrev').innerHTML = '<div class="card plan-info"><p class="small" style="margin:0">Vyber si úroveň a ukážem ti plán.</p></div>'; if (sv) sv.disabled = true; return; }
+    if (sv) sv.disabled = false;
+    const pl = pick();
     root.querySelector('#dwrap').innerHTML = seg('dseg', opts4().list.map(t => [t.days, `${t.days}×`]), days); bindDays();
     if (!pl) { root.querySelector('#planPrev').innerHTML = '<div class="card"><p class="small">Pre túto kombináciu zatiaľ plán nie je.</p></div>'; return; }
     const m = pl.meta;
@@ -382,12 +386,14 @@ async function renderTemplateSetup(opts = {}) {
     <div class="field"><span>Dní tréningu v týždni</span><div id="dwrap"></div></div>
     <div id="planPrev"></div>
     <button class="btn primary" id="save">Použiť tento plán</button>
+    ${opts.fresh ? '<button class="btn sm ghost" id="keep" type="button" style="width:100%;margin-top:10px">Ponechať terajší plán</button>' : ''}
   </div>${nav('#/trening')}`;
   const root = () => $app();
   const bindDays = () => root().querySelectorAll('#dseg [data-k]').forEach(b => b.onclick = () => { days = Number(b.dataset.k); draw(); });
   root().querySelectorAll('#lvl [data-k]').forEach(b => b.onclick = () => { level = b.dataset.k; root().querySelectorAll('#lvl [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
   root().querySelectorAll('#eseg [data-k]').forEach(b => b.onclick = () => { place = b.dataset.k; root().querySelectorAll('#eseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
   root().querySelector('#customPlan').onclick = () => paywall({ feature: 'custom_plan', reason: 'premium_only' });
+  root().querySelector('#keep')?.addEventListener('click', () => renderTraining());
   draw();
   root().querySelector('#save').onclick = async () => {
     const pl = pick(); if (!pl) return;
@@ -405,6 +411,7 @@ async function renderPlanSetup(opts = {}) {
   const op = old?.meta?.v === 3 ? (old.meta.prev || { level: old.meta.params?.level, equipment: old.meta.params?.place, days: old.meta.params?.days }) : (old?.meta?.params || {});
   let level = op.level === 'intermediate' ? 'advanced' : (LEVEL_PICK.includes(op.level) ? op.level : 'beginner'), equipment = op.equipment || 'gym';
   let days = Math.max(MIN_DAYS[level], Math.min(6, op.days || p.training_days || 3));
+  if (opts.fresh) level = null; // nový plán: úroveň si človek vyberie sám
   let emphasis = op.emphasis || (p.sex === 'f' ? 'lower' : 'balanced');
   let priority = Array.isArray(op.priority) ? op.priority.slice(0, 2) : [];
   const fromPhys = !!opts.hint;
@@ -412,13 +419,16 @@ async function renderPlanSetup(opts = {}) {
   const preview = () => generatePlan({ contestDate: op.contestDate, peakAck: op.peakAck, block: fromPhys && level === 'elite' && priority.length ? 1 : 0, goal: p.goal, days, level, equipment, emphasis, priority, sex: p.sex, birthYear: p.birth_year, heightCm: p.height_cm, weightKg: p.start_weight });
   const volRows = vol => Object.keys(MUSCLE_LABEL).filter(k => vol[k]).map(k => `<div class="vrow"><span>${MUSCLE_LABEL[k]}</span><i><b style="width:${Math.min(100, vol[k] / 30 * 100)}%"></b></i><em>${vol[k]}</em></div>`).join('');
   const draw = () => {
+    const sv = $app().querySelector('#save');
+    if (!level) { $app().querySelector('#planPrev').innerHTML = '<div class="card plan-info"><p class="small" style="margin:0">Vyber si úroveň a ukážem ti plán.</p></div>'; if (sv) sv.disabled = true; return; }
+    if (sv) sv.disabled = false;
     const pl = preview(), m = pl.meta;
     $app().querySelector('#planPrev').innerHTML = `<div class="card plan-info"><b>${h(m.split)}</b><p class="small" style="margin:6px 0 0">Blok trvá ${m.mesoWeeks} týždňov, potom sa pomocné cviky obmenia.${level === 'elite' ? ' Každý druhý blok je špecializačný na tvoje prioritné partie.' : ''}</p></div>` +
       pl.days.map(d => `<div class="card pv"><h3>${h(d.name)}</h3>${d.exercises.map(e => `<div class="pvr"><span>${h(e.name)}</span><b>${e.reps ? e.sets + ' × ' + e.reps : Math.round(e.seconds / 60) + ' min'}</b></div>`).join('')}</div>`).join('') +
       `<div class="card plan-info"><p class="small" style="margin:0 0 6px"><b>Pracovné série na sval za týždeň</b></p>${volRows(m.volume)}</div>`;
   };
   const seg = (id, items, cur) => `<div class="seg" id="${id}">${items.map(([k, t]) => `<button data-k="${k}" class="${String(k) === String(cur) ? 'on' : ''}">${t}</button>`).join('')}</div>`;
-  const dayItems = () => [2, 3, 4, 5, 6].filter(n => n >= MIN_DAYS[level]).map(n => [n, n]);
+  const dayItems = () => [2, 3, 4, 5, 6].filter(n => n >= (MIN_DAYS[level] || 2)).map(n => [n, n]);
   const lvlHtml = () => LEVEL_PICK.map(k => [k, LEVELS[k]]).map(([k, v]) => `<button data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('');
   const prioHtml = () => `<span>Prioritné partie pre špecializačný blok (až 2)</span><div class="chips" id="prio">${Object.entries(PRIORITY).map(([k, v]) => `<button type="button" data-k="${k}" class="${priority.includes(k) ? 'on' : ''}">${v[0]}</button>`).join('')}</div>`;
   $app().innerHTML = `<div class="screen">
@@ -432,6 +442,7 @@ async function renderPlanSetup(opts = {}) {
     <div class="field" id="prioWrap" style="${level === 'elite' ? '' : 'display:none'}">${prioHtml()}</div>
     <div id="planPrev"></div>
     <button class="btn primary" id="save">Použiť tento plán</button>
+    ${opts.fresh ? '<button class="btn sm ghost" id="keep" type="button" style="width:100%;margin-top:10px">Ponechať terajší plán</button>' : ''}
   </div>${nav('#/trening')}`;
   draw();
   const root = () => $app();
@@ -444,6 +455,7 @@ async function renderPlanSetup(opts = {}) {
     draw();
   });
   bindLvl(); bindDays();
+  root().querySelector('#keep')?.addEventListener('click', () => renderTraining());
   root().querySelectorAll('#eseg [data-k]').forEach(b => b.onclick = () => { equipment = b.dataset.k; root().querySelectorAll('#eseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
   root().querySelectorAll('#mseg [data-k]').forEach(b => b.onclick = () => { emphasis = b.dataset.k; root().querySelector('#mhint').textContent = EMPH_HINT[emphasis] || ''; root().querySelectorAll('#mseg [data-k]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
   root().querySelectorAll('#prio [data-k]').forEach(b => b.onclick = () => {

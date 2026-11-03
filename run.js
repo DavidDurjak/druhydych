@@ -203,8 +203,7 @@ async function entry() {
   if (path !== '#/trening') return;
   const scr = document.querySelector('#app .screen'); if (!scr || scr.querySelector('.rn-entry')) return;
   // len pri výbere úrovne (Začiatočník, Pokročilý, Elite) v nastavení plánu, nie na obrazovke s tréningom
-  // aj pri rozbehnutom pláne: v dolnej časti obrazovky (Nástroje plánu)
-  const anchor = scr.querySelector('#lvl')?.closest('.field') || scr.querySelector('#lvl') || scr.querySelector('.tf-tools > h3');
+  const anchor = scr.querySelector('#lvl')?.closest('.field') || scr.querySelector('#lvl');
   if (!anchor) return;
   entryBusy = true;
   try {
