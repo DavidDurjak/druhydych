@@ -159,6 +159,9 @@ const CSS = `
 .pw-pt .pr s{display:block;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.1}
 .pw-pt small{font-size:11.5px;color:var(--muted);line-height:1.25}
 .pw-pt .bd{position:absolute;top:-10px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--accent);color:var(--accent-ink,#06210f)}
+.pw-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:0 0 12px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+.pw-seg button{border:0;border-radius:10px;padding:9px 6px;font:inherit;font-size:14px;font-weight:700;color:var(--muted);background:transparent;cursor:pointer}
+.pw-seg button.on{background:var(--accent);color:var(--accent-ink,#06210f)}
 .pw-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .pw-row .pw-later{margin:2px 0 0;padding:8px 6px}.pw-row .pw-grp{color:var(--accent);font-weight:700}
 .pw-foot .pw-go{margin-top:0}
@@ -266,7 +269,7 @@ export function paywall(info = {}) {
     box.querySelectorAll('[data-plan]').forEach(x => x.onclick = () => { pick = x.dataset.plan; drawPlans(); });
     const tl = el.querySelector('[data-tl]'); if (tl) tl.innerHTML = timeline();
     const f = el.querySelector('[data-fine]'); if (f) f.innerHTML = fine() + ' <a href="/podmienky.html#predplatne" target="_blank" rel="noopener">Podmienky</a>';
-    const w = el.querySelector('[data-who]'); if (w) { w.dataset.who = who === 'solo' ? 'group' : 'solo'; w.textContent = who === 'solo' ? 'Duo a Rodina ›' : '‹ Len pre mňa'; }
+    el.querySelectorAll('.pw-seg [data-who]').forEach(x => x.classList.toggle('on', x.dataset.who === who));
   };
 
   const title = isSub ? 'Máš GainTrain Plus' : isMember ? 'Máš GainTrain Plus' : info.welcome ? 'Tvoj plán je hotový' : 'Odomkni celé GainTrain';
@@ -293,12 +296,12 @@ export function paywall(info = {}) {
     <div class="pw-foot">
       ${isSub ? `${group1 ? '<button class="pw-go" type="button" data-family>Pozvať ľudí do predplatného</button>' : ''}<button class="pw-go${group1 ? ' alt' : ''}" type="button" data-portal>Spravovať predplatné</button><p class="pw-fine">Zmena karty, faktúry a zrušenie cez zabezpečený portál Stripe.</p>`
         : isMember ? `<button class="pw-go alt" type="button" data-leave>Odísť z predplatného</button>`
-          : buying ? `<div class="pw-pts" role="radiogroup" aria-label="Plán"></div>
+          : buying ? `${group.length ? '<div class="pw-seg" role="tablist"><button type="button" data-who="solo">Pre mňa</button><button type="button" data-who="group">Duo a Rodina</button></div>' : ''}<div class="pw-pts" role="radiogroup" aria-label="Plán"></div>
             <button class="pw-go" type="button" data-buy>${ctaText()}</button>
             ${trialDays > 0 ? '<p class="pw-nopay">✓ Teraz nič neplatíš. Zrušíš kedykoľvek.</p>' : ''}
             <p class="pw-fine" data-fine></p>` : ''}
       <p class="pw-err" hidden></p>
-      <div class="pw-row"><button class="pw-later" type="button">${isSub || isMember ? 'Zavrieť' : 'Teraz nie'}</button>${buying && group.length ? '<button class="pw-later pw-grp" type="button" data-who="group">Duo a Rodina ›</button>' : ''}</div>
+      <div class="pw-row"><button class="pw-later" type="button">${isSub || isMember ? 'Zavrieť' : 'Teraz nie'}</button></div>
     </div>
   </div>`;
   el.querySelector('.pw-x').onclick = close; el.querySelector('.pw-later').onclick = () => { tk('pw_later', { f: info.feature || '' }); close(); };
