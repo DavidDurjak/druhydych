@@ -31,10 +31,9 @@ async function stripe(path: string, params: Record<string, string> | null, metho
   return j;
 }
 // kupón zo Stripe podľa ID; keď ešte neexistuje (alebo má inú hodnotu), založí sa
-async function coupon(id: string, params: Record<string, string>) {
-  try { const c = await stripe("coupons/" + id, null, "GET"); if (c?.valid !== false) return c.id; } catch (e) { if ((e as { status?: number }).status !== 404) throw e; }
-  const c = await stripe("coupons", { id, duration: "once", ...(params.amount_off ? { currency: "eur" } : {}), ...params });
-  return c.id;
+async function makeCoupon(id: string, params: Record<string, string>) {
+  try { await stripe("coupons", { id, duration: "once", ...(params.amount_off ? { currency: "eur" } : {}), ...params }); } catch (e) { if ((e as { status?: number }).status !== 400) throw e; /* už existuje */ }
+  return id;
 }
 
 Deno.serve(async (req) => {
@@ -42,12 +41,13 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Zlá požiadavka." }, 405);
   const admin = createClient(URL_, SERVICE);
   const jwt = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  const { data: u } = await admin.auth.getUser(jwt);
+  const [{ data: u }, { data: cfgRow }, body] = await Promise.all([
+    admin.auth.getUser(jwt),
+    admin.from("app_config").select("value").eq("key", "billing").maybeSingle(),
+    req.json().catch(() => ({})),
+  ]);
   const user = u?.user;
   if (!user) return json({ error: "Prihlás sa znova." }, 401);
-  const body = await req.json().catch(() => ({}));
-
-  const { data: cfgRow } = await admin.from("app_config").select("value").eq("key", "billing").maybeSingle();
   const cfg = cfgRow?.value || {};
   const plan = (cfg.plans || []).find((p: { id: string }) => p.id === body.plan);
   if ((!cfg.on && !(cfg.testers || []).includes(user.id)) || !STRIPE) return json({ error: "Predplatné ešte nie je spustené. Skús to o pár dní." }, 503);
@@ -72,14 +72,15 @@ Deno.serve(async (req) => {
     const trialDays = isNew && !member ? Number(cfg.stripe_trial_days || 0) : 0;
     const offers = cfg.offers || {};
     let discount = "";
+    let couponMake: (() => Promise<string>) | null = null;
     const fy = offers.first_year, wb = offers.winback;
     if (isNew && fy && (fy.plans || []).includes(plan.id) && Number(fy.price) > 0 && Number(fy.price) < Number(plan.price)) {
       const off = cents(plan.price) - cents(fy.price);
-      discount = await coupon(`GT_FIRST_${plan.id}_${off}`.toUpperCase(), { amount_off: String(off), name: "Zľava na prvý rok" });
+      discount = `GT_FIRST_${plan.id}_${off}`.toUpperCase(); couponMake = () => makeCoupon(discount, { amount_off: String(off), name: "Zľava na prvý rok" });
     } else if (!isNew && sub?.status === "canceled" && wb && (wb.plans || []).includes(plan.id) && Number(wb.price) > 0 && Number(wb.price) < Number(plan.price)
       && new Date(sub.updated_at).getTime() < Date.now() - Number(wb.after_days || 7) * 864e5) {
       const off = cents(plan.price) - cents(wb.price);
-      discount = await coupon(`GT_BACK_${plan.id}_${off}`.toUpperCase(), { amount_off: String(off), name: "Vitaj späť" });
+      discount = `GT_BACK_${plan.id}_${off}`.toUpperCase(); couponMake = () => makeCoupon(discount, { amount_off: String(off), name: "Vitaj späť" });
     }
 
     const back = backUrl(body.back);
@@ -95,6 +96,7 @@ Deno.serve(async (req) => {
       "line_items[0][price_data][product_data][metadata][plan]": plan.id,
       "subscription_data[metadata][user_id]": user.id, "subscription_data[metadata][plan]": plan.id,
       "metadata[user_id]": user.id, "metadata[plan]": plan.id,
+      "payment_method_types[0]": "card", // karta (vrátane Apple Pay a Google Pay): menej volieb, rýchlejšia platba
       payment_method_collection: "always", // karta aj pri skúšobnej dobe (jedna karta = jedna skúšobná doba)
       success_url: back + "?billing=ok#/profil", cancel_url: back + "?billing=cancel#/profil",
     };
@@ -104,7 +106,11 @@ Deno.serve(async (req) => {
       params["subscription_data[metadata][trial]"] = "1";
     }
     if (discount) params["discounts[0][coupon]"] = discount; else params.allow_promotion_codes = "true";
-    const s = await stripe("checkout/sessions", params);
+    let s;
+    try { s = await stripe("checkout/sessions", params); }
+    catch (e) { // kupón ešte neexistuje: založ ho a skús znova
+      if (discount && couponMake && /coupon/i.test((e as Error).message)) { await couponMake(); s = await stripe("checkout/sessions", params); } else throw e;
+    }
     return json({ url: s.url });
   } catch (e) {
     console.error("checkout", e);

@@ -311,6 +311,7 @@ export function paywall(info = {}) {
     drawPlans();
   });
   drawPlans();
+  try { if (buying && !info.preview) fetch(db.sb.functions.url + '/billing-checkout', { method: 'OPTIONS' }).catch(() => { }); } catch (_) { } // zahrej funkciu, nech platba naskočí rýchlejšie
   const err = m => { const e = el.querySelector('.pw-err'); e.textContent = m; e.hidden = !m; };
   const go = async (fn, body, btn) => {
     if (info.preview) return;
@@ -552,7 +553,7 @@ try {
   if (b) {
     history.replaceState(null, '', location.pathname + location.hash);
     db.ready.then(async () => {
-      for (let i = 0; i < 6; i++) { await load(true); if (b !== 'ok' || ent.reason === 'sub') break; await new Promise(r => setTimeout(r, 1500)); } // webhook môže prísť o chvíľu neskôr
+      for (let i = 0; i < 14; i++) { await load(true); if (b !== 'ok' || ent.reason === 'sub') break; await new Promise(r => setTimeout(r, 600)); } // webhook môže prísť o chvíľu neskôr
       if (b === 'ok' && ent.reason === 'sub') { try { location.hash = '#/'; } catch (_) { } celebrate(); }
       else { const t = document.createElement('div'); t.className = 'toast'; t.textContent = b === 'ok' ? 'Platba prebehla, predplatné sa o chvíľu zapne' : 'Platba bola zrušená'; document.body.appendChild(t); setTimeout(() => t.remove(), 3500); }
       tk(b === 'ok' ? 'pw_paid' : 'pw_cancel');
