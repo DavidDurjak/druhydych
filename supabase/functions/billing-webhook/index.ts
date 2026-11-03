@@ -87,6 +87,10 @@ Deno.serve(async (req) => {
         try { await trialGuard(admin, sub, uid); } catch (e) { console.error("trial guard", e); }
       }
     }
+    if (ev.type === "customer.subscription.trial_will_end" && status === "trialing") {
+      // Stripe pošle túto udalosť 3 dni pred koncom skúšobnej doby: upozornenie v appke (push), aby prvá platba nikoho nezaskočila
+      await admin.from("push_queue").insert({ user_id: uid, title: "Skúšobná doba GainTrain Plus končí", body: "O 3 dni sa začne prvá platba. Zrušíš to kedykoľvek v Profile.", url: "#/profil", tag: "trial-end" }).then(() => {}, () => {});
+    }
     await admin.from("app_events").insert({ user_id: uid, name: "sub_" + status, props: { plan, ev: ev.type } }).then(() => {}, () => {});
     return new Response("ok");
   } catch (e) {

@@ -104,6 +104,7 @@ const CSS = `
 .pw-plan .bd{position:absolute;top:-10px;right:14px;font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--accent);color:var(--accent-ink,#06210f)}
 .pw-go{margin-top:18px;border:0;border-radius:18px;padding:17px;font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;background:var(--accent);color:var(--accent-ink,#06210f)}
 .pw-go:disabled{opacity:.6}
+.pw-go[data-buy]{position:sticky;bottom:calc(env(safe-area-inset-bottom) + 10px);z-index:2;box-shadow:0 0 0 10px color-mix(in srgb,var(--bg) 92%,transparent),0 14px 34px -8px color-mix(in srgb,var(--accent) 55%,transparent)}
 .pw-go.alt{background:var(--card);color:var(--text);border:1px solid var(--line);margin-top:10px}
 .pw-who{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:18px 0 0;padding:4px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
 .pw-who button{border:0;border-radius:12px;padding:10px;background:none;color:var(--muted);font:inherit;font-size:14px;font-weight:800;cursor:pointer}
@@ -114,6 +115,15 @@ const CSS = `
 .pw-code{align-self:center;margin-top:10px;background:none;border:0;color:var(--accent);font:inherit;font-size:13.5px;font-weight:700;padding:8px;cursor:pointer}
 .pw-fine{margin:12px 0 0;text-align:center;color:var(--muted);font-size:12px;line-height:1.5}
 .pw-fine a{color:inherit}
+.pw-more{border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:700;padding:6px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.pw-tl{list-style:none;margin:16px 0 0;padding:0 0 0 4px;display:flex;flex-direction:column;gap:0}
+.pw-tl li{position:relative;padding:0 0 14px 26px;font-size:14px;line-height:1.35}
+.pw-tl li::before{content:'';position:absolute;left:3px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.pw-tl li::after{content:'';position:absolute;left:7px;top:17px;bottom:-1px;width:2px;background:color-mix(in srgb,var(--accent) 35%,transparent)}
+.pw-tl li:last-child{padding-bottom:0}.pw-tl li:last-child::after{display:none}
+.pw-tl li:last-child::before{background:var(--muted)}
+.pw-tl b{display:block;font-size:14.5px}.pw-tl small{color:var(--muted);font-size:12.5px}
+.pw-nopay{margin:10px 0 0;text-align:center;font-size:13.5px;font-weight:700;color:var(--accent)}
 .pw-err{margin:10px 0 0;text-align:center;color:var(--danger,#FF5C7A);font-size:13px}
 .pw-later{align-self:center;margin-top:6px;background:none;border:0;color:var(--muted);font:inherit;font-size:14px;padding:10px;cursor:pointer}
 .pw-st{margin:16px 0 0;padding:16px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
@@ -166,7 +176,7 @@ export function paywall(info = {}) {
   addEventListener('keydown', esc);
   const all = (info.plans || ent.plans || []).filter(p => p && p.id && p.price != null);
   const solo = all.filter(p => seatsOf(p) === 1), group = all.filter(p => seatsOf(p) > 1);
-  let who = 'solo', pick = (solo.find(p => p.id === 'year') || solo[0] || all[0])?.id;
+  let who = 'solo', more = false, pick = (solo.find(p => p.id === 'year') || solo[0] || all[0])?.id;
   const month = solo.find(p => p.id === 'month');
   const isSub = ent.reason === 'sub', isMember = ent.reason === 'member';
   const trialDays = Number(ent.trial_offer_days) || 0;
@@ -191,23 +201,32 @@ export function paywall(info = {}) {
     const of = offerPrice(p), first = of ? of.price : p.price;
     const tail = 'Zrušíš kedykoľvek v Profile, predplatné potom dobehne do konca obdobia.';
     return (trialDays > 0
-      ? `${dLabel(trialDays)} zadarmo, potom ${eur(first)} ${of ? 'za prvý rok, ďalej ' + eur(p.price) + ' ročne' : 'za ' + h(p.period)}. Deň pred koncom skúšobnej doby ti pošleme e-mail. `
+      ? `${dLabel(trialDays)} zadarmo, potom ${eur(first)} ${of ? 'za prvý rok, ďalej ' + eur(p.price) + ' ročne' : 'za ' + h(p.period)}. Pred koncom skúšobnej doby ťa upozorníme. `
       : of ? `${eur(first)} za prvý rok, potom ${eur(p.price)} ročne. ` : `${eur(p.price)} za ${h(p.period)}, obnovuje sa automaticky. `) + tail;
   };
 
+  const timeline = () => {
+    const p = chosen(); if (!p || !(trialDays > 0)) return '';
+    const of = offerPrice(p), first = of ? of.price : p.price, rem = Math.max(1, trialDays - 3);
+    return `<ol class="pw-tl"><li><b>Dnes</b><small>Odomkneš všetko z Plus. Nič neplatíš.</small></li>${rem < trialDays ? `<li><b>Deň ${rem}</b><small>Pripomenieme ti, že skúška čoskoro končí.</small></li>` : ''}<li><b>Deň ${trialDays}</b><small>Prvá platba ${eur(first)}, ak predplatné nezrušíš.</small></li></ol>`;
+  };
   const drawPlans = () => {
-    const list = who === 'solo' ? solo : group;
+    const main = solo.filter(p => p.id === 'year' || p.id === 'month');
+    const short = who === 'solo' && !more && main.length >= 2 && solo.length > main.length;
+    const list = who === 'solo' ? (short ? solo.filter(p => main.includes(p) || p.id === pick) : solo) : group;
     const box = el.querySelector('.pw-plans'); if (!box) return;
-    box.innerHTML = list.map(card).join('');
+    box.innerHTML = list.map(card).join('') + (short ? '<button class="pw-more" type="button" data-more>Ďalšie plány</button>' : '');
+    box.querySelector('[data-more]')?.addEventListener('click', () => { more = true; drawPlans(); });
+    const tl = el.querySelector('[data-tl]'); if (tl) tl.innerHTML = timeline();
     box.querySelectorAll('[data-plan]').forEach(b => b.onclick = () => { pick = b.dataset.plan; drawPlans(); });
     const f = el.querySelector('[data-fine]'); if (f) f.innerHTML = fine() + ' <a href="/podmienky.html#predplatne" target="_blank" rel="noopener">Podmienky</a>';
     el.querySelectorAll('[data-who]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.who === who)));
   };
 
-  const title = isSub ? 'Máš GainTrain Plus' : isMember ? 'Máš GainTrain Plus' : 'Celá appka, bez limitov a bez reklám';
+  const title = isSub ? 'Máš GainTrain Plus' : isMember ? 'Máš GainTrain Plus' : info.welcome ? 'Tvoj plán je hotový' : 'Celá appka, bez limitov a bez reklám';
   const subline = isSub ? (ent.trialing ? `Skúšobná doba, prvá platba ${new Date(ent.period_end).toLocaleDateString('sk-SK')}.` : ent.cancel ? `Predplatné skončí ${new Date(ent.period_end).toLocaleDateString('sk-SK')}. Dovtedy máš všetko.` : `Obnoví sa ${new Date(ent.period_end).toLocaleDateString('sk-SK')}.`)
     : isMember ? `Si v predplatnom, ktoré platí ${h(ent.owner || 'iný človek')}. Celé Plus máš, kým platí.`
-      : trial != null ? `Skúšobná doba: ešte ${dLabel(trial)} máš všetko zadarmo.` : 'Zapisovanie jedla, ciele a hotový tréningový plán ostávajú zadarmo. Plus pridá plán na mieru, AI bez obmedzení a žiadne reklamy.';
+      : trial != null ? `Skúšobná doba: ešte ${dLabel(trial)} máš všetko zadarmo.` : info.welcome ? (trialDays > 0 ? `Odomkni celú appku na ${dLabel(trialDays)} zadarmo: AI zápis jedla, kouč, plán na mieru a žiadne reklamy. Teraz nič neplatíš.` : 'Odomkni AI zápis jedla, kouča, plán na mieru a žiadne reklamy.') : 'Zapisovanie jedla, ciele a hotový tréningový plán ostávajú zadarmo. Plus pridá plán na mieru, AI bez obmedzení a žiadne reklamy.';
   const group1 = isSub && seatsOf(all.find(p => p.id === ent.plan)) > 1;
 
   el.innerHTML = `<div class="pw-in">
@@ -223,7 +242,9 @@ export function paywall(info = {}) {
       : isMember ? `<button class="pw-go alt" type="button" data-leave>Odísť z predplatného</button>`
         : all.length ? `${group.length ? `<div class="pw-who" role="group" aria-label="Pre koho"><button type="button" data-who="solo" aria-pressed="true">Len pre mňa</button><button type="button" data-who="group" aria-pressed="false">Duo a Rodina</button></div>` : ''}
           <div class="pw-plans" role="radiogroup" aria-label="Plán"></div>
+          <div data-tl></div>
           <button class="pw-go" type="button" data-buy>${ctaText()}</button>
+          ${trialDays > 0 ? '<p class="pw-nopay">✓ Teraz nič neplatíš. Zrušíš kedykoľvek.</p>' : ''}
           <p class="pw-fine" data-fine></p>
           <p class="pw-fine">Platba kartou, Apple Pay alebo Google Pay cez Stripe.</p>
           <button class="pw-code" type="button" data-join>Máš pozvánku do Duo alebo Rodiny? Zadaj kód</button>`
