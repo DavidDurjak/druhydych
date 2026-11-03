@@ -351,6 +351,7 @@ if (typeof document !== 'undefined') {
 .tp-chip{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}.tp-up{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--text) 4%,transparent)}.tp-up div{flex:1;min-width:0}.tp-up b{display:block;font-size:14.5px}.tp-up small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}.tp-up .btn{flex:none}
 .tp-lock{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px 16px;margin-bottom:12px;border-radius:18px;border:1px solid var(--line);background:radial-gradient(120% 120% at 100% 0%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 60%),var(--card);color:inherit;font:inherit;cursor:pointer}.tp-lock i{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-size:19px;background:var(--accent);color:var(--accent-ink,#06210f)}.tp-lock div{flex:1;min-width:0}.tp-lock b{display:block;font-size:15px}.tp-lock small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}.tp-lock span{color:var(--muted);font-size:20px}
 .tp-by{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:12px;border-radius:18px;background:var(--card);border:1px solid var(--line)}.tp-by i{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:17px;background:color-mix(in srgb,var(--accent) 22%,var(--card));color:var(--accent)}.tp-by b{display:block;font-size:15px}.tp-by small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}`;
+  st2.textContent += `.tp-lv2{display:grid!important;grid-template-columns:1fr 1fr;gap:10px}.tp-lv2 button{margin:0!important;min-width:0;padding:14px 12px!important;text-align:left}.tp-lv2 button b{display:block;font-size:15px}.tp-lv2 button small{display:block;margin-top:4px;font-size:12px;line-height:1.35;color:var(--muted)}`;
   document.head.appendChild(st2);
 }
 const EMPH_HINT = { balanced: 'Rovnomerne celé telo.', upper: 'Viac sérií na hrudník, chrbát, ramená a ruky.', lower: 'Viac sérií na stehná, zadok a lýtka.' };
@@ -379,9 +380,9 @@ async function renderTemplateSetup(opts = {}) {
   };
   $app().innerHTML = `<div class="screen">
     <h1 class="mb">Tvoj plán</h1>
-    <div class="tp-by"><i>${h(LAURA.name[0])}</i><div><b>Hotový plán od ${h(LAURA.gen)}</b><small>Overený rozpis podľa tvojho cieľa (${h(GOAL_TXT[goal])}), úrovne a miesta cvičenia. Série a opakovania máš dané, váhy si zapisuješ sám.</small></div></div>
+    <p class="muted mb">Hotový plán podľa tvojho cieľa (${h(GOAL_TXT[goal])}). Vyber si úroveň, miesto a počet dní.</p>
     <button class="tp-lock" type="button" id="customPlan"><i>✦</i><div><b>Plán na mieru s GainTrain Plus</b><small>Podľa tvojej výšky, váhy a veku, s váhami na štart. Týždenne sa vyvíja, po bloku obmení cviky a cviky si môžeš vymeniť.</small></div><span>›</span></button>
-    <div class="field"><span>Tvoja úroveň</span><div class="lvl" id="lvl">${Object.entries(TLEVELS).map(([k, v]) => `<button type="button" data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('')}</div></div>
+    <div class="field"><span>Tvoja úroveň</span><div class="lvl tp-lv2" id="lvl">${Object.entries(TLEVELS).map(([k, v]) => `<button type="button" data-k="${k}" class="${k === level ? 'on' : ''}"><b>${v.label}</b><small>${v.desc}</small></button>`).join('')}</div></div>
     <div class="field"><span>Kde cvičíš</span>${seg('eseg', [['gym', 'Posilňovňa'], ['home', 'Doma']], place)}</div>
     <div class="field"><span>Dní tréningu v týždni</span><div id="dwrap"></div></div>
     <div id="planPrev"></div>

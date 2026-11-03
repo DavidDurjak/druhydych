@@ -45,10 +45,12 @@ export async function confirmedFree() { await load(); return lastLoad > 0 && !!e
 export const left = f => { if (!ent.on) return Infinity; const l = ent.limits?.[f]; if (l == null) return Infinity; return Math.max(0, l - (ent.used?.[f] || 0)); };
 
 // funkcie len s predplatným: ponuka hneď pri ťuknutí na vstup, aby človek zbytočne nefotil
-const PREMIUM_ONLY = { menu_scan: 'Odfoť denné menu', fridge_scan: 'Čo uvarím z chladničky', physique_ai: 'AI analýza postavy', recipe_import: 'Import receptu z odkazu', custom_plan: 'Tréningový plán na mieru', crossfit: 'CrossFit plán od Laury' };
+const PREMIUM_ONLY = { menu_scan: 'Odfoť denné menu', fridge_scan: 'Čo uvarím z chladničky', physique_ai: 'AI analýza postavy', recipe_import: 'Import receptu z odkazu', custom_plan: 'Tréningový plán na mieru', crossfit: 'CrossFit plán od Laury', ai_log: 'Zápis jedla cez AI (hlas, fotka)', skin: 'Vzhľady Cookie a Nálepky' };
 export function gate(feature) {
-  if (isPremium() || left(feature) > 0) return true;
-  paywall({ feature, reason: (ent.limits?.[feature] ?? 1) === 0 ? 'premium_only' : 'free_limit' });
+  if (isPremium()) return true;
+  const only = feature === 'skin'; // funkcie bez limitu v nastavení: vždy len s Plus
+  if (!only && left(feature) > 0) return true;
+  paywall({ feature, reason: only || (ent.limits?.[feature] ?? 1) === 0 ? 'premium_only' : 'free_limit' });
   return false;
 }
 try { window.fwGate = gate; } catch (_) { }
@@ -382,3 +384,5 @@ try {
     });
   }
 } catch (_) { }
+// bez Plus: štítok „AI“ pri zápise jedla je zámok
+try { const st = document.createElement('style'); st.textContent = '.gt-free .ob-ai-tag{font-size:0!important}.gt-free .ob-ai-tag::after{content:"\\1F512";font-size:11px;line-height:1}'; document.head.appendChild(st); } catch (_) { }

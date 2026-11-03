@@ -491,6 +491,7 @@ pst.textContent = `.sk-sw{display:block;width:100%;height:54px;border-radius:12p
 .sk-sw.s::after{content:'GT';position:absolute;right:7%;bottom:13%;padding:3px 7px;border-radius:99px;font:900 9px/1 Inter,system-ui,sans-serif;letter-spacing:.04em;color:#FFE08A;background:#15131E;box-shadow:0 0 0 2px #fff,1px 3px 5px rgba(20,18,30,.35);transform:rotate(9deg)}
 .sk-sw .sk-r{position:absolute;left:50%;top:50%;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%) rotate(-8deg);background:radial-gradient(circle,#fff 0 40%,transparent 41%),conic-gradient(from -90deg,#FF5FB0,#FFC94D,#2FD9C6,#7E62F2,#FF5FB0);box-shadow:0 0 0 2.5px #fff,0 4px 8px -2px rgba(20,18,30,.45)}
 .sk-sw .sk-r::after{content:'';position:absolute;left:7px;top:5px;width:9px;height:5px;border-radius:50%;background:rgba(255,255,255,.75);transform:rotate(-25deg)}
+.gt-free #fwSkin [data-sk=cookie],.gt-free #fwSkin [data-sk=sticker]{position:relative!important}.gt-free #fwSkin [data-sk=cookie]::after,.gt-free #fwSkin [data-sk=sticker]::after{content:'\\1F512';position:absolute;right:10px;top:10px;font-size:13px;line-height:1;padding:4px 5px;border-radius:99px;background:rgba(10,14,18,.78)}
 .sk-sw .sk-holo .st-back{fill:#F7F6FA}.sk-sw .sk-holo .st-cut{fill:#fff}.sk-sw .sk-holo .st-track{stroke:#DDDBE4}`;
 document.head.appendChild(pst);
 const SW = k => `<i class="sk-sw ${k}">${k === 'k' ? cookieIconSvg() : k === 's' ? '<b class="sk-r"></b>' : ''}</i>`;
@@ -508,10 +509,12 @@ function profileUi() {
     const sk = get();
     box.querySelectorAll('[data-sk]').forEach(b => { const on = b.dataset.sk === sk; b.style.outline = on ? '2.5px solid var(--accent)' : '1px solid var(--line)'; b.setAttribute('aria-pressed', String(on)); });
   };
-  box.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { setSkin(b.dataset.sk); mark(); });
+  box.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { if (b.dataset.sk !== 'classic' && window.fwGate && !window.fwGate('skin')) return; setSkin(b.dataset.sk); mark(); });
   mark();
 }
 
+// bez Plus je len Klasický: po zistení, že nemá predplatné, sa vzhľad vráti na Klasický (nové nastavenie už nejde zapnúť)
+addEventListener('fw-ent', () => { if (document.documentElement.classList.contains('gt-free') && get() !== 'classic') { try { localStorage.setItem(KEY, 'classic'); } catch (_) { } apply(); } });
 // staré nastavenie: kým Sušienka nemala tmavú verziu, prepla režim na Svetlý. Vrátime pôvodný režim používateľa.
 try { const p = localStorage.getItem(PREV); if (p) { localStorage.removeItem(PREV); if (p !== 'light') setMode(p); } } catch (_) { }
 apply();

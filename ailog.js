@@ -39,9 +39,14 @@ export function bindAiBox(root, getMeal, done) {
   const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(120, ta.scrollHeight) + 'px'; root.querySelector('#aiBox').classList.toggle('has', !!ta.value.trim()); };
   ta.addEventListener('input', grow);
   ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
-  const send = () => { const t = ta.value.trim(); if (!t) { ta.focus(); return; } openAiLog({ text: t }, getMeal(), done, () => { ta.value = ''; grow(); }); };
+  const send = () => { const t = ta.value.trim(); if (!t) { ta.focus(); return; } if (window.fwGate && !window.fwGate('ai_log')) return; openAiLog({ text: t }, getMeal(), done, () => { ta.value = ''; grow(); }); };
   go.onclick = send;
   const mic = root.querySelector('#aiMic');
+  // bez Plus: zápis cez AI (hlas, fotka, tlačidlo AI) hneď ukáže ponuku, nič sa neodosiela
+  const lock = e => { if (window.fwGate && !window.fwGate('ai_log')) { e.preventDefault(); e.stopImmediatePropagation(); } };
+  mic?.addEventListener('click', lock, true);
+  go.addEventListener('click', lock, true);
+  ph.closest('label')?.addEventListener('click', lock, true);
   if (mic && SR) {
     let rec = null, want = false, base = '', lastAt = 0, startedAt = 0, fatal = false, gotAny = false;
     const finish = () => { want = false; mic.classList.remove('rec'); rec = null; if (ta.value.trim()) send(); else if (!gotAny) ta.focus(); };
