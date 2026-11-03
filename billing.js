@@ -564,11 +564,15 @@ try {
 try {
   const st = document.createElement('style');
   st.textContent = `
-.gt-free .obx-act>*{overflow:visible!important}
-.gt-free .obx-act .ob-ai-tag{font-size:0!important;position:absolute;top:-7px;right:-5px;width:20px;height:20px;padding:0;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink,#06210f);box-shadow:0 0 0 2px var(--bg,#0b0e12);z-index:3}
-.gt-free .obx-act .ob-ai-tag::after{content:"\\1F512";font-size:10px;line-height:1}
+.gt-lk{display:none}
+.obx-act>*:has(.ob-ai-tag){padding-top:7px!important}
+.obx-act .ob-ai-tag{top:2px!important}
+.gt-free .obx-act .ob-i .gt-lk{display:grid;place-items:center;position:absolute;right:-7px;bottom:-6px;width:15px;height:15px;border-radius:50%;background:var(--bg,#0b0e12);border:1.5px solid var(--accent);font-size:8px;line-height:1;z-index:2}
 .gt-free .ms-entry>em,.gt-free .frg-entry>em{font-size:0!important;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--accent)!important;color:var(--accent-ink,#06210f)!important;transform:none!important;border-radius:99px!important}
 .gt-free .ms-entry>em::after,.gt-free .frg-entry>em::after{content:"\\1F512  Plus";font-size:12px;font-weight:800;line-height:1;white-space:pre}
 `;
   document.head.appendChild(st);
+  // zámok sedí na ikone (mikrofón, foto), tag „AI“ ostáva čitateľný
+  const lk = () => document.querySelectorAll('.obx-act>*:has(.ob-ai-tag) .ob-i:not(:has(.gt-lk))').forEach(i => { const s = document.createElement('span'); s.className = 'gt-lk'; s.setAttribute('aria-hidden', 'true'); s.textContent = '\u{1F512}'; i.appendChild(s); });
+  let r = 0; new MutationObserver(() => { cancelAnimationFrame(r); r = requestAnimationFrame(lk); }).observe(document.body, { childList: true, subtree: true }); lk();
 } catch (_) { }
