@@ -563,19 +563,15 @@ try {
     });
   }
 } catch (_) { }
-// bez Plus: štítok „AI“ pri zápise jedla je zámok
+// bez Plus: zápis jedla cez AI je zadarmo (bez limitu), zámky majú len menu, chladnička a ďalšie Plus funkcie
 try {
   const st = document.createElement('style');
   st.textContent = `
 .gt-lk{display:none}
 .obx-act>*:has(.ob-ai-tag){padding-top:7px!important}
 .obx-act .ob-ai-tag{top:2px!important}
-.gt-free .obx-act .ob-i .gt-lk{display:grid;place-items:center;position:absolute;right:-7px;bottom:-6px;width:15px;height:15px;border-radius:50%;background:var(--bg,#0b0e12);border:1.5px solid var(--accent);font-size:8px;line-height:1;z-index:2}
 .gt-free .ms-entry>em,.gt-free .frg-entry>em{font-size:0!important;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;margin-right:-2px;background:var(--accent)!important;color:var(--accent-ink,#06210f)!important;transform:none!important;border-radius:99px!important}
 .gt-free .ms-entry>em::after,.gt-free .frg-entry>em::after{content:"\\1F512 Plus";font-size:11px;font-weight:800;line-height:1;white-space:pre}
 `;
   document.head.appendChild(st);
-  // zámok sedí na ikone (mikrofón, foto), tag „AI“ ostáva čitateľný
-  const lk = () => document.querySelectorAll('.obx-act>*:has(.ob-ai-tag) .ob-i:not(:has(.gt-lk))').forEach(i => { const s = document.createElement('span'); s.className = 'gt-lk'; s.setAttribute('aria-hidden', 'true'); s.textContent = '\u{1F512}'; i.appendChild(s); });
-  let r = 0; new MutationObserver(() => { cancelAnimationFrame(r); r = requestAnimationFrame(lk); }).observe(document.body, { childList: true, subtree: true }); lk();
 } catch (_) { }
