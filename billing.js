@@ -77,21 +77,24 @@ addEventListener('visibilitychange', () => { if (document.visibilityState === 'v
 
 // ---------- obrazovka predplatného ----------
 const CSS = `
-.pw{position:fixed;inset:0;z-index:80;outline:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:var(--bg);color:var(--text);
-  padding:calc(env(safe-area-inset-top) + 14px) 20px calc(env(safe-area-inset-bottom) + 20px);animation:pwIn .26s cubic-bezier(.2,.8,.2,1) both}
+.pw{position:fixed;inset:0;z-index:80;outline:none;overflow:hidden;background:var(--bg);color:var(--text);animation:pwIn .26s cubic-bezier(.2,.8,.2,1) both}
 .pw.out{animation:pwOut .2s ease both}
 @keyframes pwIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}@keyframes pwOut{to{opacity:0;transform:translateY(16px)}}
-.pw-in{max-width:460px;margin:0 auto;display:flex;flex-direction:column;min-height:100%}
-.pw-x{align-self:flex-end;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font:inherit;font-size:20px;line-height:1;cursor:pointer}
-.pw-hero{position:relative;margin:6px 0 4px;padding:22px 20px 20px;border-radius:24px;overflow:hidden;background:
+.pw-in{max-width:460px;margin:0 auto;display:flex;flex-direction:column;height:100%}
+.pw-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:calc(env(safe-area-inset-top) + 10px) 20px 18px}
+.pw-foot{flex:none;padding:12px 20px calc(env(safe-area-inset-bottom) + 12px);background:var(--bg);border-top:1px solid var(--line);display:flex;flex-direction:column}
+.pw-foot .pw-go{margin-top:0}.pw-foot .pw-fine{margin-top:8px;font-size:11.5px;line-height:1.45}.pw-foot .pw-err{margin:8px 0 0}
+.pw-foot .pw-later{margin-top:2px;padding:8px}
+.pw-x{display:block;margin-left:auto;margin-bottom:6px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font:inherit;font-size:20px;line-height:1;cursor:pointer}
+.pw-hero{position:relative;margin:2px 0 0;padding:18px 18px 16px;border-radius:24px;overflow:hidden;background:
   radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--accent) 34%,transparent),transparent 60%),
   radial-gradient(90% 80% at 0% 100%,color-mix(in srgb,var(--accent-2,#8C8CFF) 26%,transparent),transparent 60%),var(--card);border:1px solid var(--line)}
 .pw-tag{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--accent);color:var(--accent-ink,#06210f)}
-.pw-h{font-size:28px;line-height:1.12;font-weight:800;letter-spacing:-.02em;margin:12px 0 6px}
+.pw-h{font-size:26px;line-height:1.13;font-weight:800;letter-spacing:-.02em;margin:12px 0 6px}
 .pw-sub{margin:0;color:var(--muted);font-size:14.5px;line-height:1.5}
 .pw-why{margin:12px 0 0;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--text) 6%,transparent);font-size:13.5px;line-height:1.45}
-.pw-ben{list-style:none;margin:18px 0 6px;padding:0;display:flex;flex-direction:column;gap:12px}
-.pw-ben li{display:flex;gap:12px;align-items:flex-start;font-size:15px;line-height:1.35}
+.pw-ben{list-style:none;margin:16px 0 4px;padding:0;display:flex;flex-direction:column;gap:11px}
+.pw-ben li{display:flex;gap:12px;align-items:center;font-size:15.5px;font-weight:700;line-height:1.3}
 .pw-ben i{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-style:normal;font-size:17px;background:var(--card);border:1px solid var(--line)}
 .pw-ben small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
 .pw-plans{display:flex;flex-direction:column;gap:10px;margin:18px 0 0}
@@ -104,7 +107,6 @@ const CSS = `
 .pw-plan .bd{position:absolute;top:-10px;right:14px;font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--accent);color:var(--accent-ink,#06210f)}
 .pw-go{margin-top:18px;border:0;border-radius:18px;padding:17px;font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;background:var(--accent);color:var(--accent-ink,#06210f)}
 .pw-go:disabled{opacity:.6}
-.pw-go[data-buy]{position:sticky;bottom:calc(env(safe-area-inset-bottom) + 10px);z-index:2;box-shadow:0 0 0 10px color-mix(in srgb,var(--bg) 92%,transparent),0 14px 34px -8px color-mix(in srgb,var(--accent) 55%,transparent)}
 .pw-go.alt{background:var(--card);color:var(--text);border:1px solid var(--line);margin-top:10px}
 .pw-who{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:18px 0 0;padding:4px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
 .pw-who button{border:0;border-radius:12px;padding:10px;background:none;color:var(--muted);font:inherit;font-size:14px;font-weight:800;cursor:pointer}
@@ -123,7 +125,7 @@ const CSS = `
 .pw-tl li:last-child{padding-bottom:0}.pw-tl li:last-child::after{display:none}
 .pw-tl li:last-child::before{background:var(--muted)}
 .pw-tl b{display:block;font-size:14.5px}.pw-tl small{color:var(--muted);font-size:12.5px}
-.pw-nopay{margin:10px 0 0;text-align:center;font-size:13.5px;font-weight:700;color:var(--accent)}
+.pw-nopay{margin:8px 0 0;text-align:center;font-size:13.5px;font-weight:700;color:var(--accent)}
 .pw-err{margin:10px 0 0;text-align:center;color:var(--danger,#FF5C7A);font-size:13px}
 .pw-later{align-self:center;margin-top:6px;background:none;border:0;color:var(--muted);font:inherit;font-size:14px;padding:10px;cursor:pointer}
 .pw-st{margin:16px 0 0;padding:16px;border-radius:18px;background:var(--card);border:1px solid var(--line)}
@@ -133,17 +135,26 @@ const CSS = `
 .gt-sub i{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-size:19px;background:var(--accent);color:var(--accent-ink,#06210f)}
 .gt-sub div{flex:1;min-width:0}.gt-sub b{display:block;font-size:15px}.gt-sub small{color:var(--muted);font-size:12.5px}
 .gt-sub span{color:var(--muted);font-size:20px}
+/* v339: kompaktné rozloženie, aby boli plány vidieť hneď, bez posúvania */
+.pw-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pw-top .pw-x{margin:0;flex:none}
+.pw-hero{margin:14px 0 0;padding:0;background:none;border:0;border-radius:0;overflow:visible}
+.pw-h{font-size:27px;margin:0 0 6px}.pw-sub{font-size:14.5px}
+.pw-ben{margin:16px 0 0;gap:9px}.pw-ben li{font-size:15px}.pw-ben i{width:30px;height:30px;border-radius:9px;font-size:15px}
+.pw-plans{margin:18px 0 0;gap:9px}.pw-plan{padding:13px 15px;border-radius:16px}.pw-plan .n .pw-noads{display:none}
+.pw-who{margin:12px 0 0}
+.pw-code{margin-top:4px}
 @media (prefers-reduced-motion:reduce){.pw,.pw.out{animation:none}}
 `;
 function css() { if (document.getElementById('pwCss')) return; const s = document.createElement('style'); s.id = 'pwCss'; s.textContent = CSS; document.head.appendChild(s); }
 
 const BEN = [
-  ['🏋️', 'Tréningový plán na mieru', 'Podľa tvojej postavy a cieľa, s váhami na štart. Týždenne sa vyvíja'],
-  ['📸', 'AI zápis bez limitu', 'Odfoť tanier, nadiktuj alebo napíš, koľkokrát chceš'],
-  ['💬', 'AI kouč kedykoľvek', 'Poradí s jedlom, tréningom aj keď sa zasekneš'],
-  ['🍽️', 'Denné menu a chladnička', 'AI vyberie z lístka a navrhne recepty z toho, čo máš doma'],
-  ['💪', 'Analýza postavy a import receptov', 'Pokrok z fotiek a recepty z ľubovoľného odkazu'],
-  ['🚫', 'Bez reklám', 'Nikde v appke ťa nebude nič rušiť'],
+  ['📸', 'AI zápis jedla fotkou a hlasom'],
+  ['💬', 'AI kouč kedykoľvek'],
+  ['🏋️', 'Tréningový plán na mieru'],
+  ['🍽️', 'Denné menu a recepty z chladničky'],
+  ['🎨', 'Vzhľady a CrossFit plán'],
+  ['🚫', 'Bez reklám'],
 ];
 const WHY = {
   free_limit: f => `Dnešné AI ${f === 'coach_chat' ? 'správy' : 'zápisy'} zadarmo sú minuté. Zajtra sa obnovia, s Plus ich máš bez limitu.`,
@@ -199,12 +210,11 @@ export function paywall(info = {}) {
   const fine = () => {
     const p = chosen(); if (!p) return '';
     const of = offerPrice(p), first = of ? of.price : p.price;
-    const tail = 'Zrušíš kedykoľvek v Profile, predplatné potom dobehne do konca obdobia.';
+    const tail = 'Zrušíš kedykoľvek v Profile.';
     return (trialDays > 0
-      ? `${dLabel(trialDays)} zadarmo, potom ${eur(first)} ${of ? 'za prvý rok, ďalej ' + eur(p.price) + ' ročne' : 'za ' + h(p.period)}. Pred koncom skúšobnej doby ťa upozorníme. `
+      ? `${dLabel(trialDays)} zadarmo, potom ${eur(first)} ${of ? 'za prvý rok, ďalej ' + eur(p.price) + ' ročne' : 'za ' + h(p.period)}. `
       : of ? `${eur(first)} za prvý rok, potom ${eur(p.price)} ročne. ` : `${eur(p.price)} za ${h(p.period)}, obnovuje sa automaticky. `) + tail;
   };
-
   const timeline = () => {
     const p = chosen(); if (!p || !(trialDays > 0)) return '';
     const of = offerPrice(p), first = of ? of.price : p.price, rem = Math.max(1, trialDays - 3);
@@ -223,34 +233,37 @@ export function paywall(info = {}) {
     el.querySelectorAll('[data-who]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.who === who)));
   };
 
-  const title = isSub ? 'Máš GainTrain Plus' : isMember ? 'Máš GainTrain Plus' : info.welcome ? 'Tvoj plán je hotový' : 'Celá appka, bez limitov a bez reklám';
+  const title = isSub ? 'Máš GainTrain Plus' : isMember ? 'Máš GainTrain Plus' : info.welcome ? 'Tvoj plán je hotový' : 'Odomkni celé GainTrain';
   const subline = isSub ? (ent.trialing ? `Skúšobná doba, prvá platba ${new Date(ent.period_end).toLocaleDateString('sk-SK')}.` : ent.cancel ? `Predplatné skončí ${new Date(ent.period_end).toLocaleDateString('sk-SK')}. Dovtedy máš všetko.` : `Obnoví sa ${new Date(ent.period_end).toLocaleDateString('sk-SK')}.`)
     : isMember ? `Si v predplatnom, ktoré platí ${h(ent.owner || 'iný človek')}. Celé Plus máš, kým platí.`
-      : trial != null ? `Skúšobná doba: ešte ${dLabel(trial)} máš všetko zadarmo.` : info.welcome ? (trialDays > 0 ? `Odomkni celú appku na ${dLabel(trialDays)} zadarmo: AI zápis jedla, kouč, plán na mieru a žiadne reklamy. Teraz nič neplatíš.` : 'Odomkni AI zápis jedla, kouča, plán na mieru a žiadne reklamy.') : 'Zapisovanie jedla, ciele a hotový tréningový plán ostávajú zadarmo. Plus pridá plán na mieru, AI bez obmedzení a žiadne reklamy.';
+      : trial != null ? `Skúšobná doba: ešte ${dLabel(trial)} máš všetko zadarmo.` : info.welcome ? (trialDays > 0 ? `Odomkni AI, kouča a plán na mieru. ${dLabel(trialDays)} zadarmo, teraz nič neplatíš.` : 'Odomkni AI, kouča a plán na mieru.') : 'Zapisovanie jedla a hotový plán ostávajú zadarmo.';
   const group1 = isSub && seatsOf(all.find(p => p.id === ent.plan)) > 1;
 
-  el.innerHTML = `<div class="pw-in">
-    <button class="pw-x" type="button" aria-label="Zavrieť">×</button>
+  const hero = `<div class="pw-top"><span class="pw-tag">✦ GainTrain Plus</span><button class="pw-x" type="button" aria-label="Zavrieť">×</button></div>
     <div class="pw-hero">
-      <span class="pw-tag">✦ GainTrain Plus</span>
       <h1 class="pw-h">${title}</h1>
       <p class="pw-sub">${subline}</p>
       ${why ? `<p class="pw-why">${h(why)}</p>` : ''}
     </div>
-    <ul class="pw-ben">${BEN.map(([i, t, s]) => `<li><i>${i}</i><div><b>${t}</b><small>${s}</small></div></li>`).join('')}</ul>
-    ${isSub ? `${group1 ? '<button class="pw-go" type="button" data-family>Pozvať ľudí do predplatného</button>' : ''}<button class="pw-go${group1 ? ' alt' : ''}" type="button" data-portal>Spravovať predplatné</button><p class="pw-fine">Zmena karty, faktúry a zrušenie cez zabezpečený portál Stripe.</p>`
-      : isMember ? `<button class="pw-go alt" type="button" data-leave>Odísť z predplatného</button>`
-        : all.length ? `${group.length ? `<div class="pw-who" role="group" aria-label="Pre koho"><button type="button" data-who="solo" aria-pressed="true">Len pre mňa</button><button type="button" data-who="group" aria-pressed="false">Duo a Rodina</button></div>` : ''}
-          <div class="pw-plans" role="radiogroup" aria-label="Plán"></div>
-          <div data-tl></div>
-          <button class="pw-go" type="button" data-buy>${ctaText()}</button>
-          ${trialDays > 0 ? '<p class="pw-nopay">✓ Teraz nič neplatíš. Zrušíš kedykoľvek.</p>' : ''}
-          <p class="pw-fine" data-fine></p>
-          <p class="pw-fine">Platba kartou, Apple Pay alebo Google Pay cez Stripe.</p>
-          <button class="pw-code" type="button" data-join>Máš pozvánku do Duo alebo Rodiny? Zadaj kód</button>`
-          : `<div class="pw-st"><b>Predplatné pripravujeme</b><p>Čoskoro si ho tu budeš môcť zapnúť.</p></div>`}
-    <p class="pw-err" hidden></p>
-    <button class="pw-later" type="button">${isSub || isMember ? 'Zavrieť' : 'Teraz nie'}</button>
+    <ul class="pw-ben">${BEN.map(([i, t]) => `<li><i>${i}</i><span>${t}</span></li>`).join('')}</ul>`;
+  const buying = !isSub && !isMember && all.length;
+  el.innerHTML = `<div class="pw-in">
+    <div class="pw-scroll">${hero}
+      ${buying ? `<div class="pw-plans" role="radiogroup" aria-label="Plán"></div>
+        ${group.length ? `<div class="pw-who" role="group" aria-label="Pre koho"><button type="button" data-who="solo" aria-pressed="true">Len pre mňa</button><button type="button" data-who="group" aria-pressed="false">Duo a Rodina</button></div>` : ''}
+        <div data-tl></div>
+        <button class="pw-code" type="button" data-join>Máš pozvánku do Duo alebo Rodiny? Zadaj kód</button>`
+        : !isSub && !isMember ? `<div class="pw-st"><b>Predplatné pripravujeme</b><p>Čoskoro si ho tu budeš môcť zapnúť.</p></div>` : ''}
+    </div>
+    <div class="pw-foot">
+      ${isSub ? `${group1 ? '<button class="pw-go" type="button" data-family>Pozvať ľudí do predplatného</button>' : ''}<button class="pw-go${group1 ? ' alt' : ''}" type="button" data-portal>Spravovať predplatné</button><p class="pw-fine">Zmena karty, faktúry a zrušenie cez zabezpečený portál Stripe.</p>`
+        : isMember ? `<button class="pw-go alt" type="button" data-leave>Odísť z predplatného</button>`
+          : buying ? `<button class="pw-go" type="button" data-buy>${ctaText()}</button>
+            ${trialDays > 0 ? '<p class="pw-nopay">✓ Teraz nič neplatíš. Zrušíš kedykoľvek.</p>' : ''}
+            <p class="pw-fine" data-fine></p>` : ''}
+      <p class="pw-err" hidden></p>
+      <button class="pw-later" type="button">${isSub || isMember ? 'Zavrieť' : 'Teraz nie'}</button>
+    </div>
   </div>`;
   el.querySelector('.pw-x').onclick = close; el.querySelector('.pw-later').onclick = () => { tk('pw_later', { f: info.feature || '' }); close(); };
   el.querySelectorAll('[data-who]').forEach(b => b.onclick = () => {
