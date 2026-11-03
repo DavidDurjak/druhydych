@@ -561,4 +561,14 @@ try {
   }
 } catch (_) { }
 // bez Plus: štítok „AI“ pri zápise jedla je zámok
-try { const st = document.createElement('style'); st.textContent = '.gt-free .ob-ai-tag{font-size:0!important}.gt-free .ob-ai-tag::after{content:"\\1F512";font-size:11px;line-height:1}'; document.head.appendChild(st); } catch (_) { }
+try {
+  const st = document.createElement('style');
+  st.textContent = `
+.gt-free .obx-act>*{overflow:visible!important}
+.gt-free .obx-act .ob-ai-tag{font-size:0!important;position:absolute;top:-7px;right:-5px;width:20px;height:20px;padding:0;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink,#06210f);box-shadow:0 0 0 2px var(--bg,#0b0e12);z-index:3}
+.gt-free .obx-act .ob-ai-tag::after{content:"\\1F512";font-size:10px;line-height:1}
+.gt-free .ms-entry>em,.gt-free .frg-entry>em{font-size:0!important;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--accent)!important;color:var(--accent-ink,#06210f)!important;transform:none!important;border-radius:99px!important}
+.gt-free .ms-entry>em::after,.gt-free .frg-entry>em::after{content:"\\1F512  Plus";font-size:12px;font-weight:800;line-height:1;white-space:pre}
+`;
+  document.head.appendChild(st);
+} catch (_) { }
