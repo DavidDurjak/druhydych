@@ -182,7 +182,7 @@ export async function openMove(date) {
     const d = await dayMove(uid, date).catch(() => ({ items: [], kcal: 0, missing: true }));
     if (d.missing) { box.innerHTML = '<p class="muted small">Pohyb sa práve spúšťa, skús to o chvíľu.</p>'; return; }
     const mode = addMode();
-    box.innerHTML = `<div class="mv-sum"><div><b>${d.kcal}</b><span>kcal spálených pohybom</span></div><em>${mode === 'none' ? 'k cieľu nepripočítavame' : `do dnešného cieľa<strong>+${bonusOf(d.kcal)} kcal</strong>`}</em></div>
+    box.innerHTML = `<div class="mv-sum ck-c ck-l"><div><b>${d.kcal}</b><span>kcal spálených pohybom</span></div><em>${mode === 'none' ? 'k cieľu nepripočítavame' : `do dnešného cieľa<strong>+${bonusOf(d.kcal)} kcal</strong>`}</em></div>
       ${d.items.length ? `<div class="mv-day">${d.items.map(x => `<div class="mv-it"><span class="e">${x.run ? (x.kind === 'walk' ? '🚶' : '🏃') : (A(x.act)?.[3] || '🔥')}</span><div><b>${h(x.name)}</b><small>${x.minutes} min${x.km ? ` · ${x.km.toFixed(1).replace('.', ',')} km` : ''}${x.run ? ' · z Behu' : ''}</small></div><strong>${x.kcal} kcal</strong>${x.run ? '' : `<button type="button" data-del="${x.id}" aria-label="Zmazať">×</button>`}</div>`).join('')}</div>` : ''}
       <span class="mv-lab">Koľko z toho pripočítať k cieľu jedla</span>
       <div class="mv-mode">${[['half', 'Polovicu'], ['full', 'Všetko'], ['none', 'Nič']].map(([m, l]) => `<button type="button" data-m="${m}" class="${m === mode ? 'on' : ''}">${l}</button>`).join('')}</div>
