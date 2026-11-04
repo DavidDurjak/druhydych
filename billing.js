@@ -123,6 +123,9 @@ const CSS = `
 .pw-cf .rn{margin:0 0 12px;font-size:13.5px;line-height:1.45}
 .pw-cf label{display:flex;gap:11px;align-items:flex-start;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--card);font-size:13px;line-height:1.45;cursor:pointer}
 .pw-cf input[type=checkbox]{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--accent)}
+.pw-det{margin:0 0 10px;font-size:13px}.pw-det summary{cursor:pointer;color:var(--muted);font-weight:700;padding:4px 0;list-style:none}.pw-det summary::after{content:' ▾'}.pw-det[open] summary::after{content:' ▴'}
+.pw-det dl{margin:8px 0}
+.pw-cf label{font-size:13px;padding:11px}
 .pw-cf .pw-go{width:100%;margin-top:12px}.pw-cf .pw-go:disabled{opacity:.4}
 .pw-cf .pw-later{width:100%}
 .pw-wd{margin-top:6px;background:none;border:0;color:var(--muted);font:inherit;font-size:12.5px;text-decoration:underline;text-underline-offset:3px;padding:8px;cursor:pointer}
@@ -215,8 +218,8 @@ const WHY = {
 const eur = v => v == null ? '' : Number(v).toLocaleString('sk-SK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 const mo = p => Number(p.months) || (p.id === 'year' ? 12 : p.id === 'quarter' || p.id === 'q' ? 3 : 1);
 const days = t => Math.max(0, Math.ceil((new Date(t) - Date.now()) / 864e5));
-const CONSENT_V = '2026-11-04';
-const CONSENT_TEXT = 'Chcem, aby GainTrain Plus fungovalo hneď po objednávke, ešte pred uplynutím 14-dňovej lehoty na odstúpenie od zmluvy. Beriem na vedomie, že ak od zmluvy odstúpim, zaplatím pomernú časť ceny za dobu, počas ktorej som Plus používal.';
+const CONSENT_V = '2026-11-04b';
+const CONSENT_TEXT = 'Súhlasím, aby Plus fungovalo hneď. Beriem na vedomie, že pri odstúpení od zmluvy zaplatím pomernú časť za dobu používania.';
 const dLabel = n => n === 1 ? '1 deň' : n >= 2 && n <= 4 ? `${n} dni` : `${n} dní`;
 const seatsOf = p => Number(p?.seats) || 1;
 const pplLabel = n => n === 2 ? '2 ľudia' : `do ${n} ľudí`;
@@ -348,14 +351,20 @@ export function paywall(info = {}) {
     const of = offerPrice(p), first = of ? of.price : p.price;
     const startPay = trialDays > 0 ? dateIn(trialDays) : 'dnes';
     const cf = document.createElement('div'); cf.className = 'pw-cf'; cf.setAttribute('role', 'dialog'); cf.setAttribute('aria-label', 'Potvrdenie objednávky');
-    cf.innerHTML = `<div><h2>Skontroluj objednávku</h2>
-      <dl><dt>Plán</dt><dd>GainTrain Plus, ${h(String(p.name).toLowerCase())}</dd>
-      ${trialDays > 0 ? `<dt>Skúška</dt><dd>${dLabel(trialDays)} zadarmo</dd>` : ''}
-      <dt>Prvá platba</dt><dd>${eur(first)}, ${startPay}</dd>
-      ${of ? `<dt>Potom</dt><dd>${eur(p.price)} za ${h(p.period)}</dd>` : ''}</dl>
-      <p class="rn">Predplatné sa obnovuje automaticky za ${eur(p.price)} za ${h(p.period)}, kým ho nezrušíš. Zrušíš ho kedykoľvek v Profile. Podrobnosti sú v <a href="/podmienky.html#predplatne" target="_blank" rel="noopener">Podmienkach</a>.</p>
+    const line = trialDays > 0
+      ? `${dLabel(trialDays)} zadarmo, potom ${eur(first)}${of ? ' za prvý rok, ďalej ' + eur(p.price) + ' za ' + h(p.period) : ' za ' + h(p.period)}.`
+      : `${eur(first)}${of ? ' za prvý rok, ďalej ' + eur(p.price) + ' za ' + h(p.period) : ' za ' + h(p.period)}.`;
+    cf.innerHTML = `<div><h2>${h('GainTrain Plus, ' + String(p.name).toLowerCase())}</h2>
+      <p class="rn"><b>${line}</b> Obnovuje sa automaticky, zrušíš kedykoľvek.</p>
+      <details class="pw-det"><summary>Podrobnosti</summary>
+        <dl><dt>Prvá platba</dt><dd>${eur(first)}, ${startPay}</dd>
+        <dt>Obnovenie</dt><dd>${eur(p.price)} za ${h(p.period)}</dd>
+        <dt>Zrušenie</dt><dd>Profil, kedykoľvek</dd>
+        <dt>Odstúpenie</dt><dd>do 14 dní</dd></dl>
+        <p class="rn">Začiatok služby ihneď: pri odstúpení od zmluvy do 14 dní zaplatíš len pomernú časť za dobu, počas ktorej si Plus používal. Viac v <a href="/podmienky.html#predplatne" target="_blank" rel="noopener">Podmienkach</a>.</p>
+      </details>
       <label><input type="checkbox" data-agree><span>${h(CONSENT_TEXT)}</span></label>
-      <button class="pw-go" type="button" data-order disabled>Objednať s povinnosťou platby</button>
+      <button class="pw-go" type="button" data-order disabled>${trialDays > 0 ? 'Predplatiť a začať skúšku' : 'Predplatiť'}</button>
       <p class="pw-err" hidden></p>
       <button class="pw-later" type="button" data-back>Späť</button></div>`;
     el.querySelector('.pw-in').style.position = 'relative'; el.querySelector('.pw-in').appendChild(cf);
