@@ -254,7 +254,7 @@ export function paywall(info = {}) {
     const of = offerPrice(p), m = mo(p), n = seatsOf(p);
     const save = month && m > 1 ? Math.round((1 - (of ? of.price : p.price) / (month.price * m)) * 100) : 0;
     const badge = of ? of.label : n === 1 && save >= 15 ? `-${save} %` : '';
-    const sub = n > 1 ? `${eur(p.price / n / m)} / osoba` : m > 1 ? `${eur((of ? of.price : p.price) / m)} / mes.` : 'zrušíš kedykoľvek';
+    const sub = n > 1 ? `pre ${n} ľudí<br>${eur(p.price / n / m)} / osoba` : m > 1 ? `${eur((of ? of.price : p.price) / m)} / mes.` : 'zrušíš kedykoľvek';
     const nm = n > 1 ? p.name : p.id === 'month' ? 'Mesačne' : p.id === 'year' ? 'Ročne' : p.name;
     return `<button class="pw-pt" type="button" role="radio" aria-checked="${p.id === pick}" data-plan="${h(p.id)}">
       ${badge ? `<span class="bd">${h(badge)}</span>` : ''}
@@ -354,7 +354,7 @@ export function paywall(info = {}) {
     const line = trialDays > 0
       ? `${dLabel(trialDays)} zadarmo, potom ${eur(first)}${of ? ' za prvý rok, ďalej ' + eur(p.price) + ' za ' + h(p.period) : ' za ' + h(p.period)}.`
       : `${eur(first)}${of ? ' za prvý rok, ďalej ' + eur(p.price) + ' za ' + h(p.period) : ' za ' + h(p.period)}.`;
-    cf.innerHTML = `<div><h2>${h('GainTrain Plus, ' + String(p.name).toLowerCase())}</h2>
+    cf.innerHTML = `<div><h2>${h('GainTrain Plus, ' + String(p.name).toLowerCase() + (seatsOf(p) > 1 ? `, pre ${seatsOf(p)} ľudí` : ''))}</h2>
       <p class="rn"><b>${line}</b> Obnovuje sa automaticky, zrušíš kedykoľvek.</p>
       <details class="pw-det"><summary>Podrobnosti</summary>
         <dl><dt>Prvá platba</dt><dd>${eur(first)}, ${startPay}</dd>

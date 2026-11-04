@@ -81,7 +81,7 @@ export async function render() {
     const rounds = prem ? `<div class="cf-rounds">${Array.from({ length: d.rounds }, (_, i) => `<button type="button" data-id="${id}" data-i="${i + 1}" class="${i < n ? 'on' : ''}">Kolo ${i + 1}</button>`).join('')}</div>` : '';
     return `<div class="cf-card${prem ? '' : ' cf-lock'}"><h3>${h(d.name)}<small>${d.rounds} kolá</small></h3>${d.items.map((x, i) => exRow(x, !prem && i > 1)).join('')}${rounds}</div>`;
   }).join('');
-  ctx.$app.innerHTML = `<div class="screen cf"><div class="rn-h" style="margin-bottom:14px"><h1>CrossFit</h1><p>Kruhové tréningy od Laury. Vonku aj vnútri.</p></div>
+  ctx.$app.innerHTML = `<div class="screen cf"><div class="rn-h" style="margin-bottom:14px"><h1>CrossFit</h1><p>Kruhové tréningy. Vonku aj vnútri.</p></div>
     <div class="cf-tabs">${Object.entries(SETS).map(([k, v]) => `<button type="button" data-t="${k}" class="${k === tab ? 'on' : ''}">${v.e} ${v.label}</button>`).join('')}</div>
     <div class="cf-rule"><b>Ako na to:</b> každý cvik robíš jednu sériu a hneď ideš na ďalší, pauza medzi cvikmi najviac 20 sekúnd. Keď prejdeš všetky cviky, máš 1 až 2 minúty pauzu a ideš odznova. Spolu ${S.days[0].rounds} až ${Math.max(...S.days.map(d => d.rounds))} kolá.</div>
     ${warm}${days}${prem ? '' : '<button class="cf-unlock" type="button" id="cfUnlock">Odomknúť CrossFit s GainTrain Plus</button>'}</div>${ctx.nav('#/trening')}`;

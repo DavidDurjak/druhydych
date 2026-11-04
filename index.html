@@ -234,6 +234,16 @@
         try { sessionStorage.setItem('gt_upd', String(Date.now())); } catch (_) { }
         location.reload();
       });
+      // zastaraná appka (otvorená už pred nasadením): jej časti na neskôr (chunks/) už na serveri nie sú. Appka sa raz za 5 minút sama obnoví.
+      window.gtStale = () => {
+        const a = document.activeElement; if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName)) return false;
+        let last = 0; try { last = Number(sessionStorage.getItem('gt_stale') || 0); } catch (_) { }
+        if (Date.now() - last < 300000 || navigator.onLine === false) return false;
+        try { sessionStorage.setItem('gt_stale', String(Date.now())); } catch (_) { }
+        location.reload(); return true;
+      };
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => { }); });
+      window.addEventListener('unhandledrejection', e => { const m = String(e.reason && (e.reason.message || e.reason)); if (/dynamically imported module|Importing a module script failed|error loading dynamically/i.test(m)) window.gtStale(); });
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => { r.update().catch(() => {}); }).catch(() => {}));
     }
   </script>

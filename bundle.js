@@ -79,7 +79,16 @@ module.exports = async function bundle(OUT) {
     // všetko sa zapíše až na konci, keď je hotové: pri chybe ostane public/ presne taký, aký bol (záložný spôsob v build.js)
     fs.writeFileSync(path.join(OUT, 'gt.js'), code);
     fs.rmSync(path.join(OUT, 'chunks'), { recursive: true, force: true }); fs.mkdirSync(path.join(OUT, 'chunks'), { recursive: true });
-    for (const f of chunks) fs.writeFileSync(path.join(OUT, 'chunks', path.basename(f.path)), f.contents);
+    // samostatné súbory (recepty, vendor) majú v kóde cestu "./x.js", ktorá platí pre gt.js; z chunks/ treba "../x.js" (inak 404 a recepty sa nenačítajú)
+    for (const f of chunks) {
+      let buf = f.contents;
+      if (f.path.endsWith('.js')) {
+        const txt = Buffer.from(buf).toString('utf8').replace(/(["'])\.\/((?:vendor\/)?[\w.\-]+\.(?:js|mjs))\1/g, (m, q, name) =>
+          !fs.existsSync(path.join(OUT, 'chunks', name)) && !chunks.some(c => path.basename(c.path) === name) && fs.existsSync(path.join(OUT, name)) ? `${q}../${name}${q}` : m);
+        buf = Buffer.from(txt, 'utf8');
+      }
+      fs.writeFileSync(path.join(OUT, 'chunks', path.basename(f.path)), buf);
+    }
     if (map) fs.writeFileSync(path.join(OUT, 'gt.js.map'), map);
     if (out.css) fs.writeFileSync(path.join(OUT, 'gt.css'), out.css);
     fs.writeFileSync(swPath, sw);

@@ -94,7 +94,7 @@ export async function renderTraining() {
   let [plan, logs, lastKg] = await Promise.all([db.getPlan(uid), db.listWorkoutLogs(uid, calc.addDays(calc.today(), -60)), db.lastWeights(uid)]);
   if (!plan) return renderPlanSetup();
   // bez Plus: plán na mieru sa vymení za hotový plán od trénerky (parametre ostanú uložené, po zaplatení sa vráti)
-  if (plan.meta?.v === 2 && !isPremium() && await confirmedFree()) { const t = await toTemplate(plan, p).catch(() => null); if (t) { plan = t; toast(`Plán na mieru je súčasťou Plus. Máš hotový plán od ${LAURA.gen}.`); } }
+  if (plan.meta?.v === 2 && !isPremium() && await confirmedFree()) { const t = await toTemplate(plan, p).catch(() => null); if (t) { plan = t; toast(`Plán na mieru je súčasťou Plus. Máš hotový plán.`); } }
   // stredne pokročilý už nie je: starší plán sa raz prevedie na pokročilý (rovnaký blok, týždeň v rámci kratšieho bloku)
   if (plan.meta?.v === 2 && plan.meta.params?.level === 'intermediate') { try { await regen(plan, { level: 'advanced', week: Math.min(plan.meta.week || 1, LEVELS.advanced.blockWeeks) }, plan.meta.startedAt); } catch (_) { } }
   await refreshPlan(plan, p);
@@ -290,7 +290,7 @@ function templateInfo(plan) {
   const m = plan.meta, prem = isPremium();
   const days = plan.days.filter(d => d.exercises.some(e => e.role !== 'cardio')).length;
   return `<div class="card plan-info tp-info">
-    <div class="row between"><b>Plán od ${h(LAURA.gen)}</b><span class="chip tp-chip">${h(TLEVELS[m.params?.level]?.label || '')}</span></div>
+    <div class="row between"><b>Hotový plán</b><span class="chip tp-chip">${h(TLEVELS[m.params?.level]?.label || '')}</span></div>
     <p class="small" style="margin:6px 0 0">${days}× týždenne${m.aerobicDay ? ' + aeróbna aktivita' : ''}, cieľ ${h(GOAL_TXT[m.params?.goal] || '')}${m.params?.place === 'home' ? ', doma' : ''}. Odporúčané dni: ${h(m.schedule || '')}.</p>
     ${m.fallback === 'level' ? '<p class="small muted" style="margin:6px 0 0">Pre pokročilých zatiaľ nie je domáca verzia, preto máš začiatočnícky domáci plán. Ak chceš viac, zvýš váhy a skráť pauzy.</p>' : ''}
     ${m.note ? `<p class="small muted" style="margin:6px 0 0">${h(m.note)}</p>` : ''}

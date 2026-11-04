@@ -13,7 +13,7 @@ import { loadRecipeData } from './recipedata.js';
 // recepty (6 000+ jedál s fotkami, vyše 3 MB) sa načítajú až pri otvorení receptov, nie pri štarte appky
 let recMod = null;
 const loadRecipes = () => (recMod ||= loadRecipeData().then(() => import('./recipes.js')).catch(e => { recMod = null; throw e; }));
-const openRecipeHub = (...a) => loadRecipes().then(m => m.openRecipeHub(...a)).catch(() => toast('Recepty sa nepodarilo načítať, skús to znova', true));
+const openRecipeHub = (...a) => loadRecipes().then(m => m.openRecipeHub(...a)).catch(() => { if (window.gtStale && window.gtStale()) return; toast('Recepty sa nepodarilo načítať, skús to znova', true); });
 const hubTabs = active => `<div class="seg rh-seg" data-rh-seg><button data-rh="insp" class="${active === 'insp' ? 'on' : ''}">Inšpiruj sa</button><button data-rh="mine" class="${active === 'mine' ? 'on' : ''}">Môj recept</button></div>`;
 
 const $app = () => ctx.$app;
